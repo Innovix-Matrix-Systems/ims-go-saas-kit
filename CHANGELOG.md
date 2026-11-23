@@ -73,6 +73,12 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   security summary) and **Organization** profile page (details with an edit dialog, owner, people,
   plan usage, counts). IDs and codes are shown as text with a copy button instead of read-only
   inputs.
+- `GET`/`PATCH /api/v1/organization` return `branding` (`logo_url`, `color` from the
+  organization's e-mail branding settings) so clients can show its logo.
+- Client app: a getting-started checklist for new organizations' admins; organization and
+  platform settings in plain language with fitting controls (units, colour picker, plan picker);
+  a member's panel that reads like a profile; photos wherever people appear; branches shown as
+  text to those who may not edit them; dashboards that fit a phone.
 - Finished exports are listed among the organization's files (`GET /api/v1/files`, with
   `generated: true`) until their job is removed or expires.
 - Client app **Background jobs**: a top-bar tray and a page listing the signed-in person's
