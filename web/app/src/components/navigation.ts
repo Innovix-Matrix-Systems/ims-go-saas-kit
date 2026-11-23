@@ -53,10 +53,11 @@ export const pages: Page[] = [
   { to: '/org/files', label: 'org.files', icon: 'files', group: 'organization', key: 'f', keywords: 'uploads documents images', permission: 'file.view.all', tenantOnly: true },
   { to: '/org/webhooks', label: 'org.webhooks', icon: 'actions', group: 'organization', key: 'w', keywords: 'integrations events api', permission: 'webhook.manage', tenantOnly: true },
   { to: '/org/billing', label: 'org.billing', icon: 'package', group: 'organization', key: 'i', keywords: 'plan subscription payments invoice upgrade', permission: 'billing.view', tenantOnly: true },
-  { to: '/org/settings', label: 'org.settings', icon: 'building', group: 'organization', key: 'o', keywords: 'organization company owner transfer policies', tenantOnly: true },
+  { to: '/org/settings', label: 'nav.orgSettings', icon: 'building', group: 'organization', key: 'o', keywords: 'organization company owner transfer policies', tenantOnly: true },
   { to: '/settings/profile', label: 'settings.profile', icon: 'user', group: 'account', key: 'p', keywords: 'name language e-mail' },
   { to: '/settings/security', label: 'settings.security', icon: 'shield', group: 'account', key: 's', keywords: 'password two-factor 2fa sessions devices' },
   { to: '/notifications', label: 'notifications.title', icon: 'bell', group: 'workspace', key: 'n', keywords: 'inbox alerts' },
+  { to: '/jobs', label: 'jobs.title', icon: 'download', group: 'workspace', key: 'j', keywords: 'export import download background files' },
   { to: '/settings/notifications', label: 'settings.notificationSettings', icon: 'settings', group: 'account', keywords: 'notification preferences' },
   { to: '/settings/privacy', label: 'settings.privacy', icon: 'eye', group: 'account', keywords: 'export delete account data' },
 ]

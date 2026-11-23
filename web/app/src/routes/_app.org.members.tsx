@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, type Schemas, type User } from '../api/client'
 import { branchesQuery } from '../components/BranchSwitcher'
+import { useStartExport } from '../components/jobs'
 import { can, useSession } from '../auth/session'
 import { initials } from '../format'
 import { Field, useApiErrors } from '../components/form'
@@ -37,6 +38,7 @@ function MembersPage() {
   const [perPage, setPerPage] = useState(20)
   const [inviting, setInviting] = useState(false)
   const [selected, setSelected] = useState<User | null>(null)
+  const startExport = useStartExport()
 
   // Search as the user types, without a request per key.
   useEffect(() => {
@@ -70,11 +72,25 @@ function MembersPage() {
         title={t('members.title')}
         description={t('members.subtitle')}
         actions={
-          can(session, 'user.create') ? (
-            <Button variant="primary" icon="plus" onClick={() => setInviting(true)}>
-              {t('members.invite')}
-            </Button>
-          ) : null
+          <>
+            {can(session, 'user.export') ? (
+              <Button
+                icon="download"
+                onClick={() =>
+                  void startExport(t('jobs.kind.export.user'), () =>
+                    api('/user/export-background', { method: 'POST', body: { search: query || undefined, order_by: 'name', order_direction: 'asc' } }),
+                  )
+                }
+              >
+                {t('export.button')}
+              </Button>
+            ) : null}
+            {can(session, 'user.create') ? (
+              <Button variant="primary" icon="plus" onClick={() => setInviting(true)}>
+                {t('members.invite')}
+              </Button>
+            ) : null}
+          </>
         }
       />
       <div className="toolbar">

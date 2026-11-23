@@ -116,3 +116,19 @@
 .flag-rollout { display: inline-flex; align-items: center; gap: 6px; }
 .flag-rollout .input { width: 72px; }
 .field-error { color: var(--danger-fg); font-size: var(--fs-sm); }
+/* Exports & imports: the top-bar tray and the page. */
+.jobs-trigger { position: relative; }
+.jobs-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: livePulse 1.4s ease-in-out infinite; }
+.jobs-menu { width: 340px; padding: 0; }
+.jobs-menu-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.jobs-empty { padding: 16px 12px; }
+.jobs-list { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; }
+.jobs-item { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
+.jobs-item + .jobs-item { border-top: 1px solid var(--border); }
+.jobs-item-head, .jobs-item-foot { display: flex; align-items: center; gap: 8px; }
+.jobs-name { font-weight: var(--fw-medium); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jobs-status-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 160px; }
+.jobs-status-cell .meter { width: 100%; }
+.danger-text { color: var(--danger-fg); }
+.jobs-errors { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.jobs-errors ul { margin: 4px 0 0; padding-left: 16px; }

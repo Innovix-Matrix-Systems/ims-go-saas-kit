@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import { ActingBanner } from './ActingBanner'
 import { AppearanceMenu } from './AppearanceMenu'
 import { BranchSwitcher } from './BranchSwitcher'
+import { JobsTray } from './JobsTray'
 import { CommandPalette } from './CommandPalette'
 import { navGroupLabels, navGroups, pageFor, visiblePages, type NavGroup } from './navigation'
 import { NotificationBell } from './NotificationBell'
@@ -219,6 +220,7 @@ export function AppShell() {
               </span>
             </button>
             <BranchSwitcher />
+            <JobsTray />
             <NotificationBell />
             <AppearanceMenu />
             <button

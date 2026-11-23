@@ -53,8 +53,13 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   user's saved language and sends a new owner to the setup wizard.
 - Data-processing jobs report `expires_at`, failed ones can be retried
   (`POST /api/v1/data-processing/job/{jobId}/retry`) and finished ones removed
-  (`DELETE /api/v1/data-processing/job/{jobId}`); the activity log is exported as a background job
-  (`POST /api/v1/activity/export`, staff: `POST /api/v1/internal/activity/export`).
+  (`DELETE /api/v1/data-processing/job/{jobId}`; staff not acting in an organization use
+  `/api/v1/internal/data-processing/job/{jobId}` and `.../retry`); the activity log is exported as
+  a background job (`POST /api/v1/activity/export`, staff: `POST /api/v1/internal/activity/export`).
+- Client app **Exports & imports**: a top-bar tray and a page listing the signed-in person's
+  exports and imports with progress, failures and per-row import errors, download until the file
+  expires, retry and remove. Members (organization and staff console) and the activity log export
+  as background jobs; the activity export covers every matching entry, not just the visible page.
 - Organizations withdraw a pending checkout (`POST /api/v1/billing/payments/{id}/cancel`) and
   download invoices (`GET /api/v1/billing/payments/{id}/invoice`, printable HTML);
   `GET /api/v1/packages/features` lists the feature catalog; staff send announcements to every

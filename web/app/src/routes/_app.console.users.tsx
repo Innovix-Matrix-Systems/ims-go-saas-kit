@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, type Schemas, type User } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { allTenantsQuery, useStartActing } from '../components/console'
+import { useStartExport } from '../components/jobs'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, EmptyState, PageHeader } from '../components/ui'
@@ -25,6 +26,7 @@ function UsersPage() {
   const session = useSession()
   const { push } = useToast()
   const acting = useStartActing()
+  const startExport = useStartExport()
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
@@ -50,7 +52,28 @@ function UsersPage() {
 
   return (
     <>
-      <PageHeader title={t('console.users')} description={t('console.usersSubtitle')} />
+      <PageHeader
+        title={t('console.users')}
+        description={t('console.usersSubtitle')}
+        actions={
+          can(session, 'user.internal.export') ? (
+            <Button
+              icon="download"
+              onClick={() =>
+                void startExport(t('jobs.kind.export.user'), () =>
+                  api('/internal/user/export-background', {
+                    method: 'POST',
+                    asStaff: true,
+                    body: { search: query || undefined, order_by: 'name', order_direction: 'asc' },
+                  }),
+                )
+              }
+            >
+              {t('export.button')}
+            </Button>
+          ) : null
+        }
+      />
       <div className="toolbar">
         <input className="input toolbar-search" type="search" placeholder={t('members.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
