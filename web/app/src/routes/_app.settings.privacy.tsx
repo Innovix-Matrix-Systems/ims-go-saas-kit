@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { api, apiBlob, ApiError, type Schemas } from '../api/client'
+import { api, apiBlob, saveBlob, ApiError, type Schemas } from '../api/client'
 import { forgetSession } from '../auth/session'
 import { Field, PasswordInput, useApiErrors } from '../components/form'
 import { useToast } from '../components/Toasts'
@@ -57,13 +57,7 @@ function ExportCard() {
   }
 
   const download = async () => {
-    const blob = await apiBlob(`/api/v1/data-processing/job/${jobId}/download`)
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'my-data.zip'
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    saveBlob(await apiBlob(`/api/v1/data-processing/job/${jobId}/download`), 'my-data.zip')
   }
 
   return (

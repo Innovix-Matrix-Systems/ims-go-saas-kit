@@ -24,10 +24,13 @@ import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppOrgActivityRouteImport } from './routes/_app.org.activity'
 import { Route as AppOrgBranchesRouteImport } from './routes/_app.org.branches'
+import { Route as AppOrgFilesRouteImport } from './routes/_app.org.files'
 import { Route as AppOrgMembersRouteImport } from './routes/_app.org.members'
 import { Route as AppOrgRolesRouteImport } from './routes/_app.org.roles'
 import { Route as AppOrgSettingsRouteImport } from './routes/_app.org.settings'
+import { Route as AppOrgWebhooksRouteImport } from './routes/_app.org.webhooks'
 import { Route as AppSettingsNotificationsRouteImport } from './routes/_app.settings.notifications'
 import { Route as AppSettingsPrivacyRouteImport } from './routes/_app.settings.privacy'
 import { Route as AppSettingsProfileRouteImport } from './routes/_app.settings.profile'
@@ -107,9 +110,19 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOrgActivityRoute = AppOrgActivityRouteImport.update({
+  id: '/org/activity',
+  path: '/org/activity',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrgBranchesRoute = AppOrgBranchesRouteImport.update({
   id: '/org/branches',
   path: '/org/branches',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrgFilesRoute = AppOrgFilesRouteImport.update({
+  id: '/org/files',
+  path: '/org/files',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOrgMembersRoute = AppOrgMembersRouteImport.update({
@@ -125,6 +138,11 @@ const AppOrgRolesRoute = AppOrgRolesRouteImport.update({
 const AppOrgSettingsRoute = AppOrgSettingsRouteImport.update({
   id: '/org/settings',
   path: '/org/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrgWebhooksRoute = AppOrgWebhooksRouteImport.update({
+  id: '/org/webhooks',
+  path: '/org/webhooks',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsNotificationsRoute =
@@ -164,10 +182,13 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/org/activity': typeof AppOrgActivityRoute
   '/org/branches': typeof AppOrgBranchesRoute
+  '/org/files': typeof AppOrgFilesRoute
   '/org/members': typeof AppOrgMembersRoute
   '/org/roles': typeof AppOrgRolesRoute
   '/org/settings': typeof AppOrgSettingsRoute
+  '/org/webhooks': typeof AppOrgWebhooksRoute
   '/settings/notifications': typeof AppSettingsNotificationsRoute
   '/settings/privacy': typeof AppSettingsPrivacyRoute
   '/settings/profile': typeof AppSettingsProfileRoute
@@ -188,10 +209,13 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/': typeof AppIndexRoute
+  '/org/activity': typeof AppOrgActivityRoute
   '/org/branches': typeof AppOrgBranchesRoute
+  '/org/files': typeof AppOrgFilesRoute
   '/org/members': typeof AppOrgMembersRoute
   '/org/roles': typeof AppOrgRolesRoute
   '/org/settings': typeof AppOrgSettingsRoute
+  '/org/webhooks': typeof AppOrgWebhooksRoute
   '/settings/notifications': typeof AppSettingsNotificationsRoute
   '/settings/privacy': typeof AppSettingsPrivacyRoute
   '/settings/profile': typeof AppSettingsProfileRoute
@@ -214,10 +238,13 @@ export interface FileRoutesById {
   '/_app/onboarding': typeof AppOnboardingRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/': typeof AppIndexRoute
+  '/_app/org/activity': typeof AppOrgActivityRoute
   '/_app/org/branches': typeof AppOrgBranchesRoute
+  '/_app/org/files': typeof AppOrgFilesRoute
   '/_app/org/members': typeof AppOrgMembersRoute
   '/_app/org/roles': typeof AppOrgRolesRoute
   '/_app/org/settings': typeof AppOrgSettingsRoute
+  '/_app/org/webhooks': typeof AppOrgWebhooksRoute
   '/_app/settings/notifications': typeof AppSettingsNotificationsRoute
   '/_app/settings/privacy': typeof AppSettingsPrivacyRoute
   '/_app/settings/profile': typeof AppSettingsProfileRoute
@@ -240,10 +267,13 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/settings'
+    | '/org/activity'
     | '/org/branches'
+    | '/org/files'
     | '/org/members'
     | '/org/roles'
     | '/org/settings'
+    | '/org/webhooks'
     | '/settings/notifications'
     | '/settings/privacy'
     | '/settings/profile'
@@ -264,10 +294,13 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/'
+    | '/org/activity'
     | '/org/branches'
+    | '/org/files'
     | '/org/members'
     | '/org/roles'
     | '/org/settings'
+    | '/org/webhooks'
     | '/settings/notifications'
     | '/settings/privacy'
     | '/settings/profile'
@@ -289,10 +322,13 @@ export interface FileRouteTypes {
     | '/_app/onboarding'
     | '/_app/settings'
     | '/_app/'
+    | '/_app/org/activity'
     | '/_app/org/branches'
+    | '/_app/org/files'
     | '/_app/org/members'
     | '/_app/org/roles'
     | '/_app/org/settings'
+    | '/_app/org/webhooks'
     | '/_app/settings/notifications'
     | '/_app/settings/privacy'
     | '/_app/settings/profile'
@@ -420,11 +456,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/org/activity': {
+      id: '/_app/org/activity'
+      path: '/org/activity'
+      fullPath: '/org/activity'
+      preLoaderRoute: typeof AppOrgActivityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/org/branches': {
       id: '/_app/org/branches'
       path: '/org/branches'
       fullPath: '/org/branches'
       preLoaderRoute: typeof AppOrgBranchesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/org/files': {
+      id: '/_app/org/files'
+      path: '/org/files'
+      fullPath: '/org/files'
+      preLoaderRoute: typeof AppOrgFilesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/org/members': {
@@ -446,6 +496,13 @@ declare module '@tanstack/react-router' {
       path: '/org/settings'
       fullPath: '/org/settings'
       preLoaderRoute: typeof AppOrgSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/org/webhooks': {
+      id: '/_app/org/webhooks'
+      path: '/org/webhooks'
+      fullPath: '/org/webhooks'
+      preLoaderRoute: typeof AppOrgWebhooksRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings/notifications': {
@@ -502,10 +559,13 @@ interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
+  AppOrgActivityRoute: typeof AppOrgActivityRoute
   AppOrgBranchesRoute: typeof AppOrgBranchesRoute
+  AppOrgFilesRoute: typeof AppOrgFilesRoute
   AppOrgMembersRoute: typeof AppOrgMembersRoute
   AppOrgRolesRoute: typeof AppOrgRolesRoute
   AppOrgSettingsRoute: typeof AppOrgSettingsRoute
+  AppOrgWebhooksRoute: typeof AppOrgWebhooksRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -513,10 +573,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
+  AppOrgActivityRoute: AppOrgActivityRoute,
   AppOrgBranchesRoute: AppOrgBranchesRoute,
+  AppOrgFilesRoute: AppOrgFilesRoute,
   AppOrgMembersRoute: AppOrgMembersRoute,
   AppOrgRolesRoute: AppOrgRolesRoute,
   AppOrgSettingsRoute: AppOrgSettingsRoute,
+  AppOrgWebhooksRoute: AppOrgWebhooksRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

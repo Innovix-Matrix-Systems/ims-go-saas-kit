@@ -50,7 +50,10 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   values for tenant settings such as branding, two-factor and privacy), roles (create, rename,
   delete, and a permission editor grouped by area that offers only what the editor may grant; the
   managed Admin role is read-only) and branches (create, edit with a manager, delete), plus a
-  branch switcher in the top bar and moving a member to another branch.
+  branch switcher in the top bar and moving a member to another branch. Also the activity log
+  (filter by subject and member, details, load more), files (upload, filter by type, download,
+  delete) and webhooks (endpoints with an event picker, the signing secret shown once, test
+  event, turn on or off, new secret, delivery log with payloads and sending again).
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.
