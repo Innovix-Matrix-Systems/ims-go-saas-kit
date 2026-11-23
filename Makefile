@@ -41,7 +41,8 @@ endif
         vet format format-check lint lint-fix tidy check \
         sqlc openapi openapi-gen openapi-check generate gen-check skills-sync skills-check \
         db-up db-down migrate migrate-status migrate-rollback seed fresh \
-        health config version web-build web-typecheck dev-web docs docs-build docs-gen clean clean-all
+        health config version web-build web-typecheck dev-web app-build app-typecheck app-style-check app-openapi-check dev-app \
+        docs docs-build docs-gen clean clean-all
 
 # ── Help ─────────────────────────────────────────────────────────────────────
 help:
@@ -51,14 +52,17 @@ help:
 	@echo   make rename MODULE=... Rename the starter to your app, once after creating it
 	@echo   make key-generate      Generate APP_KEY into .env once, KEY_FLAGS=--show prints it
 	@echo --- Develop ---
-	@echo   make dev               Run SPA :8080 with Vite HMR + API :8081 with air
+	@echo   make dev               Run the dashboard :8080 and the app :8082 with Vite HMR + API :8081 with air
 	@echo   make dev-api           Run the API only with air
 	@echo   make run               Run the API once with go run
 	@echo   make queue             Run the queue worker with go run
 	@echo   make schedule          Run the scheduler daemon with go run
 	@echo   make build             Build the release binary into bin/
-	@echo   make build-all         Build the SPA and then the Go binary
+	@echo   make build-all         Build both SPAs and then the Go binary
 	@echo   make dev-web           Run the developer dashboard SPA on :5173
+	@echo   make dev-app           Run the client app SPA on :8082
+	@echo   make app-build         Build the client app into web/app/dist
+	@echo   make app-typecheck     Type-check the client app
 	@echo --- Quality ---
 	@echo   make test              Unit tests, integration tests skip without a DSN
 	@echo   make test-race         Unit tests with the race detector
@@ -128,7 +132,7 @@ key-generate: ## Generate APP_KEY and write it to .env (KEY_FLAGS=--show prints 
 build: ## Build the release binary with a baked-in version.
 	go build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/app
 
-build-all: web-build build ## Build the developer SPA, then the Go binary.
+build-all: web-build app-build build ## Build the developer SPA and the client app, then the Go binary.
 
 web-build: ## Build the developer SPA into web/dev/dist (embedded by Go).
 	npm --prefix web/dev ci
@@ -142,6 +146,22 @@ web-style-check: ## Check the SPA design tokens: WCAG AA contrast, type scale, n
 
 dev-web: ## Run the SPA dev server on :5173 with /dev/api proxied to :8080.
 	npm --prefix web/dev run dev
+
+app-build: ## Build the client app into web/app/dist (embedded by Go, served at /).
+	npm --prefix web/app ci
+	npm --prefix web/app run build
+
+app-typecheck: ## Type-check the client app.
+	npm --prefix web/app run typecheck
+
+app-style-check: ## Check the client app's design tokens: WCAG AA contrast, type scale, no raw colours.
+	npm --prefix web/app run check:style
+
+app-openapi-check: ## Fail if the client app's generated API types are stale.
+	npm --prefix web/app run openapi:check
+
+dev-app: ## Run the client app dev server on :8082 with /api proxied to :8081.
+	npm --prefix web/app run dev
 
 dev: env ## Run the SPA dev server (:8080, HMR) and the API (:8081, air).
 	go run ./cmd/app migrate

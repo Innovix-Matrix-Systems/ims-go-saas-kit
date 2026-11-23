@@ -11,6 +11,7 @@ backups/
 coverage.*
 **/node_modules
 web/dev/dist
+web/app/dist
 website/
 docs/
 specs/

@@ -1,0 +1,6 @@
+﻿/* ── Home ──────────────────────────────────────────────── */
+.home-hero { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.home-hero .avatar { width: 48px; height: 48px; font-size: var(--fs-lg); }
+.home-hero h1 { font-size: var(--fs-xl); font-weight: var(--fw-semibold); margin: 0; line-height: var(--lh-heading); }
+.home-hero p { margin: 4px 0 0; color: var(--text-2); }
+.home-roles { display: flex; flex-wrap: wrap; gap: 6px; }

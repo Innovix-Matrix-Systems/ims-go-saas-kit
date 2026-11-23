@@ -95,6 +95,39 @@ jobs:
           git diff --exit-code -- src/api/schema.d.ts
         working-directory: web/dev
 
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/app/package-lock.json
+
+      - name: install
+        run: npm ci
+        working-directory: web/app
+
+      - name: typecheck
+        run: npm run typecheck
+        working-directory: web/app
+
+      - name: style check (contrast, type scale, tokens)
+        run: npm run check:style
+        working-directory: web/app
+
+      - name: build
+        run: npm run build
+        working-directory: web/app
+
+      - name: generated route tree and OpenAPI types are current
+        run: |
+          npm run openapi:gen
+          git diff --exit-code -- src/api/schema.d.ts src/routeTree.gen.ts
+        working-directory: web/app
+
   docs:
     runs-on: ubuntu-latest
     steps:

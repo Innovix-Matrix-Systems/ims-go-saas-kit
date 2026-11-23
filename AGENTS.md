@@ -35,7 +35,7 @@ recipes live in
 
 ```bash
 make help                  # list every task (dev, build, test, lint, generate, db, ...)
-make dev                   # SPA dev server on :8080 (HMR, /dev) + API on :8081 (air hot reload)
+make dev                   # dashboard on :8080 (/dev) + client app on :8082 (both HMR) + API on :8081 (air)
 make dev-api               # API only, hot reload via air
 make build                 # bin/ims (CGO-free)
 make check                 # format-check + vet + lint + unit tests
@@ -47,6 +47,8 @@ make migrate               # goose + River migrations
 make web-typecheck         # dashboard: tsc --noEmit
 make web-style-check       # dashboard: token contrast and style rules
 make web-build             # dashboard: build web/dev/dist (embedded by the binary)
+make app-typecheck         # client app: tsc --noEmit (also app-style-check, app-openapi-check)
+make app-build             # client app: build web/app/dist (embedded, served at /)
 make docs-gen              # docs/reference/* from the CLI, .env.example, permission catalog, Makefile
 make docs                  # docs site preview at :4321 (website/, Node 22.23+); make docs-build checks links
 
@@ -83,6 +85,12 @@ website/                      Astro Starlight shell that renders docs/ (deployed
 web/dev/                      dashboard SPA (TanStack Router/Query, cmdk); embed.go also embeds package.json
   src/components/ui.tsx       Card, Button, Chip, Drawer, Modal, Tabs, StatCard, Icon, ...
   src/components/inputs.tsx   Select, DatePicker, TimePicker (use these, never native <select>/date)
+web/app/                      client app SPA served at / (Vite + TanStack Router plugin, React Query, cmdk)
+  src/api/client.ts           api() wrapper: /api/v1 paths, ApiError (problem+json), token storage, app-wide events
+  src/auth/session.ts         sign-in/2FA/sign-out, session query (profile + permissions), can()
+  src/components/navigation.ts every page: label key, icon, group, `g` letter, required permission
+  src/i18n/                   en.ts (reference catalog) + bn.ts; useT(), Accept-Language sent with every call
+  public/appearance.js        theme/accent/density before first paint (a file, so the CSP needs no inline script)
 internal/
   app/        composition root: platform.go (shared deps), schedule.go (recurring tasks),
               wiring.go (HTTP deps), routes.go (middleware chain + route groups), dev_commands.go (dashboard commands)

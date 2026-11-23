@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -6,8 +7,10 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '../../..')
 const webDir = path.join(root, 'web', 'dev')
+const appDir = path.join(root, 'web', 'app')
 const apiPort = process.env.IMS_API_PORT ?? '8081'
 const webPort = process.env.IMS_WEB_PORT ?? '8080'
+const appPort = process.env.IMS_APP_PORT ?? '8082'
 const apiOrigin = `http://127.0.0.1:${apiPort}`
 const apiEnv = { ...process.env, APP_LISTEN_ADDR: `:${apiPort}` }
 const webEnv = { ...process.env, IMS_API_ORIGIN: apiOrigin }
@@ -66,6 +69,16 @@ start(
   webDir,
   webEnv,
 )
+
+// The client app (web/app) runs next to the dashboard once its packages are
+// installed (`npm --prefix web/app ci`).
+const appVite = path.join(appDir, 'node_modules', 'vite', 'bin', 'vite.js')
+if (existsSync(appVite)) {
+  console.log(`[dev] client app (Vite HMR): http://127.0.0.1:${appPort}/`)
+  start('app', process.execPath, [appVite, '--port', appPort, '--strictPort'], appDir, webEnv)
+} else {
+  console.log('[dev] client app skipped: run `npm --prefix web/app ci` to start it with the dashboard.')
+}
 
 if (hasAir) {
   start('api', isWindows ? 'air.exe' : 'air', [], root, apiEnv)

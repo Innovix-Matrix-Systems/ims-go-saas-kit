@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Client app** (`web/app`): a React single-page app for the people who use the API, embedded in
+  the binary and served at the site root. It has sign-in with two-factor codes and recovery codes,
+  "keep me signed in", a collapsible sidebar, a Ctrl+K command palette, keyboard shortcuts, light
+  and dark themes with accent and density presets (shared design tokens with the developer
+  dashboard), and English and Bangla. Ended sessions, required two-factor setup, suspended
+  organizations and maintenance mode each get their own screen.
+- The binary serves the client app at `/` and on every path outside the API and tool prefixes
+  (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
+  so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.
+  The app's HTML is sent with a strict `Content-Security-Policy` (same-origin scripts, styles and
+  connections only, no inline code).
+- `make dev` also starts the client app's Vite server on `:8082` (once `npm --prefix web/app ci`
+  has run); new targets `app-build`, `app-typecheck`, `app-style-check`, `app-openapi-check` and
+  `dev-app`; `build-all`, the Dockerfile and CI build the client app too.
+
 ## [0.2.1] - 2026-11-23
 
 Account deletion and personal-data export (the right to erasure and the right of access):
