@@ -6444,6 +6444,12 @@ export interface components {
                     email: string;
                 } | null;
                 is_owner: boolean;
+                /** @description The organization's e-mail branding (`branding.logo_url`, `branding.color` settings), for its mark in clients. Null when unset. */
+                branding: {
+                    logo_url: string | null;
+                    /** @example #2563eb */
+                    color: string | null;
+                };
                 /** Format: date-time */
                 created_at: string;
             };

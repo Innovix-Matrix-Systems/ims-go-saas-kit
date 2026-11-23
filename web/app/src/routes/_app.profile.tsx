@@ -1,12 +1,11 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
-import { api, ApiError, type Schemas } from '../api/client'
+import { useQuery } from '@tanstack/react-query'
+import { api, type Schemas } from '../api/client'
 import { useSession } from '../auth/session'
 import { localeLabel, intlLocale, useLocale, useT } from '../i18n'
 import { relativeTimeIn } from '../format'
 import { organizationQuery } from '../components/organization'
-import { useToast } from '../components/Toasts'
+import { usePhotoUpload } from '../components/PhotoUpload'
 import { inOrganization, OrgMark } from '../components/WorkspaceMenu'
 import { Avatar, Badge, Card, CopyField, Icon, Spinner } from '../components/ui'
 import { FormSkeleton } from '../components/Skeleton'
@@ -23,10 +22,7 @@ function ProfilePage() {
   const t = useT()
   const locale = intlLocale(useLocale())
   const session = useSession()
-  const client = useQueryClient()
-  const { push } = useToast()
-  const input = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
+  const photo = usePhotoUpload()
   const inside = inOrganization(session)
   const organization = useQuery({ ...organizationQuery, enabled: inside })
   const twoFactor = useQuery({ queryKey: ['two-factor'], queryFn: () => api<TwoFactorStatus>('/two-factor') })
@@ -38,24 +34,6 @@ function ProfilePage() {
   const roles = user.roles ?? []
   const current = sessions.data?.find((item) => item.current)
 
-  const upload = async (file: File | undefined) => {
-    if (!file) return
-    setUploading(true)
-    try {
-      const form = new FormData()
-      form.append('id', String(user.id))
-      form.append('avatar', file)
-      await api('/user/profile/update-avatar', { method: 'POST', body: form })
-      await client.invalidateQueries({ queryKey: ['session'] })
-      push(t('profilePage.photoSaved'), 'success')
-    } catch (cause) {
-      push(cause instanceof ApiError ? (cause.field('avatar') ?? cause.message) : String(cause), 'error')
-    } finally {
-      setUploading(false)
-      if (input.current) input.current.value = ''
-    }
-  }
-
   return (
     <div className="profile">
       <section className="profile-hero card">
@@ -63,16 +41,16 @@ function ProfilePage() {
         <div className="profile-hero-body">
           <div className="profile-photo">
             <Avatar name={user.name} photo={user.photo} size="xl" />
-            <input ref={input} type="file" accept="image/*" hidden onChange={(e) => void upload(e.target.files?.[0])} />
+            {photo.input}
             <button
               type="button"
               className="profile-photo-edit"
               title={t('profilePage.changePhoto')}
               aria-label={t('profilePage.changePhoto')}
-              disabled={uploading}
-              onClick={() => input.current?.click()}
+              disabled={photo.uploading}
+              onClick={photo.choose}
             >
-              {uploading ? <Spinner /> : <Icon name="edit" />}
+              {photo.uploading ? <Spinner /> : <Icon name="edit" />}
             </button>
           </div>
           <div className="profile-identity">
@@ -131,7 +109,7 @@ function ProfilePage() {
             <Card title={t('profilePage.organization')} actions={<Link to="/org" className="link-btn">{t('profilePage.view')}</Link>}>
               {organization.data ? (
                 <div className="profile-org">
-                  <OrgMark name={organization.data.name} size="lg" />
+                  <OrgMark name={organization.data.name} logo={organization.data.branding.logo_url} size="lg" />
                   <div className="member-meta">
                     <span className="member-name">{organization.data.name}</span>
                     <span className="small muted">

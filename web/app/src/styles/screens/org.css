@@ -144,3 +144,15 @@
   border: 1px solid var(--ok-border); background: var(--ok-subtle); color: var(--ok-fg); font-weight: 500;
 }
 .jobs-queued-note svg { width: 18px; height: 18px; flex: none; }
+
+/* Organization preferences */
+.policy-groups { display: flex; flex-direction: column; gap: var(--space-5); }
+.policy-group-title { margin: 0 0 2px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-2); }
+.setting-label { display: block; font-size: var(--fs-base); font-weight: var(--fw-medium); color: var(--text-1); }
+.setting-hint { margin-top: 2px; font-size: var(--fs-sm); color: var(--text-3); line-height: var(--lh-body); }
+.setting-color { display: inline-flex; align-items: center; gap: 8px; }
+.setting-color input[type="color"] { width: 34px; height: 32px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-1); cursor: pointer; }
+.setting-color .input { width: 110px; }
+.input-unit { display: inline-flex; align-items: center; gap: 8px; }
+.input-unit .input { width: 96px; text-align: right; }
+.input-unit-label { font-size: var(--fs-md); color: var(--text-2); }

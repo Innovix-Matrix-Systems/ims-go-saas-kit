@@ -3,13 +3,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, type Schemas, type User } from '../api/client'
 import { can, useSession } from '../auth/session'
-import { initials } from '../format'
 import { Field, PasswordInput, useApiErrors } from '../components/form'
 import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
-import { Badge, Card, CopyField, Icon, PageHeader, Spinner } from '../components/ui'
+import { Avatar, Badge, Card, CopyField, Icon, PageHeader, Spinner } from '../components/ui'
 import { OrganizationForm } from '../components/OrganizationForm'
-import { useT } from '../i18n'
+import { useT, type MessageKey } from '../i18n'
 import { FormSkeleton, ListSkeleton, SettingsSkeleton } from '../components/Skeleton'
 import { organizationQuery, type Organization } from '../components/organization'
 
@@ -87,7 +86,7 @@ function OwnerCard({ organization }: { organization: Organization }) {
       <div className="stack g-4">
         {owner ? (
           <div className="owner-card">
-            <span className="avatar">{initials(owner.name)}</span>
+            <Avatar name={owner.name} />
             <div className="member-meta">
               <span className="member-name">
                 {owner.name} {organization.is_owner ? <Badge tone="info">{t('org.ownerYou')}</Badge> : null}
@@ -164,6 +163,37 @@ function TransferForm({ ownerId }: { ownerId?: number }) {
   )
 }
 
+// What an organization may set, in words its admins use. Settings the app
+// does not know yet fall back to the API's description.
+interface Known {
+  label: MessageKey
+  hint: MessageKey
+  unit?: MessageKey
+  kind?: 'color' | 'url'
+  placeholder?: string
+}
+
+const knownSettings: Record<string, Known> = {
+  'notification.enabled': { label: 'policy.notifications', hint: 'policy.notificationsHint' },
+  'data_processing_job.cleanup_days': { label: 'policy.jobsKeep', hint: 'policy.jobsKeepHint', unit: 'policy.days' },
+  'branding.name': { label: 'policy.brandName', hint: 'policy.brandNameHint' },
+  'branding.logo_url': { label: 'policy.brandLogo', hint: 'policy.brandLogoHint', kind: 'url', placeholder: 'https://' },
+  'branding.color': { label: 'policy.brandColor', hint: 'policy.brandColorHint', kind: 'color' },
+  'branding.footer': { label: 'policy.brandFooter', hint: 'policy.brandFooterHint' },
+  'security.new_sign_in_alert': { label: 'policy.signInAlert', hint: 'policy.signInAlertHint' },
+  'security.require_two_factor': { label: 'policy.requireTwoFactor', hint: 'policy.requireTwoFactorHint' },
+  'privacy.deletion_grace_days': { label: 'policy.deletionGrace', hint: 'policy.deletionGraceHint', unit: 'policy.days' },
+}
+
+const knownGroups: Record<string, MessageKey> = {
+  notifications: 'policy.groupNotifications',
+  'data-processing': 'policy.groupJobs',
+  data_processing: 'policy.groupJobs',
+  branding: 'policy.groupBranding',
+  security: 'policy.groupSecurity',
+  privacy: 'policy.groupPrivacy',
+}
+
 // The organization's own overrides of tenant-scoped settings, grouped as the
 // API returns them.
 function PoliciesCard() {
@@ -178,15 +208,18 @@ function PoliciesCard() {
       {!settings.data ? (
         <SettingsSkeleton rows={5} />
       ) : (
-        <div className="stack g-4">
-          {sections.map((section) => (
-            <div key={section.group.slug} className="stack">
-              <div className="strong">{section.group.name}</div>
-              {section.settings.map((item) => (
-                <SettingRow key={item.key} item={item} />
-              ))}
-            </div>
-          ))}
+        <div className="policy-groups">
+          {sections.map((section) => {
+            const group = knownGroups[section.group.slug]
+            return (
+              <section key={section.group.slug} className="policy-group">
+                <h3 className="policy-group-title">{group ? t(group) : section.group.name}</h3>
+                {section.settings.map((item) => (
+                  <SettingRow key={item.key} item={item} />
+                ))}
+              </section>
+            )
+          })}
         </div>
       )}
     </Card>
@@ -197,9 +230,12 @@ function SettingRow({ item }: { item: Setting }) {
   const t = useT()
   const client = useQueryClient()
   const { push } = useToast()
+  const known = knownSettings[item.key]
   const [draft, setDraft] = useState(() => display(item.value))
   const [busy, setBusy] = useState(false)
   useEffect(() => setDraft(display(item.value)), [item.value])
+  const label = known ? t(known.label) : item.description || item.key
+  const id = `setting-${item.key.replace(/[^a-z0-9]+/gi, '-')}`
 
   const save = async (value: unknown) => {
     setBusy(true)
@@ -215,54 +251,79 @@ function SettingRow({ item }: { item: Setting }) {
     }
   }
 
-  const commit = () => {
-    if (draft === display(item.value)) return
+  const commit = (next = draft) => {
+    if (next === display(item.value)) return
     if (item.type === 'int') {
-      const number = Number(draft)
+      const number = Number(next)
       if (!Number.isInteger(number)) return setDraft(display(item.value))
       return void save(number)
     }
     if (item.type === 'json') {
       try {
-        return void save(JSON.parse(draft))
+        return void save(JSON.parse(next))
       } catch {
         return setDraft(display(item.value))
       }
     }
-    void save(draft)
+    void save(next)
+  }
+
+  const keys = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Enter saves by leaving the field, so the change is sent once.
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      e.currentTarget.blur()
+    }
   }
 
   return (
     <div className="setting-row">
       <div className="setting-meta">
-        <div>{item.description || item.key}</div>
+        <label className="setting-label" htmlFor={id}>
+          {label}
+        </label>
+        {known ? <div className="setting-hint">{t(known.hint)}</div> : null}
       </div>
       <div className="setting-control">
         {item.type === 'bool' ? (
           <button
+            id={id}
             type="button"
             role="switch"
             aria-checked={item.value === true}
-            aria-label={item.description || item.key}
+            aria-label={label}
             className={`switch ${item.value === true ? 'on' : ''}`}
             disabled={busy}
             onClick={() => void save(item.value !== true)}
           />
+        ) : known?.kind === 'color' ? (
+          <span className="setting-color">
+            <input
+              type="color"
+              aria-label={label}
+              disabled={busy}
+              value={/^#[0-9a-f]{6}$/i.test(draft) ? draft : '#000000'}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={(e) => commit(e.target.value)}
+            />
+            <input id={id} className="input mono" disabled={busy} value={draft} maxLength={7} onChange={(e) => setDraft(e.target.value)} onBlur={() => commit()} onKeyDown={keys} />
+          </span>
+        ) : known?.unit ? (
+          <span className="input-unit">
+            <input id={id} className="input" type="number" min="0" disabled={busy} value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => commit()} onKeyDown={keys} />
+            <span className="input-unit-label">{t(known.unit)}</span>
+          </span>
         ) : (
           <input
+            id={id}
             className="input"
-            type={item.type === 'int' ? 'number' : 'text'}
+            type={item.type === 'int' ? 'number' : known?.kind === 'url' ? 'url' : 'text'}
+            placeholder={known?.placeholder}
             disabled={busy}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              // Enter saves by leaving the field, so the change is sent once.
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                e.currentTarget.blur()
-              }
-            }}
+            onBlur={() => commit()}
+            onKeyDown={keys}
           />
         )}
       </div>

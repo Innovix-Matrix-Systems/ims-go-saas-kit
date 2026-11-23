@@ -5,12 +5,11 @@ import { api, type Schemas, type User } from '../api/client'
 import { branchesQuery } from '../components/BranchSwitcher'
 import { useStartExport } from '../components/jobs'
 import { can, useSession } from '../auth/session'
-import { initials } from '../format'
 import { Field, useApiErrors } from '../components/form'
 import { Select } from '../components/inputs'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
+import { Avatar, Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT } from '../i18n'
 import { TableSkeleton } from '../components/Skeleton'
 
@@ -173,7 +172,7 @@ function MembersTable({ users, ownerId, selfId, onSelect }: { users: User[]; own
             <tr key={user.id} className="clickable" onClick={() => onSelect(user)}>
               <td>
                 <div className="member-cell">
-                  <span className="avatar sm">{initials(user.name)}</span>
+                  <Avatar name={user.name} photo={user.photo} size="sm" />
                   <span className="member-meta">
                     <span className="member-name">
                       {user.name} {user.id === ownerId ? <Badge tone="info">{t('members.owner')}</Badge> : null}

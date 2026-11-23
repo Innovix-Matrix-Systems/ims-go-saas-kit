@@ -7,8 +7,7 @@ import { Field, useApiErrors } from '../components/form'
 import { Select } from '../components/inputs'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
-import { initials } from '../format'
+import { Avatar, Badge, Button, Card, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { useT } from '../i18n'
 import { TableSkeleton } from '../components/Skeleton'
 
@@ -66,7 +65,7 @@ function StaffPage() {
                   <tr key={user.id}>
                     <td>
                       <div className="member-cell">
-                        <span className="avatar sm">{initials(user.name)}</span>
+                        <Avatar name={user.name} photo={user.photo} size="sm" />
                         <span className="member-meta">
                           <span className="member-name">
                             {user.name} {user.id === session?.user.id ? <Badge tone="neutral">{t('members.you')}</Badge> : null}

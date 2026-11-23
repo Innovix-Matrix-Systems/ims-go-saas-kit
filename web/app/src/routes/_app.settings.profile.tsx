@@ -7,6 +7,7 @@ import { Field, PasswordInput, useApiErrors } from '../components/form'
 import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
 import { Card, Icon, Spinner } from '../components/ui'
+import { PhotoField } from '../components/PhotoUpload'
 import { locales, setLocale, useT, type Locale } from '../i18n'
 
 export const Route = createFileRoute('/_app/settings/profile')({
@@ -64,6 +65,8 @@ function ProfileForm({ user }: { user: User }) {
 
   return (
     <Card title={t('settings.profile')}>
+      <PhotoField />
+      <div className="divider" />
       <form onSubmit={submit} className="stack form-narrow">
         <div className="form-grid-2">
           <Field label={t('profile.firstName')} error={errors.field('first_name')}>

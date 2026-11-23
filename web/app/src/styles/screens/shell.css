@@ -44,7 +44,7 @@
 /* ── Avatars and organization marks ───────────────────── */
 .avatar { overflow: hidden; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.avatar.sm { width: 36px; height: 36px; }
+.avatar.sm { width: 32px; height: 32px; }
 .avatar.lg { width: 48px; height: 48px; font-size: var(--fs-lg); }
 .avatar.xl { width: 88px; height: 88px; font-size: var(--fs-xl); border-width: 3px; border-color: var(--surface-1); background: var(--accent-subtle); color: var(--accent); }
 .org-mark.lg { width: 40px; height: 40px; border-radius: 10px; font-size: var(--fs-base); }
@@ -118,3 +118,9 @@
 .check-dot.warn { background: var(--warn-subtle); color: var(--warn-fg); }
 .check-dot.neutral { background: var(--surface-2); color: var(--text-2); }
 .check-text { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-md); }
+
+.photo-field { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.photo-field-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 200px; }
+.org-mark { overflow: hidden; }
+.org-mark.has-logo { background: var(--surface-1); border: 1px solid var(--border); }
+.org-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }

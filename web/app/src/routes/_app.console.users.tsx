@@ -7,8 +7,7 @@ import { allTenantsQuery, useStartActing } from '../components/console'
 import { useStartExport } from '../components/jobs'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, ConfirmDialog, EmptyState, PageHeader } from '../components/ui'
-import { initials } from '../format'
+import { Avatar, Badge, Button, Card, ConfirmDialog, EmptyState, PageHeader } from '../components/ui'
 import { useT } from '../i18n'
 import { TableSkeleton } from '../components/Skeleton'
 
@@ -99,7 +98,7 @@ function UsersPage() {
                   <tr key={user.id}>
                     <td>
                       <div className="member-cell">
-                        <span className="avatar sm">{initials(user.name)}</span>
+                        <Avatar name={user.name} photo={user.photo} size="sm" />
                         <span className="member-meta">
                           <span className="member-name">{user.name}</span>
                           <span className="small muted">{user.email}</span>

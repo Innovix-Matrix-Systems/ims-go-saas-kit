@@ -21,8 +21,9 @@ export function useOrganizationName(): string | null {
   return inOrganization(session) ? (organization.data?.name ?? null) : null
 }
 
-/** The organization's mark: its initials on the accent, until it has a logo. */
-export function OrgMark({ name, size }: { name: string; size?: 'sm' | 'lg' | 'xl' }) {
+/** The organization's mark: its logo, or its initials on the accent. */
+export function OrgMark({ name, logo, size }: { name: string; logo?: string | null; size?: 'sm' | 'lg' | 'xl' }) {
+  const [broken, setBroken] = useState(false)
   const letters = name
     .trim()
     .split(/\s+/)
@@ -31,8 +32,8 @@ export function OrgMark({ name, size }: { name: string; size?: 'sm' | 'lg' | 'xl
     .map((word) => word[0]!.toUpperCase())
     .join('')
   return (
-    <span className={`org-mark ${size ?? ''}`} aria-hidden="true">
-      {letters || '·'}
+    <span className={`org-mark ${size ?? ''} ${logo && !broken ? 'has-logo' : ''}`} aria-hidden="true">
+      {logo && !broken ? <img src={logo} alt="" onError={() => setBroken(true)} /> : letters || '·'}
     </span>
   )
 }
@@ -92,7 +93,7 @@ export function WorkspaceMenu({ collapsed }: { collapsed: boolean }) {
         title={collapsed ? name : undefined}
         onClick={() => setOpen((value) => !value)}
       >
-        {inside ? <OrgMark name={name} /> : <span className="brand-mark">I</span>}
+        {inside ? <OrgMark name={name} logo={organization.data?.branding.logo_url} /> : <span className="brand-mark">I</span>}
         <span className="workspace-text">
           <span className="workspace-name">{name}</span>
           <span className="workspace-sub">{sub}</span>
@@ -102,7 +103,7 @@ export function WorkspaceMenu({ collapsed }: { collapsed: boolean }) {
       {open ? (
         <div className="ui-popover workspace-menu" role="menu" aria-label={name}>
           <div className="workspace-menu-head">
-            {inside ? <OrgMark name={name} size="lg" /> : <span className="brand-mark">I</span>}
+            {inside ? <OrgMark name={name} logo={organization.data?.branding.logo_url} size="lg" /> : <span className="brand-mark">I</span>}
             <span className="workspace-text">
               <span className="workspace-name">{name}</span>
               <span className="workspace-sub">{inside && organization.data ? organization.data.code : sub}</span>

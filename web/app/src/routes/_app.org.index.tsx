@@ -60,7 +60,7 @@ function OrganizationProfilePage() {
         <div className="profile-cover org" aria-hidden="true" />
         <div className="profile-hero-body">
           <div className="profile-photo">
-            <OrgMark name={org.name} size="xl" />
+            <OrgMark name={org.name} logo={org.branding.logo_url} size="xl" />
           </div>
           <div className="profile-identity">
             <h1>{org.name}</h1>

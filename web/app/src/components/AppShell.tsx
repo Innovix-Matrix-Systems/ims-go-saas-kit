@@ -113,7 +113,8 @@ export function AppShell() {
             to={page.to}
             className="nav-item"
             activeProps={{ className: 'nav-item active' }}
-            activeOptions={{ exact: page.to === '/' }}
+            // A page with pages under it (Home, Organization) is active only on itself.
+            activeOptions={{ exact: page.to === '/' || pages.some((other) => other.to.startsWith(`${page.to}/`)) }}
             title={collapsed ? t(page.label) : undefined}
           >
             <Icon name={page.icon} />
