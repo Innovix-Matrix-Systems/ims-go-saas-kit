@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { api, type Schemas, type User } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { Field, useApiErrors } from '../components/form'
+import { Select } from '../components/inputs'
+import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, PageHeader, Spinner } from '../components/ui'
 import { useT } from '../i18n'
@@ -24,6 +26,7 @@ function BranchesPage() {
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(20)
   // null: closed; 'new': the create form; a branch: its editor.
   const [editing, setEditing] = useState<Branch | 'new' | null>(null)
 
@@ -36,8 +39,8 @@ function BranchesPage() {
   }, [search])
 
   const branches = useQuery({
-    queryKey: ['branches', query, page],
-    queryFn: () => api<Page>('/branch', { envelope: true, query: { search: query, page, per_page: 20, order_by: 'name', order_direction: 'asc' } }),
+    queryKey: ['branches', query, page, perPage],
+    queryFn: () => api<Page>('/branch', { envelope: true, query: { search: query, page, per_page: perPage, order_by: 'name', order_direction: 'asc' } }),
     placeholderData: keepPreviousData,
   })
   const currentId = session?.user.active_branch_id ?? session?.user.branch_id
@@ -91,16 +94,17 @@ function BranchesPage() {
             </table>
           </div>
         )}
-        {branches.data && branches.data.meta.last_page > 1 ? (
-          <div className="pager">
-            <Button size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              {t('members.previous')}
-            </Button>
-            <span className="small muted">{t('members.page', { page, pages: branches.data.meta.last_page })}</span>
-            <Button size="sm" disabled={page >= branches.data.meta.last_page} onClick={() => setPage((p) => p + 1)}>
-              {t('members.next')}
-            </Button>
-          </div>
+        {branches.data ? (
+          <Pagination
+            page={page}
+            perPage={perPage}
+            total={branches.data.meta.total}
+            onPage={setPage}
+            onPerPage={(size) => {
+              setPerPage(size)
+              setPage(1)
+            }}
+          />
         ) : null}
       </Card>
       {editing ? <BranchDrawer branch={editing === 'new' ? null : editing} onClose={() => setEditing(null)} /> : null}
@@ -194,14 +198,16 @@ function BranchDrawer({ branch, onClose }: { branch: Branch | null; onClose: () 
         </div>
         {members.data ? (
           <Field label={t('branches.manager')} error={errors.field('manager_id')}>
-            <select className="input" disabled={!editable} value={managerId} onChange={(e) => setManagerId(e.target.value)}>
-              <option value="">{t('branches.noManager')}</option>
-              {members.data.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name} ({user.email})
-                </option>
-              ))}
-            </select>
+            <Select
+              value={managerId}
+              disabled={!editable}
+              ariaLabel={t('branches.manager')}
+              onChange={setManagerId}
+              options={[
+                { value: '', label: t('branches.noManager') },
+                ...members.data.map((user) => ({ value: String(user.id), label: user.name, text: `${user.name} ${user.email}`, hint: user.email })),
+              ]}
+            />
           </Field>
         ) : null}
         <Field label={`${t('branches.description')} (${t('form.optional')})`} error={errors.field('description')}>

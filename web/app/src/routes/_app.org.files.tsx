@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { api, apiBlob, ApiError, saveBlob, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { formatBytes } from '../format'
+import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, EmptyState, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
@@ -35,13 +36,14 @@ function FilesPage() {
   const input = useRef<HTMLInputElement>(null)
   const [type, setType] = useState<FileType>('')
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(20)
   const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState<StoredFile | null>(null)
   const [busy, setBusy] = useState(false)
 
   const files = useQuery({
-    queryKey: ['files', type, page],
-    queryFn: () => api<Page>('/files', { envelope: true, query: { type: type || undefined, page, per_page: 20 } }),
+    queryKey: ['files', type, page, perPage],
+    queryFn: () => api<Page>('/files', { envelope: true, query: { type: type || undefined, page, per_page: perPage } }),
     placeholderData: keepPreviousData,
   })
 
@@ -175,16 +177,17 @@ function FilesPage() {
             </table>
           </div>
         )}
-        {files.data && files.data.meta.last_page > 1 ? (
-          <div className="pager">
-            <Button size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              {t('members.previous')}
-            </Button>
-            <span className="small muted">{t('members.page', { page, pages: files.data.meta.last_page })}</span>
-            <Button size="sm" disabled={page >= files.data.meta.last_page} onClick={() => setPage((p) => p + 1)}>
-              {t('members.next')}
-            </Button>
-          </div>
+        {files.data ? (
+          <Pagination
+            page={page}
+            perPage={perPage}
+            total={files.data.meta.total}
+            onPage={setPage}
+            onPerPage={(size) => {
+              setPerPage(size)
+              setPage(1)
+            }}
+          />
         ) : null}
       </Card>
       <ConfirmDialog

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react'
 import { api, type Schemas } from '../api/client'
 import { prettyJSON } from '../format'
 import { Field, useApiErrors } from '../components/form'
+import { pageSlice, Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, CopyButton, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
@@ -31,6 +32,8 @@ function WebhooksPage() {
   const [creating, setCreating] = useState(false)
   const [selected, setSelected] = useState<number | null>(null)
   const [secret, setSecret] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(20)
   const endpoints = useQuery({ queryKey: ['webhooks'], queryFn: () => api<Endpoint[]>('/webhook') })
 
   return (
@@ -53,7 +56,7 @@ function WebhooksPage() {
           <EmptyState icon="actions" title={t('webhooks.empty')} />
         ) : (
           <ul className="role-list">
-            {endpoints.data!.map((endpoint) => (
+            {pageSlice(endpoints.data!, page, perPage).map((endpoint) => (
               <li key={endpoint.id}>
                 <button type="button" className="role-row" onClick={() => setSelected(endpoint.id)}>
                   <span className="role-meta">
@@ -72,6 +75,18 @@ function WebhooksPage() {
             ))}
           </ul>
         )}
+        {(endpoints.data ?? []).length > 0 ? (
+          <Pagination
+            page={page}
+            perPage={perPage}
+            total={endpoints.data!.length}
+            onPage={setPage}
+            onPerPage={(size) => {
+              setPerPage(size)
+              setPage(1)
+            }}
+          />
+        ) : null}
       </Card>
       {creating ? (
         <EndpointForm

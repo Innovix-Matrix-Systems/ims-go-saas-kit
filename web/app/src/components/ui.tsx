@@ -188,7 +188,7 @@ export function Card({
   flush?: boolean
 }) {
   if (title === undefined) {
-    return <div className={`card ${tight ? 'tight' : ''} ${className ?? ''}`}>{children}</div>
+    return <div className={`card ${tight ? 'tight' : ''} ${flush ? 'flush' : ''} ${className ?? ''}`}>{children}</div>
   }
   return (
     <section className={`card framed ${className ?? ''}`}>

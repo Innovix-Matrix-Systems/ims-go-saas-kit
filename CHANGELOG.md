@@ -56,7 +56,11 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   branch switcher in the top bar and moving a member to another branch. Also the activity log
   (filter by subject and member, details, load more), files (upload, filter by type, download,
   delete) and webhooks (endpoints with an event picker, the signing secret shown once, test
-  event, turn on or off, new secret, delivery log with payloads and sending again).
+  event, turn on or off, new secret, delivery log with payloads and sending again). Every list
+  has a pagination footer (count, rows per page, pages); the activity log follows the developer
+  dashboard's audit log (counters, search, action, person, area and date filters, a details
+  drawer with previous and next, CSV export); dropdowns use the custom select, and checkboxes
+  and radios are drawn to match the theme.
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.

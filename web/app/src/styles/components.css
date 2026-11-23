@@ -201,6 +201,9 @@
   padding: 16px;
 }
 .card.tight { padding: 14px; }
+/* An untitled flush card holds a table or list edge to edge. */
+.card.flush { padding: 0; overflow: hidden; }
+.card.flush > .table-wrap { border: 0; border-radius: 0; box-shadow: none; margin: 0; }
 .role-warning { border-color: var(--danger-border); background: var(--danger-subtle); }
 .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .card-title { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
@@ -270,6 +273,25 @@
 .filters .grow { flex: 1; min-width: 200px; }
 .checkbox { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-base); color: var(--text-2); cursor: pointer; }
 .checkbox input { accent-color: var(--accent); }
+
+/* Checkboxes and radios are drawn here, not by the browser, so they match the
+   theme and accent everywhere. */
+input[type="checkbox"], input[type="radio"] {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative;
+  width: 16px; height: 16px; border: 1px solid var(--border-strong); background: var(--surface-1);
+  border-radius: 4px; cursor: pointer; display: inline-grid; place-items: center;
+  transition: background var(--ease), border-color var(--ease), box-shadow var(--ease);
+}
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]:hover:not(:disabled), input[type="radio"]:hover:not(:disabled) { border-color: var(--accent); }
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-subtle); border-color: var(--accent); }
+input[type="checkbox"]:checked, input[type="radio"]:checked { background: var(--accent); border-color: var(--accent); }
+input[type="checkbox"]:checked::after {
+  content: ""; width: 4px; height: 8px; margin-top: -2px;
+  border: solid var(--accent-fg); border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+input[type="radio"]:checked::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-fg); }
+input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Chips & badges ──────────────────────────────────── */
 .chip {

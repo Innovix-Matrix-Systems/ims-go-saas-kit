@@ -5,6 +5,7 @@ import { api, type Schemas, type User } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { initials } from '../format'
 import { Field, PasswordInput, useApiErrors } from '../components/form'
+import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
 import { Badge, Card, Icon, PageHeader, Spinner } from '../components/ui'
 import { useT } from '../i18n'
@@ -169,16 +170,13 @@ function TransferForm({ ownerId }: { ownerId?: number }) {
         <p className="small muted">{t('org.transferHint')}</p>
       </div>
       <Field label={t('org.newOwner')} error={errors.field('user_id')}>
-        <select className="input" required value={userId} onChange={(e) => setUserId(e.target.value)}>
-          <option value="" disabled>
-            —
-          </option>
-          {candidates.map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.name} ({user.email})
-            </option>
-          ))}
-        </select>
+        <Select
+          value={userId}
+          placeholder={t('org.newOwner')}
+          ariaLabel={t('org.newOwner')}
+          onChange={setUserId}
+          options={candidates.map((user) => ({ value: String(user.id), label: user.name, text: `${user.name} ${user.email}`, hint: user.email }))}
+        />
       </Field>
       <Field label={t('auth.password')} error={errors.field('password')}>
         <PasswordInput name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -269,9 +267,15 @@ function SettingRow({ item }: { item: Setting }) {
       </div>
       <div className="setting-control">
         {item.type === 'bool' ? (
-          <label className="check-row">
-            <input type="checkbox" checked={item.value === true} disabled={busy} onChange={(e) => void save(e.target.checked)} />
-          </label>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={item.value === true}
+            aria-label={item.description || item.key}
+            className={`switch ${item.value === true ? 'on' : ''}`}
+            disabled={busy}
+            onClick={() => void save(item.value !== true)}
+          />
         ) : (
           <input
             className="input"

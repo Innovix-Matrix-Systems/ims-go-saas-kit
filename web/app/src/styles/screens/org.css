@@ -64,3 +64,16 @@
 .secret-box { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
 .secret-box code { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .activity-body > .link-button { align-self: flex-start; }
+.pagination { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-top: 1px solid var(--border); }
+.pagination-size { display: inline-flex; align-items: center; gap: 8px; }
+.pagination-pages { display: inline-flex; align-items: center; gap: 4px; }
+.page-btn {
+  min-width: 30px; height: 30px; padding: 0 8px; display: inline-grid; place-items: center;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-1); color: var(--text-2);
+  font: inherit; font-size: var(--fs-sm); cursor: pointer;
+}
+.page-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text-1); }
+.page-btn.active { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.page-btn svg { width: 14px; height: 14px; }
+.page-gap { padding: 0 4px; color: var(--text-3); }

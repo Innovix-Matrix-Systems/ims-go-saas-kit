@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react'
 import { api, type User } from '../api/client'
 import { useSession } from '../auth/session'
 import { Field, PasswordInput, useApiErrors } from '../components/form'
+import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
 import { Card, Icon, Spinner } from '../components/ui'
 import { locales, setLocale, useT, type Locale } from '../i18n'
@@ -78,14 +79,15 @@ function ProfileForm({ user }: { user: User }) {
           <input className="input" type="tel" name="phone" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
         <Field label={t('profile.language')} error={errors.field('locale')}>
-          <select className="input" value={locale} onChange={(e) => setLocaleChoice(e.target.value)}>
-            <option value="">{t('profile.languageDefault')}</option>
-            {locales.map((item) => (
-              <option key={item.code} value={item.code} lang={item.code}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={locale}
+            ariaLabel={t('profile.language')}
+            onChange={setLocaleChoice}
+            options={[
+              { value: '', label: t('profile.languageDefault') },
+              ...locales.map((item) => ({ value: item.code, label: <span lang={item.code}>{item.label}</span>, text: item.label })),
+            ]}
+          />
         </Field>
         {errors.box}
         <div>

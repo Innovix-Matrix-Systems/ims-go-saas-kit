@@ -6,6 +6,8 @@ import { branchesQuery } from '../components/BranchSwitcher'
 import { can, useSession } from '../auth/session'
 import { initials } from '../format'
 import { Field, useApiErrors } from '../components/form'
+import { Select } from '../components/inputs'
+import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT } from '../i18n'
@@ -31,6 +33,7 @@ function MembersPage() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('')
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(20)
   const [inviting, setInviting] = useState(false)
   const [selected, setSelected] = useState<User | null>(null)
 
@@ -44,9 +47,9 @@ function MembersPage() {
   }, [search])
 
   const members = useQuery({
-    queryKey: ['members', query, filter, page],
+    queryKey: ['members', query, filter, page, perPage],
     queryFn: () =>
-      api<Page>('/user', { envelope: true, query: { search: query, invitation: filter || undefined, page, per_page: 20, order_by: 'name', order_direction: 'asc' } }),
+      api<Page>('/user', { envelope: true, query: { search: query, invitation: filter || undefined, page, per_page: perPage, order_by: 'name', order_direction: 'asc' } }),
     placeholderData: keepPreviousData,
   })
   const organization = useQuery({ queryKey: ['organization'], queryFn: () => api<Organization>('/organization') })
@@ -107,16 +110,17 @@ function MembersPage() {
         ) : (
           <MembersTable users={members.data!.data} ownerId={ownerId} selfId={session?.user.id} onSelect={setSelected} />
         )}
-        {members.data && members.data.meta.last_page > 1 ? (
-          <div className="pager">
-            <Button size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              {t('members.previous')}
-            </Button>
-            <span className="small muted">{t('members.page', { page, pages: members.data.meta.last_page })}</span>
-            <Button size="sm" disabled={page >= members.data.meta.last_page} onClick={() => setPage((p) => p + 1)}>
-              {t('members.next')}
-            </Button>
-          </div>
+        {members.data ? (
+          <Pagination
+            page={page}
+            perPage={perPage}
+            total={members.data.meta.total}
+            onPage={setPage}
+            onPerPage={(size) => {
+              setPerPage(size)
+              setPage(1)
+            }}
+          />
         ) : null}
       </Card>
       <InviteDialog open={inviting} roles={roles.data ?? []} onClose={() => setInviting(false)} />
@@ -350,13 +354,13 @@ function MemberDrawer({
           </Field>
           {branches.data && branches.data.length > 1 ? (
             <Field label={t('members.branch')} error={errors.field('branch_id')}>
-              <select className="input" disabled={!canUpdate} value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-                {branches.data.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
+              <Select
+                value={branchId}
+                disabled={!canUpdate}
+                ariaLabel={t('members.branch')}
+                onChange={setBranchId}
+                options={branches.data.map((branch) => ({ value: String(branch.id), label: branch.name }))}
+              />
             </Field>
           ) : null}
           {roles.length > 0 ? (

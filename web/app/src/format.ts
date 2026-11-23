@@ -205,3 +205,24 @@ export function localDayStart(iso: string | undefined): string | undefined {
 export function localDayEnd(iso: string | undefined): string | undefined {
   return localDay(iso, 23, 59, 59, 999)
 }
+
+/** "5 minutes ago" in the given BCP 47 locale. */
+export function relativeTimeIn(locale: string, value: string | number): string {
+  const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000)
+  if (Number.isNaN(seconds)) return '—'
+  const format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+  const steps: [Intl.RelativeTimeFormatUnit, number][] = [
+    ['second', 60],
+    ['minute', 60],
+    ['hour', 24],
+    ['day', 30],
+    ['month', 12],
+    ['year', Infinity],
+  ]
+  let amount = seconds
+  for (const [unit, size] of steps) {
+    if (Math.abs(amount) < size) return format.format(Math.round(amount), unit)
+    amount /= size
+  }
+  return format.format(Math.round(amount), 'year')
+}
