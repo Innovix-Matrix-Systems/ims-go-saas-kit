@@ -288,7 +288,8 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	authenticator := authn.NewOpaqueAuthenticator(txManager.Queries(), identityRepo, cfg.Auth)
 	accounts := accountDeliverer{delivery: deliveryService}
 	recovery := authn.NewRecovery(identityRepo, identityRepo, authenticator, store, accounts, cfg.Auth, logger).
-		WithInvitationAudit(activityRecorder)
+		WithInvitationAudit(activityRecorder).
+		WithEmailChange(identityRepo)
 	sessions := authn.NewSessions(txManager.Queries(), authenticator).WithAudit(activityRecorder)
 	otpService := authn.NewOTPService(store, cfg.Auth, logger, cfg.IsDebug()).WithDeliverer(accounts)
 	twoFactor := authn.NewTwoFactor(txManager.Queries(), encrypter, otpService, cfg.App.Name).

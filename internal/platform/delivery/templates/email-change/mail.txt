@@ -1,0 +1,7 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+You asked to use this address for your account. Open this link to confirm it:
+
+{{.Data.link}}
+
+The link expires in {{duration .Data.minutes}}. Until then your account keeps its current address. If you did not ask for this, ignore this e-mail.

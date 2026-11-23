@@ -45,6 +45,7 @@ func (h *Handler) profileUpdate(w http.ResponseWriter, r *http.Request) {
 		LastName:  req.LastName,
 		Name:      name,
 		Phone:     req.Phone,
+		Locale:    req.Locale,
 	})
 	if err != nil {
 		h.Error(w, r, err)

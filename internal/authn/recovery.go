@@ -38,6 +38,7 @@ type Recovery struct {
 	store       cache.Store
 	deliverer   Deliverer
 	invitations InvitationAudit
+	emails      EmailWriter
 	cfg         config.Auth
 	logger      *slog.Logger
 }

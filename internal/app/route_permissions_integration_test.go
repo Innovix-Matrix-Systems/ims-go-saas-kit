@@ -35,6 +35,9 @@ var routesWithoutPermission = map[string]bool{
 	"POST /api/v1/email/verify":                    true,
 	"POST /api/v1/invitation/accept":               true,
 	"POST /api/v1/signup":                          true, // creates a new organization, rate-limited per IP
+	"POST /api/v1/invitation/preview":              true, // needs the invitation link (token + e-mail)
+	"POST /api/v1/email/change/confirm":            true, // needs the link mailed to the new address
+	"POST /api/v1/user/profile/change-email":       true, // the caller's own address
 	"GET /api/v1/public/packages":                  true,
 	"GET /api/v1/public/tenant":                    true, // tenant from X-Tenant-Code, no sign-in
 	"POST /api/v1/billing/{gateway}/callback":      true,

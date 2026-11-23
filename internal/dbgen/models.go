@@ -583,6 +583,7 @@ type User struct {
 	InvitedBy            *int64             `json:"invited_by"`
 	InvitationAcceptedAt pgtype.Timestamptz `json:"invitation_accepted_at"`
 	ErasedAt             pgtype.Timestamptz `json:"erased_at"`
+	Locale               *string            `json:"locale"`
 }
 
 type UserAgreement struct {

@@ -546,6 +546,104 @@ paths:
         "422": *validationFailed
         "429": *tooManyRequests
 
+  /api/v1/invitation/preview:
+    post:
+      tags: [Auth]
+      summary: Describe a pending invitation
+      description: >-
+        For the invitation page: the invitee's name and e-mail, the organization and who invited
+        them. Does not use the link up. Answers 422 for a wrong e-mail or an unknown or expired
+        link, and 404 once the invitation was accepted.
+      operationId: authPreviewInvitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, token]
+              properties:
+                email: {type: string, format: email, maxLength: 255}
+                token: {type: string, maxLength: 200}
+      responses:
+        "200":
+          description: The invitation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [name, email, organization_name, inviter_name]
+                    properties:
+                      name: {type: string}
+                      email: {type: string}
+                      organization_name: {type: string}
+                      inviter_name: {type: string}
+        "404": *notFound
+        "422": *validationFailed
+        "429": *tooManyRequests
+
+  /api/v1/email/change/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm a new e-mail address
+      description: >-
+        Opens the link mailed to the new address: the account switches to it (verified), the old
+        address is told, and every session is signed out. The link works once.
+      operationId: authConfirmEmailChange
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: {type: string, maxLength: 200}
+      responses:
+        "200":
+          description: Changed.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/MessageEnvelope"}
+        "422": *validationFailed
+        "429": *tooManyRequests
+
+  /api/v1/user/profile/change-email:
+    post:
+      tags: [Users]
+      summary: Change the authenticated user's e-mail address
+      description: >-
+        Checks the password and mails a confirmation link (`AUTH_EMAIL_CHANGE_URL`) to the new
+        address; nothing changes until it is opened. One request a minute. Refused while acting as
+        another user.
+      operationId: requestEmailChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, email]
+              properties:
+                password: {type: string, maxLength: 72}
+                email: {type: string, format: email, maxLength: 255}
+      responses:
+        "202":
+          description: The confirmation link is on its way.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/MessageEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+        "429": *tooManyRequests
+
   /api/v1/invitation/accept:
     post:
       tags: [Auth]
@@ -1263,6 +1361,10 @@ paths:
                 last_name: {type: string, maxLength: 100, nullable: true}
                 name: {type: string, minLength: 2, maxLength: 255, nullable: true}
                 phone: {type: string, maxLength: 50, nullable: true}
+                locale:
+                  type: string
+                  maxLength: 10
+                  description: The user's language ("en", "bn"). An empty string clears it; leave it out to keep it.
       responses:
         "200":
           description: Updated profile.
@@ -2115,6 +2217,10 @@ paths:
                 last_name: {type: string, maxLength: 100, nullable: true}
                 name: {type: string, minLength: 2, maxLength: 255, nullable: true}
                 phone: {type: string, maxLength: 50, nullable: true}
+                locale:
+                  type: string
+                  maxLength: 10
+                  description: The user's language ("en", "bn"). An empty string clears it; leave it out to keep it.
       responses:
         "200":
           description: Updated profile.
@@ -6826,6 +6932,7 @@ components:
         branch_id: {type: integer, format: int64, nullable: true}
         active_branch_id: {type: integer, format: int64, nullable: true}
         photo: {type: string, nullable: true}
+        locale: {type: string, nullable: true, description: 'The language the user chose; null means the default.'}
         roles:
           type: array
           items: {$ref: "#/components/schemas/RoleSlim"}

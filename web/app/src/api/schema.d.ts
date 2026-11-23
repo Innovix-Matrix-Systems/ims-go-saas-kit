@@ -398,6 +398,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/invitation/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Describe a pending invitation
+         * @description For the invitation page: the invitee's name and e-mail, the organization and who invited them. Does not use the link up. Answers 422 for a wrong e-mail or an unknown or expired link, and 404 once the invitation was accepted.
+         */
+        post: operations["authPreviewInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/email/change/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a new e-mail address
+         * @description Opens the link mailed to the new address: the account switches to it (verified), the old address is told, and every session is signed out. The link works once.
+         */
+        post: operations["authConfirmEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/user/profile/change-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the authenticated user's e-mail address
+         * @description Checks the password and mails a confirmation link (`AUTH_EMAIL_CHANGE_URL`) to the new address; nothing changes until it is opened. One request a minute. Refused while acting as another user.
+         */
+        post: operations["requestEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invitation/accept": {
         parameters: {
             query?: never;
@@ -6027,6 +6087,8 @@ export interface components {
             /** Format: int64 */
             active_branch_id?: number | null;
             photo?: string | null;
+            /** @description The language the user chose; null means the default. */
+            locale?: string | null;
             roles: components["schemas"]["RoleSlim"][];
             /** Format: date-time */
             created_at: string;
@@ -9237,6 +9299,179 @@ export interface operations {
             };
         };
     };
+    authPreviewInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The invitation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            name: string;
+                            email: string;
+                            organization_name: string;
+                            inviter_name: string;
+                        };
+                    };
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Rate limit exceeded; see `retry_after`. */
+            429: {
+                headers: {
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    authConfirmEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageEnvelope"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Rate limit exceeded; see `retry_after`. */
+            429: {
+                headers: {
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    requestEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    password: string;
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The confirmation link is on its way. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Rate limit exceeded; see `retry_after`. */
+            429: {
+                headers: {
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     authAcceptInvitation: {
         parameters: {
             query?: never;
@@ -10861,6 +11096,8 @@ export interface operations {
                     last_name?: string | null;
                     name?: string | null;
                     phone?: string | null;
+                    /** @description The user's language ("en", "bn"). An empty string clears it; leave it out to keep it. */
+                    locale?: string;
                 };
             };
         };
@@ -13373,6 +13610,8 @@ export interface operations {
                     last_name?: string | null;
                     name?: string | null;
                     phone?: string | null;
+                    /** @description The user's language ("en", "bn"). An empty string clears it; leave it out to keep it. */
+                    locale?: string;
                 };
             };
         };

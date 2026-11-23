@@ -39,6 +39,23 @@ func (q *Queries) AcceptUserInvitation(ctx context.Context, arg AcceptUserInvita
 	return result.RowsAffected(), nil
 }
 
+const changeUserEmail = `-- name: ChangeUserEmail :exec
+UPDATE users
+SET email = $1, email_verified_at = now(), updated_at = now()
+WHERE id = $2 AND deleted_at IS NULL
+`
+
+type ChangeUserEmailParams struct {
+	Email string `json:"email"`
+	ID    int64  `json:"id"`
+}
+
+// The user confirmed the new address from its mailbox, so it is verified.
+func (q *Queries) ChangeUserEmail(ctx context.Context, arg ChangeUserEmailParams) error {
+	_, err := q.db.Exec(ctx, changeUserEmail, arg.Email, arg.ID)
+	return err
+}
+
 const countOtherActiveRoleHolders = `-- name: CountOtherActiveRoleHolders :one
 SELECT count(DISTINCT u.id)::bigint FROM users u
 JOIN model_has_roles mr ON mr.model_type = $1 AND mr.model_id = u.id
@@ -132,7 +149,7 @@ VALUES (
     $7, $8, $9, $10, $11, $12, $13, $14,
     $15, $16
 )
-RETURNING id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at
+RETURNING id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at, locale
 `
 
 type CreateUserParams struct {
@@ -201,6 +218,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.InvitedBy,
 		&i.InvitationAcceptedAt,
 		&i.ErasedAt,
+		&i.Locale,
 	)
 	return i, err
 }
@@ -263,7 +281,7 @@ func (q *Queries) EraseUser(ctx context.Context, arg EraseUserParams) (int64, er
 }
 
 const getAuthUser = `-- name: GetAuthUser :one
-SELECT u.id, u.tenant_id, u.branch_id, u.active_branch_id, u.first_name, u.last_name, u.user_name, u.name, u.email, u.email_verified_at, u.phone, u.phone_verified_at, u.password, u.is_active, u.last_login_at, u.last_active_device, u.remember_token, u.created_by, u.updated_by, u.created_at, u.updated_at, u.deleted_at, u.invited_at, u.invited_by, u.invitation_accepted_at, u.erased_at,
+SELECT u.id, u.tenant_id, u.branch_id, u.active_branch_id, u.first_name, u.last_name, u.user_name, u.name, u.email, u.email_verified_at, u.phone, u.phone_verified_at, u.password, u.is_active, u.last_login_at, u.last_active_device, u.remember_token, u.created_by, u.updated_by, u.created_at, u.updated_at, u.deleted_at, u.invited_at, u.invited_by, u.invitation_accepted_at, u.erased_at, u.locale,
        coalesce(u.tenant_id IS NULL OR (t.is_active AND t.deleted_at IS NULL), false)::boolean AS tenant_active
 FROM users u
 LEFT JOIN tenants t ON t.id = u.tenant_id
@@ -307,13 +325,14 @@ func (q *Queries) GetAuthUser(ctx context.Context, id int64) (GetAuthUserRow, er
 		&i.User.InvitedBy,
 		&i.User.InvitationAcceptedAt,
 		&i.User.ErasedAt,
+		&i.User.Locale,
 		&i.TenantActive,
 	)
 	return i, err
 }
 
 const getAuthUserByEmail = `-- name: GetAuthUserByEmail :one
-SELECT u.id, u.tenant_id, u.branch_id, u.active_branch_id, u.first_name, u.last_name, u.user_name, u.name, u.email, u.email_verified_at, u.phone, u.phone_verified_at, u.password, u.is_active, u.last_login_at, u.last_active_device, u.remember_token, u.created_by, u.updated_by, u.created_at, u.updated_at, u.deleted_at, u.invited_at, u.invited_by, u.invitation_accepted_at, u.erased_at,
+SELECT u.id, u.tenant_id, u.branch_id, u.active_branch_id, u.first_name, u.last_name, u.user_name, u.name, u.email, u.email_verified_at, u.phone, u.phone_verified_at, u.password, u.is_active, u.last_login_at, u.last_active_device, u.remember_token, u.created_by, u.updated_by, u.created_at, u.updated_at, u.deleted_at, u.invited_at, u.invited_by, u.invitation_accepted_at, u.erased_at, u.locale,
        coalesce(u.tenant_id IS NULL OR (t.is_active AND t.deleted_at IS NULL), false)::boolean AS tenant_active
 FROM users u
 LEFT JOIN tenants t ON t.id = u.tenant_id
@@ -355,13 +374,50 @@ func (q *Queries) GetAuthUserByEmail(ctx context.Context, email string) (GetAuth
 		&i.User.InvitedBy,
 		&i.User.InvitationAcceptedAt,
 		&i.User.ErasedAt,
+		&i.User.Locale,
 		&i.TenantActive,
 	)
 	return i, err
 }
 
+const getInvitationPreview = `-- name: GetInvitationPreview :one
+SELECT u.id, u.name, u.email,
+       u.invitation_accepted_at,
+       COALESCE(t.name, '')::text AS organization_name,
+       COALESCE(inviter.name, '')::text AS inviter_name
+FROM users u
+LEFT JOIN tenants t ON t.id = u.tenant_id
+LEFT JOIN users inviter ON inviter.id = u.invited_by
+WHERE u.id = $1 AND u.deleted_at IS NULL
+`
+
+type GetInvitationPreviewRow struct {
+	ID                   int64              `json:"id"`
+	Name                 string             `json:"name"`
+	Email                string             `json:"email"`
+	InvitationAcceptedAt pgtype.Timestamptz `json:"invitation_accepted_at"`
+	OrganizationName     string             `json:"organization_name"`
+	InviterName          string             `json:"inviter_name"`
+}
+
+// What an invitee sees before choosing a password: their name, the
+// organization and who invited them.
+func (q *Queries) GetInvitationPreview(ctx context.Context, id int64) (GetInvitationPreviewRow, error) {
+	row := q.db.QueryRow(ctx, getInvitationPreview, id)
+	var i GetInvitationPreviewRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.InvitationAcceptedAt,
+		&i.OrganizationName,
+		&i.InviterName,
+	)
+	return i, err
+}
+
 const getUser = `-- name: GetUser :one
-SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at FROM users
+SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at, locale FROM users
 WHERE id = $1 AND deleted_at IS NULL
   AND ($2::boolean OR tenant_id = $3::bigint)
 `
@@ -402,12 +458,13 @@ func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) 
 		&i.InvitedBy,
 		&i.InvitationAcceptedAt,
 		&i.ErasedAt,
+		&i.Locale,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at FROM users
+SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at, locale FROM users
 WHERE lower(email) = lower($1) AND deleted_at IS NULL
 `
 
@@ -441,12 +498,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.InvitedBy,
 		&i.InvitationAcceptedAt,
 		&i.ErasedAt,
+		&i.Locale,
 	)
 	return i, err
 }
 
 const getUserForPrivacy = `-- name: GetUserForPrivacy :one
-SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at FROM users WHERE id = $1
+SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at, locale FROM users WHERE id = $1
 `
 
 // Any user row, soft-deleted or erased included: erasure and export run on
@@ -481,12 +539,13 @@ func (q *Queries) GetUserForPrivacy(ctx context.Context, id int64) (User, error)
 		&i.InvitedBy,
 		&i.InvitationAcceptedAt,
 		&i.ErasedAt,
+		&i.Locale,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at FROM users
+SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at, locale FROM users
 WHERE deleted_at IS NULL
   AND ($1::boolean OR users.tenant_id = $2)
   AND (
@@ -583,6 +642,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.InvitedBy,
 			&i.InvitationAcceptedAt,
 			&i.ErasedAt,
+			&i.Locale,
 		); err != nil {
 			return nil, err
 		}
@@ -839,7 +899,7 @@ WHERE id = $8 AND deleted_at IS NULL
   -- saw, a concurrent change makes this match nothing (409 in the service).
   AND ($11::timestamptz IS NULL
        OR updated_at = $11::timestamptz)
-RETURNING id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at
+RETURNING id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at, locale
 `
 
 type UpdateUserParams struct {
@@ -898,8 +958,24 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.InvitedBy,
 		&i.InvitationAcceptedAt,
 		&i.ErasedAt,
+		&i.Locale,
 	)
 	return i, err
+}
+
+const updateUserLocale = `-- name: UpdateUserLocale :exec
+UPDATE users SET locale = $1, updated_at = now()
+WHERE id = $2 AND deleted_at IS NULL
+`
+
+type UpdateUserLocaleParams struct {
+	Locale *string `json:"locale"`
+	ID     int64   `json:"id"`
+}
+
+func (q *Queries) UpdateUserLocale(ctx context.Context, arg UpdateUserLocaleParams) error {
+	_, err := q.db.Exec(ctx, updateUserLocale, arg.Locale, arg.ID)
+	return err
 }
 
 const updateUserPassword = `-- name: UpdateUserPassword :execrows

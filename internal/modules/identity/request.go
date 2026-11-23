@@ -53,6 +53,8 @@ type ProfileUpdateRequest struct {
 	LastName  *string `json:"last_name" validate:"omitempty,max=100"`
 	Name      *string `json:"name" validate:"omitempty,min=2,max=255"`
 	Phone     *string `json:"phone" validate:"omitempty,max=50"`
+	// Locale is the user's language ("en", "bn"); "" clears it, absent keeps it.
+	Locale *string `json:"locale" validate:"omitempty,max=10"`
 }
 
 // ProfileChangePasswordRequest changes the own password.
@@ -102,6 +104,7 @@ type Response struct {
 	BranchID         *int64     `json:"branch_id"`
 	ActiveBranchID   *int64     `json:"active_branch_id"`
 	Photo            *string    `json:"photo"`
+	Locale           *string    `json:"locale"`
 	Roles            []RoleSlim `json:"roles"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
@@ -130,6 +133,7 @@ func NewResponse(user User, roles []authz.RoleRef, photo *string) Response {
 		BranchID:         user.BranchID,
 		ActiveBranchID:   user.ActiveBranchID,
 		Photo:            photo,
+		Locale:           user.Locale,
 		Roles:            slim,
 		CreatedAt:        user.CreatedAt,
 		UpdatedAt:        user.UpdatedAt,

@@ -186,9 +186,35 @@ policy) applies.
   reactivate a user an admin deactivated after they joined. A mistyped e-mail does not use the link
   up.
 - **Activity:** `user.invited`, `user.invitation_resent`, `user.invitation_accepted`.
+- **Preview:** before asking for a password, the invitation page can show who is inviting whom:
+  `POST /api/v1/invitation/preview {email, token}` → `{name, email, organization_name,
+  inviter_name}`. It does not use the link up; a wrong address or an expired link is 422, an
+  accepted invitation 404.
 
 Like reset links, invitation tokens live in the cache: with the `memory` driver a restart
 invalidates pending links (resend fixes it). Use `redis` or `database` in production.
+
+## Changing the e-mail address
+
+```http
+POST /api/v1/user/profile/change-email   { "password": "…", "email": "new@acme.test" }   → 202
+POST /api/v1/email/change/confirm        { "token": "…" }                                → 200
+```
+
+The first call checks the password and that the address is free, then mails a link to the **new**
+address (template `email-change`, `AUTH_EMAIL_CHANGE_URL`, default
+`APP_URL/confirm-email-change?token={token}`, valid for `AUTH_EMAIL_VERIFY_EXPIRY`). Nothing
+changes until the link is opened, so a typo never locks anyone out. Confirming switches the
+account to the new address (verified), mails the old address (`email-changed`, with the new one
+masked) and signs the user out everywhere. One request a minute per account; refused while acting
+as another user.
+
+## Language
+
+`GET /api/v1/user/profile` returns `locale` (`null` = default) and
+`POST /api/v1/user/profile/update` accepts it: `"bn"` saves it, `""` clears it, leaving it out
+keeps it. Clients use it to show the user's language on every device; requests still choose
+their response language with `Accept-Language`.
 
 ## Changing passwords
 

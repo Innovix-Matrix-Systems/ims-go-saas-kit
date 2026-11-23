@@ -261,3 +261,25 @@ WHERE r.name = @role_name
   AND u.id <> @user_id
   AND u.is_active = 1
   AND u.deleted_at IS NULL;
+
+-- name: ChangeUserEmail :exec
+-- The user confirmed the new address from its mailbox, so it is verified.
+UPDATE users
+SET email = @email, email_verified_at = now(), updated_at = now()
+WHERE id = @id AND deleted_at IS NULL;
+
+-- name: UpdateUserLocale :exec
+UPDATE users SET locale = sqlc.narg('locale'), updated_at = now()
+WHERE id = @id AND deleted_at IS NULL;
+
+-- name: GetInvitationPreview :one
+-- What an invitee sees before choosing a password: their name, the
+-- organization and who invited them.
+SELECT u.id, u.name, u.email,
+       u.invitation_accepted_at,
+       COALESCE(t.name, '')::text AS organization_name,
+       COALESCE(inviter.name, '')::text AS inviter_name
+FROM users u
+LEFT JOIN tenants t ON t.id = u.tenant_id
+LEFT JOIN users inviter ON inviter.id = u.invited_by
+WHERE u.id = @id AND u.deleted_at IS NULL;

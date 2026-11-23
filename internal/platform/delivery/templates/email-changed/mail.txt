@@ -1,0 +1,5 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+Your account now uses a new e-mail address ({{.Data.new_email}}), and every session was signed out. This address no longer signs in.
+
+If you did not make this change, contact your administrator or our support team right away.

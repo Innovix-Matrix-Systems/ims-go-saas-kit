@@ -126,6 +126,7 @@ effective values with secrets masked.
 | `AUTH_PASSWORD_RESET_URL` | `https://app.example.com/reset-password?token={token}&email={email}` | *Optional.* |
 | `AUTH_EMAIL_VERIFY_URL` | `https://app.example.com/verify-email?token={token}` | *Optional.* |
 | `AUTH_INVITATION_URL` | `https://app.example.com/accept-invitation?token={token}&email={email}` | *Optional.* |
+| `AUTH_EMAIL_CHANGE_URL` | `https://app.example.com/confirm-email-change?token={token}` | *Optional.* |
 | `AUTH_INVITATION_TTL` | `168h` | *Optional.* how long an invitation link works |
 | `BCRYPT_ROUNDS` | `12` |  |
 

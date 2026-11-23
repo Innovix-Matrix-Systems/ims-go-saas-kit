@@ -6,8 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-**Upgrading:** run `ims migrate` (migration `00037_create_onboarding`: `tenant_onboarding` and
-`user_agreements`), `ims permission:sync` (adds `billing.view` and `billing.manage`, and now also
+**Upgrading:** run `ims migrate` (migrations `00037_create_onboarding`: `tenant_onboarding` and
+`user_agreements`; `00038_user_locale`: `users.locale`), `ims permission:sync` (adds `billing.view` and `billing.manage`, and now also
 grants every tenant Admin role the permissions it is missing) and `ims settings:sync` (the new
 **Sign-up** group).
 
@@ -37,6 +37,13 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   before signing in. It never reveals whether an address already has an account (that owner is
   mailed instead), records the accepted terms and privacy-policy version, and is limited to ten
   attempts per IP an hour. Settings `signup.enabled`, `signup.package_id`, `signup.terms_version`.
+- **Change your own e-mail address** ([guide](docs/guides/authentication.md#changing-the-e-mail-address)):
+  `POST /api/v1/user/profile/change-email` mails a confirmation link to the new address
+  (`AUTH_EMAIL_CHANGE_URL`); `POST /api/v1/email/change/confirm` switches the account, tells the old
+  address and signs out every session.
+- **Invitation preview**: `POST /api/v1/invitation/preview` shows the invitee, the organization
+  and the inviter without using the link up.
+- **Language per user**: `locale` on the profile (read and update).
 - **First-run setup**: `GET /api/v1/onboarding` and `POST /api/v1/onboarding/complete` (owner only)
   track a new organization's setup wizard.
 - Tenant billing permissions `billing.view` and `billing.manage`, held by the tenant Admin role:

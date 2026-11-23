@@ -48,6 +48,14 @@ type Repository interface {
 	AcceptInvitation(ctx context.Context, userID int64, hash string) (bool, error)
 	MarkInvited(ctx context.Context, id int64, by *int64) (bool, error)
 	MarkEmailVerified(ctx context.Context, userID int64) error
+
+	// authn.EmailWriter
+	ChangeEmail(ctx context.Context, userID int64, email string) error
+
+	UpdateLocale(ctx context.Context, userID int64, locale *string) error
+	// InvitationPreview fails with ResourceNotFound once the invitation
+	// was accepted (or the user is gone).
+	InvitationPreview(ctx context.Context, userID int64) (*InvitationPreview, error)
 }
 
 // ListFilter carries user list filters.
@@ -442,6 +450,31 @@ func (r *repository) MarkEmailVerified(ctx context.Context, userID int64) error 
 		return database.MapError("users.mark_email_verified", err)
 	}
 	return nil
+}
+
+func (r *repository) ChangeEmail(ctx context.Context, userID int64, email string) error {
+	if err := r.queries.ChangeUserEmail(ctx, dbgen.ChangeUserEmailParams{ID: userID, Email: email}); err != nil {
+		return database.MapError("users.change_email", err)
+	}
+	return nil
+}
+
+func (r *repository) UpdateLocale(ctx context.Context, userID int64, locale *string) error {
+	if err := r.queries.UpdateUserLocale(ctx, dbgen.UpdateUserLocaleParams{ID: userID, Locale: locale}); err != nil {
+		return database.MapError("users.update_locale", err)
+	}
+	return nil
+}
+
+func (r *repository) InvitationPreview(ctx context.Context, userID int64) (*InvitationPreview, error) {
+	row, err := r.queries.GetInvitationPreview(ctx, userID)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && row.InvitationAcceptedAt.Valid) {
+		return nil, apperr.New(apperr.ResourceNotFound, "This invitation is no longer pending.")
+	}
+	if err != nil {
+		return nil, database.MapError("users.invitation_preview", err)
+	}
+	return &InvitationPreview{Name: row.Name, Email: row.Email, OrganizationName: row.OrganizationName, InviterName: row.InviterName}, nil
 }
 
 func (r *repository) TouchLogin(ctx context.Context, userID int64, device string) error {

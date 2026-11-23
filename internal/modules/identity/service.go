@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -333,6 +334,8 @@ type UpdateParams struct {
 	Roles     []int64
 	// ExpectedUpdatedAt enables optimistic locking (see UpdateInput).
 	ExpectedUpdatedAt *time.Time
+	// Locale (own profile only): nil keeps the language, "" clears it.
+	Locale *string
 }
 
 // Update modifies a user; super admins are protected from non-super actors.
@@ -590,7 +593,7 @@ func (s *Service) ProfileUpdate(ctx context.Context, userID int64, input UpdateP
 	if err := s.validatePhoneUnique(ctx, input.Phone, target.ID); err != nil {
 		return nil, err
 	}
-	return s.repo.Update(ctx, UpdateInput{
+	updated, err := s.repo.Update(ctx, UpdateInput{
 		Tenant:    tenancy.Unscoped(),
 		ID:        target.ID,
 		FirstName: input.FirstName,
@@ -601,6 +604,32 @@ func (s *Service) ProfileUpdate(ctx context.Context, userID int64, input UpdateP
 		BranchID:  target.BranchID,
 		ActorID:   &userID,
 	})
+	if err != nil || input.Locale == nil {
+		return updated, err
+	}
+	var locale *string
+	if value := strings.TrimSpace(*input.Locale); value != "" {
+		locale = &value
+	}
+	if err := s.repo.UpdateLocale(ctx, target.ID, locale); err != nil {
+		return nil, err
+	}
+	updated.Locale = locale
+	return updated, nil
+}
+
+// InvitationPreview is what an invitee sees before choosing a password.
+type InvitationPreview struct {
+	Name             string
+	Email            string
+	OrganizationName string
+	InviterName      string
+}
+
+// GetInvitationPreview describes a pending invitation for the invitee (the
+// caller proved they hold the link; see authn.Recovery.PeekInvitation).
+func (s *Service) GetInvitationPreview(ctx context.Context, userID int64) (*InvitationPreview, error) {
+	return s.repo.InvitationPreview(ctx, userID)
 }
 
 // ProfileChangePassword verifies the current password before updating, then
