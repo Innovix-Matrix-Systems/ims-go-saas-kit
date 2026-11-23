@@ -84,6 +84,13 @@ func Run(ctx context.Context, cfg *config.Config, queries *dbgen.Queries, tx *da
 	if err := roleSvc.CreateDefaultRolesForTenant(ctx, tenant.ID); err != nil {
 		return fmt.Errorf("seed tenant roles: %w", err)
 	}
+	if _, err := roleSvc.SyncTenantAdminRoles(ctx); err != nil {
+		return fmt.Errorf("sync tenant admin roles: %w", err)
+	}
+	// Without a plan the default tenant could not add a single user (402).
+	if err := ensureDefaultSubscription(ctx, queries, tenant.ID, logger); err != nil {
+		return err
+	}
 
 	if err := ensureSuperAdminUser(ctx, cfg, userRepo, checker, superRole.ID, logger); err != nil {
 		return err

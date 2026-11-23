@@ -62,7 +62,8 @@ Statuses: `trial`, `pending`, `active`, `past_due`, `cancelled`, `expired`. Only
 
 | Action | How |
 | --- | --- |
-| tenant subscribes | `POST /api/v1/billing/subscribe` `{package_id, payment_method, payment_data}` |
+| tenant subscribes | `POST /api/v1/billing/subscribe` `{package_id, payment_method, payment_data}` (`billing.manage`) |
+| tenant payment history | `GET /api/v1/billing/payments` (`billing.view`) |
 | see the current plan | `GET /api/v1/billing/subscription/status` |
 | staff assigns a plan | `POST /api/v1/billing/internal/tenants/{tenant_id}/subscription` |
 | staff cancels | `POST /api/v1/billing/internal/subscriptions/{id}/cancel` — immediate |
@@ -121,6 +122,10 @@ An **orchestrator** picks a driver per method:
   completed → refunded).
 
 ## Packages
+
+`ims db:seed` creates a hidden **Unlimited** package (every feature on, every limit `-1`) and
+subscribes the default tenant to it when that tenant has no active plan, so a fresh install can
+add users right away; it is never listed publicly and seeding again changes nothing.
 
 `GET /api/v1/public/packages` lists active packages for your pricing page (no auth). Staff manage
 packages with `/api/v1/packages` (`package.*`); updating a package **replaces** its feature set

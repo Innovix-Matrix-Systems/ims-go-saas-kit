@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+**Upgrading:** run `ims permission:sync`: it adds `billing.view` and `billing.manage` and now also
+grants every tenant Admin role the permissions it is missing.
+
+### Changed
+
+- `POST /api/v1/billing/subscribe` needs `billing.manage` and `GET /api/v1/billing/payments`
+  needs `billing.view` (were the system permissions `subscription.manage` and `payment.view`,
+  which no tenant role could hold).
+- Signing in no longer checks the password's length (it only must be sent), so accounts with
+  passwords from older rules keep working; setting a password follows the new rule below.
+
 ### Added
 
 - **Client app** (`web/app`): a React single-page app for the people who use the API, embedded in
@@ -19,6 +30,13 @@ All notable changes to this project are documented here. The format follows
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.
   The app's HTML is sent with a strict `Content-Security-Policy` (same-origin scripts, styles and
   connections only, no inline code).
+- Tenant billing permissions `billing.view` and `billing.manage`, held by the tenant Admin role:
+  an organization can now see its payments and choose or pay for a plan itself.
+- `ims db:seed` gives the default tenant the hidden **Unlimited** package when it has no active
+  plan, so a fresh install can add users.
+- One password rule wherever a password is chosen (sign-up, invitation, reset, own change, admin
+  change, import): at least 8 characters, at most 72 bytes, not only spaces, and not one of the
+  most common passwords.
 - `make dev` also starts the client app's Vite server on `:8082` (once `npm --prefix web/app ci`
   has run); new targets `app-build`, `app-typecheck`, `app-style-check`, `app-openapi-check` and
   `dev-app`; `build-all`, the Dockerfile and CI build the client app too.

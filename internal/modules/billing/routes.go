@@ -1,6 +1,10 @@
 package billing
 
-import "github.com/go-chi/chi/v5"
+import (
+	"github.com/go-chi/chi/v5"
+
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+)
 
 // RegisterPublicRoutes mounts unauthenticated package and callback routes.
 func (h *Handler) RegisterPublicRoutes(r chi.Router) {
@@ -8,11 +12,13 @@ func (h *Handler) RegisterPublicRoutes(r chi.Router) {
 	r.Get("/billing/{gateway}/callback", h.callback)
 }
 
-// RegisterRoutesResolve mounts tenant-scoped billing routes.
+// RegisterRoutesResolve mounts tenant-scoped billing routes: the caller's own
+// organization. They use tenant permissions (billing.*): the system ones
+// (subscription.*, payment.*) can never be held by a tenant role.
 func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.Get("/billing/subscription/status", h.status)
-	r.With(h.can("payment.view")).Get("/billing/payments", h.listTenantPayments)
-	r.With(h.can("subscription.manage")).Post("/billing/subscribe", h.subscribe)
+	r.With(h.can(authz.PermBillingView)).Get("/billing/payments", h.listTenantPayments)
+	r.With(h.can(authz.PermBillingManage)).Post("/billing/subscribe", h.subscribe)
 }
 
 // RegisterRoutesExempt mounts system billing management routes.

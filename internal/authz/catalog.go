@@ -88,6 +88,11 @@ const (
 	PermBranchUpdate  = "branch.update"
 	PermBranchDelete  = "branch.delete"
 
+	// The organization's own plan, usage and payments (tenant routes). Staff
+	// routes keep the system permissions subscription.* / payment.*.
+	PermBillingView   = "billing.view"
+	PermBillingManage = "billing.manage"
+
 	PermTenantViewAll = "tenant.view.all"
 	PermTenantView    = "tenant.view"
 	PermTenantCreate  = "tenant.create"
@@ -177,6 +182,10 @@ var Catalog = []Permission{
 	{Name: PermDataProcessingViewAll, Group: "data_processing_job", Description: "Can view all data processing jobs"},
 	{Name: PermDataProcessingView, Group: "data_processing_job", Description: "Can view data processing job details"},
 
+	// ── billing (the tenant's own plan and payments) ──────
+	{Name: PermBillingView, Group: "billing", Description: "Can view the organization's plan, usage and payments"},
+	{Name: PermBillingManage, Group: "billing", Description: "Can choose the organization's plan and pay for it"},
+
 	// ── package ───────────────────────────────────────────
 	{Name: "package.view.all", Group: "package", IsSystem: true, Description: "Can view all packages"},
 	{Name: "package.view", Group: "package", IsSystem: true, Description: "Can view package details"},
@@ -263,7 +272,7 @@ func AdminTenantPermissions() []Permission {
 			continue
 		}
 		switch permission.Group {
-		case "role", "branch", "user", "file", "setting", "activity", "webhook":
+		case "role", "branch", "user", "file", "setting", "activity", "webhook", "billing":
 			if _, skip := exclude[permission.Name]; skip {
 				continue
 			}

@@ -54,6 +54,15 @@ func newPermissionSyncCommand(state *State) *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Synced %d permission(s).\n", affected)
+
+			// Tenants created before a permission was added to the Admin role
+			// get it now (add-only).
+			roles := access.NewRoleService(access.NewRoleRepository(queries), access.NewPermissionRepository(queries), checker, nil)
+			granted, err := roles.SyncTenantAdminRoles(ctx)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Granted %d missing permission(s) to tenant Admin roles.\n", granted)
 			return nil
 		},
 	}

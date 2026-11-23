@@ -294,6 +294,18 @@ func (s *RoleService) replacePermissions(ctx context.Context, roleID int64, perm
 }
 
 // CreateDefaultRolesForTenant provisions the tenant Admin role (idempotent).
+// SyncTenantAdminRoles gives every tenant's Admin role the permissions that
+// role is defined with (authz.AdminTenantPermissions), so a permission added
+// to the catalog reaches tenants created before it. It only adds grants; a
+// permission removed from the catalog disappears through permission:sync.
+func (s *RoleService) SyncTenantAdminRoles(ctx context.Context) (int64, error) {
+	names := make([]string, 0, 64)
+	for _, permission := range authz.AdminTenantPermissions() {
+		names = append(names, permission.Name)
+	}
+	return s.roles.GrantToTenantRoles(ctx, authz.AdminRole, names)
+}
+
 func (s *RoleService) CreateDefaultRolesForTenant(ctx context.Context, tenantID int64) error {
 	if existing, err := s.roles.GetByName(ctx, tenantID, authz.AdminRole); err == nil && existing != nil {
 		return nil
