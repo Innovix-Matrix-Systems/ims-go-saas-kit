@@ -14,7 +14,7 @@ type InsertUpdateRequest struct {
 	UserName  *string `json:"user_name" validate:"omitempty,max=100"`
 	Name      string  `json:"name" validate:"required,min=2,max=255"`
 	Email     string  `json:"email" validate:"required,email,max=255"`
-	Password  *string `json:"password" validate:"omitempty,min=6,max=72"`
+	Password  *string `json:"password" validate:"omitempty,min=8,max=72"`
 	Phone     *string `json:"phone" validate:"omitempty,max=50"`
 	IsActive  *bool   `json:"is_active"`
 	// SendInvitation (create only) invites the user instead of setting a
@@ -44,7 +44,7 @@ type AssignRoleRequest struct {
 // ChangePasswordRequest is the admin password-set payload.
 type ChangePasswordRequest struct {
 	UserID   int64  `json:"user_id" validate:"required,gt=0"`
-	Password string `json:"password" validate:"required,min=6,max=72"`
+	Password string `json:"password" validate:"required,min=8,max=72"`
 }
 
 // ProfileUpdateRequest updates the authenticated user's own profile.
@@ -58,7 +58,7 @@ type ProfileUpdateRequest struct {
 // ProfileChangePasswordRequest changes the own password.
 type ProfileChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
-	Password        string `json:"password" validate:"required,min=6,max=72"`
+	Password        string `json:"password" validate:"required,min=8,max=72"`
 }
 
 // ExportFiltersRequest is the background export filter body.

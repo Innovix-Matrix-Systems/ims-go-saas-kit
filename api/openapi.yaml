@@ -1230,7 +1230,7 @@ paths:
               required: [current_password, password]
               properties:
                 current_password: {type: string}
-                password: {type: string, minLength: 6, maxLength: 72}
+                password: {type: string, minLength: 8, maxLength: 72}
       responses:
         "200":
           description: Password changed.
@@ -2035,7 +2035,7 @@ paths:
               required: [current_password, password]
               properties:
                 current_password: {type: string}
-                password: {type: string, minLength: 6, maxLength: 72}
+                password: {type: string, minLength: 8, maxLength: 72}
       responses:
         "200":
           description: Password changed.
@@ -6583,7 +6583,7 @@ components:
       required: [email, password, device]
       properties:
         email: {type: string, format: email}
-        password: {type: string, minLength: 6}
+        password: {type: string, maxLength: 72}
         device: {type: string, maxLength: 100}
       example:
         email: superadmin@ims.com
@@ -6739,7 +6739,7 @@ components:
         user_name: {type: string, maxLength: 100, nullable: true}
         name: {type: string, minLength: 2, maxLength: 255}
         email: {type: string, format: email, maxLength: 255}
-        password: {type: string, minLength: 6, maxLength: 72, nullable: true}
+        password: {type: string, minLength: 8, maxLength: 72, nullable: true}
         phone: {type: string, maxLength: 50, nullable: true}
         is_active: {type: boolean, nullable: true}
         send_invitation:
@@ -6801,7 +6801,7 @@ components:
       required: [user_id, password]
       properties:
         user_id: {type: integer, format: int64}
-        password: {type: string, minLength: 6, maxLength: 72}
+        password: {type: string, minLength: 8, maxLength: 72}
       example:
         user_id: 2
         password: "newsecret123"

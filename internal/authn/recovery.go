@@ -73,6 +73,10 @@ func (r *Recovery) SendPasswordResetLink(ctx context.Context, email string) erro
 // ResetPassword sets a new password with a valid reset token and signs the
 // user out everywhere.
 func (r *Recovery) ResetPassword(ctx context.Context, email, token, password string) error {
+	// Check the new password before using the link up.
+	if err := ValidateNewPassword(password); err != nil {
+		return err
+	}
 	ticket, err := r.redeem(ctx, "pwreset", token)
 	if err != nil || !strings.EqualFold(ticket.Email, strings.TrimSpace(email)) {
 		return apperr.Validation(map[string][]string{"token": {"This password reset link is invalid or has expired."}})

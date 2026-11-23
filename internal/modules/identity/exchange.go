@@ -20,6 +20,7 @@ import (
 	"github.com/xuri/excelize/v2"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
@@ -477,8 +478,11 @@ func (s *ExchangeService) importRow(ctx context.Context, scope tenancy.Scope, ac
 	} else if _, err := mail.ParseAddress(email); err != nil || len(email) > 255 {
 		fields["email"] = append(fields["email"], "The email field must be a valid email address.")
 	}
-	if len(password) < 6 {
-		fields["password"] = append(fields["password"], "The password field must be at least 6 characters.")
+	if err := authn.ValidateNewPassword(password); err != nil {
+		var policy *apperr.Error
+		if errors.As(err, &policy) {
+			fields["password"] = append(fields["password"], policy.Fields["password"]...)
+		}
 	}
 	if len(fields) > 0 {
 		return apperr.Validation(fields)

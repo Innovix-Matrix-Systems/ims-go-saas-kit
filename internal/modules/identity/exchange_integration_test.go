@@ -123,7 +123,7 @@ func TestUserImportReportsPerRowErrors(t *testing.T) {
 
 	content := buildWorkbook(t, [][]any{
 		{"name", "email", "phone", "password", "status", "roles"},
-		{"Valid User", "valid@example.com", "+8801700000000", "password123", "Active", "Tenant Role"},
+		{"Valid User", "valid@example.com", "+8801700000000", "Imported-Pass-42", "Active", "Tenant Role"},
 		{"", "not-an-email", "", "", "", "Unknown Role"},
 		{"Default Password", "default@example.com", "", "", "Active", "Tenant Role"},
 	})

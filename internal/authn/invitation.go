@@ -68,6 +68,9 @@ func (r *Recovery) SendInvitation(ctx context.Context, userID int64, inviter str
 // user an admin deactivated after they joined.
 func (r *Recovery) AcceptInvitation(ctx context.Context, email, token, password string) error {
 	invalid := apperr.Validation(map[string][]string{"token": {"This invitation link is invalid or has expired."}})
+	if err := ValidateNewPassword(password); err != nil {
+		return err
+	}
 	// Check the address before using the link up: a typo must not cost the
 	// invitee a link that is meant to last days.
 	var peeked recoveryTicket

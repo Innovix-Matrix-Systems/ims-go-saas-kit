@@ -740,7 +740,12 @@ func (s *Service) validateBranch(ctx context.Context, tenantID int64, branchID *
 	return nil
 }
 
+// hashPassword applies the password policy, then hashes. Every path that sets
+// a user's password (create, admin change, own change) goes through it.
 func (s *Service) hashPassword(password string) (string, error) {
+	if err := authn.ValidateNewPassword(password); err != nil {
+		return "", err
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), s.cfg.BcryptRounds)
 	if err != nil {
 		return "", apperr.Wrap(apperr.InternalServerError, "hash password", err)

@@ -137,7 +137,7 @@ func (h *Handler) verifyEmail(w http.ResponseWriter, r *http.Request) {
 // LoginRequest is the login payload.
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
+	Password string `json:"password" validate:"required,max=72"`
 	Device   string `json:"device" validate:"required,max=100"`
 }
 
