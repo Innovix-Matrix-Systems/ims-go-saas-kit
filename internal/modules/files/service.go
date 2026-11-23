@@ -214,6 +214,9 @@ func (s *Service) Delete(ctx context.Context, id int64, allTenants bool, tenantI
 	if err != nil {
 		return err
 	}
+	if file.Generated() {
+		return apperr.New(apperr.InvalidState, "This file belongs to a background job; remove the job instead.")
+	}
 	if err := s.repo.Delete(ctx, id, allTenants, tenantID); err != nil {
 		return err
 	}

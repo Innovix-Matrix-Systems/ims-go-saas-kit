@@ -64,6 +64,9 @@ func (s *Service) Retry(ctx context.Context, job *Job) (*Job, error) {
 	if err != nil {
 		return nil, database.MapError("dataprocessing.reset", err)
 	}
+	if err := s.removeOutput(ctx, job.ID); err != nil {
+		return nil, err
+	}
 	fresh := mapJob(reset)
 	if err := rerun(ctx, &fresh); err != nil {
 		return nil, err
@@ -140,7 +143,10 @@ func (h *Handler) remove(w http.ResponseWriter, r *http.Request) {
 	h.NoContent(w)
 }
 
-// lifecycleQueries are the sqlc queries Retry needs.
+// lifecycleQueries are the sqlc queries Retry and the files entries of
+// exports need.
 type lifecycleQueries interface {
 	ResetDataProcessingJob(ctx context.Context, id int64) (dbgen.DataProcessingJob, error)
+	CreateFile(ctx context.Context, arg dbgen.CreateFileParams) (dbgen.File, error)
+	DeleteFilesByOwner(ctx context.Context, arg dbgen.DeleteFilesByOwnerParams) ([]dbgen.File, error)
 }

@@ -153,3 +153,56 @@ func TestProcessingRetentionPerOrganization(t *testing.T) {
 		t.Fatalf("remaining = %v, want only long-old (its organization keeps 30 days)", remaining)
 	}
 }
+
+// A finished export is listed among the organization's files until its job
+// goes; it cannot be deleted from the files on its own and does not count
+// against storage.
+func TestExportFilesListedWithUploads(t *testing.T) {
+	app := testkit.New(t)
+	admin := app.User(t)
+	other := app.User(t, testkit.InTenant(app.Tenant(t, "Other Files")))
+
+	var job processingJob
+	app.As(admin).Post("/api/v1/activity/export", map[string]any{}).Status(t, http.StatusAccepted).Data(t, &job)
+	done := finishActivityExport(t, app, admin, job)
+	if done.Status != "completed" || done.FileName == nil {
+		t.Fatalf("export = %+v", done)
+	}
+
+	type file struct {
+		ID        int64  `json:"id"`
+		Name      string `json:"name"`
+		Generated bool   `json:"generated"`
+	}
+	var files []file
+	app.As(admin).Get("/api/v1/files").Status(t, http.StatusOK).Data(t, &files)
+	var listed *file
+	for i := range files {
+		if files[i].Name == *done.FileName {
+			listed = &files[i]
+		}
+	}
+	if listed == nil || !listed.Generated {
+		t.Fatalf("files = %+v, want the export marked generated", files)
+	}
+	var others []file
+	app.As(other).Get("/api/v1/files").Status(t, http.StatusOK).Data(t, &others)
+	for _, f := range others {
+		if f.ID == listed.ID {
+			t.Fatal("another organization sees the export")
+		}
+	}
+	app.As(admin).Get(fmt.Sprintf("/api/v1/files/%d/download", listed.ID)).Status(t, http.StatusOK)
+	app.As(admin).Delete(fmt.Sprintf("/api/v1/files/%d", listed.ID)).Status(t, http.StatusConflict)
+
+	var used int64
+	if err := app.Pool.QueryRow(context.Background(), `SELECT COALESCE(sum(size), 0) FROM files WHERE tenant_id = (SELECT tenant_id FROM data_processing_jobs WHERE id = $1) AND owner_type IS DISTINCT FROM 'data_processing_job'`, done.ID).Scan(&used); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := app.Deps.Tx.Queries().SumFileBytesForTenant(context.Background(), admin.TenantID); err != nil || got != used {
+		t.Fatalf("storage used = %d (%v), want %d without the export", got, err, used)
+	}
+
+	app.As(admin).Delete("/api/v1/data-processing/job/"+job.JobID).Status(t, http.StatusNoContent)
+	app.As(admin).Get(fmt.Sprintf("/api/v1/files/%d", listed.ID)).Status(t, http.StatusNotFound)
+}

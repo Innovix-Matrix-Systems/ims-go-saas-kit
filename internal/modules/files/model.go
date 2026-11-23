@@ -88,6 +88,15 @@ func (f File) Attached() bool {
 	return f.OwnerType != nil && f.OwnerID != nil
 }
 
+// generatedOwnerType marks a background job's output (an export): it is
+// listed with the uploads but lives and dies with its job.
+const generatedOwnerType = "data_processing_job"
+
+// Generated reports whether a background job wrote the file.
+func (f File) Generated() bool {
+	return f.OwnerType != nil && *f.OwnerType == generatedOwnerType
+}
+
 func mapFile(row dbgen.File) File {
 	file := File{
 		ID:         row.ID,

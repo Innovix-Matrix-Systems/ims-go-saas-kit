@@ -31,7 +31,8 @@ type Service struct {
 	queries lifecycleQueries
 }
 
-// WithQueries enables Retry (it resets the job row directly).
+// WithQueries enables Retry (it resets the job row directly) and lists
+// export files among the organization's files.
 func (s *Service) WithQueries(queries lifecycleQueries) *Service {
 	s.queries = queries
 	return s
@@ -255,7 +256,10 @@ func (s *Service) UpdateProgress(ctx context.Context, id int64, total, processed
 
 // AttachFile records the generated export/import file.
 func (s *Service) AttachFile(ctx context.Context, id int64, file FileInput) error {
-	return s.repo.UpdateFile(ctx, id, file)
+	if err := s.repo.UpdateFile(ctx, id, file); err != nil {
+		return err
+	}
+	return s.registerOutput(ctx, id, file)
 }
 
 // CleanupCompleted deletes finished jobs older than the retention window
@@ -316,6 +320,9 @@ func (s *Service) CleanupType(ctx context.Context, jobType string, maxAgeHours i
 
 // removeJobFile deletes the stored artifact from the first disk that has it.
 func (s *Service) removeJobFile(ctx context.Context, job ExpiredJob) {
+	if err := s.removeOutput(ctx, job.ID); err != nil && s.logger != nil {
+		s.logger.WarnContext(ctx, "processing job files entry cleanup failed", "error", err)
+	}
 	if !s.hasDisk || job.FilePath == nil || *job.FilePath == "" {
 		return
 	}

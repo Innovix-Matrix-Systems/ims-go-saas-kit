@@ -4250,6 +4250,7 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
+        "409": *conflict
 
   /api/v1/files/{id}/download:
     parameters:
@@ -4349,6 +4350,7 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
+        "409": *conflict
 
   /api/v1/internal/files/{id}/download:
     parameters:
@@ -8346,7 +8348,7 @@ components:
 
     File:
       type: object
-      required: [id, uuid, type, url, name, file_name, mime_type, size, attached, created_at]
+      required: [id, uuid, type, url, name, file_name, mime_type, size, attached, generated, created_at]
       properties:
         id: {type: integer, format: int64}
         uuid: {type: string, format: uuid}
@@ -8357,6 +8359,9 @@ components:
         mime_type: {type: string}
         size: {type: integer, format: int64}
         attached: {type: boolean}
+        generated:
+          type: boolean
+          description: Written by a background job (an export). It is removed with the job, and deleting it here is refused (409).
         created_at: {type: string, format: date-time}
 
     FileEnvelope:

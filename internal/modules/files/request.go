@@ -15,6 +15,7 @@ type Response struct {
 	MimeType  string    `json:"mime_type"`
 	Size      int64     `json:"size"`
 	Attached  bool      `json:"attached"`
+	Generated bool      `json:"generated"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -30,6 +31,7 @@ func NewResponse(file File, url string) Response {
 		MimeType:  file.MimeType,
 		Size:      file.Size,
 		Attached:  file.Attached(),
+		Generated: file.Generated(),
 		CreatedAt: file.CreatedAt,
 	}
 }

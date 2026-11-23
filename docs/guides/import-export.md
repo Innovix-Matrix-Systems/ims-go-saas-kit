@@ -18,6 +18,7 @@ a queue worker does the work, and the client polls the job for progress and a do
 | `GET /api/v1/data-processing/job/{jobId}/download` | the export file — only when `COMPLETED` |
 | `POST /api/v1/data-processing/job/{jobId}/retry` | run a `FAILED` job again with the same filters or file |
 | `DELETE /api/v1/data-processing/job/{jobId}` | remove a finished job and its file |
+| `GET /api/v1/files` | finished exports are listed here too (`generated: true`), attached to their job; they leave with the job, deleting one here answers 409, and they do not count against the storage limit |
 | `POST /api/v1/internal/data-processing/job/{jobId}/retry`, `DELETE /api/v1/internal/data-processing/job/{jobId}` | the same for staff not acting in an organization (their writes on organization routes are refused) |
 
 ```json
