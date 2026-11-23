@@ -152,6 +152,7 @@ func (d *Dependencies) Router() http.Handler {
 				d.Settings.RegisterRoutes(r)
 				d.Flags.RegisterRoutes(r)
 				d.Onboarding.RegisterRoutes(r)
+				d.Tenants.RegisterOrganizationRoutes(r)
 			})
 
 			r.Group(func(r chi.Router) {

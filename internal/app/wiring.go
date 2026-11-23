@@ -179,6 +179,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		WithSignInWatcher(signInAlerts{settings: platform.Settings, queries: queries, delivery: platform.Delivery, logger: logger}).
 		WithTwoFactor(platform.TwoFactor, twoFactorPolicy{settings: platform.Settings, cfg: cfg.Auth, logger: logger})
 	userService := platform.Identity
+	tenantService.WithOwnership(tenants.OwnershipCollaborators{Passwords: authService, Members: identityRepo, Checker: checker})
 
 	// MCP connector: the authorization server and the tool catalog.
 	oauthService := platform.OAuthService()

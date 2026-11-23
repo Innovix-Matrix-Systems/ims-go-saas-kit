@@ -96,6 +96,14 @@ func (PrivacyContributor) Erase(ctx context.Context, q *dbgen.Queries, s privacy
 // CheckErasure implements privacy.Guard: a tenant keeps at least one active
 // Admin, so the last one cannot be erased.
 func (PrivacyContributor) CheckErasure(ctx context.Context, q *dbgen.Queries, s privacy.Subject) ([]string, error) {
+	// An organization's owner hands it over before their account can go.
+	owner, err := q.IsTenantOwner(ctx, s.UserIDPtr())
+	if err != nil {
+		return nil, database.MapError("identity.privacy_guard", err)
+	}
+	if owner {
+		return []string{"This user owns an organization. Transfer ownership to another administrator first."}, nil
+	}
 	if s.TenantID == nil {
 		return nil, nil
 	}

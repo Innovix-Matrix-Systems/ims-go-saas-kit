@@ -7,15 +7,16 @@ package dbgen
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const completeTenantOnboarding = `-- name: CompleteTenantOnboarding :one
+const completeTenantOnboarding = `-- name: CompleteTenantOnboarding :execrows
 UPDATE tenant_onboarding
 SET completed_at  = COALESCE(completed_at, now()),
     skipped_steps = $1::text[],
     updated_at    = now()
 WHERE tenant_id = $2
-RETURNING tenant_id, owner_user_id, source, completed_at, skipped_steps, created_at, updated_at
 `
 
 type CompleteTenantOnboardingParams struct {
@@ -23,19 +24,12 @@ type CompleteTenantOnboardingParams struct {
 	TenantID     int64    `json:"tenant_id"`
 }
 
-func (q *Queries) CompleteTenantOnboarding(ctx context.Context, arg CompleteTenantOnboardingParams) (TenantOnboarding, error) {
-	row := q.db.QueryRow(ctx, completeTenantOnboarding, arg.SkippedSteps, arg.TenantID)
-	var i TenantOnboarding
-	err := row.Scan(
-		&i.TenantID,
-		&i.OwnerUserID,
-		&i.Source,
-		&i.CompletedAt,
-		&i.SkippedSteps,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) CompleteTenantOnboarding(ctx context.Context, arg CompleteTenantOnboardingParams) (int64, error) {
+	result, err := q.db.Exec(ctx, completeTenantOnboarding, arg.SkippedSteps, arg.TenantID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const createTenantOnboarding = `-- name: CreateTenantOnboarding :one
@@ -104,20 +98,38 @@ func (q *Queries) CreateUserAgreement(ctx context.Context, arg CreateUserAgreeme
 }
 
 const getTenantOnboarding = `-- name: GetTenantOnboarding :one
-SELECT tenant_id, owner_user_id, source, completed_at, skipped_steps, created_at, updated_at FROM tenant_onboarding WHERE tenant_id = $1
+SELECT o.tenant_id,
+       COALESCE(t.owner_user_id, o.owner_user_id)::bigint AS owner_user_id,
+       (t.owner_user_id IS NOT NULL OR o.owner_user_id IS NOT NULL)::boolean AS has_owner,
+       o.source, o.completed_at, o.skipped_steps, o.created_at
+FROM tenant_onboarding o
+JOIN tenants t ON t.id = o.tenant_id
+WHERE o.tenant_id = $1
 `
 
-func (q *Queries) GetTenantOnboarding(ctx context.Context, tenantID int64) (TenantOnboarding, error) {
+type GetTenantOnboardingRow struct {
+	TenantID     int64              `json:"tenant_id"`
+	OwnerUserID  int64              `json:"owner_user_id"`
+	HasOwner     bool               `json:"has_owner"`
+	Source       string             `json:"source"`
+	CompletedAt  pgtype.Timestamptz `json:"completed_at"`
+	SkippedSteps []string           `json:"skipped_steps"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+// The owner is the organization's current owner (ownership can be
+// transferred); the onboarding row remembers who signed up.
+func (q *Queries) GetTenantOnboarding(ctx context.Context, tenantID int64) (GetTenantOnboardingRow, error) {
 	row := q.db.QueryRow(ctx, getTenantOnboarding, tenantID)
-	var i TenantOnboarding
+	var i GetTenantOnboardingRow
 	err := row.Scan(
 		&i.TenantID,
 		&i.OwnerUserID,
+		&i.HasOwner,
 		&i.Source,
 		&i.CompletedAt,
 		&i.SkippedSteps,
 		&i.CreatedAt,
-		&i.UpdatedAt,
 	)
 	return i, err
 }

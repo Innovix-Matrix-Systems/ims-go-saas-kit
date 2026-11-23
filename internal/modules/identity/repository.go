@@ -53,6 +53,10 @@ type Repository interface {
 	ChangeEmail(ctx context.Context, userID int64, email string) error
 
 	UpdateLocale(ctx context.Context, userID int64, locale *string) error
+	// ActiveMember tells whether the user is an active member of the tenant.
+	ActiveMember(ctx context.Context, tenantID, userID int64) (bool, error)
+	// IsTenantOwner tells whether the user owns an organization.
+	IsTenantOwner(ctx context.Context, userID int64) (bool, error)
 	// InvitationPreview fails with ResourceNotFound once the invitation
 	// was accepted (or the user is gone).
 	InvitationPreview(ctx context.Context, userID int64) (*InvitationPreview, error)
@@ -457,6 +461,25 @@ func (r *repository) ChangeEmail(ctx context.Context, userID int64, email string
 		return database.MapError("users.change_email", err)
 	}
 	return nil
+}
+
+func (r *repository) ActiveMember(ctx context.Context, tenantID, userID int64) (bool, error) {
+	user, err := r.Get(ctx, tenancy.InTenant(tenantID), userID)
+	if apperr.Is(err, apperr.ResourceNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return user.IsActive, nil
+}
+
+func (r *repository) IsTenantOwner(ctx context.Context, userID int64) (bool, error) {
+	owner, err := r.queries.IsTenantOwner(ctx, &userID)
+	if err != nil {
+		return false, database.MapError("users.is_tenant_owner", err)
+	}
+	return owner, nil
 }
 
 func (r *repository) UpdateLocale(ctx context.Context, userID int64, locale *string) error {

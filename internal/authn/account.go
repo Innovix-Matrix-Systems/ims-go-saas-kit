@@ -14,6 +14,13 @@ func (s *Service) Account(ctx context.Context, userID int64) (*UserRecord, error
 	return s.users.FindByID(ctx, userID)
 }
 
+// ConfirmPasswordOnly is ConfirmPassword for callers that only need to know
+// the password was right.
+func (s *Service) ConfirmPasswordOnly(ctx context.Context, userID int64, password string) error {
+	_, err := s.ConfirmPassword(ctx, userID, password)
+	return err
+}
+
 // ConfirmPassword checks the signed-in user's password before a sensitive
 // account change (turning two-factor on or off, new recovery codes). Wrong
 // answers count against the account's sign-in throttle, so it cannot be

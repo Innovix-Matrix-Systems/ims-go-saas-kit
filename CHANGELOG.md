@@ -7,7 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 **Upgrading:** run `ims migrate` (migrations `00037_create_onboarding`: `tenant_onboarding` and
-`user_agreements`; `00038_user_locale`: `users.locale`), `ims permission:sync` (adds `billing.view` and `billing.manage`, and now also
+`user_agreements`; `00038_user_locale`: `users.locale`; `00039_tenant_owner`: `tenants.owner_user_id`), `ims permission:sync` (adds `billing.view`, `billing.manage` and `organization.update`, and now also
 grants every tenant Admin role the permissions it is missing) and `ims settings:sync` (the new
 **Sign-up** group).
 
@@ -52,6 +52,12 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
 - **Invitation preview**: `POST /api/v1/invitation/preview` shows the invitee, the organization
   and the inviter without using the link up.
 - **Language per user**: `locale` on the profile (read and update).
+- **The organization and its owner** ([guide](docs/guides/tenancy.md#the-organization-and-its-owner)):
+  `GET/PATCH /api/v1/organization` let members read and admins (`organization.update`) edit their own
+  organization; `POST /api/v1/organization/transfer-ownership` lets the owner hand it over. The owner
+  (`tenants.owner_user_id`, set at sign-up and backfilled for signed-up organizations) cannot be
+  deleted, deactivated, demoted, have their password or two-factor reset by others, or be erased
+  until ownership is transferred.
 - **First-run setup**: `GET /api/v1/onboarding` and `POST /api/v1/onboarding/complete` (owner only)
   track a new organization's setup wizard.
 - Tenant billing permissions `billing.view` and `billing.manage`, held by the tenant Admin role:

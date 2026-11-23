@@ -93,6 +93,9 @@ const (
 	PermBillingView   = "billing.view"
 	PermBillingManage = "billing.manage"
 
+	// The caller's own organization (tenant-resolved routes).
+	PermOrganizationUpdate = "organization.update"
+
 	PermTenantViewAll = "tenant.view.all"
 	PermTenantView    = "tenant.view"
 	PermTenantCreate  = "tenant.create"
@@ -181,6 +184,9 @@ var Catalog = []Permission{
 	// ── data_processing_job ───────────────────────────────
 	{Name: PermDataProcessingViewAll, Group: "data_processing_job", Description: "Can view all data processing jobs"},
 	{Name: PermDataProcessingView, Group: "data_processing_job", Description: "Can view data processing job details"},
+
+	// ── organization (the tenant's own profile) ───────────
+	{Name: PermOrganizationUpdate, Group: "organization", Description: "Can edit the organization's name and contact details"},
 
 	// ── billing (the tenant's own plan and payments) ──────
 	{Name: PermBillingView, Group: "billing", Description: "Can view the organization's plan, usage and payments"},
@@ -272,7 +278,7 @@ func AdminTenantPermissions() []Permission {
 			continue
 		}
 		switch permission.Group {
-		case "role", "branch", "user", "file", "setting", "activity", "webhook", "billing":
+		case "role", "branch", "user", "file", "setting", "activity", "webhook", "billing", "organization":
 			if _, skip := exclude[permission.Name]; skip {
 				continue
 			}

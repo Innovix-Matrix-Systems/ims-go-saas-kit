@@ -350,6 +350,16 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 	if err := s.guardSuperAdmin(ctx, actorID, target.ID); err != nil {
 		return nil, err
 	}
+	if input.IsActive != nil && !*input.IsActive {
+		if err := s.refuseOwner(ctx, actorID, target.ID); err != nil {
+			return nil, err
+		}
+	}
+	if input.Roles != nil {
+		if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
+			return nil, err
+		}
+	}
 
 	if err := s.validatePhoneUnique(ctx, input.Phone, target.ID); err != nil {
 		return nil, err
@@ -443,6 +453,9 @@ func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id i
 	if targetIsSuper {
 		return apperr.New(apperr.Forbidden, "The super admin user cannot be deleted.")
 	}
+	if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
+		return err
+	}
 	if err := s.repo.Delete(ctx, scope.Filter(), target.ID, &actorID); err != nil {
 		return err
 	}
@@ -473,6 +486,9 @@ func (s *Service) AssignRoles(ctx context.Context, scope tenancy.Scope, actorID,
 		return nil, apperr.New(apperr.Forbidden, "You cannot change your own roles.")
 	}
 	if err := s.guardSuperAdmin(ctx, actorID, target.ID); err != nil {
+		return nil, err
+	}
+	if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
 		return nil, err
 	}
 	if scope.Internal && target.TenantIDValue() == 0 {
@@ -548,6 +564,9 @@ func (s *Service) ChangePassword(ctx context.Context, scope tenancy.Scope, actor
 	if err := s.guardSuperAdmin(ctx, actorID, target.ID); err != nil {
 		return err
 	}
+	if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
+		return err
+	}
 	hash, err := s.hashPassword(password)
 	if err != nil {
 		return err
@@ -579,6 +598,9 @@ func (s *Service) ResetTwoFactor(ctx context.Context, scope tenancy.Scope, actor
 		return err
 	}
 	if err := s.guardSuperAdmin(ctx, actorID, target.ID); err != nil {
+		return err
+	}
+	if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
 		return err
 	}
 	return s.twoFactor.Disable(ctx, target.toRecord(true), true)
@@ -682,6 +704,31 @@ func (s *Service) GetRecord(ctx context.Context, id int64) (*User, error) {
 
 // guardSuperAdmin is a business invariant, not a permission: only a
 // super-admin may modify a super-admin account, whoever the caller is.
+// guardOwner protects an organization's owner: other members cannot delete
+// them, deactivate them, change their roles, set their password or reset
+// their two-factor; ownership has to be transferred first. Platform super
+// admins may still act (support).
+func (s *Service) guardOwner(ctx context.Context, actorID, targetID int64) error {
+	if actorID == targetID {
+		return nil
+	}
+	return s.refuseOwner(ctx, actorID, targetID)
+}
+
+// refuseOwner refuses the change whoever asks (super admins excepted).
+func (s *Service) refuseOwner(ctx context.Context, actorID, targetID int64) error {
+	owner, err := s.repo.IsTenantOwner(ctx, targetID)
+	if err != nil || !owner {
+		return err
+	}
+	if super, err := s.checker.IsSuperAdmin(ctx, actorID); err != nil {
+		return err
+	} else if super {
+		return nil
+	}
+	return apperr.New(apperr.Forbidden, "This user owns the organization. Transfer ownership to another administrator first.")
+}
+
 func (s *Service) guardSuperAdmin(ctx context.Context, actorID, targetID int64) error {
 	targetIsSuper, err := s.checker.IsSuperAdmin(ctx, targetID)
 	if err != nil || !targetIsSuper {

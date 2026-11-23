@@ -29,13 +29,14 @@ type RoleProvisioner interface {
 
 // Service implements tenant business rules.
 type Service struct {
-	repo     Repository
-	branches BranchProvisioner
-	roles    RoleProvisioner
-	tx       *database.TxManager
-	cache    cache.Store
-	cfg      config.Tenancy
-	activity *activity.Recorder
+	repo      Repository
+	branches  BranchProvisioner
+	roles     RoleProvisioner
+	tx        *database.TxManager
+	cache     cache.Store
+	cfg       config.Tenancy
+	activity  *activity.Recorder
+	ownership *OwnershipCollaborators
 }
 
 // NewService creates the tenant service.

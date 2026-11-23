@@ -531,19 +531,20 @@ type Subscription struct {
 }
 
 type Tenant struct {
-	ID        int64              `json:"id"`
-	Name      string             `json:"name"`
-	Code      string             `json:"code"`
-	Slug      *string            `json:"slug"`
-	Domain    *string            `json:"domain"`
-	Phone     *string            `json:"phone"`
-	Email     *string            `json:"email"`
-	IsActive  bool               `json:"is_active"`
-	CreatedBy *int64             `json:"created_by"`
-	UpdatedBy *int64             `json:"updated_by"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+	ID          int64              `json:"id"`
+	Name        string             `json:"name"`
+	Code        string             `json:"code"`
+	Slug        *string            `json:"slug"`
+	Domain      *string            `json:"domain"`
+	Phone       *string            `json:"phone"`
+	Email       *string            `json:"email"`
+	IsActive    bool               `json:"is_active"`
+	CreatedBy   *int64             `json:"created_by"`
+	UpdatedBy   *int64             `json:"updated_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+	OwnerUserID *int64             `json:"owner_user_id"`
 }
 
 type TenantOnboarding struct {

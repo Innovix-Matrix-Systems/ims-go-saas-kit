@@ -92,6 +92,8 @@ var routesWithoutPermission = map[string]bool{
 	"GET /api/v1/billing/subscription/status":          true,
 	"GET /api/v1/onboarding":                           true, // the caller's own organization's setup
 	"POST /api/v1/onboarding/complete":                 true, // only the organization's owner (checked in the service)
+	"GET /api/v1/organization":                         true, // every member reads their own organization
+	"POST /api/v1/organization/transfer-ownership":     true, // only the owner (checked in the service)
 }
 
 // TestEveryProtectedRouteRequiresAPermission logs in a tenant user that holds

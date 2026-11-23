@@ -283,3 +283,9 @@ FROM users u
 LEFT JOIN tenants t ON t.id = u.tenant_id
 LEFT JOIN users inviter ON inviter.id = u.invited_by
 WHERE u.id = @id AND u.deleted_at IS NULL;
+
+-- name: IsTenantOwner :one
+-- Whether the user owns a (live) organization.
+SELECT EXISTS (
+    SELECT 1 FROM tenants WHERE owner_user_id = @user_id AND deleted_at IS NULL
+)::boolean;

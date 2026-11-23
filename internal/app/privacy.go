@@ -77,6 +77,7 @@ func newPrivacy(cfg *config.Config, tx *database.TxManager, disks *storage.Regis
 // identifies anyone.
 var privacyExemptions = map[string]string{
 	"privacy_requests.user_id":      "the erasure ledger: user ids and counts only, kept as proof of erasure",
+	"tenants.owner_user_id":         "an owner cannot be erased (the identity guard refuses until ownership is transferred), so it never points at an erased user",
 	"privacy_requests.requested_by": "the erasure ledger: who asked, by id",
 	"backup_runs.actor_user_id":     "audit stamp: who started a backup",
 	"maintenance.by_user_id":        "audit stamp: who put the app into maintenance",

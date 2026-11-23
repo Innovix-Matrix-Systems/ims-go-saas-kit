@@ -29,7 +29,7 @@ func (q *Queries) CountTenants(ctx context.Context, search *string) (int64, erro
 const createTenant = `-- name: CreateTenant :one
 INSERT INTO tenants (name, code, slug, domain, phone, email, is_active, created_by, updated_by)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at
+RETURNING id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at, owner_user_id
 `
 
 type CreateTenantParams struct {
@@ -71,6 +71,7 @@ func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) (Ten
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OwnerUserID,
 	)
 	return i, err
 }
@@ -79,7 +80,7 @@ const createTenantWithID = `-- name: CreateTenantWithID :one
 INSERT INTO tenants (id, name, code, slug, domain, phone, email, is_active, created_by, updated_by)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (id) DO NOTHING
-RETURNING id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at
+RETURNING id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at, owner_user_id
 `
 
 type CreateTenantWithIDParams struct {
@@ -123,12 +124,13 @@ func (q *Queries) CreateTenantWithID(ctx context.Context, arg CreateTenantWithID
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OwnerUserID,
 	)
 	return i, err
 }
 
 const getTenant = `-- name: GetTenant :one
-SELECT id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at FROM tenants
+SELECT id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at, owner_user_id FROM tenants
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -149,12 +151,13 @@ func (q *Queries) GetTenant(ctx context.Context, id int64) (Tenant, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OwnerUserID,
 	)
 	return i, err
 }
 
 const getTenantByCode = `-- name: GetTenantByCode :one
-SELECT id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at FROM tenants
+SELECT id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at, owner_user_id FROM tenants
 WHERE code = $1 AND deleted_at IS NULL
 `
 
@@ -175,12 +178,34 @@ func (q *Queries) GetTenantByCode(ctx context.Context, code string) (Tenant, err
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OwnerUserID,
 	)
 	return i, err
 }
 
+const getTenantOwner = `-- name: GetTenantOwner :one
+SELECT u.id, u.name, u.email
+FROM tenants t
+JOIN users u ON u.id = t.owner_user_id AND u.deleted_at IS NULL
+WHERE t.id = $1 AND t.deleted_at IS NULL
+`
+
+type GetTenantOwnerRow struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// The organization's owner, for showing on the organization page.
+func (q *Queries) GetTenantOwner(ctx context.Context, tenantID int64) (GetTenantOwnerRow, error) {
+	row := q.db.QueryRow(ctx, getTenantOwner, tenantID)
+	var i GetTenantOwnerRow
+	err := row.Scan(&i.ID, &i.Name, &i.Email)
+	return i, err
+}
+
 const listTenants = `-- name: ListTenants :many
-SELECT id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at FROM tenants
+SELECT id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at, owner_user_id FROM tenants
 WHERE deleted_at IS NULL
   AND (
     $1::text IS NULL
@@ -220,6 +245,7 @@ func (q *Queries) ListTenants(ctx context.Context, arg ListTenantsParams) ([]Ten
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.OwnerUserID,
 		); err != nil {
 			return nil, err
 		}
@@ -264,6 +290,21 @@ func (q *Queries) ListTenantsByIDs(ctx context.Context, ids []int64) ([]ListTena
 	return items, nil
 }
 
+const setTenantOwner = `-- name: SetTenantOwner :exec
+UPDATE tenants SET owner_user_id = $1, updated_at = now()
+WHERE id = $2 AND deleted_at IS NULL
+`
+
+type SetTenantOwnerParams struct {
+	OwnerUserID *int64 `json:"owner_user_id"`
+	ID          int64  `json:"id"`
+}
+
+func (q *Queries) SetTenantOwner(ctx context.Context, arg SetTenantOwnerParams) error {
+	_, err := q.db.Exec(ctx, setTenantOwner, arg.OwnerUserID, arg.ID)
+	return err
+}
+
 const softDeleteTenant = `-- name: SoftDeleteTenant :execrows
 UPDATE tenants
 SET deleted_at = now(),
@@ -305,7 +346,7 @@ SET name       = $1,
     updated_by = $7,
     updated_at = now()
 WHERE id = $8 AND deleted_at IS NULL
-RETURNING id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at
+RETURNING id, name, code, slug, domain, phone, email, is_active, created_by, updated_by, created_at, updated_at, deleted_at, owner_user_id
 `
 
 type UpdateTenantParams struct {
@@ -345,6 +386,7 @@ func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) (Ten
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OwnerUserID,
 	)
 	return i, err
 }

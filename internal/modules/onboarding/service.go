@@ -44,6 +44,7 @@ type (
 	TenantProvisioner interface {
 		Create(ctx context.Context, actorID int64, input tenants.CreateInput) (*tenants.Tenant, error)
 		Delete(ctx context.Context, actorID, id int64) error
+		SetOwner(ctx context.Context, tenantID, userID int64) error
 	}
 	// PlanAssigner starts a tenant's subscription.
 	PlanAssigner interface {
@@ -226,6 +227,9 @@ func (s *Service) provision(ctx context.Context, tenant *tenants.Tenant, pkg *do
 		BranchID: &branchID, Roles: []int64{admin.ID}, RequireVerification: true,
 	})
 	if err != nil {
+		return err
+	}
+	if err := s.Tenants.SetOwner(ctx, tenant.ID, owner.ID); err != nil {
 		return err
 	}
 	if _, err := s.Repo.CreateProgress(ctx, tenant.ID, &owner.ID, "signup"); err != nil {

@@ -544,6 +544,20 @@ func (q *Queries) GetUserForPrivacy(ctx context.Context, id int64) (User, error)
 	return i, err
 }
 
+const isTenantOwner = `-- name: IsTenantOwner :one
+SELECT EXISTS (
+    SELECT 1 FROM tenants WHERE owner_user_id = $1 AND deleted_at IS NULL
+)::boolean
+`
+
+// Whether the user owns a (live) organization.
+func (q *Queries) IsTenantOwner(ctx context.Context, userID *int64) (bool, error) {
+	row := q.db.QueryRow(ctx, isTenantOwner, userID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const listUsers = `-- name: ListUsers :many
 SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at, locale FROM users
 WHERE deleted_at IS NULL

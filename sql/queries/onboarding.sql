@@ -4,15 +4,22 @@ VALUES (@tenant_id, @owner_user_id, @source)
 RETURNING *;
 
 -- name: GetTenantOnboarding :one
-SELECT * FROM tenant_onboarding WHERE tenant_id = @tenant_id;
+-- The owner is the organization's current owner (ownership can be
+-- transferred); the onboarding row remembers who signed up.
+SELECT o.tenant_id,
+       COALESCE(t.owner_user_id, o.owner_user_id)::bigint AS owner_user_id,
+       (t.owner_user_id IS NOT NULL OR o.owner_user_id IS NOT NULL)::boolean AS has_owner,
+       o.source, o.completed_at, o.skipped_steps, o.created_at
+FROM tenant_onboarding o
+JOIN tenants t ON t.id = o.tenant_id
+WHERE o.tenant_id = @tenant_id;
 
--- name: CompleteTenantOnboarding :one
+-- name: CompleteTenantOnboarding :execrows
 UPDATE tenant_onboarding
 SET completed_at  = COALESCE(completed_at, now()),
     skipped_steps = @skipped_steps::text[],
     updated_at    = now()
-WHERE tenant_id = @tenant_id
-RETURNING *;
+WHERE tenant_id = @tenant_id;
 
 -- name: ListOnboardingOwnedByUser :many
 SELECT * FROM tenant_onboarding WHERE owner_user_id = @user_id ORDER BY tenant_id;

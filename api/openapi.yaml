@@ -493,6 +493,83 @@ paths:
         "404": *notFound
         "422": *validationFailed
 
+  /api/v1/organization:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Tenants]
+      summary: Get the caller's organization
+      description: Any member. `is_owner` tells whether the caller owns it.
+      operationId: getOrganization
+      responses:
+        "200":
+          description: The organization.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OrganizationEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+    patch:
+      tags: [Tenants]
+      summary: Update the caller's organization
+      description: Name and contact details (`organization.update`). Code, slug, domain and status stay with platform staff.
+      operationId: updateOrganization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: {type: string, minLength: 2, maxLength: 255}
+                phone: {type: string, maxLength: 50, nullable: true}
+                email: {type: string, format: email, maxLength: 255, nullable: true}
+      responses:
+        "200":
+          description: The updated organization.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OrganizationEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
+  /api/v1/organization/transfer-ownership:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+    post:
+      tags: [Tenants]
+      summary: Transfer the organization's ownership
+      description: >-
+        Only the current owner, with their password, and never while acting as another user. The
+        new owner must be an active member who can manage the organization (`organization.update`).
+        The owner cannot be removed, deactivated, demoted, have their password or two-factor reset
+        by others, or be erased, until ownership is transferred.
+      operationId: transferOrganizationOwnership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, password]
+              properties:
+                user_id: {type: integer, format: int64}
+                password: {type: string, maxLength: 72}
+      responses:
+        "200":
+          description: The organization with its new owner.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OrganizationEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
   /api/v1/reset-password:
     post:
       tags: [Auth]
@@ -6650,6 +6727,30 @@ components:
               items: {type: string}
             source: {type: string, enum: [signup, staff]}
             is_owner: {type: boolean}
+    OrganizationEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, name, code, is_active, is_owner, created_at]
+          properties:
+            id: {type: integer, format: int64}
+            name: {type: string}
+            code: {type: string}
+            phone: {type: string, nullable: true}
+            email: {type: string, nullable: true}
+            is_active: {type: boolean}
+            owner:
+              type: object
+              nullable: true
+              required: [id, name, email]
+              properties:
+                id: {type: integer, format: int64}
+                name: {type: string}
+                email: {type: string}
+            is_owner: {type: boolean}
+            created_at: {type: string, format: date-time}
     MessageEnvelope:
       type: object
       required: [message]

@@ -198,3 +198,21 @@ Off by default, because suspending customers is a business decision. With
 tenant whose subscription has been expired for `BILLING_SUSPEND_GRACE_DAYS` (default `3`) and
 that has nothing active, in trial, pending or past due. The default tenant is never suspended.
 Each suspension is a `tenant.suspended` row with `"reason": "subscription_expired"`.
+
+## The organization and its owner
+
+Inside a tenant, the tenant is **the organization**. Its members reach it without platform
+permissions:
+
+| Endpoint | Who | Does |
+| --- | --- | --- |
+| `GET /api/v1/organization` | any member | name, code, contact details, `owner` and `is_owner` |
+| `PATCH /api/v1/organization` | `organization.update` (tenant Admin) | name, phone, e-mail; code, slug, domain and status stay with staff |
+| `POST /api/v1/organization/transfer-ownership` | the owner | `{user_id, password}` hands ownership to an active member who holds `organization.update` |
+
+Every organization can have one **owner** (`tenants.owner_user_id`): the person who signed it up,
+or whoever ownership was transferred to. Until ownership moves, other members cannot delete the
+owner, deactivate them, change their roles, set their password or reset their two-factor, nobody
+can deactivate them, and the owner's account cannot be erased (self-deletion and admin erasure
+answer 409). Platform super admins can still act, for support. Transfers are
+`organization.ownership_transferred` activity entries.

@@ -72,23 +72,34 @@ func (r *repository) GetProgress(ctx context.Context, tenantID int64) (*Progress
 	if err != nil {
 		return nil, database.MapError("onboarding.get", err)
 	}
-	return mapProgress(row), nil
+	progress := &Progress{
+		TenantID: row.TenantID, Source: row.Source, CompletedAt: timePtr(row.CompletedAt),
+		SkippedSteps: row.SkippedSteps, CreatedAt: row.CreatedAt.Time,
+	}
+	if progress.SkippedSteps == nil {
+		progress.SkippedSteps = []string{}
+	}
+	if row.HasOwner {
+		owner := row.OwnerUserID
+		progress.OwnerUserID = &owner
+	}
+	return progress, nil
 }
 
 func (r *repository) CompleteProgress(ctx context.Context, tenantID int64, skipped []string) (*Progress, error) {
 	if skipped == nil {
 		skipped = []string{}
 	}
-	row, err := r.queries.CompleteTenantOnboarding(ctx, dbgen.CompleteTenantOnboardingParams{
+	affected, err := r.queries.CompleteTenantOnboarding(ctx, dbgen.CompleteTenantOnboardingParams{
 		TenantID: tenantID, SkippedSteps: skipped,
 	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apperr.New(apperr.ResourceNotFound, "This organization has no onboarding record.")
-	}
 	if err != nil {
 		return nil, database.MapError("onboarding.complete", err)
 	}
-	return mapProgress(row), nil
+	if affected == 0 {
+		return nil, apperr.New(apperr.ResourceNotFound, "This organization has no onboarding record.")
+	}
+	return r.GetProgress(ctx, tenantID)
 }
 
 func (r *repository) RecordAgreement(ctx context.Context, input Agreement) (*Agreement, error) {
