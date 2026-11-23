@@ -1,8 +1,9 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import {
   isSignedIn,
+  sessionQuery,
   signIn,
   takeSessionEndedNotice,
   verifySecondFactor,
@@ -11,7 +12,9 @@ import {
 } from '../auth/session'
 import { AppearanceMenu } from '../components/AppearanceMenu'
 import { ErrorBox, Icon, Spinner } from '../components/ui'
-import { useT } from '../i18n'
+import { setLocale, useT } from '../i18n'
+import { queryClient } from '../query'
+import { onboardingQuery } from './_app.onboarding'
 
 interface LoginSearch {
   /** Where to go after signing in (an in-app path only). */
@@ -49,6 +52,16 @@ function LoginPage() {
     }
     if (outcome.kind === 'two-factor-setup') {
       await navigate({ to: '/setup-two-factor' })
+      return
+    }
+    // The language the user chose follows them to every device.
+    const session = await queryClient.fetchQuery(sessionQuery).catch(() => null)
+    const saved = session?.user.locale
+    if (saved === 'en' || saved === 'bn') setLocale(saved)
+    // A new organization's owner continues its setup first.
+    const progress = await queryClient.fetchQuery(onboardingQuery).catch(() => null)
+    if (progress?.is_owner && !progress.completed) {
+      await navigate({ to: '/onboarding' })
       return
     }
     await navigate({ to: next ?? '/' })
@@ -164,6 +177,9 @@ function LoginPage() {
                     <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
                     {t('auth.remember')}
                   </label>
+                  <Link to="/forgot-password" className="small">
+                    {t('auth.forgot')}
+                  </Link>
                 </div>
                 {message ? <ErrorBox message={message} /> : null}
                 <button type="submit" className="btn primary mt-4" disabled={busy || !email.trim() || !password}>
@@ -174,6 +190,13 @@ function LoginPage() {
             </>
           )}
         </div>
+        {!pending ? (
+          <div className="login-links">
+            <span>
+              {t('auth.noAccount')} <Link to="/signup">{t('auth.createOrganization')}</Link>
+            </span>
+          </div>
+        ) : null}
       </div>
     </div>
   )

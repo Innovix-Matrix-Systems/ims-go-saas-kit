@@ -10,14 +10,41 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
+import { Route as ConfirmEmailChangeRouteImport } from './routes/confirm-email-change'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MaintenanceRouteImport } from './routes/maintenance'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SetupTwoFactorRouteImport } from './routes/setup-two-factor'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SuspendedRouteImport } from './routes/suspended'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppSettingsNotificationsRouteImport } from './routes/_app.settings.notifications'
+import { Route as AppSettingsPrivacyRouteImport } from './routes/_app.settings.privacy'
+import { Route as AppSettingsProfileRouteImport } from './routes/_app.settings.profile'
+import { Route as AppSettingsSecurityRouteImport } from './routes/_app.settings.security'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcceptInvitationRoute = AcceptInvitationRouteImport.update({
+  id: '/accept-invitation',
+  path: '/accept-invitation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmEmailChangeRoute = ConfirmEmailChangeRouteImport.update({
+  id: '/confirm-email-change',
+  path: '/confirm-email-change',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -30,9 +57,19 @@ const MaintenanceRoute = MaintenanceRouteImport.update({
   path: '/maintenance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SetupTwoFactorRoute = SetupTwoFactorRouteImport.update({
   id: '/setup-two-factor',
   path: '/setup-two-factor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuspendedRoute = SuspendedRouteImport.update({
@@ -40,57 +77,180 @@ const SuspendedRoute = SuspendedRouteImport.update({
   path: '/suspended',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsNotificationsRoute =
+  AppSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsPrivacyRoute = AppSettingsPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsProfileRoute = AppSettingsProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsSecurityRoute = AppSettingsSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/accept-invitation': typeof AcceptInvitationRoute
+  '/confirm-email-change': typeof ConfirmEmailChangeRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/maintenance': typeof MaintenanceRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/setup-two-factor': typeof SetupTwoFactorRoute
+  '/signup': typeof SignupRoute
   '/suspended': typeof SuspendedRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/onboarding': typeof AppOnboardingRoute
+  '/settings': typeof AppSettingsRouteWithChildren
+  '/settings/notifications': typeof AppSettingsNotificationsRoute
+  '/settings/privacy': typeof AppSettingsPrivacyRoute
+  '/settings/profile': typeof AppSettingsProfileRoute
+  '/settings/security': typeof AppSettingsSecurityRoute
 }
 export interface FileRoutesByTo {
+  '/accept-invitation': typeof AcceptInvitationRoute
+  '/confirm-email-change': typeof ConfirmEmailChangeRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/maintenance': typeof MaintenanceRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/setup-two-factor': typeof SetupTwoFactorRoute
+  '/signup': typeof SignupRoute
   '/suspended': typeof SuspendedRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/onboarding': typeof AppOnboardingRoute
+  '/settings': typeof AppSettingsRouteWithChildren
   '/': typeof AppIndexRoute
+  '/settings/notifications': typeof AppSettingsNotificationsRoute
+  '/settings/privacy': typeof AppSettingsPrivacyRoute
+  '/settings/profile': typeof AppSettingsProfileRoute
+  '/settings/security': typeof AppSettingsSecurityRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/accept-invitation': typeof AcceptInvitationRoute
+  '/confirm-email-change': typeof ConfirmEmailChangeRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/maintenance': typeof MaintenanceRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/setup-two-factor': typeof SetupTwoFactorRoute
+  '/signup': typeof SignupRoute
   '/suspended': typeof SuspendedRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/_app/onboarding': typeof AppOnboardingRoute
+  '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/': typeof AppIndexRoute
+  '/_app/settings/notifications': typeof AppSettingsNotificationsRoute
+  '/_app/settings/privacy': typeof AppSettingsPrivacyRoute
+  '/_app/settings/profile': typeof AppSettingsProfileRoute
+  '/_app/settings/security': typeof AppSettingsSecurityRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/maintenance' | '/setup-two-factor' | '/suspended'
+    | '/'
+    | '/accept-invitation'
+    | '/confirm-email-change'
+    | '/forgot-password'
+    | '/login'
+    | '/maintenance'
+    | '/reset-password'
+    | '/setup-two-factor'
+    | '/signup'
+    | '/suspended'
+    | '/verify-email'
+    | '/onboarding'
+    | '/settings'
+    | '/settings/notifications'
+    | '/settings/privacy'
+    | '/settings/profile'
+    | '/settings/security'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/maintenance' | '/setup-two-factor' | '/suspended' | '/'
+  to:
+    | '/accept-invitation'
+    | '/confirm-email-change'
+    | '/forgot-password'
+    | '/login'
+    | '/maintenance'
+    | '/reset-password'
+    | '/setup-two-factor'
+    | '/signup'
+    | '/suspended'
+    | '/verify-email'
+    | '/onboarding'
+    | '/settings'
+    | '/'
+    | '/settings/notifications'
+    | '/settings/privacy'
+    | '/settings/profile'
+    | '/settings/security'
   id:
     | '__root__'
     | '/_app'
+    | '/accept-invitation'
+    | '/confirm-email-change'
+    | '/forgot-password'
     | '/login'
     | '/maintenance'
+    | '/reset-password'
     | '/setup-two-factor'
+    | '/signup'
     | '/suspended'
+    | '/verify-email'
+    | '/_app/onboarding'
+    | '/_app/settings'
     | '/_app/'
+    | '/_app/settings/notifications'
+    | '/_app/settings/privacy'
+    | '/_app/settings/profile'
+    | '/_app/settings/security'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  AcceptInvitationRoute: typeof AcceptInvitationRoute
+  ConfirmEmailChangeRoute: typeof ConfirmEmailChangeRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   MaintenanceRoute: typeof MaintenanceRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SetupTwoFactorRoute: typeof SetupTwoFactorRoute
+  SignupRoute: typeof SignupRoute
   SuspendedRoute: typeof SuspendedRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -100,6 +260,27 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accept-invitation': {
+      id: '/accept-invitation'
+      path: '/accept-invitation'
+      fullPath: '/accept-invitation'
+      preLoaderRoute: typeof AcceptInvitationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirm-email-change': {
+      id: '/confirm-email-change'
+      path: '/confirm-email-change'
+      fullPath: '/confirm-email-change'
+      preLoaderRoute: typeof ConfirmEmailChangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -116,11 +297,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MaintenanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/setup-two-factor': {
       id: '/setup-two-factor'
       path: '/setup-two-factor'
       fullPath: '/setup-two-factor'
       preLoaderRoute: typeof SetupTwoFactorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/suspended': {
@@ -130,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuspendedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/': {
       id: '/_app/'
       path: '/'
@@ -137,14 +339,78 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/onboarding': {
+      id: '/_app/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/notifications': {
+      id: '/_app/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AppSettingsNotificationsRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/privacy': {
+      id: '/_app/settings/privacy'
+      path: '/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof AppSettingsPrivacyRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/profile': {
+      id: '/_app/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof AppSettingsProfileRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/security': {
+      id: '/_app/settings/security'
+      path: '/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof AppSettingsSecurityRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
   }
 }
 
+interface AppSettingsRouteChildren {
+  AppSettingsNotificationsRoute: typeof AppSettingsNotificationsRoute
+  AppSettingsPrivacyRoute: typeof AppSettingsPrivacyRoute
+  AppSettingsProfileRoute: typeof AppSettingsProfileRoute
+  AppSettingsSecurityRoute: typeof AppSettingsSecurityRoute
+}
+
+const AppSettingsRouteChildren: AppSettingsRouteChildren = {
+  AppSettingsNotificationsRoute: AppSettingsNotificationsRoute,
+  AppSettingsPrivacyRoute: AppSettingsPrivacyRoute,
+  AppSettingsProfileRoute: AppSettingsProfileRoute,
+  AppSettingsSecurityRoute: AppSettingsSecurityRoute,
+}
+
+const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
+  AppSettingsRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppOnboardingRoute: typeof AppOnboardingRoute
+  AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppOnboardingRoute: AppOnboardingRoute,
+  AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -152,10 +418,16 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  AcceptInvitationRoute: AcceptInvitationRoute,
+  ConfirmEmailChangeRoute: ConfirmEmailChangeRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   MaintenanceRoute: MaintenanceRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SetupTwoFactorRoute: SetupTwoFactorRoute,
+  SignupRoute: SignupRoute,
   SuspendedRoute: SuspendedRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -4,3 +4,29 @@
 .home-hero h1 { font-size: var(--fs-xl); font-weight: var(--fw-semibold); margin: 0; line-height: var(--lh-heading); }
 .home-hero p { margin: 4px 0 0; color: var(--text-2); }
 .home-roles { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ── Settings ──────────────────────────────────────────── */
+.settings-body { max-width: 760px; }
+.form-narrow { max-width: 460px; }
+.form-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.session-list, .pref-list { list-style: none; margin: 0; padding: 0; }
+.session-row, .pref-row { display: flex; align-items: center; gap: 12px; padding: var(--row-pad-y) var(--row-pad-x); border-top: 1px solid var(--border); }
+.session-row:first-child, .pref-row:first-child { border-top: 0; }
+.session-meta, .pref-meta { flex: 1; min-width: 0; }
+.session-name, .pref-name { font-weight: var(--fw-medium); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pref-channels { display: flex; gap: 14px; flex-wrap: wrap; }
+.banner { padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-inset); }
+.banner.warn { border-color: var(--warn-border); background: var(--warn-subtle); }
+.banner.info { border-color: var(--accent-border); background: var(--accent-subtle); display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+.p-4 { padding: 16px; }
+.g-4 { gap: 16px; }
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.plan-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; background: var(--surface-1); display: flex; flex-direction: column; gap: 8px; }
+.plan-card.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.plan-price { font-size: var(--fs-xl); font-weight: var(--fw-semibold); }
+.plan-features { margin: 0; padding-left: 18px; color: var(--text-2); font-size: var(--fs-md); }
+.wizard-steps { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.wizard-step { font-size: var(--fs-sm); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-2); }
+.wizard-step.active { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+.wizard-step.done { color: var(--ok-fg); border-color: var(--ok-border); }
+.session-row > svg { width: 18px; height: 18px; flex: none; color: var(--text-2); }

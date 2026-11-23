@@ -27,6 +27,14 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   and dark themes with accent and density presets (shared design tokens with the developer
   dashboard), and English and Bangla. Ended sessions, required two-factor setup, suspended
   organizations and maintenance mode each get their own screen.
+- Client app account screens: sign-up (with terms acceptance), e-mail verification and a new
+  link, forgot and reset password, accepting an invitation (shows the organization and the
+  inviter), confirming an e-mail change, forced two-factor setup, and a first-run setup wizard for
+  new owners (choose a plan with bank-transfer payment, invite the team, turn on two-factor).
+  Account settings: profile with the saved language, e-mail change, password change, two-factor
+  (authenticator app with QR code or e-mail codes, recovery codes), signed-in devices,
+  notification preferences, personal-data export and account deletion. Signing in applies the
+  user's saved language and sends a new owner to the setup wizard.
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.

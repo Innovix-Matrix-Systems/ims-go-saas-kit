@@ -32,3 +32,18 @@
 .status-icon.danger { background: var(--danger-subtle); border-color: var(--danger-border); color: var(--danger-fg); }
 .status-icon svg { width: 22px; height: 22px; }
 .status-ref { font-family: var(--mono); font-size: var(--fs-sm); color: var(--text-3); margin-top: 12px; }
+.input-with-action { position: relative; display: flex; align-items: center; }
+.input-with-action .input { flex: 1; padding-right: 40px; }
+.input-with-action .icon-btn { position: absolute; right: 4px; }
+.link-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: var(--fs-sm); }
+.link-row a, .login-links a { color: var(--accent); text-decoration: none; }
+.link-row a:hover, .login-links a:hover { text-decoration: underline; }
+.success-box {
+  padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--ok-border);
+  background: var(--ok-subtle); color: var(--text-1); font-size: var(--fs-base); line-height: var(--lh-body);
+}
+.terms-row { display: flex; gap: 8px; align-items: flex-start; font-size: var(--fs-md); color: var(--text-2); }
+.terms-row input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); }
+.qr-box { display: grid; place-items: center; padding: 12px; background: var(--qr-surface); border-radius: var(--radius-sm); border: 1px solid var(--border); width: fit-content; }
+.qr-box img { width: 180px; height: 180px; image-rendering: pixelated; }
+.codes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; font-family: var(--mono); font-size: var(--fs-md); padding: 12px; background: var(--surface-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); }

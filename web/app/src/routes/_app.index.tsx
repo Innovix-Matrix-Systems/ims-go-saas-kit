@@ -1,4 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { onboardingQuery } from './_app.onboarding'
 import { useSession } from '../auth/session'
 import { initials } from '../format'
 import { intlLocale, useLocale, useT } from '../i18n'
@@ -12,6 +14,7 @@ function HomePage() {
   const t = useT()
   const locale = useLocale()
   const session = useSession()
+  const onboarding = useQuery(onboardingQuery)
   if (!session) return null
   const { user } = session
   const lastSignIn = user.last_login_at
@@ -20,6 +23,14 @@ function HomePage() {
 
   return (
     <>
+      {onboarding.data && onboarding.data.is_owner && !onboarding.data.completed ? (
+        <div className="banner info mb-16">
+          <span>{t('onboarding.banner')}</span>
+          <Link to="/onboarding" className="btn primary">
+            {t('onboarding.resume')}
+          </Link>
+        </div>
+      ) : null}
       <div className="home-hero">
         <div className="avatar">{initials(user.name)}</div>
         <div>

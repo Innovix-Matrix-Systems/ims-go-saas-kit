@@ -67,6 +67,8 @@
   --danger-fg: #c42727;
   --info-fg: #1d4ed8;
   --violet-fg: #6d28d9;
+  /* QR codes stay dark-on-white in both themes so phones can scan them. */
+  --qr-surface: #ffffff;
 }
 
 /* Accent presets: a light and a dark value each, both passing AA on the
