@@ -90,7 +90,9 @@ export async function signOut(): Promise<void> {
   const token = getToken() ?? setupOnly?.token ?? null
   if (token) {
     try {
-      await api('/logout', { method: 'POST', quiet: true, token })
+      // The API signs out the tokens of this device name, so send the one
+      // used at sign-in.
+      await api('/logout', { method: 'POST', body: { device: DEVICE }, quiet: true, token })
     } catch {
       /* offline or already revoked: the local session is cleared anyway */
     }

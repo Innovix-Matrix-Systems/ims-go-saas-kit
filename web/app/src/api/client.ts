@@ -174,12 +174,16 @@ function headersFor(options: RequestOptions): Headers {
  * returns `data` from the envelope. Errors are ApiError with the problem fields.
  */
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const method = options.method ?? 'GET'
+  // The API only accepts JSON on writes, even when there is nothing to send
+  // (POST /logout answers 415 without a body), so writes always carry one.
+  if (options.body === undefined && method !== 'GET' && method !== 'DELETE') options = { ...options, body: {} }
   const body =
     options.body === undefined ? undefined : options.body instanceof FormData ? options.body : JSON.stringify(options.body)
   let response: Response
   try {
     response = await fetch(buildURL(path, options.query), {
-      method: options.method ?? 'GET',
+      method,
       headers: headersFor(options),
       body,
       signal: options.signal,
