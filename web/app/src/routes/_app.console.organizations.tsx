@@ -12,6 +12,7 @@ import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { ListSkeleton, TableSkeleton } from '../components/Skeleton'
+import { OrgMark } from '../components/WorkspaceMenu'
 
 export const Route = createFileRoute('/_app/console/organizations')({
   component: OrganizationsPage,
@@ -91,9 +92,12 @@ function OrganizationsPage() {
                 {tenants.data!.data.map((tenant) => (
                   <tr key={tenant.id} className="clickable" onClick={() => setSelected(tenant)}>
                     <td>
-                      <span className="member-meta">
-                        <span className="member-name">{tenant.name}</span>
-                        <span className="small muted mono">#{tenant.id}</span>
+                      <span className="org-cell">
+                        <OrgMark name={tenant.name} />
+                        <span className="member-meta">
+                          <span className="member-name">{tenant.name}</span>
+                          <span className="small muted mono">#{tenant.id}</span>
+                        </span>
                       </span>
                     </td>
                     <td className="small muted">{tenant.email || tenant.phone || '—'}</td>
