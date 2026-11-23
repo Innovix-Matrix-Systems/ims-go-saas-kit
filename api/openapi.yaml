@@ -3972,6 +3972,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: event_type, in: query, required: false, schema: {type: string}, example: platform.announcement, description: Only notifications of this event type.}
       responses:
         "200":
           description: Paginated notifications.

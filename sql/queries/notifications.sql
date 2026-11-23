@@ -45,6 +45,7 @@ SELECT * FROM notifications
 WHERE (@all_tenants::boolean OR tenant_id = @tenant_id)
   AND (@search::text IS NULL OR title ILIKE '%' || @search || '%')
   AND (sqlc.narg('priority')::text IS NULL OR priority = sqlc.narg('priority')::text)
+  AND (sqlc.narg('event_type')::text IS NULL OR event_type = sqlc.narg('event_type')::text)
 ORDER BY
   CASE WHEN @order_by::text = 'created_at' AND @order_dir::text = 'asc' THEN created_at END ASC,
   CASE WHEN @order_by::text = 'created_at' AND @order_dir::text = 'desc' THEN created_at END DESC,
@@ -59,7 +60,8 @@ LIMIT @page_limit OFFSET @page_offset;
 SELECT count(*) FROM notifications
 WHERE (@all_tenants::boolean OR tenant_id = @tenant_id)
   AND (@search::text IS NULL OR title ILIKE '%' || @search || '%')
-  AND (sqlc.narg('priority')::text IS NULL OR priority = sqlc.narg('priority')::text);
+  AND (sqlc.narg('priority')::text IS NULL OR priority = sqlc.narg('priority')::text)
+  AND (sqlc.narg('event_type')::text IS NULL OR event_type = sqlc.narg('event_type')::text);
 
 -- name: CreateNotificationTarget :one
 INSERT INTO notification_targets (tenant_id, notification_id, target_type, target_id)

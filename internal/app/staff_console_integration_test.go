@@ -140,4 +140,23 @@ func TestStaffBroadcastsAnnouncement(t *testing.T) {
 	}
 	app.As(member).Post("/api/v1/internal/notification/broadcast", map[string]any{"priority": "INFO", "title": "x"}).
 		Status(t, http.StatusForbidden)
+
+	// Staff list the announcements they sent, without other notifications.
+	var page struct {
+		Data []struct {
+			EventType string `json:"event_type"`
+		} `json:"data"`
+		Meta struct {
+			Total int64 `json:"total"`
+		} `json:"meta"`
+	}
+	app.As(staff).Get("/api/v1/internal/notification?event_type=platform.announcement&per_page=100").Status(t, http.StatusOK).JSON(t, &page)
+	if page.Meta.Total != int64(sent.Organizations+1) {
+		t.Fatalf("announcements listed = %d, want %d", page.Meta.Total, sent.Organizations+1)
+	}
+	for _, item := range page.Data {
+		if item.EventType != "platform.announcement" {
+			t.Fatalf("listed a %s notification", item.EventType)
+		}
+	}
 }

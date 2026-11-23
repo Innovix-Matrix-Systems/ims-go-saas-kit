@@ -36,6 +36,7 @@ SELECT count(*) FROM notifications
 WHERE ($1::boolean OR tenant_id = $2)
   AND ($3::text IS NULL OR title ILIKE '%' || $3 || '%')
   AND ($4::text IS NULL OR priority = $4::text)
+  AND ($5::text IS NULL OR event_type = $5::text)
 `
 
 type CountNotificationsParams struct {
@@ -43,6 +44,7 @@ type CountNotificationsParams struct {
 	TenantID   *int64  `json:"tenant_id"`
 	Search     string  `json:"search"`
 	Priority   *string `json:"priority"`
+	EventType  *string `json:"event_type"`
 }
 
 func (q *Queries) CountNotifications(ctx context.Context, arg CountNotificationsParams) (int64, error) {
@@ -51,6 +53,7 @@ func (q *Queries) CountNotifications(ctx context.Context, arg CountNotifications
 		arg.TenantID,
 		arg.Search,
 		arg.Priority,
+		arg.EventType,
 	)
 	var count int64
 	err := row.Scan(&count)
@@ -766,15 +769,16 @@ SELECT id, tenant_id, event_type, priority, title, body, data, group_key, create
 WHERE ($1::boolean OR tenant_id = $2)
   AND ($3::text IS NULL OR title ILIKE '%' || $3 || '%')
   AND ($4::text IS NULL OR priority = $4::text)
+  AND ($5::text IS NULL OR event_type = $5::text)
 ORDER BY
-  CASE WHEN $5::text = 'created_at' AND $6::text = 'asc' THEN created_at END ASC,
-  CASE WHEN $5::text = 'created_at' AND $6::text = 'desc' THEN created_at END DESC,
-  CASE WHEN $5::text = 'title' AND $6::text = 'asc' THEN lower(title) END ASC,
-  CASE WHEN $5::text = 'title' AND $6::text = 'desc' THEN lower(title) END DESC,
-  CASE WHEN $5::text = 'priority' AND $6::text = 'asc' THEN priority END ASC,
-  CASE WHEN $5::text = 'priority' AND $6::text = 'desc' THEN priority END DESC,
+  CASE WHEN $6::text = 'created_at' AND $7::text = 'asc' THEN created_at END ASC,
+  CASE WHEN $6::text = 'created_at' AND $7::text = 'desc' THEN created_at END DESC,
+  CASE WHEN $6::text = 'title' AND $7::text = 'asc' THEN lower(title) END ASC,
+  CASE WHEN $6::text = 'title' AND $7::text = 'desc' THEN lower(title) END DESC,
+  CASE WHEN $6::text = 'priority' AND $7::text = 'asc' THEN priority END ASC,
+  CASE WHEN $6::text = 'priority' AND $7::text = 'desc' THEN priority END DESC,
   id DESC
-LIMIT $8 OFFSET $7
+LIMIT $9 OFFSET $8
 `
 
 type ListNotificationsParams struct {
@@ -782,6 +786,7 @@ type ListNotificationsParams struct {
 	TenantID   *int64  `json:"tenant_id"`
 	Search     string  `json:"search"`
 	Priority   *string `json:"priority"`
+	EventType  *string `json:"event_type"`
 	OrderBy    string  `json:"order_by"`
 	OrderDir   string  `json:"order_dir"`
 	PageOffset int32   `json:"page_offset"`
@@ -794,6 +799,7 @@ func (q *Queries) ListNotifications(ctx context.Context, arg ListNotificationsPa
 		arg.TenantID,
 		arg.Search,
 		arg.Priority,
+		arg.EventType,
 		arg.OrderBy,
 		arg.OrderDir,
 		arg.PageOffset,

@@ -51,7 +51,7 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   download invoices (`GET /api/v1/billing/payments/{id}/invoice`, printable HTML);
   `GET /api/v1/packages/features` lists the feature catalog; staff send announcements to every
   or chosen organizations (`POST /api/v1/internal/notification/broadcast`, event
-  `platform.announcement`).
+  `platform.announcement`); `GET /api/v1/internal/notification` filters by `event_type`.
 - `GET /api/v1/user/profile/permissions` returns the effective user's permissions, the target's
   while staff act as a user; `GET /api/v1/user?platform=true` lists staff accounts; payment
   approvals carry `details` (organization, plan, amount, invoice) and filter by `status`.

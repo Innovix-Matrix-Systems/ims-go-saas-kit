@@ -122,12 +122,13 @@ func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 	page, perPage, offset := httpx.PageParams(r)
 	orderBy, orderDir := httpx.OrderParams(r, "created_at", "created_at", "title", "priority")
 	filter := ListFilter{
-		Search:   r.URL.Query().Get("search"),
-		Priority: r.URL.Query().Get("priority"),
-		OrderBy:  orderBy,
-		OrderDir: orderDir,
-		Limit:    int32(perPage),
-		Offset:   int32(offset),
+		Search:    r.URL.Query().Get("search"),
+		Priority:  r.URL.Query().Get("priority"),
+		EventType: r.URL.Query().Get("event_type"),
+		OrderBy:   orderBy,
+		OrderDir:  orderDir,
+		Limit:     int32(perPage),
+		Offset:    int32(offset),
 	}
 	if filter.Priority != "" {
 		if _, ok := Priorities[filter.Priority]; !ok {

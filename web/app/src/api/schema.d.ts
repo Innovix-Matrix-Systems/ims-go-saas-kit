@@ -19207,6 +19207,11 @@ export interface operations {
             query?: {
                 page?: components["parameters"]["Page"];
                 per_page?: components["parameters"]["PerPage"];
+                /**
+                 * @description Only notifications of this event type.
+                 * @example platform.announcement
+                 */
+                event_type?: string;
             };
             header?: {
                 /**

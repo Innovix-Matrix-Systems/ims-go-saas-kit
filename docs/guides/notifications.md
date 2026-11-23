@@ -67,6 +67,7 @@ only. To tell organizations something (planned maintenance, a policy change), st
 `title`, optional `body` and `channels`, and optional `tenant_ids`: it creates one
 `platform.announcement` per organization, addressed to all its members, and answers how many
 organizations it reached. Without `tenant_ids` it reaches every active organization.
+`GET /api/v1/internal/notification?event_type=platform.announcement` lists what was sent.
 
 ## Mail, SMS and push
 

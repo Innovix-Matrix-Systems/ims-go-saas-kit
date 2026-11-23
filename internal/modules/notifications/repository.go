@@ -59,10 +59,12 @@ type ListFilter struct {
 	TenantID   int64
 	Search     string
 	Priority   string
-	OrderBy    string
-	OrderDir   string
-	Limit      int32
-	Offset     int32
+	// EventType keeps one event type (platform.announcement).
+	EventType string
+	OrderBy   string
+	OrderDir  string
+	Limit     int32
+	Offset    int32
 }
 
 // Visibility carries the caller's addressability inputs.
@@ -246,6 +248,7 @@ func (r *repository) List(ctx context.Context, filter ListFilter) ([]Notificatio
 		TenantID:   &filter.TenantID,
 		Search:     optionalString(filter.Search),
 		Priority:   optionalPriority(filter.Priority),
+		EventType:  nullableString(filter.EventType),
 		OrderBy:    filter.OrderBy,
 		OrderDir:   filter.OrderDir,
 		PageLimit:  filter.Limit,
@@ -267,6 +270,7 @@ func (r *repository) Count(ctx context.Context, filter ListFilter) (int64, error
 		TenantID:   &filter.TenantID,
 		Search:     optionalString(filter.Search),
 		Priority:   optionalPriority(filter.Priority),
+		EventType:  nullableString(filter.EventType),
 	})
 	if err != nil {
 		return 0, database.MapError("notifications.count", err)
@@ -661,4 +665,12 @@ func (r *repository) SetPreference(ctx context.Context, userID int64, eventType,
 		return database.MapError("notifications.set_preference", err)
 	}
 	return nil
+}
+
+// nullableString maps "" to SQL NULL (no filter).
+func nullableString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
 }
