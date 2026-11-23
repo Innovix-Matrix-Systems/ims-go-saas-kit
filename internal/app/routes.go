@@ -154,6 +154,7 @@ func (d *Dependencies) Router() http.Handler {
 				d.Flags.RegisterRoutes(r)
 				d.Onboarding.RegisterRoutes(r)
 				d.Tenants.RegisterOrganizationRoutes(r)
+				d.Dashboard.RegisterRoutes(r)
 			})
 
 			r.Group(func(r chi.Router) {
@@ -178,6 +179,7 @@ func (d *Dependencies) Router() http.Handler {
 					d.Notifications.RegisterRoutesExempt(r)
 					d.Platform.ActivityExport.RegisterInternalRoutes(r)
 					d.Processing.RegisterInternalRoutes(r)
+					d.Dashboard.RegisterInternalRoutes(r)
 					d.Files.RegisterRoutesExempt(r)
 					d.Settings.RegisterInternalRoutes(r)
 					d.Flags.RegisterInternalRoutes(r)

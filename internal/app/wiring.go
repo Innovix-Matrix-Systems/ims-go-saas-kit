@@ -24,6 +24,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing"
 	billingservice "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dashboard"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/featureflags"
@@ -84,6 +85,7 @@ type Dependencies struct {
 	Onboarding    *onboarding.Handler
 	Files         *files.Handler
 	Notifications *notifications.Handler
+	Dashboard     *dashboard.Handler
 	Webhooks      *webhooks.Handler
 	Processing    *dataprocessing.Handler
 	Settings      *settings.Handler
@@ -240,6 +242,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		Permissions:   access.NewPermissionHandler(permissionService, checker, kit),
 		Files:         files.NewHandler(platform.Files, checker, kit),
 		Notifications: notifications.NewHandler(platform.Notifications, checker, kit),
+		Dashboard:     dashboard.NewHandler(dashboard.NewService(queries), checker, kit),
 		Webhooks:      webhooks.NewHandler(platform.Webhooks, checker, kit),
 		Processing:    dataprocessing.NewHandler(platform.Processing, platform.Settings, checker, kit),
 		Settings:      settings.NewHandler(platform.Settings, checker, kit),
