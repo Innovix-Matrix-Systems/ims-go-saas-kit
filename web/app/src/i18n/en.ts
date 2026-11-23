@@ -645,6 +645,13 @@ export const en = {
   'inputs.clear': 'Clear',
   'inputs.hour': 'Hour',
   'inputs.minute': 'Min',
+  'pagination.page': 'Page {page}',
+  'console.auditLog': 'Audit log',
+  'console.auditLogSubtitle': 'Everything that happened on the platform: every organization, staff actions and the system log.',
+  'console.allActivity': 'Every organization and the system',
+  'console.systemActivity': 'System only',
+  'console.actedBy': 'By {name} (staff)',
+  'console.actingStaff': 'Staff member',
 }
 
 export type MessageKey = keyof typeof en

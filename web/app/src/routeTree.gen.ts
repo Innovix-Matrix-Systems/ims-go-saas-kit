@@ -24,6 +24,7 @@ import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppConsoleActivityRouteImport } from './routes/_app.console.activity'
 import { Route as AppConsoleAnnouncementsRouteImport } from './routes/_app.console.announcements'
 import { Route as AppConsoleApprovalsRouteImport } from './routes/_app.console.approvals'
 import { Route as AppConsoleFlagsRouteImport } from './routes/_app.console.flags'
@@ -117,6 +118,11 @@ const AppOnboardingRoute = AppOnboardingRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleActivityRoute = AppConsoleActivityRouteImport.update({
+  id: '/console/activity',
+  path: '/console/activity',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConsoleAnnouncementsRoute = AppConsoleAnnouncementsRouteImport.update({
@@ -236,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/console/activity': typeof AppConsoleActivityRoute
   '/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/console/approvals': typeof AppConsoleApprovalsRoute
   '/console/flags': typeof AppConsoleFlagsRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/': typeof AppIndexRoute
+  '/console/activity': typeof AppConsoleActivityRoute
   '/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/console/approvals': typeof AppConsoleApprovalsRoute
   '/console/flags': typeof AppConsoleFlagsRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/_app/onboarding': typeof AppOnboardingRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/': typeof AppIndexRoute
+  '/_app/console/activity': typeof AppConsoleActivityRoute
   '/_app/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/_app/console/approvals': typeof AppConsoleApprovalsRoute
   '/_app/console/flags': typeof AppConsoleFlagsRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/settings'
+    | '/console/activity'
     | '/console/announcements'
     | '/console/approvals'
     | '/console/flags'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/'
+    | '/console/activity'
     | '/console/announcements'
     | '/console/approvals'
     | '/console/flags'
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/_app/onboarding'
     | '/_app/settings'
     | '/_app/'
+    | '/_app/console/activity'
     | '/_app/console/announcements'
     | '/_app/console/approvals'
     | '/_app/console/flags'
@@ -562,6 +574,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/console/activity': {
+      id: '/_app/console/activity'
+      path: '/console/activity'
+      fullPath: '/console/activity'
+      preLoaderRoute: typeof AppConsoleActivityRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/console/announcements': {
@@ -730,6 +749,7 @@ interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
+  AppConsoleActivityRoute: typeof AppConsoleActivityRoute
   AppConsoleAnnouncementsRoute: typeof AppConsoleAnnouncementsRoute
   AppConsoleApprovalsRoute: typeof AppConsoleApprovalsRoute
   AppConsoleFlagsRoute: typeof AppConsoleFlagsRoute
@@ -753,6 +773,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
+  AppConsoleActivityRoute: AppConsoleActivityRoute,
   AppConsoleAnnouncementsRoute: AppConsoleAnnouncementsRoute,
   AppConsoleApprovalsRoute: AppConsoleApprovalsRoute,
   AppConsoleFlagsRoute: AppConsoleFlagsRoute,

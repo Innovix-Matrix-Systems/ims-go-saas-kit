@@ -39,6 +39,7 @@ export const pages: Page[] = [
   { to: '/', label: 'nav.home', icon: 'home', group: 'workspace', key: 'h', keywords: 'dashboard overview' },
   { to: '/console/organizations', label: 'console.organizations', icon: 'tenants', group: 'console', key: 'c', keywords: 'tenants customers companies impersonate suspend', permission: 'tenant.view.all', platformOnly: true },
   { to: '/console/users', label: 'console.users', icon: 'users', group: 'console', key: 'u', keywords: 'people accounts log in as support', permission: 'user.view.all', platformOnly: true },
+  { to: '/console/activity', label: 'console.auditLog', icon: 'activity', group: 'console', key: 'd', keywords: 'audit log activity history system impersonation', permission: 'activity.view.all', platformOnly: true },
   { to: '/console/approvals', label: 'console.approvals', icon: 'check', group: 'console', key: 'v', keywords: 'payments bank transfer review approve reject', permission: 'payment_approval.view.all', platformOnly: true },
   { to: '/console/plans', label: 'console.plans', icon: 'package', group: 'console', key: 'l', keywords: 'packages pricing features limits', permission: 'package.view.all', platformOnly: true },
   { to: '/console/staff', label: 'console.staff', icon: 'shield', group: 'console', key: 'x', keywords: 'internal users team admins', permission: 'user.internal.create', platformOnly: true },

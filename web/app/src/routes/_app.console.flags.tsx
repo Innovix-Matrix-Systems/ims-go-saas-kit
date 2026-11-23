@@ -101,8 +101,7 @@ function FlagRow({ flag, target }: { flag: Flag; target: string }) {
     <div className="flag-row">
       <div className="setting-meta">
         <div>{flag.description || flag.key}</div>
-        <div className="small muted mono flex wrap">
-          {flag.key}
+        <div className="flex wrap">
           <Badge tone={overridden ? 'info' : 'neutral'}>{t(`console.source.${flag.source}` as MessageKey)}</Badge>
         </div>
       </div>

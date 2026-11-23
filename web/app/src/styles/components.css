@@ -201,9 +201,11 @@
   padding: 16px;
 }
 .card.tight { padding: 14px; }
-/* An untitled flush card holds a table or list edge to edge. */
-.card.flush { padding: 0; overflow: hidden; }
-.card.flush > .table-wrap { border: 0; border-radius: 0; box-shadow: none; margin: 0; }
+/* An untitled flush card holds a table or list edge to edge. It must not
+   clip: the pagination's per-page picker opens over its edge. */
+.card.flush { padding: 0; }
+.card.flush > .table-wrap { border: 0; border-radius: var(--radius) var(--radius) 0 0; box-shadow: none; margin: 0; }
+.card.flush > .table-wrap:last-child { border-radius: var(--radius); }
 .role-warning { border-color: var(--danger-border); background: var(--danger-subtle); }
 .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .card-title { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
@@ -215,7 +217,8 @@
 .card-head-text { min-width: 0; }
 .card-head .card-title { margin: 0; }
 .card-body { padding: 16px; }
-.card-flush { overflow: auto; }
+/* Tables scroll inside .table-wrap; the body itself must not clip popovers. */
+.card-flush { overflow: visible; }
 .card-flush > .table-wrap { border: 0; border-radius: 0; box-shadow: none; }
 .grid { display: grid; gap: 14px; }
 .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -538,6 +541,7 @@ pre.json {
   box-shadow: var(--shadow); animation: fadeIn 100ms ease-out;
 }
 .ui-popover.align-right { left: auto; right: 0; }
+.ui-popover.align-up { top: auto; bottom: calc(100% + 6px); }
 .ui-select-menu { min-width: 100%; max-width: 420px; padding: 4px; }
 .ui-select-search { display: flex; align-items: center; gap: 6px; padding: 4px 8px 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; color: var(--text-2); }
 .ui-select-search svg { width: 14px; height: 14px; }

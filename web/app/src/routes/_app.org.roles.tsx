@@ -278,7 +278,6 @@ function RoleEditor({ role, grantable, editable, onDeleted }: { role: Role; gran
                     <input type="checkbox" checked={chosen.has(permission.id)} disabled={!allowed || busy} onChange={(e) => toggle(permission.id, e.target.checked)} />
                     <span className="permission-meta">
                       <span>{permission.description || permission.name}</span>
-                      <span className="small muted mono">{permission.name}</span>
                     </span>
                   </label>
                 )

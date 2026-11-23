@@ -263,7 +263,6 @@ function SettingRow({ item }: { item: Setting }) {
     <div className="setting-row">
       <div className="setting-meta">
         <div>{item.description || item.key}</div>
-        <div className="small muted mono">{item.key}</div>
       </div>
       <div className="setting-control">
         {item.type === 'bool' ? (

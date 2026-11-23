@@ -647,4 +647,11 @@ export const bn: Messages = {
   'inputs.clear': 'মুছুন',
   'inputs.hour': 'ঘণ্টা',
   'inputs.minute': 'মিনিট',
+  'pagination.page': 'পাতা {page}',
+  'console.auditLog': 'অডিট লগ',
+  'console.auditLogSubtitle': 'প্ল্যাটফর্মে যা ঘটেছে সবকিছু: প্রতিটি প্রতিষ্ঠান, স্টাফের কাজ এবং সিস্টেম লগ।',
+  'console.allActivity': 'সব প্রতিষ্ঠান ও সিস্টেম',
+  'console.systemActivity': 'শুধু সিস্টেম',
+  'console.actedBy': '{name} (স্টাফ)-এর দ্বারা',
+  'console.actingStaff': 'স্টাফ সদস্য',
 }

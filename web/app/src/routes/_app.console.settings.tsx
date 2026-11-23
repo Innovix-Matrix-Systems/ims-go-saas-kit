@@ -103,9 +103,11 @@ function PlatformSetting({ item }: { item: Setting }) {
     <div className={`setting-row ${multiline.has(item.key) ? 'wide' : ''}`}>
       <div className="setting-meta">
         <div>{item.description || item.key}</div>
-        <div className="small muted mono">
-          {item.key} {item.scope === 'tenant' ? <Badge tone="info">{t('console.overridable')}</Badge> : null}
-        </div>
+        {item.scope === 'tenant' ? (
+          <div>
+            <Badge tone="info">{t('console.overridable')}</Badge>
+          </div>
+        ) : null}
       </div>
       <div className="setting-control">
         {item.type === 'bool' ? (

@@ -246,7 +246,6 @@ function PlanDrawer({ pkg, catalog, onClose }: { pkg: Package | null; catalog: C
                   />
                   <span className="permission-meta">
                     <span>{featureName(t, key).toLowerCase() === key ? description : featureName(t, key)}</span>
-                    <span className="small muted mono">{key}</span>
                   </span>
                 </label>
                 {limits.has(key) && features[key].enabled ? (

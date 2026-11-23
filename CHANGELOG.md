@@ -91,7 +91,10 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   the console adds feature flags (for everyone or one organization, with rollout and reset) and
   announcements (to every or chosen organizations); staff get a platform home with counts; the
   plan editor reads the feature catalog from the API; the date picker and select follow the
-  app's language.
+  app's language. The activity log and notifications page with cursors (previous and next, rows
+  per page); the console has an audit log of every organization and the system log; the per-page
+  picker opens upwards when needed and is no longer cut off; settings pages show descriptions, not
+  setting keys; a staff account reads its own notifications through the internal routes.
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.

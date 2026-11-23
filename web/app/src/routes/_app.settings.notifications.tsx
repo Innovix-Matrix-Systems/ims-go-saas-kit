@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { notificationPath } from '../components/notifications'
 import { api, type Schemas } from '../api/client'
 import { useToast } from '../components/Toasts'
 import { Badge, Card, Spinner } from '../components/ui'
@@ -22,14 +23,14 @@ function NotificationsPage() {
   const t = useT()
   const { push } = useToast()
   const queryClient = useQueryClient()
-  const prefs = useQuery({ queryKey: ['notification-preferences'], queryFn: () => api<Preference[]>('/notification/preferences') })
+  const prefs = useQuery({ queryKey: ['notification-preferences'], queryFn: () => api<Preference[]>(notificationPath('/notification/preferences')) })
   const [saving, setSaving] = useState<string | null>(null)
 
   const toggle = async (pref: Preference) => {
     const key = `${pref.event_type}:${pref.channel}`
     setSaving(key)
     try {
-      await api('/notification/preferences', {
+      await api(notificationPath('/notification/preferences'), {
         method: 'PUT',
         body: { preferences: [{ event_type: pref.event_type, channel: pref.channel, enabled: !pref.enabled }] },
       })
@@ -59,7 +60,6 @@ function NotificationsPage() {
             <li key={event} className="pref-row">
               <div className="pref-meta">
                 <div className="pref-name">{items[0].description || event}</div>
-                <div className="small muted mono">{event}</div>
               </div>
               <div className="pref-channels">
                 {items.map((pref) =>

@@ -35,15 +35,22 @@ export function useDismiss(open: boolean, close: () => void) {
 // trigger (label activation) after every pick.
 const stopLabel = (event: { preventDefault: () => void }) => event.preventDefault()
 
-/** Right-aligns a popover that would overflow the viewport. */
-function useAlign(open: boolean, ref: React.RefObject<HTMLDivElement | null>, width: number) {
-  const [right, setRight] = useState(false)
+/**
+ * Keeps a popover on screen: right-aligned when it would overflow the right
+ * edge, opened upwards when there is not room for it below the trigger (a
+ * per-page picker at the bottom of a list).
+ */
+function useAlign(open: boolean, ref: React.RefObject<HTMLDivElement | null>, width: number, height = 320) {
+  const [placement, setPlacement] = useState('')
   useLayoutEffect(() => {
     if (!open || !ref.current) return
     const rect = ref.current.getBoundingClientRect()
-    setRight(rect.left + width > window.innerWidth - 12)
-  }, [open, ref, width])
-  return right ? ' align-right' : ''
+    const right = rect.left + width > window.innerWidth - 12
+    const below = window.innerHeight - rect.bottom
+    const up = below < height + 12 && rect.top > below
+    setPlacement(`${right ? ' align-right' : ''}${up ? ' align-up' : ''}`)
+  }, [open, ref, width, height])
+  return placement
 }
 
 // ── Select ────────────────────────────────────────────────────────────────
@@ -254,7 +261,7 @@ export function DatePicker({
   const close = useCallback(() => setOpen(false), [])
   const ref = useDismiss(open, close)
   const selected = parseISODate(value)
-  const align = useAlign(open, ref, 264)
+  const align = useAlign(open, ref, 264, 340)
   const [view, setView] = useState(() => selected ?? new Date())
 
   useEffect(() => {
@@ -382,7 +389,7 @@ export function TimePicker({
   const hour = match ? Number(match[1]) : null
   const minute = match ? Number(match[2]) : null
   const minutes = Array.from({ length: Math.ceil(60 / minuteStep) }, (_, index) => index * minuteStep)
-  const align = useAlign(open, ref, 130)
+  const align = useAlign(open, ref, 130, 260)
   const set = (h: number, m: number) => onChange(`${pad(h)}:${pad(m)}`)
 
   return (
