@@ -10,6 +10,7 @@ import { actionLabel } from '../components/ActivityLog'
 import { subscriptionStatusQuery, useMoney } from '../components/billing'
 import { AreaChart, BarList, Delta, KpiCard } from '../components/charts'
 import { PlanCard } from '../components/PlanCard'
+import { GettingStarted } from '../components/GettingStarted'
 import { fetchFeed, feedKey } from '../components/notifications'
 import { organizationQuery } from '../components/organization'
 import { Avatar, Badge, Card, EmptyState, Icon, type IconName } from '../components/ui'
@@ -364,6 +365,7 @@ function OrganizationHome({ session }: { session: Session }) {
         <DashboardSkeleton />
       ) : (
         <div className={`dash ${dashboard.isPlaceholderData ? 'is-updating' : ''}`}>
+          <GettingStarted members={data.members?.total} />
           <div className="dash-kpis">
             {data.members ? (
               <KpiCard
