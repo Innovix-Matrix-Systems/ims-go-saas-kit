@@ -433,6 +433,14 @@ func (s *ExchangeService) RegisterJobs(registry *queue.Registry) error {
 			return err
 		}
 	}
+	// A failed import or export can be retried from the jobs screen: the
+	// same job row runs again (an import reads its uploaded file again).
+	for jobType, kind := range map[string]string{dataprocessing.TypeImport: KindUserImport, dataprocessing.TypeExport: KindUserExport} {
+		kind := kind
+		dataprocessing.RegisterRerun(dataprocessing.RerunKey(jobType, "user"), func(ctx context.Context, job *dataprocessing.Job) error {
+			return s.queue.Enqueue(tenancy.WithScope(ctx, jobScope(job)), kind, userExchangePayload{JobID: job.ID}, queue.EnqueueOptions{})
+		})
+	}
 	return nil
 }
 

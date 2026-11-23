@@ -83,20 +83,35 @@ WHERE id = @id;
 DELETE FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => @retention_days::int);
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), @retention_days::int));
 
 -- name: CountCompletedDataProcessingJobsBefore :one
 SELECT count(*) FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => @retention_days::int);
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), @retention_days::int));
 
 -- name: ListExpiredDataProcessingJobs :many
 SELECT id, job_id, status, file_disk, file_path, file_name
 FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => @retention_days::int)
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), @retention_days::int))
 ORDER BY id
 LIMIT @page_limit;
 
@@ -128,3 +143,23 @@ WHERE type = @type
   AND completed_at < now() - make_interval(hours => @max_age_hours::int)
 ORDER BY id
 LIMIT @page_limit;
+
+-- name: ResetDataProcessingJob :one
+-- Puts a failed job back to the start so it can run again (retry).
+UPDATE data_processing_jobs
+SET status          = 'pending',
+    processed_items = 0,
+    success_count   = 0,
+    error_count     = 0,
+    errors          = NULL,
+    error_message   = NULL,
+    started_at      = NULL,
+    completed_at    = NULL,
+    file_name       = NULL,
+    file_disk       = NULL,
+    file_path       = NULL,
+    file_size       = NULL,
+    file_mime       = NULL,
+    updated_at      = now()
+WHERE id = @id AND status = 'failed'
+RETURNING *;

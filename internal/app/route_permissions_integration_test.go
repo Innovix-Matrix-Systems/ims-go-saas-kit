@@ -83,6 +83,8 @@ var routesWithoutPermission = map[string]bool{
 	"GET /api/v1/data-processing/jobs/user":            true,
 	"GET /api/v1/data-processing/job/{jobId}":          true,
 	"GET /api/v1/data-processing/job/{jobId}/download": true,
+	"POST /api/v1/data-processing/job/{jobId}/retry":   true, // the job owner (checked in the handler)
+	"DELETE /api/v1/data-processing/job/{jobId}":       true, // the job owner (checked in the handler)
 	"GET /api/v1/files/{id}":                           true, // creator or file.view
 	"DELETE /api/v1/files/{id}":                        true, // creator or file.delete
 	"GET /api/v1/files/{id}/download":                  true, // same rule as show

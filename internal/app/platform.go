@@ -15,6 +15,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	activityexport "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity/export"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing"
 	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
@@ -86,6 +87,7 @@ type Platform struct {
 	Webhooks         *webhooks.Service
 	Activity         *activity.Recorder
 	Exchange         *identity.ExchangeService
+	ActivityExport   *activityexport.Exporter
 	BillingPackages  *billingservice.PackageService
 	BillingSubs      *billingservice.SubscriptionService
 	BillingPayments  *billingservice.PaymentService
@@ -221,7 +223,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	}
 	filesService := files.NewService(files.NewRepository(txManager.Queries()), storageRegistry, cfg.Files.Disk, txManager, logger).
 		WithPublicDisk(cfg.Files.PublicDisk)
-	processingService := dataprocessing.NewService(dataprocessing.NewRepository(txManager.Queries())).
+	processingService := dataprocessing.NewService(dataprocessing.NewRepository(txManager.Queries())).WithQueries(txManager.Queries()).
 		WithFiles(storageRegistry, cfg.Processing).
 		WithLogger(logger)
 	backupService := backup.NewService(backup.Options{
@@ -305,6 +307,11 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	if err := exchangeService.RegisterJobs(queueRegistry); err != nil {
 		return nil, nil, err
 	}
+	activityExport := activityexport.New(activity.NewService(txManager.Queries()), processingService, storageRegistry, cfg.Processing,
+		queueEngine, txManager.Queries(), checker, logger)
+	if err := activityExport.RegisterJobs(queueRegistry); err != nil {
+		return nil, nil, err
+	}
 
 	privacyService, err := newPrivacy(cfg, txManager, storageRegistry, checker, authenticator, activityRecorder,
 		settingsService, deliveryService, processingService, queueEngine, queueRegistry, logger)
@@ -346,6 +353,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		IdentityRepo:     identityRepo,
 		Identity:         identityService,
 		Exchange:         exchangeService,
+		ActivityExport:   activityExport,
 		Mail:             mailDriver,
 		Delivery:         deliveryService,
 		Crypto:           encrypter,

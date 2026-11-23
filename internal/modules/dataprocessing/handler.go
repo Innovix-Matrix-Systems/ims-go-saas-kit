@@ -57,7 +57,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request, scope tenancy.Sco
 	}
 	data := make([]Response, 0, len(items))
 	for _, item := range items {
-		data = append(data, NewResponse(item))
+		data = append(data, h.respond(r.Context(), item))
 	}
 	meta, links := httpx.NewPagination(r, page, perPage, total)
 	h.Paginated(w, r, http.StatusOK, data, meta, links)
@@ -70,7 +70,7 @@ func (h *Handler) show(w http.ResponseWriter, r *http.Request) {
 	if job == nil {
 		return
 	}
-	h.Data(w, r, http.StatusOK, NewResponse(*job))
+	h.Data(w, r, http.StatusOK, h.respond(r.Context(), *job))
 }
 
 func (h *Handler) download(w http.ResponseWriter, r *http.Request) {

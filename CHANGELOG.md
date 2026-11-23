@@ -24,6 +24,8 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   to clear one.
 - Subscribing to a free package starts it at once, with no payment (`payment_method` is only
   required for paid packages and `payment` is null).
+- An organization's own `data_processing_job.cleanup_days` now decides when its jobs are deleted
+  (the cleanup used the platform's value only).
 - A staff account's notification feed no longer includes every organization's organization-wide
   notifications; those reach that organization's members (and staff acting in it) only.
 - A tenant's Admin role is managed: it cannot be renamed, deleted or given other permissions
@@ -49,6 +51,10 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (authenticator app with QR code or e-mail codes, recovery codes), signed-in devices,
   notification preferences, personal-data export and account deletion. Signing in applies the
   user's saved language and sends a new owner to the setup wizard.
+- Data-processing jobs report `expires_at`, failed ones can be retried
+  (`POST /api/v1/data-processing/job/{jobId}/retry`) and finished ones removed
+  (`DELETE /api/v1/data-processing/job/{jobId}`); the activity log is exported as a background job
+  (`POST /api/v1/activity/export`, staff: `POST /api/v1/internal/activity/export`).
 - Organizations withdraw a pending checkout (`POST /api/v1/billing/payments/{id}/cancel`) and
   download invoices (`GET /api/v1/billing/payments/{id}/invoice`, printable HTML);
   `GET /api/v1/packages/features` lists the feature catalog; staff send announcements to every

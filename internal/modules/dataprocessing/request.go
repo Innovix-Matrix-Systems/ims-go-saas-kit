@@ -31,6 +31,8 @@ type Response struct {
 	CompletedAt        *time.Time `json:"completed_at"`
 	CreatedAt          time.Time  `json:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at"`
+	// ExpiresAt is when the finished job and its file are deleted.
+	ExpiresAt *time.Time `json:"expires_at"`
 }
 
 // NewResponse maps a job to its public representation.

@@ -13,6 +13,8 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/data-processing/jobs/user", h.userJobs)
 	r.Get("/data-processing/job/{jobId}", h.show)
 	r.Get("/data-processing/job/{jobId}/download", h.download)
+	r.Post("/data-processing/job/{jobId}/retry", h.retry)
+	r.Delete("/data-processing/job/{jobId}", h.remove)
 	r.With(h.can(authz.PermDataProcessingViewAll)).Get("/data-processing/settings/cleanup", h.cleanupSettings)
 	r.With(h.can(authz.PermDataProcessingViewAll)).Post("/data-processing/settings/cleanup", h.updateCleanupSettings)
 }

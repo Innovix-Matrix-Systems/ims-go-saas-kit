@@ -304,6 +304,8 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 				return name
 			})),
 	}
+	// The activity export answers HTTP with the shared kit.
+	platform.ActivityExport.WithKit(kit)
 	deps.Onboarding = onboarding.NewHandler(
 		onboarding.NewService(onboarding.Deps{
 			Repo:      onboarding.NewRepository(queries),

@@ -2462,6 +2462,45 @@ paths:
         "429": *tooManyRequests
 
 
+  /api/v1/activity/export:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    post:
+      tags: [Activity]
+      summary: Export the activity log as a background job
+      description: "Queues a data-processing job (export, entity activity) that writes every entry matching the filters into an xlsx file; follow it with GET /data-processing/job/{jobId}. A tenant user exports their organization's log; staff acting in an organization export that one."
+      operationId: exportActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id: {type: string, description: "Staff only: a tenant id, or system. Empty: every organization and the system log."}
+                subject_type: {type: string}
+                actor_id: {type: integer, format: int64}
+                action: {type: string}
+                from: {type: string, format: date-time}
+                to: {type: string, format: date-time}
+                search: {type: string}
+      responses:
+        "202":
+          description: The queued export job.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ProcessingJob"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+        "503": *serviceUnavailable
+
   /api/v1/activity/facets:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -4000,6 +4039,41 @@ paths:
         "403": *forbidden
         "422": *validationFailed
 
+  /api/v1/internal/activity/export:
+    post:
+      tags: [Activity]
+      summary: Export the platform activity log as a background job
+      description: "Staff (activity.view.all): every organization and the system log, narrowed by tenant_id. On the internal routes because staff without acting headers may not write through the tenant routes."
+      operationId: exportPlatformActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id: {type: string, description: "Staff only: a tenant id, or system. Empty: every organization and the system log."}
+                subject_type: {type: string}
+                actor_id: {type: integer, format: int64}
+                action: {type: string}
+                from: {type: string, format: date-time}
+                to: {type: string, format: date-time}
+                search: {type: string}
+      responses:
+        "202":
+          description: The queued export job.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ProcessingJob"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+        "503": *serviceUnavailable
+
   /api/v1/internal/notification/broadcast:
     post:
       tags: [Notifications]
@@ -4356,6 +4430,43 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
+    delete:
+      tags: [Data Processing]
+      summary: Remove a finished job and its file
+      description: 409 while it is still pending or running.
+      operationId: removeProcessingJob
+      responses:
+        "204": {description: Removed.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
+  /api/v1/data-processing/job/{jobId}/retry:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+      - $ref: "#/components/parameters/PathJobID"
+    post:
+      tags: [Data Processing]
+      summary: Run a failed job again
+      description: "The same job, with the same filters or uploaded file, goes back to pending and is queued again. 409 unless it failed, or when its kind cannot be retried."
+      operationId: retryProcessingJob
+      responses:
+        "200":
+          description: The job, pending again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ProcessingJob"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
 
   /api/v1/data-processing/job/{jobId}/download:
     parameters:
@@ -8253,6 +8364,7 @@ components:
         completed_at: {type: string, format: date-time, nullable: true}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+        expires_at: {type: string, format: date-time, nullable: true, description: "When the finished job and its file are deleted (the organization's data_processing_job.cleanup_days; personal-data exports: privacy.export_ttl_hours). Null while it runs."}
 
     ProcessingJobEnvelope:
       type: object

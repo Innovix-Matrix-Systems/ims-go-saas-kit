@@ -13,7 +13,12 @@ const countCompletedDataProcessingJobsBefore = `-- name: CountCompletedDataProce
 SELECT count(*) FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => $1::int)
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), $1::int))
 `
 
 func (q *Queries) CountCompletedDataProcessingJobsBefore(ctx context.Context, retentionDays int32) (int64, error) {
@@ -132,7 +137,12 @@ const deleteCompletedDataProcessingJobs = `-- name: DeleteCompletedDataProcessin
 DELETE FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => $1::int)
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), $1::int))
 `
 
 func (q *Queries) DeleteCompletedDataProcessingJobs(ctx context.Context, retentionDays int32) (int64, error) {
@@ -367,7 +377,12 @@ SELECT id, job_id, status, file_disk, file_path, file_name
 FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => $1::int)
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), $1::int))
 ORDER BY id
 LIMIT $2
 `
@@ -466,6 +481,59 @@ func (q *Queries) ListExpiredDataProcessingJobsOfType(ctx context.Context, arg L
 		return nil, err
 	}
 	return items, nil
+}
+
+const resetDataProcessingJob = `-- name: ResetDataProcessingJob :one
+UPDATE data_processing_jobs
+SET status          = 'pending',
+    processed_items = 0,
+    success_count   = 0,
+    error_count     = 0,
+    errors          = NULL,
+    error_message   = NULL,
+    started_at      = NULL,
+    completed_at    = NULL,
+    file_name       = NULL,
+    file_disk       = NULL,
+    file_path       = NULL,
+    file_size       = NULL,
+    file_mime       = NULL,
+    updated_at      = now()
+WHERE id = $1 AND status = 'failed'
+RETURNING id, tenant_id, branch_id, job_id, type, status, entity_type, filters, total_items, processed_items, success_count, error_count, errors, error_message, file_name, file_disk, file_path, file_size, file_mime, user_id, started_at, completed_at, created_at, updated_at
+`
+
+// Puts a failed job back to the start so it can run again (retry).
+func (q *Queries) ResetDataProcessingJob(ctx context.Context, id int64) (DataProcessingJob, error) {
+	row := q.db.QueryRow(ctx, resetDataProcessingJob, id)
+	var i DataProcessingJob
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.JobID,
+		&i.Type,
+		&i.Status,
+		&i.EntityType,
+		&i.Filters,
+		&i.TotalItems,
+		&i.ProcessedItems,
+		&i.SuccessCount,
+		&i.ErrorCount,
+		&i.Errors,
+		&i.ErrorMessage,
+		&i.FileName,
+		&i.FileDisk,
+		&i.FilePath,
+		&i.FileSize,
+		&i.FileMime,
+		&i.UserID,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateDataProcessingJobFile = `-- name: UpdateDataProcessingJobFile :execrows

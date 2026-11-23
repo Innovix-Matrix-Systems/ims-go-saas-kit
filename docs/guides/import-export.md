@@ -16,6 +16,8 @@ a queue worker does the work, and the client polls the job for progress and a do
 | `GET /api/v1/data-processing/jobs/user` | the caller's jobs |
 | `GET /api/v1/data-processing/job/{jobId}` | status, progress and per-row errors |
 | `GET /api/v1/data-processing/job/{jobId}/download` | the export file — only when `COMPLETED` |
+| `POST /api/v1/data-processing/job/{jobId}/retry` | run a `FAILED` job again with the same filters or file |
+| `DELETE /api/v1/data-processing/job/{jobId}` | remove a finished job and its file |
 
 ```json
 {
@@ -34,8 +36,15 @@ a queue worker does the work, and the client polls the job for progress and a do
   spreadsheet can't run a formula a user typed in.
 - **Bounded**: imports stream rows instead of loading gigabytes into memory.
 - **Files** live on `DATA_PROCESSING_DISK` (private by default).
-- **Retention**: completed jobs are deleted after the tenant's `data_processing_job.cleanup_days`
-  setting (default 30) by the `dataprocessing.cleanup-completed` task.
+- **Retention**: finished jobs are deleted after their organization's
+  `data_processing_job.cleanup_days` setting (default 30; the organization's own value wins over
+  the platform's) by the `dataprocessing.cleanup-completed` task. Every job reports `expires_at`.
+- **Retry**: a module makes its failed jobs retryable with
+  `dataprocessing.RegisterRerun(dataprocessing.RerunKey(type, entity), rerun)`; the rerun queues
+  the same job row again (users and activity exports do).
+- **Activity**: `POST /api/v1/activity/export` (an organization's log) and
+  `POST /api/v1/internal/activity/export` (staff: every organization and the system log) export
+  every entry matching the activity filters (`internal/modules/activity/export`).
 
 ## Building your own
 

@@ -28,6 +28,13 @@ type Service struct {
 	cfg     config.Processing
 	logger  *slog.Logger
 	hasDisk bool
+	queries lifecycleQueries
+}
+
+// WithQueries enables Retry (it resets the job row directly).
+func (s *Service) WithQueries(queries lifecycleQueries) *Service {
+	s.queries = queries
+	return s
 }
 
 // NewService creates the processing-job service.
