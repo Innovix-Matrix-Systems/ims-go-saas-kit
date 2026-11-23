@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { api } from '../api/client'
 import { AuthCard, Field, PasswordInput, passwordProblem, readLinkParams, useApiErrors } from '../components/form'
 import { Icon, Spinner } from '../components/ui'
+import { FormSkeleton } from '../components/Skeleton'
 import { useT } from '../i18n'
 
 export const Route = createFileRoute('/accept-invitation')({
@@ -65,7 +66,7 @@ function AcceptInvitationPage() {
   if (!preview) {
     return (
       <AuthCard title={t('common.loading')}>
-        <Spinner />
+        <FormSkeleton fields={3} />
       </AuthCard>
     )
   }
