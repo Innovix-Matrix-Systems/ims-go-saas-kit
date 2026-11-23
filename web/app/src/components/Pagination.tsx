@@ -5,21 +5,45 @@ import { Icon } from './ui'
 
 export const perPageOptions = [10, 20, 50, 100] as const
 
-/** Page numbers to show: the ends, the current page and its neighbours, gaps as null. */
+/**
+ * Page numbers to show: a window of five around the current page, with the
+ * first and last pages and a gap (null) where pages are left out:
+ * 1 2 3 4 5 … 77, 1 … 38 39 40 41 42 … 77.
+ */
 function pageList(page: number, last: number): (number | null)[] {
-  const pages = new Set([1, last, page - 1, page, page + 1].filter((n) => n >= 1 && n <= last))
-  const sorted = [...pages].sort((a, b) => a - b)
+  const size = 5
+  let start = Math.max(1, page - Math.floor(size / 2))
+  const end = Math.min(last, start + size - 1)
+  start = Math.max(1, end - size + 1)
   const out: (number | null)[] = []
-  sorted.forEach((n, i) => {
-    if (i > 0 && n - sorted[i - 1] > 1) out.push(null)
-    out.push(n)
-  })
+  if (start > 1) out.push(1)
+  if (start > 2) out.push(null)
+  for (let n = start; n <= end; n++) out.push(n)
+  if (end < last - 1) out.push(null)
+  if (end < last) out.push(last)
   return out
 }
 
+function PerPage({ perPage, onPerPage }: { perPage: number; onPerPage: (perPage: number) => void }) {
+  const t = useT()
+  return (
+    <span className="pagination-size">
+      <span className="small muted">{t('pagination.perPage')}</span>
+      <Select
+        size="sm"
+        value={String(perPage)}
+        ariaLabel={t('pagination.perPage')}
+        onChange={(value) => onPerPage(Number(value))}
+        options={perPageOptions.map((n) => ({ value: String(n), label: String(n) }))}
+      />
+    </span>
+  )
+}
+
 /**
- * The footer of every paginated list: how many rows and which ones are shown,
- * how many per page, and the pages. Shown even when everything fits on one page.
+ * The footer of every page-numbered list: which rows are shown, how many per
+ * page, and first / previous / pages / next / last. Shown even when
+ * everything fits on one page.
  */
 export function Pagination({
   page,
@@ -42,25 +66,17 @@ export function Pagination({
     <nav className="pagination" aria-label={t('pagination.label')}>
       <span className="small muted">{t('pagination.showing', { from, to, total })}</span>
       <span className="spacer" />
-      {onPerPage ? (
-        <span className="pagination-size">
-          <span className="small muted">{t('pagination.perPage')}</span>
-          <Select
-            size="sm"
-            value={String(perPage)}
-            ariaLabel={t('pagination.perPage')}
-            onChange={(value) => onPerPage(Number(value))}
-            options={perPageOptions.map((n) => ({ value: String(n), label: String(n) }))}
-          />
-        </span>
-      ) : null}
+      {onPerPage ? <PerPage perPage={perPage} onPerPage={onPerPage} /> : null}
       <span className="pagination-pages">
-        <button type="button" className="page-btn flip" aria-label={t('members.previous')} disabled={page <= 1} onClick={() => onPage(page - 1)}>
+        <button type="button" className="page-btn arrow" title={t('pagination.first')} aria-label={t('pagination.first')} disabled={page <= 1} onClick={() => onPage(1)}>
+          <Icon name="first" />
+        </button>
+        <button type="button" className="page-btn arrow flip" title={t('members.previous')} aria-label={t('members.previous')} disabled={page <= 1} onClick={() => onPage(page - 1)}>
           <Icon name="chevron" />
         </button>
         {pageList(page, last).map((n, i) =>
           n === null ? (
-            <span key={`gap-${i}`} className="page-gap">
+            <span key={`gap-${i}`} className="page-gap" aria-hidden="true">
               …
             </span>
           ) : (
@@ -69,8 +85,11 @@ export function Pagination({
             </button>
           ),
         )}
-        <button type="button" className="page-btn" aria-label={t('members.next')} disabled={page >= last} onClick={() => onPage(page + 1)}>
+        <button type="button" className="page-btn arrow" title={t('members.next')} aria-label={t('members.next')} disabled={page >= last} onClick={() => onPage(page + 1)}>
           <Icon name="chevron" />
+        </button>
+        <button type="button" className="page-btn arrow" title={t('pagination.last')} aria-label={t('pagination.last')} disabled={page >= last} onClick={() => onPage(last)}>
+          <Icon name="last" />
         </button>
       </span>
     </nav>
@@ -107,7 +126,10 @@ export function useCursorPages(initialPerPage = 20) {
   }
 }
 
-/** The footer of a cursor-paged feed: rows shown, rows per page, previous and next. */
+/**
+ * The footer of a cursor-paged feed (activity, notifications): rows shown,
+ * rows per page, and only previous and next, since its pages have no numbers.
+ */
 export function CursorPagination({
   index,
   perPage,
@@ -137,26 +159,14 @@ export function CursorPagination({
         {total != null ? t('pagination.showing', { from, to, total }) : t('pagination.page', { page: index + 1 })}
       </span>
       <span className="spacer" />
-      {onPerPage ? (
-        <span className="pagination-size">
-          <span className="small muted">{t('pagination.perPage')}</span>
-          <Select
-            size="sm"
-            value={String(perPage)}
-            ariaLabel={t('pagination.perPage')}
-            onChange={(value) => onPerPage(Number(value))}
-            options={perPageOptions.map((n) => ({ value: String(n), label: String(n) }))}
-          />
-        </span>
-      ) : null}
+      {onPerPage ? <PerPage perPage={perPage} onPerPage={onPerPage} /> : null}
       <span className="pagination-pages">
-        <button type="button" className="page-btn flip" aria-label={t('members.previous')} disabled={index === 0} onClick={onPrevious}>
-          <Icon name="chevron" />
+        <button type="button" className="page-btn labelled" disabled={index === 0} onClick={onPrevious}>
+          <Icon name="chevron" className="flip-x" />
+          {t('members.previous')}
         </button>
-        <span className="page-btn active" aria-current="page">
-          {index + 1}
-        </span>
-        <button type="button" className="page-btn" aria-label={t('members.next')} disabled={!hasNext} onClick={onNext}>
+        <button type="button" className="page-btn labelled" disabled={!hasNext} onClick={onNext}>
+          {t('members.next')}
           <Icon name="chevron" />
         </button>
       </span>

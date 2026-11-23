@@ -98,20 +98,24 @@ export function useJobActions() {
   }
 }
 
+/** What the queued dialog shows after an export starts. */
+export interface QueuedJob {
+  what: string
+  jobId: string | null
+}
+
 /**
- * Starts an export and says where to find it. `start` calls the API; the
- * tray picks the new job up at once.
+ * Starts an export and says where to find it: `start` calls the API, then a
+ * dialog says the job is queued and leads to Background jobs.
  */
 export function useStartExport() {
-  const t = useT()
   const client = useQueryClient()
   const { push } = useToast()
   return async (what: string, start: () => Promise<unknown>) => {
     try {
-      await start()
-      push(t('jobs.started', { what }), 'success')
+      const job = (await start()) as Partial<Job> | undefined
       await client.invalidateQueries({ queryKey: jobsKey })
-      window.dispatchEvent(new CustomEvent('jobs:open'))
+      window.dispatchEvent(new CustomEvent<QueuedJob>('jobs:queued', { detail: { what, jobId: job?.job_id ?? null } }))
     } catch (cause) {
       push(cause instanceof Error ? cause.message : String(cause), 'error')
     }

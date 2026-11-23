@@ -8,8 +8,10 @@ import (
 
 // ClientCSP is the Content-Security-Policy for the client app's HTML. The app
 // loads only its own scripts and styles (no inline code, no third parties) and
-// talks only to this origin.
+// talks only to this origin. File previews are blob: URLs (images, media and
+// PDF frames).
 const ClientCSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; " +
+	"media-src 'self' blob:; frame-src blob:; " +
 	"font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
 
 // clientReserved are path prefixes the client app never owns: an unknown path

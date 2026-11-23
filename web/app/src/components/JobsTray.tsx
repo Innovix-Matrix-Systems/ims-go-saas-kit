@@ -1,15 +1,15 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { useDismiss } from './inputs'
-import { fetchJobs, isRunning, jobStatus, jobsKey, refreshWhileRunning, statusTones, useJobActions, useJobDates, useJobName } from './jobs'
-import { Badge, Button, Icon } from './ui'
+import { fetchJobs, isRunning, jobStatus, jobsKey, refreshWhileRunning, statusTones, useJobActions, useJobDates, useJobName, type QueuedJob } from './jobs'
+import { Badge, Button, Icon, Modal } from './ui'
 
 /**
- * The top bar's exports & imports: a count while something runs, and the
- * latest jobs with their progress and downloads. Opens by itself when an
- * export starts.
+ * The top bar's background jobs: a dot while something runs, and the latest
+ * jobs with their progress and downloads. Starting an export shows the
+ * queued dialog.
  */
 export function JobsTray() {
   const t = useT()
@@ -24,11 +24,6 @@ export function JobsTray() {
     queryFn: () => fetchJobs(1, 6),
     refetchInterval: (query) => refreshWhileRunning(query.state.data),
   })
-  useEffect(() => {
-    const show = () => setOpen(true)
-    window.addEventListener('jobs:open', show)
-    return () => window.removeEventListener('jobs:open', show)
-  }, [])
 
   const items = jobs.data?.data ?? []
   const running = items.filter(isRunning).length
@@ -92,6 +87,50 @@ export function JobsTray() {
           )}
         </div>
       ) : null}
+      <JobQueuedDialog />
     </div>
+  )
+}
+
+/** Says an export is queued, with its job ID, and leads to Background jobs. */
+function JobQueuedDialog() {
+  const t = useT()
+  const navigate = useNavigate()
+  const [queued, setQueued] = useState<QueuedJob | null>(null)
+  useEffect(() => {
+    const show = (event: Event) => setQueued((event as CustomEvent<QueuedJob>).detail)
+    window.addEventListener('jobs:queued', show)
+    return () => window.removeEventListener('jobs:queued', show)
+  }, [])
+  const close = () => setQueued(null)
+  return (
+    <Modal
+      open={queued != null}
+      title={queued ? t('jobs.queuedTitle', { what: queued.what }) : ''}
+      onClose={close}
+      actions={
+        <>
+          <Button onClick={close}>{t('jobs.close')}</Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              close()
+              void navigate({ to: '/jobs' })
+            }}
+          >
+            {t('jobs.view')}
+          </Button>
+        </>
+      }
+    >
+      <div className="jobs-queued">
+        <div className="jobs-queued-note">
+          <Icon name="check" />
+          <span>{t('jobs.queuedNote')}</span>
+        </div>
+        <p className="muted">{t('jobs.queuedBody')}</p>
+        {queued?.jobId ? <p className="small muted mono">{t('jobs.queuedId', { id: queued.jobId })}</p> : null}
+      </div>
+    </Modal>
   )
 }

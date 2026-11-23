@@ -24,6 +24,8 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   to clear one.
 - Subscribing to a free package starts it at once, with no payment (`payment_method` is only
   required for paid packages and `payment` is null).
+- `DELETE /api/v1/files/{id}` (and the internal and dashboard deletes) answer 409 for an export's
+  file; removing its job removes it. Export files do not count against the storage limit.
 - An organization's own `data_processing_job.cleanup_days` now decides when its jobs are deleted
   (the cleanup used the platform's value only).
 - A staff account's notification feed no longer includes every organization's organization-wide
@@ -56,10 +58,17 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (`DELETE /api/v1/data-processing/job/{jobId}`; staff not acting in an organization use
   `/api/v1/internal/data-processing/job/{jobId}` and `.../retry`); the activity log is exported as
   a background job (`POST /api/v1/activity/export`, staff: `POST /api/v1/internal/activity/export`).
-- Client app **Exports & imports**: a top-bar tray and a page listing the signed-in person's
+- Finished exports are listed among the organization's files (`GET /api/v1/files`, with
+  `generated: true`) until their job is removed or expires.
+- Client app **Background jobs**: a top-bar tray and a page listing the signed-in person's
   exports and imports with progress, failures and per-row import errors, download until the file
   expires, retry and remove. Members (organization and staff console) and the activity log export
-  as background jobs; the activity export covers every matching entry, not just the visible page.
+  as background jobs (the activity export covers every matching entry, not just the visible page),
+  and starting one shows a dialog with its job ID that leads to Background jobs.
+- Client app Files: grid and list views with image thumbnails, and a preview (images, video,
+  audio, PDF) with the file's details; generated exports are marked and managed from Background
+  jobs. Numbered lists page with first / previous / pages / next / last; cursor-paged feeds
+  (activity, notifications) with previous and next only.
 - Organizations withdraw a pending checkout (`POST /api/v1/billing/payments/{id}/cancel`) and
   download invoices (`GET /api/v1/billing/payments/{id}/invoice`, printable HTML);
   `GET /api/v1/packages/features` lists the feature catalog; staff send announcements to every

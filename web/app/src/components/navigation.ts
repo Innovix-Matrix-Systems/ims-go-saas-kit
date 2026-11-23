@@ -57,7 +57,7 @@ export const pages: Page[] = [
   { to: '/settings/profile', label: 'settings.profile', icon: 'user', group: 'account', key: 'p', keywords: 'name language e-mail' },
   { to: '/settings/security', label: 'settings.security', icon: 'shield', group: 'account', key: 's', keywords: 'password two-factor 2fa sessions devices' },
   { to: '/notifications', label: 'notifications.title', icon: 'bell', group: 'workspace', key: 'n', keywords: 'inbox alerts' },
-  { to: '/jobs', label: 'jobs.title', icon: 'download', group: 'workspace', key: 'j', keywords: 'export import download background files' },
+  { to: '/jobs', label: 'nav.jobs', icon: 'queue', group: 'workspace', key: 'j', keywords: 'background jobs export import download queue progress retry' },
   { to: '/settings/notifications', label: 'settings.notificationSettings', icon: 'settings', group: 'account', keywords: 'notification preferences' },
   { to: '/settings/privacy', label: 'settings.privacy', icon: 'eye', group: 'account', keywords: 'export delete account data' },
 ]

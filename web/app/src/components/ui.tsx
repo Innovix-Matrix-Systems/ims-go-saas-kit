@@ -24,6 +24,8 @@ export type IconName =
   | 'copy'
   | 'external'
   | 'chevron'
+  | 'first'
+  | 'last'
   | 'x'
   | 'play'
   | 'pause'
@@ -102,6 +104,8 @@ const paths: Record<IconName, ReactNode> = {
   copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4V4h11v1" /></>,
   external: <><path d="M14 4h6v6M20 4l-9 9" /><path d="M20 14v6H4V4h6" /></>,
   chevron: <path d="m9 6 6 6-6 6" />,
+  first: <path d="M7 6v12M17 6l-6 6 6 6" />,
+  last: <path d="M17 6v12M7 6l6 6-6 6" />,
   x: <path d="M6 6l12 12M18 6 6 18" />,
   play: <path d="m8 5 11 7-11 7z" />,
   pause: <><path d="M9 5v14M15 5v14" /></>,
