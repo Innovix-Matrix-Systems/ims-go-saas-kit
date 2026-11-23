@@ -178,6 +178,7 @@ export const bn: Messages = {
   'settings.profile': 'প্রোফাইল',
   'settings.security': 'নিরাপত্তা',
   'settings.notifications': 'নোটিফিকেশন',
+  'settings.notificationSettings': 'নোটিফিকেশন সেটিংস',
   'settings.privacy': 'গোপনীয়তা',
   'profile.firstName': 'নামের প্রথম অংশ',
   'profile.lastName': 'নামের শেষ অংশ',
@@ -208,6 +209,10 @@ export const bn: Messages = {
   'notifications.channel.push': 'পুশ',
   'notifications.empty': 'আপনার কোনো নোটিফিকেশন নেই।',
   'notifications.markAllRead': 'সব পড়া হয়েছে হিসেবে চিহ্নিত করুন',
+  'notifications.unreadLabel': '{count}টি অপঠিত',
+  'notifications.unreadOnly': 'শুধু অপঠিত',
+  'notifications.viewAll': 'সব নোটিফিকেশন দেখুন',
+  'notifications.loadMore': 'আরও দেখুন',
 
   'privacy.exportTitle': 'আপনার তথ্য ডাউনলোড করুন',
   'privacy.exportBody': 'আমরা আপনার অ্যাকাউন্টের তথ্য দিয়ে একটি ফাইল তৈরি করে আপনাকে লিংক ই-মেইল করব। দিনে একবার।',

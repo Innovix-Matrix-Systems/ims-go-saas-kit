@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import { AppearanceMenu } from './AppearanceMenu'
 import { CommandPalette } from './CommandPalette'
 import { navGroupLabels, navGroups, pageFor, visiblePages, type NavGroup } from './navigation'
+import { NotificationBell } from './NotificationBell'
 import { ShortcutsSheet } from './ShortcutsSheet'
 import { useShortcuts } from './shortcuts'
 import { Icon, Kbd, Spinner } from './ui'
@@ -148,6 +149,7 @@ export function AppShell() {
                 <Kbd>k</Kbd>
               </span>
             </button>
+            <NotificationBell />
             <AppearanceMenu />
             <button
               type="button"

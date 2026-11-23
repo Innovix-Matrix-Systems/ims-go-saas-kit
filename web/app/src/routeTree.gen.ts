@@ -21,6 +21,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SuspendedRouteImport } from './routes/suspended'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppSettingsNotificationsRouteImport } from './routes/_app.settings.notifications'
@@ -87,6 +88,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/suspended': typeof SuspendedRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/settings/notifications': typeof AppSettingsNotificationsRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/suspended': typeof SuspendedRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/': typeof AppIndexRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/suspended': typeof SuspendedRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/_app/notifications': typeof AppNotificationsRoute
   '/_app/onboarding': typeof AppOnboardingRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/': typeof AppIndexRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/suspended'
     | '/verify-email'
+    | '/notifications'
     | '/onboarding'
     | '/settings'
     | '/settings/notifications'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/suspended'
     | '/verify-email'
+    | '/notifications'
     | '/onboarding'
     | '/settings'
     | '/'
@@ -230,6 +241,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/suspended'
     | '/verify-email'
+    | '/_app/notifications'
     | '/_app/onboarding'
     | '/_app/settings'
     | '/_app/'
@@ -339,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/onboarding': {
       id: '/_app/onboarding'
       path: '/onboarding'
@@ -403,12 +422,14 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppNotificationsRoute: AppNotificationsRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,

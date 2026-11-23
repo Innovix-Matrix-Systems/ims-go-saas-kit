@@ -176,6 +176,7 @@ export const en = {
   'settings.profile': 'Profile',
   'settings.security': 'Security',
   'settings.notifications': 'Notifications',
+  'settings.notificationSettings': 'Notification settings',
   'settings.privacy': 'Privacy',
   'profile.firstName': 'First name',
   'profile.lastName': 'Last name',
@@ -206,6 +207,10 @@ export const en = {
   'notifications.channel.push': 'Push',
   'notifications.empty': 'You have no notifications.',
   'notifications.markAllRead': 'Mark all as read',
+  'notifications.unreadLabel': '{count} unread',
+  'notifications.unreadOnly': 'Unread only',
+  'notifications.viewAll': 'View all notifications',
+  'notifications.loadMore': 'Load more',
 
   'privacy.exportTitle': 'Download your data',
   'privacy.exportBody': 'We prepare a file with your account data and e-mail you a link. One export a day.',

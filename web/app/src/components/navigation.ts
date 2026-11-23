@@ -35,7 +35,8 @@ export const pages: Page[] = [
   { to: '/', label: 'nav.home', icon: 'home', group: 'workspace', key: 'h', keywords: 'dashboard overview' },
   { to: '/settings/profile', label: 'settings.profile', icon: 'user', group: 'account', key: 'p', keywords: 'name language e-mail' },
   { to: '/settings/security', label: 'settings.security', icon: 'shield', group: 'account', key: 's', keywords: 'password two-factor 2fa sessions devices' },
-  { to: '/settings/notifications', label: 'settings.notifications', icon: 'bell', group: 'account', key: 'n' },
+  { to: '/notifications', label: 'notifications.title', icon: 'bell', group: 'workspace', key: 'n', keywords: 'inbox alerts' },
+  { to: '/settings/notifications', label: 'settings.notificationSettings', icon: 'settings', group: 'account', keywords: 'notification preferences' },
   { to: '/settings/privacy', label: 'settings.privacy', icon: 'eye', group: 'account', keywords: 'export delete account data' },
 ]
 
