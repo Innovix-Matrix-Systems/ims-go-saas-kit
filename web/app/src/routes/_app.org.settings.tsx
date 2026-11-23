@@ -7,29 +7,18 @@ import { initials } from '../format'
 import { Field, PasswordInput, useApiErrors } from '../components/form'
 import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
-import { Badge, Card, Icon, PageHeader, Spinner } from '../components/ui'
+import { Badge, Card, CopyField, Icon, PageHeader, Spinner } from '../components/ui'
+import { OrganizationForm } from '../components/OrganizationForm'
 import { useT } from '../i18n'
 import { FormSkeleton, ListSkeleton, SettingsSkeleton } from '../components/Skeleton'
+import { organizationQuery, type Organization } from '../components/organization'
 
 export const Route = createFileRoute('/_app/org/settings')({
   component: OrganizationSettingsPage,
 })
 
-interface Organization {
-  id: number
-  name: string
-  code: string
-  phone: string | null
-  email: string | null
-  is_active: boolean
-  owner: { id: number; name: string; email: string } | null
-  is_owner: boolean
-  created_at: string
-}
 type SettingsSection = Schemas['SettingsGroupSection']
 type Setting = Schemas['SettingItem']
-
-export const organizationQuery = { queryKey: ['organization'], queryFn: () => api<Organization>('/organization') }
 
 function OrganizationSettingsPage() {
   const t = useT()
@@ -60,56 +49,32 @@ function OrganizationSettingsPage() {
 
 function ProfileCard({ organization, editable }: { organization: Organization; editable: boolean }) {
   const t = useT()
-  const client = useQueryClient()
-  const { push } = useToast()
-  const errors = useApiErrors()
-  const [name, setName] = useState(organization.name)
-  const [email, setEmail] = useState(organization.email ?? '')
-  const [phone, setPhone] = useState(organization.phone ?? '')
-  const [busy, setBusy] = useState(false)
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault()
-    setBusy(true)
-    errors.clear()
-    try {
-      await api('/organization', { method: 'PATCH', body: { name: name.trim(), email: email.trim() || null, phone: phone.trim() || null } })
-      await client.invalidateQueries({ queryKey: ['organization'] })
-      await client.invalidateQueries({ queryKey: ['session'] })
-      push(t('form.saved'), 'success')
-    } catch (cause) {
-      errors.setError(cause instanceof Error ? cause : new Error(String(cause)))
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
-    <Card title={t('org.profileTitle')}>
-      <form onSubmit={submit} className="stack form-narrow">
-        <Field label={t('org.name')} error={errors.field('name')}>
-          <input className="input" name="organization" autoComplete="organization" required disabled={!editable} value={name} onChange={(e) => setName(e.target.value)} />
-        </Field>
-        <div className="form-grid-2">
-          <Field label={`${t('org.contactEmail')} (${t('form.optional')})`} error={errors.field('email')}>
-            <input className="input" type="email" name="email" autoComplete="email" disabled={!editable} value={email} onChange={(e) => setEmail(e.target.value)} />
-          </Field>
-          <Field label={`${t('org.contactPhone')} (${t('form.optional')})`} error={errors.field('phone')}>
-            <input className="input" type="tel" name="phone" autoComplete="tel" disabled={!editable} value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </Field>
-        </div>
-        <Field label={t('org.code')}>
-          <input className="input mono" readOnly value={organization.code} />
-        </Field>
-        {errors.box}
+    <Card title={t('org.profileTitle')} description={t('org.profileHint')}>
+      <div className="stack g-4 form-narrow">
+        <dl className="details">
+          <dt>{t('orgPage.id')}</dt>
+          <dd>
+            <CopyField value={String(organization.id)} />
+          </dd>
+          <dt>{t('org.code')}</dt>
+          <dd>
+            <CopyField value={organization.code} short />
+          </dd>
+        </dl>
         {editable ? (
-          <div>
-            <button type="submit" className="btn primary" disabled={busy || name.trim().length < 2}>
-              {busy ? <Spinner /> : <Icon name="check" />} {busy ? t('form.saving') : t('form.save')}
-            </button>
-          </div>
-        ) : null}
-      </form>
+          <OrganizationForm organization={organization} />
+        ) : (
+          <dl className="details">
+            <dt>{t('org.name')}</dt>
+            <dd>{organization.name}</dd>
+            <dt>{t('org.contactEmail')}</dt>
+            <dd>{organization.email ?? <span className="muted">{t('profilePage.notSet')}</span>}</dd>
+            <dt>{t('org.contactPhone')}</dt>
+            <dd>{organization.phone ?? <span className="muted">{t('profilePage.notSet')}</span>}</dd>
+          </dl>
+        )}
+      </div>
     </Card>
   )
 }

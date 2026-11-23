@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { api, type Schemas, type User } from '../api/client'
+import { api, getActing, type Schemas, type User } from '../api/client'
 import { changeActing } from '../auth/session'
 
 export type Tenant = Schemas['Tenant']
@@ -29,5 +29,15 @@ export function useStartActing() {
     impersonate: (tenant: Pick<Tenant, 'id' | 'name'>) => start({ kind: 'tenant', tenantId: tenant.id, name: tenant.name }),
     loginAs: (user: Pick<User, 'id' | 'name' | 'email'>, tenantName?: string) =>
       start({ kind: 'user', userId: user.id, name: user.name, email: user.email, tenantName }),
+  }
+}
+
+/** Ends impersonation or logging in as someone, back to where it started. */
+export function useStopActing() {
+  const navigate = useNavigate()
+  return async () => {
+    const acting = getActing()
+    await changeActing(null)
+    await navigate({ to: acting?.kind === 'user' ? '/console/users' : '/console/organizations' })
   }
 }

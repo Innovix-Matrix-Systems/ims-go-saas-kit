@@ -9,3 +9,5 @@
 @import "./styles/screens/org.css";
 @import "./styles/screens/audit.css";
 @import "./styles/screens/files.css";
+@import "./styles/screens/dashboard.css";
+@import "./styles/screens/shell.css";

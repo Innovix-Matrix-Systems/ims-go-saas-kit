@@ -358,6 +358,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboard": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The organization's dashboard
+         * @description Any member. Each section is null unless the caller holds its permission: members (`user.view.all`), activity (`activity.view`), files (`file.view.all`), branches (`branch.view.all`), roles (`role.view.all`). Daily series are counted in `tz`. Staff not acting in an organization get 403 and use `/internal/dashboard`.
+         */
+        get: operations["getDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The platform dashboard (staff)
+         * @description Each section is null unless the caller holds its permission: organizations (`tenant.view.all`), users (`user.view.all`), activity (`activity.view.all`), revenue (`payment.view.all`), plans (`package.view.all`). Daily series are counted in `tz`.
+         */
+        get: operations["getPlatformDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organization": {
         parameters: {
             query?: never;
@@ -7133,6 +7194,123 @@ export interface components {
                 active: boolean;
             };
         };
+        DashboardPeriod: {
+            days: number;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            time_zone: string;
+        };
+        /** @description A value per day over the period, its total, and the total of the same number of days before it. */
+        DashboardSeries: {
+            points: {
+                /** Format: date */
+                date: string;
+                /** Format: int64 */
+                value: number;
+            }[];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            previous_total: number;
+        };
+        TenantDashboard: {
+            period: components["schemas"]["DashboardPeriod"];
+            members: {
+                /** Format: int64 */
+                total: number;
+                /** Format: int64 */
+                active: number;
+                /** Format: int64 */
+                pending_invitations: number;
+                /**
+                 * Format: int64
+                 * @description Signed in during the period.
+                 */
+                signed_in_recently: number;
+                added: components["schemas"]["DashboardSeries"];
+            } | null;
+            activity: {
+                events: components["schemas"]["DashboardSeries"];
+                top_actions: {
+                    action: string;
+                    /** Format: int64 */
+                    count: number;
+                }[];
+                top_actors: {
+                    /** Format: int64 */
+                    id: number;
+                    name: string;
+                    /** Format: int64 */
+                    count: number;
+                }[];
+            } | null;
+            files: {
+                /** Format: int64 */
+                files: number;
+                /** Format: int64 */
+                bytes: number;
+            } | null;
+            /** Format: int64 */
+            branches: number | null;
+            /** Format: int64 */
+            roles: number | null;
+        };
+        PlatformDashboard: {
+            period: components["schemas"]["DashboardPeriod"];
+            organizations: {
+                /** Format: int64 */
+                total: number;
+                /** Format: int64 */
+                active: number;
+                /** Format: int64 */
+                suspended: number;
+                added: components["schemas"]["DashboardSeries"];
+                recent: {
+                    /** Format: int64 */
+                    id: number;
+                    name: string;
+                    code: string;
+                    active: boolean;
+                    /** Format: int64 */
+                    members: number;
+                    /** Format: date-time */
+                    created_at: string;
+                }[];
+            } | null;
+            users: {
+                /** Format: int64 */
+                total: number;
+                /** Format: int64 */
+                signed_in_recently: number;
+                added: components["schemas"]["DashboardSeries"];
+            } | null;
+            activity: components["schemas"]["DashboardSeries"] | null;
+            /** @description Completed payments per currency (most payments first), in minor units, and those awaiting approval. */
+            revenue: {
+                currencies: {
+                    currency: string;
+                    /** Format: int64 */
+                    payments: number;
+                    amount: components["schemas"]["DashboardSeries"];
+                }[];
+                pending: {
+                    currency: string;
+                    /** Format: int64 */
+                    count: number;
+                    /** Format: int64 */
+                    amount: number;
+                }[];
+            } | null;
+            plans: {
+                /** Format: int64 */
+                package_id: number;
+                name: string;
+                /** Format: int64 */
+                organizations: number;
+            }[] | null;
+        };
         BillingUsage: {
             limits: {
                 /** @example users.max */
@@ -9067,6 +9245,10 @@ export interface components {
         };
     };
     parameters: {
+        /** @description The period, in days up to today. */
+        DashboardDays: 7 | 30 | 90;
+        /** @description The IANA time zone days are counted in. */
+        DashboardTimeZone: string;
         /** @description Optional on any write. Reuse the same value when retrying: the first answer is replayed for 24 h (`Idempotent-Replayed: true`) and the action runs once. A different body with the same key answers 422 `IDEMPOTENCY_KEY_REUSED`. */
         IdempotencyKey: string;
         PathID: number;
@@ -9805,6 +9987,135 @@ export interface operations {
             };
             /** @description Resource not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getDashboard: {
+        parameters: {
+            query?: {
+                /** @description The period, in days up to today. */
+                days?: components["parameters"]["DashboardDays"];
+                /** @description The IANA time zone days are counted in. */
+                tz?: components["parameters"]["DashboardTimeZone"];
+            };
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dashboard. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["TenantDashboard"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getPlatformDashboard: {
+        parameters: {
+            query?: {
+                /** @description The period, in days up to today. */
+                days?: components["parameters"]["DashboardDays"];
+                /** @description The IANA time zone days are counted in. */
+                tz?: components["parameters"]["DashboardTimeZone"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dashboard. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PlatformDashboard"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

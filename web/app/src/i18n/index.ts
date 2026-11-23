@@ -35,6 +35,11 @@ function applyDocument(): void {
 }
 applyDocument()
 
+/** A language's own name ("English", "বাংলা"), or the code when unknown. */
+export function localeLabel(code: string): string {
+  return locales.find((item) => item.code === code)?.label ?? code
+}
+
 export function getLocale(): Locale {
   return current
 }

@@ -1,7 +1,6 @@
-import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
-import { signOut, useSession } from '../auth/session'
-import { initials } from '../format'
+import { useSession } from '../auth/session'
 import { useT } from '../i18n'
 import { ActingBanner } from './ActingBanner'
 import { AppearanceMenu } from './AppearanceMenu'
@@ -12,7 +11,8 @@ import { navGroupLabels, navGroups, pageFor, visiblePages, type NavGroup } from 
 import { NotificationBell } from './NotificationBell'
 import { ShortcutsSheet } from './ShortcutsSheet'
 import { useShortcuts } from './shortcuts'
-import { Icon, Kbd, Spinner } from './ui'
+import { Icon, Kbd } from './ui'
+import { AccountMenu, WorkspaceMenu, useOrganizationName } from './WorkspaceMenu'
 
 const SIDEBAR_KEY = 'ims.app.sidebar'
 const WIDTH_KEY = 'ims.app.sidebar-width'
@@ -42,7 +42,6 @@ function readCollapsed(): boolean {
 /** The signed-in frame: sidebar, top bar, and the current page. */
 export function AppShell() {
   const t = useT()
-  const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const session = useSession()
   const [commandOpen, setCommandOpen] = useState(false)
@@ -55,7 +54,7 @@ export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const pages = visiblePages(session)
   const current = pageFor(pathname)
-  const user = session?.user
+  const orgName = useOrganizationName()
 
   useEffect(() => {
     try {
@@ -101,10 +100,6 @@ export function AppShell() {
     onToggleSidebar: () => setCollapsed((value) => !value),
   })
 
-  const handleSignOut = async () => {
-    await signOut()
-    await navigate({ to: '/login' })
-  }
 
   const navGroup = (group: NavGroup) => {
     const items = pages.filter((page) => page.group === group)
@@ -135,10 +130,6 @@ export function AppShell() {
     )
   }
 
-  const roleLabel = session?.isPlatformUser
-    ? t('role.superAdmin')
-    : (user?.roles?.map((role) => role.name).join(', ') || t('role.member'))
-
   return (
     <div
       className={`app ${collapsed ? 'sidebar-collapsed' : ''} ${menuOpen ? 'menu-open' : ''} ${resizing ? 'sidebar-resizing' : ''}`}
@@ -146,10 +137,7 @@ export function AppShell() {
     >
       <aside className="sidebar" aria-label="Navigation">
         <div className="brand">
-          <div className="brand-mark">I</div>
-          <div className="brand-text">
-            <div className="brand-title">{t('app.name')}</div>
-          </div>
+          <WorkspaceMenu collapsed={collapsed} />
           <button
             type="button"
             className={`icon-btn sidebar-pin ${collapsed ? '' : 'pinned'}`}
@@ -163,24 +151,7 @@ export function AppShell() {
         </div>
         <nav className="nav">{navGroups.map(navGroup)}</nav>
         <div className="sidebar-footer">
-          <div className="user-card">
-            <div className="avatar">{user ? initials(user.name) : <Spinner />}</div>
-            <div className="user-meta">
-              <div className="user-name">{user?.name ?? '…'}</div>
-              <div className="user-email" title={user?.email}>
-                {user ? roleLabel : t('common.loading')}
-              </div>
-            </div>
-            <button
-              type="button"
-              className="icon-btn"
-              title={t('common.signOut')}
-              aria-label={t('common.signOut')}
-              onClick={() => void handleSignOut()}
-            >
-              <Icon name="logout" />
-            </button>
-          </div>
+          <AccountMenu />
         </div>
         {collapsed ? null : (
           <div
@@ -209,7 +180,21 @@ export function AppShell() {
           <button type="button" className="icon-btn menu-btn" aria-label={t('nav.openMenu')} onClick={() => setMenuOpen(true)}>
             <Icon name="list" />
           </button>
-          <div className="topbar-title">{current ? t(current.label) : t('app.name')}</div>
+          <nav className="topbar-crumbs" aria-label={t('nav.breadcrumb')}>
+            {orgName ? (
+              <>
+                <Link to="/org" className="topbar-org">
+                  {orgName}
+                </Link>
+                <span className="topbar-sep" aria-hidden="true">
+                  /
+                </span>
+              </>
+            ) : null}
+            <span className="topbar-title" aria-current="page">
+              {current ? t(current.label) : t('app.name')}
+            </span>
+          </nav>
           <div className="topbar-right">
             <button type="button" className="command-trigger" onClick={() => setCommandOpen(true)}>
               <Icon name="search" />

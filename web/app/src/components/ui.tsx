@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
-import { prettyJSON } from '../format'
+import { initials, prettyJSON } from '../format'
+import { useT } from '../i18n'
 import { useToast } from './Toasts'
 
 export type IconName =
@@ -25,6 +26,7 @@ export type IconName =
   | 'external'
   | 'chevron'
   | 'first'
+  | 'edit'
   | 'last'
   | 'x'
   | 'play'
@@ -105,6 +107,7 @@ const paths: Record<IconName, ReactNode> = {
   external: <><path d="M14 4h6v6M20 4l-9 9" /><path d="M20 14v6H4V4h6" /></>,
   chevron: <path d="m9 6 6 6-6 6" />,
   first: <path d="M7 6v12M17 6l-6 6 6 6" />,
+  edit: <><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z" /><path d="m13.5 6.5 4 4" /></>,
   last: <path d="M17 6v12M7 6l6 6-6 6" />,
   x: <path d="M6 6l12 12M18 6 6 18" />,
   play: <path d="m8 5 11 7-11 7z" />,
@@ -551,21 +554,46 @@ export function JsonView({ value, maxHeight, label }: { value: unknown; maxHeigh
 
 export function CopyButton({ value, label }: { value: string; label?: string }) {
   const { push } = useToast()
+  const t = useT()
   return (
     <button
       type="button"
       className="btn ghost sm"
-      title="Copy to clipboard"
+      title={t('copy.copy')}
+      aria-label={label ? undefined : t('copy.copy')}
       onClick={() => {
         void navigator.clipboard
           .writeText(value)
-          .then(() => push('Copied to clipboard', 'success'))
-          .catch(() => push('Clipboard unavailable', 'error'))
+          .then(() => push(t('copy.copied'), 'success'))
+          .catch(() => push(t('copy.unavailable'), 'error'))
       }}
     >
       <Icon name="copy" />
       {label ?? null}
     </button>
+  )
+}
+
+/** A value to read and copy (an ID, a code): text with a copy button, never an input. */
+export function CopyField({ value, mono = true, short }: { value: string; mono?: boolean; short?: boolean }) {
+  return (
+    <span className="copy-field">
+      <span className={`copy-field-value ${mono ? 'mono' : ''} ${short ? 'short' : ''}`} title={value}>
+        {value}
+      </span>
+      <CopyButton value={value} />
+    </span>
+  )
+}
+
+/** A person's photo, or their initials when there is none. */
+export function Avatar({ name, photo, size }: { name: string; photo?: string | null; size?: 'xs' | 'sm' | 'lg' | 'xl' }) {
+  const [broken, setBroken] = useState(false)
+  const letters = initials(name)
+  return (
+    <span className={`avatar ${size ?? ''}`} aria-hidden="true">
+      {photo && !broken ? <img src={photo} alt="" onError={() => setBroken(true)} /> : letters || '·'}
+    </span>
   )
 }
 

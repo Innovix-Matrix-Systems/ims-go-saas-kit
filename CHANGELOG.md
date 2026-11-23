@@ -58,6 +58,21 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (`DELETE /api/v1/data-processing/job/{jobId}`; staff not acting in an organization use
   `/api/v1/internal/data-processing/job/{jobId}` and `.../retry`); the activity log is exported as
   a background job (`POST /api/v1/activity/export`, staff: `POST /api/v1/internal/activity/export`).
+- Dashboards: `GET /api/v1/dashboard` (an organization's members, activity, files, branches and
+  roles, each section behind its permission) and `GET /api/v1/internal/dashboard` (staff:
+  organizations, users, activity, revenue per currency, plans), with `?days=7|30|90` and
+  `?tz=` (IANA); daily series come with the previous period's total.
+- Client app home dashboards: staff see organizations, members, revenue, payments to review,
+  plans and the newest organizations; an organization sees members, invitations, activity
+  (trend, most frequent changes, most active members, recent entries), storage and its plan's
+  usage; everyone gets quick actions. Charts are small SVG components with hover and keyboard
+  readouts and a table for screen readers.
+- Client app: the sidebar header names the organization (its mark, name and plan) and opens to
+  its profile, members, billing and settings; the top bar shows "Organization / Page"; the user
+  card opens an account menu. New **Your profile** page (photo upload, details, organization,
+  security summary) and **Organization** profile page (details with an edit dialog, owner, people,
+  plan usage, counts). IDs and codes are shown as text with a copy button instead of read-only
+  inputs.
 - Finished exports are listed among the organization's files (`GET /api/v1/files`, with
   `generated: true`) until their job is removed or expires.
 - Client app **Background jobs**: a top-bar tray and a page listing the signed-in person's

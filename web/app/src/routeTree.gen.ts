@@ -24,6 +24,7 @@ import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppJobsRouteImport } from './routes/_app.jobs'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
+import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppConsoleActivityRouteImport } from './routes/_app.console.activity'
 import { Route as AppConsoleAnnouncementsRouteImport } from './routes/_app.console.announcements'
@@ -34,6 +35,7 @@ import { Route as AppConsolePlansRouteImport } from './routes/_app.console.plans
 import { Route as AppConsoleSettingsRouteImport } from './routes/_app.console.settings'
 import { Route as AppConsoleStaffRouteImport } from './routes/_app.console.staff'
 import { Route as AppConsoleUsersRouteImport } from './routes/_app.console.users'
+import { Route as AppOrgIndexRouteImport } from './routes/_app.org.index'
 import { Route as AppOrgActivityRouteImport } from './routes/_app.org.activity'
 import { Route as AppOrgBillingRouteImport } from './routes/_app.org.billing'
 import { Route as AppOrgBranchesRouteImport } from './routes/_app.org.branches'
@@ -121,6 +123,11 @@ const AppOnboardingRoute = AppOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -169,6 +176,11 @@ const AppConsoleStaffRoute = AppConsoleStaffRouteImport.update({
 const AppConsoleUsersRoute = AppConsoleUsersRouteImport.update({
   id: '/console/users',
   path: '/console/users',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrgIndexRoute = AppOrgIndexRouteImport.update({
+  id: '/org/',
+  path: '/org/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOrgActivityRoute = AppOrgActivityRouteImport.update({
@@ -248,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof AppJobsRoute
   '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
+  '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/console/activity': typeof AppConsoleActivityRoute
   '/console/announcements': typeof AppConsoleAnnouncementsRoute
@@ -270,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/settings/privacy': typeof AppSettingsPrivacyRoute
   '/settings/profile': typeof AppSettingsProfileRoute
   '/settings/security': typeof AppSettingsSecurityRoute
+  '/org/': typeof AppOrgIndexRoute
 }
 export interface FileRoutesByTo {
   '/accept-invitation': typeof AcceptInvitationRoute
@@ -285,6 +299,7 @@ export interface FileRoutesByTo {
   '/jobs': typeof AppJobsRoute
   '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
+  '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/': typeof AppIndexRoute
   '/console/activity': typeof AppConsoleActivityRoute
@@ -308,6 +323,7 @@ export interface FileRoutesByTo {
   '/settings/privacy': typeof AppSettingsPrivacyRoute
   '/settings/profile': typeof AppSettingsProfileRoute
   '/settings/security': typeof AppSettingsSecurityRoute
+  '/org': typeof AppOrgIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -325,6 +341,7 @@ export interface FileRoutesById {
   '/_app/jobs': typeof AppJobsRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/onboarding': typeof AppOnboardingRoute
+  '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/': typeof AppIndexRoute
   '/_app/console/activity': typeof AppConsoleActivityRoute
@@ -348,6 +365,7 @@ export interface FileRoutesById {
   '/_app/settings/privacy': typeof AppSettingsPrivacyRoute
   '/_app/settings/profile': typeof AppSettingsProfileRoute
   '/_app/settings/security': typeof AppSettingsSecurityRoute
+  '/_app/org/': typeof AppOrgIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -366,6 +384,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/notifications'
     | '/onboarding'
+    | '/profile'
     | '/settings'
     | '/console/activity'
     | '/console/announcements'
@@ -388,6 +407,7 @@ export interface FileRouteTypes {
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
+    | '/org/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/accept-invitation'
@@ -403,6 +423,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/notifications'
     | '/onboarding'
+    | '/profile'
     | '/settings'
     | '/'
     | '/console/activity'
@@ -426,6 +447,7 @@ export interface FileRouteTypes {
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
+    | '/org'
   id:
     | '__root__'
     | '/_app'
@@ -442,6 +464,7 @@ export interface FileRouteTypes {
     | '/_app/jobs'
     | '/_app/notifications'
     | '/_app/onboarding'
+    | '/_app/profile'
     | '/_app/settings'
     | '/_app/'
     | '/_app/console/activity'
@@ -465,6 +488,7 @@ export interface FileRouteTypes {
     | '/_app/settings/privacy'
     | '/_app/settings/profile'
     | '/_app/settings/security'
+    | '/_app/org/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -588,6 +612,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -656,6 +687,13 @@ declare module '@tanstack/react-router' {
       path: '/console/users'
       fullPath: '/console/users'
       preLoaderRoute: typeof AppConsoleUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/org/': {
+      id: '/_app/org/'
+      path: '/org'
+      fullPath: '/org/'
+      preLoaderRoute: typeof AppOrgIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/org/activity': {
@@ -767,6 +805,7 @@ interface AppRouteChildren {
   AppJobsRoute: typeof AppJobsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   AppConsoleActivityRoute: typeof AppConsoleActivityRoute
@@ -786,12 +825,14 @@ interface AppRouteChildren {
   AppOrgRolesRoute: typeof AppOrgRolesRoute
   AppOrgSettingsRoute: typeof AppOrgSettingsRoute
   AppOrgWebhooksRoute: typeof AppOrgWebhooksRoute
+  AppOrgIndexRoute: typeof AppOrgIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppJobsRoute: AppJobsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOnboardingRoute: AppOnboardingRoute,
+  AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   AppConsoleActivityRoute: AppConsoleActivityRoute,
@@ -811,6 +852,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOrgRolesRoute: AppOrgRolesRoute,
   AppOrgSettingsRoute: AppOrgSettingsRoute,
   AppOrgWebhooksRoute: AppOrgWebhooksRoute,
+  AppOrgIndexRoute: AppOrgIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
