@@ -62,6 +62,16 @@ func (c *Checker) Can(ctx context.Context, userID int64, permission string) (boo
 	return false, nil
 }
 
+// Grants reports whether the user is a Super-Admin and the permission names
+// they hold through their roles (one cache read).
+func (c *Checker) Grants(ctx context.Context, userID int64) (bool, []string, error) {
+	access, err := c.accessFor(ctx, userID)
+	if err != nil {
+		return false, nil, err
+	}
+	return access.Super, access.Permissions, nil
+}
+
 // MustCan returns FORBIDDEN unless the user holds the permission.
 func (c *Checker) MustCan(ctx context.Context, userID int64, permission string) error {
 	ok, err := c.Can(ctx, userID, permission)

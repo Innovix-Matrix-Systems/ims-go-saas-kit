@@ -2,6 +2,8 @@ package access
 
 import (
 	"context"
+	"sort"
+	"strings"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
@@ -156,7 +158,10 @@ func (s *RoleService) Update(ctx context.Context, tenantID, id, actorID int64, n
 	if role.IsSystem {
 		return nil, apperr.New(apperr.Forbidden, "System roles cannot be modified.")
 	}
-	if name == authz.SuperAdminRole || name == authz.DeveloperRole {
+	if role.Managed() {
+		return nil, errManagedRole
+	}
+	if isReservedRoleName(name) || name == authz.AdminRole {
 		return nil, apperr.Validation(map[string][]string{"name": {"The name has already been taken."}})
 	}
 	updated, err := s.roles.UpdateInTenant(ctx, tenantID, id, name, description, &actorID)
@@ -193,6 +198,9 @@ func (s *RoleService) Delete(ctx context.Context, tenantID, id int64) error {
 	if role.IsSystem {
 		return apperr.New(apperr.Forbidden, "System roles cannot be deleted.")
 	}
+	if role.Managed() {
+		return errManagedRole
+	}
 	_ = s.checker.InvalidateRole(ctx, id)
 	if err := s.roles.DeleteInTenant(ctx, tenantID, id); err != nil {
 		return err
@@ -217,8 +225,10 @@ func (s *RoleService) DeleteInternal(ctx context.Context, id int64) error {
 }
 
 // AssignPermissions replaces a tenant role's permissions. System permissions
-// are stripped for tenant roles.
-func (s *RoleService) AssignPermissions(ctx context.Context, tenantID, roleID int64, permissionIDs []int64) error {
+// are stripped for tenant roles, and the actor may only add permissions they
+// hold themselves (Super-Admins excepted), so editing a role never grants
+// more than its editor has.
+func (s *RoleService) AssignPermissions(ctx context.Context, tenantID, actorID, roleID int64, permissionIDs []int64) error {
 	role, err := s.roles.Get(ctx, tenantID, roleID)
 	if err != nil {
 		return err
@@ -226,14 +236,102 @@ func (s *RoleService) AssignPermissions(ctx context.Context, tenantID, roleID in
 	if role.IsSystem {
 		return apperr.New(apperr.Forbidden, "System roles cannot be modified.")
 	}
+	if role.Managed() {
+		return errManagedRole
+	}
+	if err := s.guardGrant(ctx, actorID, roleID, permissionIDs); err != nil {
+		return err
+	}
 	if err := s.replacePermissions(ctx, roleID, permissionIDs, true); err != nil {
 		return err
 	}
 	s.activity.Record(ctx, activity.Entry{
-		TenantID: tenantID, Action: "role.permissions_assigned", Subject: "role", SubjectID: roleID,
+		TenantID: tenantID, ActorID: actorID, Action: "role.permissions_assigned", Subject: "role", SubjectID: roleID,
 		Changes: map[string]any{"permissions": permissionIDs},
 	})
 	return nil
+}
+
+// errManagedRole refuses changes to an organization's Admin role.
+var errManagedRole = apperr.New(apperr.Forbidden, "The Admin role is managed by the app and always holds every organization permission. Create another role instead.")
+
+// guardGrant refuses permissions the role does not have yet and the actor
+// does not hold. Removing permissions is always allowed.
+func (s *RoleService) guardGrant(ctx context.Context, actorID, roleID int64, permissionIDs []int64) error {
+	super, held, err := s.checker.Grants(ctx, actorID)
+	if err != nil || super {
+		return err
+	}
+	current, err := s.roles.PermissionIDs(ctx, roleID)
+	if err != nil {
+		return err
+	}
+	had := make(map[int64]bool, len(current))
+	for _, id := range current {
+		had[id] = true
+	}
+	added := make([]int64, 0, len(permissionIDs))
+	for _, id := range permissionIDs {
+		if !had[id] {
+			added = append(added, id)
+		}
+	}
+	if len(added) == 0 {
+		return nil
+	}
+	permissions, err := s.perms.GetByIDs(ctx, added)
+	if err != nil {
+		return err
+	}
+	holds := make(map[string]bool, len(held))
+	for _, name := range held {
+		holds[name] = true
+	}
+	missing := make([]string, 0)
+	for _, permission := range permissions {
+		if !permission.IsSystem && !holds[permission.Name] {
+			missing = append(missing, permission.Name)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return apperr.Newf(apperr.Forbidden, "You can only grant permissions you hold yourself (missing: %s).", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+// Grantable returns the permissions the actor may put on a tenant role: the
+// non-system permissions they hold (every one, for a Super-Admin).
+func (s *RoleService) Grantable(ctx context.Context, actorID int64) ([]Permission, error) {
+	super, held, err := s.checker.Grants(ctx, actorID)
+	if err != nil {
+		return nil, err
+	}
+	all, err := s.perms.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	holds := make(map[string]bool, len(held))
+	for _, name := range held {
+		holds[name] = true
+	}
+	out := make([]Permission, 0, len(all))
+	for _, permission := range all {
+		if permission.IsSystem || (!super && !holds[permission.Name]) {
+			continue
+		}
+		out = append(out, permission)
+	}
+	return out, nil
+}
+
+// Permissions returns the permissions a role visible to the tenant holds.
+func (s *RoleService) Permissions(ctx context.Context, roleID int64) ([]Permission, error) {
+	ids, err := s.roles.PermissionIDs(ctx, roleID)
+	if err != nil || len(ids) == 0 {
+		return []Permission{}, err
+	}
+	return s.perms.GetByIDs(ctx, ids)
 }
 
 // AssignPermissionsInternal replaces permissions including system ones.

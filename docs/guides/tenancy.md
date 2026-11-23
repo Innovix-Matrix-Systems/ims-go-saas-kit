@@ -113,6 +113,13 @@ func (h *Handler) RegisterPublicTenantRoutes(r chi.Router) {
 }
 ```
 
+## Deleting a branch
+
+`DELETE /api/v1/branch/{id}` soft-deletes a branch and answers 409 for the organization's last
+branch, for a branch its members belong to (`users.branch_id`; move them first) and for the seeded
+default branch. Members who had switched into the branch (`active_branch_id`) go back to their own
+branch.
+
 ## Writes: the service stamps the tenant
 
 In a Laravel app with a `TenantAware` trait, a model hook stamps `tenant_id` on every insert and

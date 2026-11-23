@@ -227,7 +227,9 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 	return branch, nil
 }
 
-// Delete soft-deletes a branch, protecting the configured default branch.
+// Delete soft-deletes a branch, protecting the configured default branch, an
+// organization's last branch and a branch its members belong to. Members who
+// had switched into it go back to their own branch.
 func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) error {
 	tenantID := scope.EffectiveTenantID()
 	if tenantID == 0 {
@@ -235,6 +237,19 @@ func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id i
 	}
 	if id == s.cfg.DefaultBranchID {
 		return apperr.New(apperr.OperationNotAllowed, "The default branch cannot be deleted.")
+	}
+	if _, err := s.repo.Get(ctx, tenantID, id, false); err != nil {
+		return err
+	}
+	if count, err := s.repo.CountInTenant(ctx, tenantID); err != nil {
+		return err
+	} else if count <= 1 {
+		return apperr.New(apperr.OperationNotAllowed, "An organization needs at least one branch.")
+	}
+	if members, err := s.repo.CountMembers(ctx, tenantID, id); err != nil {
+		return err
+	} else if members > 0 {
+		return apperr.Newf(apperr.OperationNotAllowed, "%d member(s) belong to this branch. Move them to another branch first.", members)
 	}
 	if err := s.repo.Delete(ctx, tenantID, id, &actorID); err != nil {
 		return err

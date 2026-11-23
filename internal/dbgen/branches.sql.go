@@ -28,6 +28,41 @@ func (q *Queries) BranchBelongsToTenant(ctx context.Context, arg BranchBelongsTo
 	return exists, err
 }
 
+const clearActiveBranch = `-- name: ClearActiveBranch :execrows
+UPDATE users SET active_branch_id = NULL, updated_at = now()
+WHERE tenant_id = $1 AND active_branch_id = $2
+`
+
+type ClearActiveBranchParams struct {
+	TenantID *int64 `json:"tenant_id"`
+	BranchID *int64 `json:"branch_id"`
+}
+
+func (q *Queries) ClearActiveBranch(ctx context.Context, arg ClearActiveBranchParams) (int64, error) {
+	result, err := q.db.Exec(ctx, clearActiveBranch, arg.TenantID, arg.BranchID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const countBranchMembers = `-- name: CountBranchMembers :one
+SELECT count(*) FROM users
+WHERE tenant_id = $1 AND branch_id = $2 AND deleted_at IS NULL
+`
+
+type CountBranchMembersParams struct {
+	TenantID *int64 `json:"tenant_id"`
+	BranchID *int64 `json:"branch_id"`
+}
+
+func (q *Queries) CountBranchMembers(ctx context.Context, arg CountBranchMembersParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countBranchMembers, arg.TenantID, arg.BranchID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countBranches = `-- name: CountBranches :one
 SELECT count(*) FROM branches
 WHERE ($1::boolean OR tenant_id = $2)
@@ -47,6 +82,17 @@ type CountBranchesParams struct {
 
 func (q *Queries) CountBranches(ctx context.Context, arg CountBranchesParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countBranches, arg.AllTenants, arg.TenantID, arg.Search)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTenantBranches = `-- name: CountTenantBranches :one
+SELECT count(*) FROM branches WHERE tenant_id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) CountTenantBranches(ctx context.Context, tenantID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countTenantBranches, tenantID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

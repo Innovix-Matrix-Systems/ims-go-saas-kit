@@ -10,6 +10,7 @@ import (
 func (h *RoleHandler) RegisterRoutesResolve(r chi.Router) {
 	r.With(h.can(authz.PermRoleViewAll)).Get("/role", h.index)
 	r.With(h.can(authz.PermRoleCreate)).Post("/role", h.store)
+	r.With(h.can(authz.PermRoleUpdate)).Get("/role/grantable-permissions", h.grantable)
 	r.With(h.can(authz.PermRoleView)).Get("/role/{id}", h.show)
 	r.With(h.can(authz.PermRoleUpdate)).Patch("/role/{id}", h.update)
 	r.With(h.can(authz.PermRoleDelete)).Delete("/role/{id}", h.destroy)

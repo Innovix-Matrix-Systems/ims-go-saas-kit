@@ -86,3 +86,14 @@ LIMIT 1;
 -- name: GetTenantBranchName :one
 SELECT name FROM branches
 WHERE id = @branch_id AND tenant_id = @tenant_id AND deleted_at IS NULL;
+
+-- name: CountTenantBranches :one
+SELECT count(*) FROM branches WHERE tenant_id = @tenant_id AND deleted_at IS NULL;
+
+-- name: CountBranchMembers :one
+SELECT count(*) FROM users
+WHERE tenant_id = @tenant_id AND branch_id = @branch_id AND deleted_at IS NULL;
+
+-- name: ClearActiveBranch :execrows
+UPDATE users SET active_branch_id = NULL, updated_at = now()
+WHERE tenant_id = @tenant_id AND active_branch_id = @branch_id;

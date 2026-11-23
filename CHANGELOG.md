@@ -18,6 +18,12 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   which no tenant role could hold).
 - Signing in no longer checks the password's length (it only must be sent), so accounts with
   passwords from older rules keep working; setting a password follows the new rule below.
+- A tenant's Admin role is managed: it cannot be renamed, deleted or given other permissions
+  (403), and no other role can be renamed to Admin. Role responses carry `managed`.
+- `POST /api/v1/role/assign-permission` only adds permissions the caller holds (403 otherwise;
+  removing is always allowed; Super-Admins are not capped).
+- `DELETE /api/v1/branch/{id}` answers 409 for an organization's last branch and for a branch its
+  members belong to; members who had switched into a deleted branch go back to their own.
 
 ### Added
 
@@ -35,6 +41,9 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (authenticator app with QR code or e-mail codes, recovery codes), signed-in devices,
   notification preferences, personal-data export and account deletion. Signing in applies the
   user's saved language and sends a new owner to the setup wizard.
+- `GET /api/v1/role/{id}` includes the role's `permissions`, and
+  `GET /api/v1/role/grantable-permissions` (`role.update`) lists the permissions the caller may
+  put on a role.
 - Client app organization screens: members (search, invited or joined filter, invite with roles,
   edit, deactivate, resend an invitation, reset two-factor, remove) and organization settings
   (profile and contact details, the owner and ownership transfer, and the organization's own
