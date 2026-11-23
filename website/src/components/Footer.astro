@@ -1,0 +1,181 @@
+---
+// Starlight's footer (last updated, previous/next) plus who builds and
+// maintains the starter. Company details live in ../company.ts.
+import Default from '@astrojs/starlight/components/Footer.astro'
+import versionFile from '../../../VERSION?raw'
+import { company, starters } from '../company'
+import logo from '../assets/brand/innovix-logo.png'
+import logoOnDark from '../assets/brand/innovix-logo-light.png'
+
+const version = versionFile.trim()
+const year = new Date().getFullYear()
+---
+
+<Default {...Astro.props}><slot /></Default>
+
+<div class="ims-footer not-content">
+  <div class="brand">
+    <a class="logo" href={company.website} rel="noopener" aria-label={company.name}>
+      <img class="light:sl-hidden" src={logoOnDark.src} width="160" height={Math.round((160 * logoOnDark.height) / logoOnDark.width)} alt={company.name} />
+      <img class="dark:sl-hidden" src={logo.src} width="160" height={Math.round((160 * logo.height) / logo.width)} alt={company.name} />
+    </a>
+    <p class="made-by">
+      Built and maintained by{' '}
+      <a href={company.website} rel="noopener">{company.name}</a>
+    </p>
+    <p class="pitch">{company.pitch}</p>
+    <div class="cta">
+      <a class="button primary" href={company.website} rel="noopener">Work with us</a>
+      <a class="button" href={`mailto:${company.emails.hello}`}>{company.emails.hello}</a>
+    </div>
+  </div>
+
+  <nav class="links" aria-label="Innovix Matrix System">
+    <div>
+      <h2>More open-source starters</h2>
+      <ul>
+        {
+          starters.map((starter) => (
+            <li>
+              <a href={starter.href} rel="noopener">
+                {starter.name}
+              </a>
+              <span>{starter.stack}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div>
+      <h2>This project</h2>
+      <ul>
+        <li><a href={company.repo} rel="noopener">Source code</a> <span>GitHub</span></li>
+        <li><a href={`${company.repo}/generate`} rel="noopener">Use this template</a></li>
+        <li><a href={`${company.repo}/issues/new`} rel="noopener">Report an issue</a></li>
+        <li><a href={`${company.repo}/releases`} rel="noopener">Releases</a></li>
+        <li><a href="/project/changelog/">Changelog</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Company</h2>
+      <ul>
+        <li><a href={company.website} rel="noopener">Website</a></li>
+        <li><a href={company.github} rel="noopener">GitHub</a></li>
+        <li><a href={`mailto:${company.emails.info}`}>Contact</a> <span>{company.emails.info}</span></li>
+        <li><a href={`mailto:${company.emails.support}`}>Support</a> <span>{company.emails.support}</span></li>
+        <li><span>{company.location}</span></li>
+      </ul>
+    </div>
+  </nav>
+
+  <p class="legal">
+    © {year} {company.name}. IMS Go API Starter v{version}.
+  </p>
+</div>
+
+<style>
+  .ims-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+    display: grid;
+    gap: 2rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+  .logo {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+  /* No `display` here: Starlight's light:/dark:sl-hidden classes pick the
+     variant for the current theme. */
+  .logo img {
+    height: auto;
+    vertical-align: middle;
+  }
+  .made-by {
+    margin: 0;
+    font-size: var(--sl-text-base);
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .made-by a {
+    color: var(--sl-color-accent-high);
+    text-decoration: none;
+  }
+  .made-by a:hover {
+    text-decoration: underline;
+  }
+  .pitch {
+    margin: 0.4rem 0 1rem;
+    max-width: 38rem;
+    line-height: 1.6;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .button {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    color: var(--sl-color-white);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .button:hover {
+    border-color: var(--sl-color-accent);
+  }
+  .button.primary {
+    background: var(--ims-accent);
+    border-color: var(--ims-accent);
+    color: #0b0b0d;
+  }
+  .button.primary:hover {
+    background: #ff743d;
+  }
+  .links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 1.5rem 2rem;
+  }
+  h2 {
+    margin: 0 0 0.6rem;
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-2);
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+  }
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.5rem;
+  }
+  li a {
+    color: var(--sl-color-gray-1);
+    text-decoration: none;
+  }
+  li a:hover {
+    color: var(--sl-color-accent-high);
+    text-decoration: underline;
+  }
+  li span {
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+  .legal {
+    margin: 0;
+    font-size: var(--sl-text-xs);
+  }
+</style>

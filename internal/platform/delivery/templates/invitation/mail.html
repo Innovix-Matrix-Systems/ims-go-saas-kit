@@ -1,0 +1,5 @@
+<p>Hello{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>{{if .Data.inviter}}<strong>{{.Data.inviter}}</strong> has invited you{{else}}You have been invited{{end}} to <strong>{{.Brand.Name}}</strong>. Choose your password to activate your account.</p>
+<p style="margin:24px 0;"><a href="{{.Data.link}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Accept the invitation</a></p>
+<p style="font-size:13px;color:#6b7785;">Or open this link: <a href="{{.Data.link}}">{{.Data.link}}</a></p>
+<p>The link works once and expires in {{duration .Data.minutes}}. If you were not expecting this invitation, you can ignore this e-mail.</p>

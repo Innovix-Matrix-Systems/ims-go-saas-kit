@@ -1,0 +1,4 @@
+<p>Hello{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Your sign-in code is:</p>
+<p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0;">{{.Data.code}}</p>
+<p>It expires in {{duration .Data.minutes}}. If you did not try to sign in, you can ignore this e-mail and consider changing your password.</p>

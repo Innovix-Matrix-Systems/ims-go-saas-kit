@@ -1,0 +1,1 @@
+Your {{.Brand.Name}} account has been deleted

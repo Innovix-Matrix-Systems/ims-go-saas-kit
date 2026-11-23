@@ -1,0 +1,97 @@
+---
+title: Project tour
+description: Where everything lives, and what you will — and will never — edit.
+---
+
+import { FileTree, Aside } from '@astrojs/starlight/components'
+
+<FileTree>
+- api/
+  - openapi.yaml the HTTP contract — canonical, served at /docs
+- cmd/app/main.go the single entry point (`ims`)
+- cmd/rename/ `make rename`: turns the template into your app (logic in internal/rename)
+- docs/ these pages, as plain Markdown
+- internal/
+  - app/ composition root
+    - platform.go shared dependencies (DB, cache, queue, services)
+    - schedule.go recurring tasks
+    - wiring.go HTTP handlers
+    - routes.go middleware chain and route groups
+    - dev_commands.go commands runnable from the dashboard
+  - apperr/ error codes → RFC 9457 problems
+  - authn/ tokens, OTP, throttle, password recovery
+  - authz/ permission catalog and checker
+  - cli/ Cobra commands (`ims migrate`, `ims gen module`, …)
+  - config/ typed config, one file per section
+  - dbgen/ **generated** by sqlc — never edit
+  - contract/ **generated** from openapi.yaml — never edit
+  - modules/ one folder per business module
+    - branches/ the small reference module
+    - identity/ users (the rich reference)
+    - billing/ big module, split into domain/ and service/
+    - …
+  - platform/ infrastructure: httpx, database, cache, queue, scheduler, storage, mail, telemetry
+  - scaffold/ the module and OpenAPI generators
+  - tenancy/ tenant scope and resolve middleware
+  - testkit/ integration-test helpers
+- migrations/ goose SQL — the only schema source
+- sql/queries/ SQL that sqlc turns into Go
+- web/dev/ developer dashboard (React, embedded in the binary)
+- website/ this documentation site (Astro Starlight)
+- .agents/skills/ task recipes for AI agents
+- AGENTS.md working guide for humans and agents
+- Makefile
+- VERSION the release version (semver)
+</FileTree>
+
+## Anatomy of a module
+
+Small and medium modules are **flat**: one package, a handful of files, each with one job.
+
+| File | Holds | Must not |
+| --- | --- | --- |
+| `routes.go` | paths → handlers, each with its permission | contain logic |
+| `handler.go` | bind, call the service, respond | contain SQL or business rules |
+| `request.go` | request and response DTOs, `NewXResponse` mappers | contain logic |
+| `service.go` | business rules, tenancy, transactions, activity | import `httpx` or `authn` |
+| `repository.go` | `Repository` interface + sqlc implementation | import `httpx` or `authn` |
+| `model.go` | domain structs and row mappers | let `dbgen` types leak out |
+
+Big modules (billing) keep `routes/handler/request` at the root, shared types in `domain/` and
+business services in `service/`, which keeps the packages free of import cycles.
+
+**Reference modules** to copy from: `branches` (small), `identity` (rich), `billing` (big).
+
+## Generated code
+
+Three folders are generated and **committed**. CI regenerates them and fails on any diff.
+
+| Folder | Generated from | Regenerate with |
+| --- | --- | --- |
+| `internal/dbgen` | `migrations/` + `sql/queries/` | `make sqlc` |
+| `internal/contract` | `api/openapi.yaml` | `make openapi` |
+| `docs/reference/*` | the CLI, `.env.example`, the permission catalog, the Makefile | `make docs-gen` |
+
+`make gen-check` runs all of them and fails if anything is stale.
+
+<Aside type="tip" title="Building your own product on it?">
+  Start with GitHub's **[Use this template](https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/generate)** button rather than a fork: you get a repository of
+  your own with a clean history. Then run `make rename MODULE=github.com/you/your-app` to give it
+  your module path, binary and names (see the [quick start](./quick-start.mdx)), and keep `docs/`:
+  it documents your codebase. If you don't want to publish a docs site, delete `website/`; nothing
+  else depends on it.
+</Aside>
+
+## Where does X go?
+
+| I want to… | Put it in |
+| --- | --- |
+| add a resource with CRUD | `ims gen module`, then `internal/modules/<name>` — see the [tutorial](../tutorial/first-module.mdx) |
+| add an endpoint to a module | `request.go` → `service.go` → `handler.go` → `routes.go` ([recipe](../guides/modules.md#add-an-endpoint-to-an-existing-module)) |
+| add a permission | `internal/authz/catalog.go`, then `ims permission:sync` |
+| add a config setting | `internal/config/<section>.go` and `.env.example` |
+| add a recurring task | `internal/app/schedule.go` |
+| add a queue job | the module's `RegisterJobs`, registered in `platform.go` |
+| add a CLI command | `internal/cli` |
+| add a dashboard command | `internal/app/dev_commands.go` |
+| change the schema | a new file in `migrations/` ([database guide](../guides/database.md)) |

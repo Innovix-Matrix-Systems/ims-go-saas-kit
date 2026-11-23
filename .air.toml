@@ -1,0 +1,31 @@
+# Air hot-reload configuration — run with `make dev`.
+# Builds ./cmd/app and runs `ims serve`, rebuilding when Go sources change.
+# See https://github.com/air-verse/air for the full option list.
+
+root    = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd                 = "go build -o ./tmp/ims ./cmd/app"
+  bin                 = "./tmp/ims"
+  entrypoint          = ["./tmp/ims", "serve"]
+  include_ext         = ["go"]
+  exclude_dir         = ["bin", "tmp", "var", "tests", "node_modules", "web", ".git", ".agents", "api", "deploy", "docs", "specs", "sql", "migrations"]
+  exclude_regex       = ["_test.go"]
+  exclude_unchanged   = true
+  delay               = 500
+  stop_on_error       = true
+  send_interrupt      = true
+  kill_delay          = "3s"
+
+  # Windows only: build/run an executable with the .exe extension.
+  [build.windows]
+    cmd        = "go build -o ./tmp/ims.exe ./cmd/app"
+    bin        = "./tmp/ims.exe"
+    entrypoint = ["./tmp/ims.exe", "serve"]
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true

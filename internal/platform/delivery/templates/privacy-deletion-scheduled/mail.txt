@@ -1,0 +1,7 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+Your account is scheduled for deletion on {{.Data.date}}. On that date your personal data is erased from {{.Brand.Name}}; it cannot be brought back afterwards.
+
+You have been signed out everywhere. To keep your account, sign in before that date and cancel the deletion.
+
+If you did not ask for this, sign in now, cancel the deletion and change your password.

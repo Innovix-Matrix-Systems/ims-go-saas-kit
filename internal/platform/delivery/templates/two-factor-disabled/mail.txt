@@ -1,0 +1,5 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+Two-factor sign-in was turned off for your account on {{.Data.when}}{{if .Data.reset}} by an administrator{{end}}. Your password alone now signs you in.
+
+If you did not expect this, change your password now and turn two-factor sign-in back on.

@@ -1,0 +1,7 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+Please confirm your e-mail address by opening this link:
+
+{{.Data.link}}
+
+The link expires in {{duration .Data.minutes}}.

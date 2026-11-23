@@ -1,0 +1,9 @@
+{{.Data.title}}
+{{if .Data.body}}
+{{.Data.body}}
+{{end}}{{if .Data.url}}
+খুলুন: {{.Data.url}}
+{{end}}{{if .Data.unsubscribe}}
+--
+আপনার নোটিফিকেশন সেটিংসের কারণে এই ই-মেইল পাচ্ছেন। এগুলো বন্ধ করুন: {{.Data.unsubscribe}}
+{{end}}

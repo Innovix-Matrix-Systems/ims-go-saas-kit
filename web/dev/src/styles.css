@@ -1,0 +1,22 @@
+/* The dashboard's styles, in cascade order: tokens (themes, accents,
+   density), base, the shared components, then one file per screen that
+   needs its own rules. */
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/components.css";
+@import "./styles/screens/overview.css";
+@import "./styles/screens/logs.css";
+@import "./styles/screens/queue.css";
+@import "./styles/screens/commands.css";
+@import "./styles/screens/backups.css";
+@import "./styles/screens/scheduler.css";
+@import "./styles/screens/settings.css";
+@import "./styles/screens/flags.css";
+@import "./styles/screens/files.css";
+@import "./styles/screens/tenants.css";
+@import "./styles/screens/inspector.css";
+@import "./styles/screens/system.css";
+@import "./styles/screens/audit.css";
+@import "./styles/screens/maintenance.css";
+@import "./styles/screens/deliveries.css";
+@import "./styles/screens/login.css";

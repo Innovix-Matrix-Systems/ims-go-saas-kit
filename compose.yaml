@@ -1,0 +1,108 @@
+# The whole stack in containers: PostgreSQL, a one-shot migration, the API,
+# the queue worker and the scheduler, all from one image (see Dockerfile).
+# Docker is optional; `make dev` runs the same app natively.
+#
+#   docker compose up -d --build          # build and start everything
+#   docker compose run --rm api db:seed   # first run: tenant, roles, admin
+#   docker compose logs -f api
+#
+# Tracing (optional): Jaeger receives the app's OpenTelemetry traces; the UI is
+# at http://localhost:16686 (service ims-go-api).
+#
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 docker compose --profile otel up -d
+#
+# Configuration comes from .env (optional), like a native run. The values
+# under `environment` win, so the containers always find each other.
+# For a production-like stack set APP_ENV=production and real secrets in .env.
+
+x-app: &app
+  build: .
+  image: ims-go-api:local
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    DATABASE_DSN: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ims_go_api}?sslmode=disable
+    APP_URL: ${APP_URL:-http://localhost:8080}
+    OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+  volumes:
+    - app-data:/app/var
+    - app-backups:/app/backups
+  restart: unless-stopped
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ims_go_api}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Migrations are a release step: they run once, then the app starts.
+  migrate:
+    <<: *app
+    entrypoint: ["sh", "-c"]
+    command: ["ims migrate && ims permission:sync"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    command: ["serve"]
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+  worker:
+    <<: *app
+    command: ["queue:work"]
+    healthcheck:
+      disable: true
+
+  scheduler:
+    <<: *app
+    command: ["schedule"]
+    healthcheck:
+      disable: true
+
+  # OpenTelemetry backend for local development (profile "otel"): the Jaeger UI
+  # on :16686, OTLP on :4318 (HTTP) and :4317 (gRPC). Traces are kept in memory.
+  jaeger:
+    image: jaegertracing/jaeger:2.23.0
+    profiles: ["otel"]
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    restart: unless-stopped
+
+  # Prefer Grafana? One container with Tempo, Loki and Prometheus behind the
+  # same OTLP ports (UI on :3000, Explore → Tempo). Use it instead of jaeger,
+  # not beside it: both listen on 4317/4318.
+  # otel-lgtm:
+  #   image: grafana/otel-lgtm:0.41.1
+  #   profiles: ["otel"]
+  #   ports:
+  #     - "3000:3000"
+  #     - "4317:4317"
+  #     - "4318:4318"
+  #   restart: unless-stopped
+
+volumes:
+  pg-data:
+  app-data:
+  app-backups:

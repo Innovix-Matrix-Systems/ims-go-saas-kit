@@ -1,0 +1,9 @@
+<p>প্রিয়{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>এইমাত্র একটি নতুন জায়গা থেকে আপনার অ্যাকাউন্টে সাইন ইন করা হয়েছে:</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:12px 0;font-size:14px;">
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">কখন</td><td>{{.Data.when}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">কোথা থেকে</td><td>{{.Data.ip}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">ব্রাউজার</td><td>{{if .Data.browser}}{{.Data.browser}}{{else}}অজানা{{end}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">ডিভাইস</td><td>{{.Data.device}}</td></tr>
+</table>
+<p>এটি আপনি হলে কিছু করার দরকার নেই। আপনি না হলে <strong>এখনই পাসওয়ার্ড পরিবর্তন করুন</strong> এবং অন্য সব সেশন থেকে সাইন আউট করুন।</p>

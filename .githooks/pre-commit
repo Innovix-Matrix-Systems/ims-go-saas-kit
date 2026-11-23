@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+
+if ! make format-check; then
+	echo "Go files are not gofmt-clean. Run: make format"
+	exit 1
+fi

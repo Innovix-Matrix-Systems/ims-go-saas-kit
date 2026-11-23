@@ -1,0 +1,9 @@
+/* ── Tenants ─────────────────────────────────────────── */
+.feature-list { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.feature-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+.feature-row:last-child { border-bottom: 0; }
+.usage { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 120px; }
+.usage .red { color: var(--danger-fg); }
+.usage-bar { width: 120px; height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.usage-bar span { display: block; height: 100%; background: var(--ok-fg); }
+.usage-bar span.over { background: var(--danger-fg); }

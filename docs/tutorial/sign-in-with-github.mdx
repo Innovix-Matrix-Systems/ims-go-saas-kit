@@ -1,0 +1,301 @@
+---
+title: Sign in with GitHub locally
+description: Step by step — create a GitHub OAuth app, turn on social login, sign in from a small test page with PKCE, and see the token and the activity entry it leaves.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components'
+
+In this tutorial you sign in to the API running on your computer with your own GitHub account,
+the way a real front end would. No prior OAuth knowledge needed.
+
+**You will:**
+
+- create a GitHub OAuth app for local work,
+- turn on social login in `.env`,
+- serve a one-file test page that plays the front end,
+- sign in with GitHub and get the API's normal login token,
+- check on the server what the sign-in left behind.
+
+<Aside>
+  Finish the [Quick start](../getting-started/quick-start.mdx) first: Postgres running,
+  `make migrate seed` done and `make dev` working. Commands run from the repository root; use
+  `go run ./cmd/app …` while developing (a built binary is `ims …`).
+</Aside>
+
+## How it fits together
+
+Three pieces, and the API is the only one that holds a secret:
+
+| Piece | What it is here |
+| --- | --- |
+| **GitHub** | proves who the user is. After the user approves, it sends the browser back to your page with a one-time **code**. |
+| **The test page** | plays your front end on `http://localhost:5173`: it sends the user to GitHub, takes the code when they come back, and posts it to the API. |
+| **The API** | trades the code for the user's verified e-mail (with the client secret), finds the user with that address, and answers exactly like `POST /login`. |
+
+Social login signs in **existing** users: it never creates one. So the e-mail address on your
+GitHub account must belong to a user in your local database. Step 4 sorts that out.
+([How it works](../guides/social-login.md#how-it-works).)
+
+## 1. Create a GitHub OAuth app
+
+<Steps>
+
+1. Open [https://github.com/settings/developers](https://github.com/settings/developers) → **OAuth Apps** → **New OAuth App**.
+
+2. Fill in the form:
+
+   | Field | Value |
+   | --- | --- |
+   | Application name | `my-api-local` (anything; GitHub shows it on the approval page) |
+   | Homepage URL | `http://localhost:5173` |
+   | Redirect URI | `http://localhost:5173/` (with the trailing `/`) |
+   | Allow wildcard matching | off |
+   | Enable Device Flow | off |
+   | Expire user access tokens | either |
+
+   The redirect URI is the **test page**, not the API: GitHub sends the browser back to the front
+   end, and the API never gets a callback.
+
+3. Click **Register application**. Copy the **Client ID** (it starts with `Ov23li`).
+
+4. Click **Generate a new client secret** and copy it now: GitHub shows it only once.
+
+</Steps>
+
+<Aside type="caution" title="The secret is a password">
+  Put it only in `.env` (which git ignores). Don't paste it in chats, issues or the front end.
+  If it leaks, generate a new one on the same page and delete the old one.
+</Aside>
+
+## 2. Turn social login on
+
+<Steps>
+
+1. Add to `.env`:
+
+   ```bash
+   SOCIAL_PROVIDERS=github
+   SOCIAL_GITHUB_CLIENT_ID=Ov23li…          # your Client ID
+   SOCIAL_GITHUB_CLIENT_SECRET=…            # your client secret
+   CORS_ALLOWED_ORIGINS=http://localhost:5173
+   ```
+
+   The last line lets the test page, on another port, call the API from the browser.
+
+2. **Restart `make dev`** so the API reads the change.
+
+3. Check that GitHub is listed:
+
+   <Tabs>
+   <TabItem label="PowerShell">
+
+   ```powershell
+   Invoke-RestMethod http://localhost:8080/api/v1/social/providers
+   ```
+
+   </TabItem>
+   <TabItem label="bash">
+
+   ```bash
+   curl -s localhost:8080/api/v1/social/providers
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   You should see `{"data":[{"name":"github","display_name":"GitHub"}]}`. An empty list means
+   the API did not pick up `.env`: restart it again.
+
+</Steps>
+
+## 3. Serve the test page
+
+<Steps>
+
+1. Create a folder outside the repository, for example `github-test`, and save this as
+   `github-test/index.html`. Replace `YOUR_CLIENT_ID`:
+
+   ```html
+   <!doctype html>
+   <meta charset="utf-8">
+   <title>GitHub sign-in test</title>
+   <h1>GitHub sign-in test</h1>
+   <button id="go">Sign in with GitHub</button>
+   <pre id="out">Not signed in yet.</pre>
+   <script>
+   const CLIENT_ID = 'YOUR_CLIENT_ID'
+   const API = 'http://localhost:8080'
+   const REDIRECT = location.origin + '/'
+   const out = document.getElementById('out')
+   const b64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+
+   // 1. Send the user to GitHub, with PKCE and a state value.
+   document.getElementById('go').onclick = async () => {
+     const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)))
+     const state = b64url(crypto.getRandomValues(new Uint8Array(16)))
+     const challenge = b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))))
+     sessionStorage.setItem('verifier', verifier)
+     sessionStorage.setItem('state', state)
+     location = 'https://github.com/login/oauth/authorize?' + new URLSearchParams({
+       client_id: CLIENT_ID, redirect_uri: REDIRECT, scope: 'user:email', state,
+       code_challenge: challenge, code_challenge_method: 'S256',
+     })
+   }
+
+   // 2. GitHub sent the user back with ?code=…&state=…: check state, post the code to the API.
+   const params = new URLSearchParams(location.search)
+   if (params.has('code')) {
+     history.replaceState(null, '', '/')
+     if (params.get('state') !== sessionStorage.getItem('state')) {
+       out.textContent = 'state does not match: not sending the code.'
+     } else {
+       fetch(API + '/api/v1/social/github/login', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           code: params.get('code'),
+           code_verifier: sessionStorage.getItem('verifier'),
+           redirect_uri: REDIRECT,
+           device: 'github-test',
+         }),
+       }).then(async res => {
+         const body = await res.json()
+         if (body.data?.token) body.data.token = body.data.token.slice(0, 6) + '… (hidden)'
+         out.textContent = 'HTTP ' + res.status + '\n' + JSON.stringify(body, null, 2)
+       })
+     }
+   }
+   </script>
+   ```
+
+2. Serve the folder on port 5173 (the port GitHub knows):
+
+   <Tabs>
+   <TabItem label="Node">
+
+   ```bash
+   npx serve -l 5173 github-test
+   ```
+
+   </TabItem>
+   <TabItem label="Python">
+
+   ```bash
+   python -m http.server 5173 --directory github-test
+   ```
+
+   </TabItem>
+   </Tabs>
+
+</Steps>
+
+<Aside type="note" title="Why localhost and not 127.0.0.1?">
+  The browser treats them as different sites, and GitHub compares the redirect URI exactly. Open
+  the page as `http://localhost:5173`, the address you registered.
+</Aside>
+
+## 4. Make sure a user has your GitHub e-mail
+
+GitHub hands the API your account's **primary** e-mail address (under *GitHub → Settings →
+Emails*; it must be verified). A user with that address must exist locally.
+
+The quickest way to find out: just sign in (next step). If no user has the address, the page
+shows `403 SOCIAL_ACCOUNT_NOT_FOUND`, and the activity log records which address GitHub returned.
+Then create a user with it, as the super admin in the default tenant (replace
+`you@example.com`), and sign in again:
+
+<Tabs>
+<TabItem label="PowerShell">
+
+```powershell
+$token = (Invoke-RestMethod http://localhost:8080/api/v1/login -Method Post -ContentType application/json `
+  -Body '{"email":"superadmin@ims.com","password":"123456","device":"cli"}').data.token
+Invoke-RestMethod http://localhost:8080/api/v1/user -Method Post -ContentType application/json `
+  -Headers @{ Authorization = "Bearer $token"; 'X-Acting-Tenant' = '1'; 'X-Acting-Branch' = '1' } `
+  -Body '{"name":"Me","email":"you@example.com","password":"secret123"}'
+```
+
+</TabItem>
+<TabItem label="bash">
+
+```bash
+TOKEN=$(curl -s localhost:8080/api/v1/login -H 'Content-Type: application/json' \
+  -d '{"email":"superadmin@ims.com","password":"123456","device":"cli"}' | jq -r .data.token)
+curl -s localhost:8080/api/v1/user -H "Authorization: Bearer $TOKEN" \
+  -H 'X-Acting-Tenant: 1' -H 'X-Acting-Branch: 1' -H 'Content-Type: application/json' \
+  -d '{"name":"Me","email":"you@example.com","password":"secret123"}'
+```
+
+</TabItem>
+</Tabs>
+
+The user still has a password: social login is another way in, not the only one.
+
+## 5. Sign in
+
+<Steps>
+
+1. Open [http://localhost:5173](http://localhost:5173) and click **Sign in with GitHub**.
+
+2. GitHub asks you to sign in (if you aren't), then shows your app's name and asks to share your
+   **e-mail addresses**. Click **Authorize**.
+
+3. GitHub sends you back to the test page, which posts the code. You should see:
+
+   ```json
+   HTTP 200
+   {
+     "data": {
+       "user": { "id": 4, "name": "…", "email": "you@example.com", "roles": [ … ], … },
+       "status": "AUTH_SUCCESS",
+       "message": "Login is successful.",
+       "token": "115|c4… (hidden)"
+     }
+   }
+   ```
+
+   The same body `POST /login` returns. The token works on every route a password token does.
+
+</Steps>
+
+Behind that one request, the API exchanged the code for a GitHub access token with your client
+secret (GitHub also checked the PKCE verifier and the redirect URI), read your primary e-mail
+from GitHub, found your user, ran the usual account checks and issued a token for the device
+`github-test`. It kept nothing from GitHub.
+
+## 6. Look at what it left
+
+<Steps>
+
+1. **The activity log.** As the super admin (the `$TOKEN` from step 4), list the newest entries
+   of every tenant and the system log:
+
+   ```bash
+   curl -s "localhost:8080/api/v1/activity?per_page=5" -H "Authorization: Bearer $TOKEN"
+   ```
+
+   The sign-in is an `auth.login` entry with `"method": "github"`, `"status": "ok"` and the
+   device. A failed attempt would show `"status": "failed"` and its error code.
+
+2. **The token.** In the developer dashboard ([http://localhost:8080/dev](http://localhost:8080/dev)), **Sessions** lists the
+   user; open it to see the `github-test` device next to their other sessions, where it can be
+   revoked like any other.
+
+</Steps>
+
+## Troubleshooting
+
+| You see | Do |
+| --- | --- |
+| GitHub: *The redirect_uri is not associated with this application* | the page must be opened as `http://localhost:5173/`, exactly the registered URI |
+| `Failed to fetch` on the page, *CORS* in the browser console | `CORS_ALLOWED_ORIGINS=http://localhost:5173` in `.env`, then restart `make dev` |
+| `404` | `SOCIAL_PROVIDERS=github` missing, or the API not restarted |
+| `401 INVALID_CREDENTIALS` | the code was already used or expired (ten minutes): click the button again. Reloading the result page reuses the old code |
+| `403 ACCOUNT_UNVERIFIED` | verify your primary e-mail on GitHub (*Settings → Emails*) |
+| `403 SOCIAL_ACCOUNT_NOT_FOUND` | create the user from step 4 |
+
+## Next
+
+- [Social login](../guides/social-login.md): Google, mobile apps, production settings, and adding
+  another provider.
+- [Authentication](../guides/authentication.md): tokens, login checks and OTP.

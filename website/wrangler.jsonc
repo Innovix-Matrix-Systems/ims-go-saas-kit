@@ -1,0 +1,14 @@
+{
+  // The docs are a fully static site: Cloudflare only serves the built files.
+  // `npm run deploy` (or the docs-deploy workflow on a release) uploads dist/.
+  // Public address: https://ims-go-api-starter.innovixmatrixsystem.com, attached to this Worker as a Custom Domain in
+  // the Cloudflare dashboard (Worker → Settings → Domains & Routes). It is not
+  // listed here, so the deploy token needs no zone permissions; deploys keep it.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ims-go-api-starter",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}

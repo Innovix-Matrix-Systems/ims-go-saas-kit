@@ -1,0 +1,307 @@
+---
+/**
+ * The home page's picture of the system, animated: one Go binary runs the
+ * API, the dashboard, the queue worker and the scheduler; PostgreSQL holds
+ * the data, the job queue, the cache and the sessions; files go to a disk.
+ *
+ * One 7-second cycle tells two stories:
+ *   0.0–2.6s  a request: an app, or an AI agent through /mcp (OAuth 2.1),
+ *             → API (auth, tenant, permission) → PostgreSQL, and the
+ *             dashboard records it.
+ *   3.0–6.2s  a job: the scheduler enqueues it in PostgreSQL, the worker
+ *             picks it up and writes a file, and the dashboard records it.
+ *
+ * Packets are SMIL <animateMotion>; each one moves only inside its window
+ * (keyTimes), so every path shares one loop and they never drift apart.
+ * With reduced motion the packets are hidden and the diagram is static.
+ */
+const cycle = 7
+
+// [id, path, start s, end s, tone]
+const packets: [string, string, number, number, 'req' | 'job' | 'obs'][] = [
+  ['you-dash', 'M342 52 V108', 0.1, 0.8, 'obs'],
+  ['app-api', 'M82 52 V108', 0.2, 1.0, 'req'],
+  ['agent-api', 'M188 52 V108', 0.4, 1.0, 'req'],
+  ['api-db', 'M196 144 H210 V292', 1.2, 2.2, 'req'],
+  ['api-dash', 'M196 124 H224', 2.2, 2.6, 'obs'],
+  ['sched-db', 'M116 228 V292', 3.0, 3.7, 'job'],
+  ['db-worker', 'M254 292 V228', 3.9, 4.6, 'job'],
+  ['worker-disk', 'M344 228 V296', 4.8, 5.5, 'job'],
+  ['worker-dash', 'M304 176 V160', 5.7, 6.2, 'obs'],
+]
+
+const keys = (start: number, end: number) => {
+  const a = (start / cycle).toFixed(3)
+  const b = (end / cycle).toFixed(3)
+  return { keyTimes: `0;${a};${b};1`, opacity: `0;1;0`, opacityTimes: `0;${a};${b}` }
+}
+
+// Who calls the binary: [x, title, subtitle]
+const callers: [number, string, string][] = [
+  [24, 'Web & mobile', 'REST · /api/v1'],
+  [152, 'AI agents', 'MCP · OAuth 2.1'],
+  [280, 'Your browser', '/dev · /docs'],
+]
+
+// [x, y, w, title, subtitle, pulse at s]
+const chips: [number, number, number, string, string, number][] = [
+  [36, 108, 160, 'ims serve', 'auth → tenant → permission', 1.0],
+  [224, 108, 160, '/dev dashboard', 'requests · logs · jobs · SQL', 2.6],
+  [36, 176, 160, 'ims schedule', 'cron · no overlaps', 3.0],
+  [224, 176, 160, 'ims queue', 'River jobs · retries', 4.6],
+]
+---
+
+<div class="arch not-content">
+  <svg viewBox="0 0 420 372" role="img" aria-labelledby="arch-title arch-desc">
+    <title id="arch-title">How the IMS Go API Starter is put together</title>
+    <desc id="arch-desc">
+      One Go binary runs the HTTP API, the developer dashboard, the scheduler and the queue workers.
+      Apps call the REST API and AI agents call it through MCP, signed in with OAuth 2.1; every
+      call checks authentication, tenant and permission before reading
+      PostgreSQL. The scheduler enqueues jobs in PostgreSQL, the workers run them and write files
+      to local or S3 storage, and the dashboard records every request and job.
+    </desc>
+
+    <!-- callers -->
+    <g class="box">
+      {
+        callers.map(([x, title, sub]) => (
+          <>
+            <rect x={x} y="6" width="116" height="46" rx="8" />
+            <text x={x + 58} y="26" class="label">
+              {title}
+            </text>
+            <text x={x + 58} y="42" class="store-sub">
+              {sub}
+            </text>
+          </>
+        ))
+      }
+    </g>
+
+    <!-- the binary -->
+    <rect class="frame" x="20" y="78" width="380" height="194" rx="14" />
+    <text x="36" y="98" class="frame-label">one Go binary · <tspan class="mono">ims</tspan></text>
+
+    <!-- wires (drawn under the chips) -->
+    <g class="wires">{packets.map(([, d]) => <path d={d} />)}</g>
+
+    {
+      chips.map(([x, y, w, title, sub, pulse]) => (
+        <g class="chip" style={`--pulse:${pulse}s`}>
+          <rect x={x} y={y} width={w} height="52" rx="9" />
+          <text x={x + 12} y={y + 22} class="chip-title">
+            {title}
+          </text>
+          <text x={x + 12} y={y + 40} class="chip-sub">
+            {sub}
+          </text>
+        </g>
+      ))
+    }
+    <text x="210" y="258" class="frame-note">same code · same config · one deploy</text>
+
+    <!-- stores -->
+    <g class="store" style="--pulse:2.2s">
+      <path d="M30 300 a118 10 0 0 0 236 0 v42 a118 10 0 0 1 -236 0 z" />
+      <ellipse cx="148" cy="300" rx="118" ry="10" class="lid" />
+      <text x="148" y="330" class="label">PostgreSQL</text>
+      <text x="148" y="346" class="store-sub">data · queue · cache · sessions</text>
+    </g>
+    <g class="store" style="--pulse:5.5s">
+      <rect x="282" y="296" width="110" height="56" rx="8" />
+      <text x="337" y="320" class="label">Storage</text>
+      <text x="337" y="337" class="store-sub">local · S3 · R2</text>
+    </g>
+
+    <!-- packets -->
+    <g class="packets" aria-hidden="true">
+      {
+        packets.map(([id, d, start, end, tone]) => {
+          const k = keys(start, end)
+          return (
+            <circle r="5" class={`packet ${tone}`} opacity="0">
+              <animateMotion
+                id={id}
+                dur={`${cycle}s`}
+                repeatCount="indefinite"
+                path={d}
+                keyPoints="0;0;1;1"
+                keyTimes={k.keyTimes}
+                calcMode="linear"
+              />
+              <animate
+                attributeName="opacity"
+                dur={`${cycle}s`}
+                repeatCount="indefinite"
+                values={k.opacity}
+                keyTimes={k.opacityTimes}
+                calcMode="discrete"
+              />
+            </circle>
+          )
+        })
+      }
+    </g>
+  </svg>
+  <ul class="legend" aria-hidden="true">
+    <li><span class="dot req"></span>request</li>
+    <li><span class="dot job"></span>background job</li>
+    <li><span class="dot obs"></span>recorded by the dashboard</li>
+  </ul>
+</div>
+
+<style define:vars={{ cycle: `${cycle}s` }}>
+  .arch {
+    width: 100%;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    font-family: var(--sl-font);
+  }
+  text {
+    text-anchor: middle;
+    fill: var(--sl-color-gray-2);
+  }
+  .label {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--sl-color-white);
+  }
+  .mono,
+  .chip-sub,
+  .store-sub {
+    font-family: var(--sl-font-mono);
+  }
+  .box rect {
+    fill: var(--sl-color-gray-6);
+    stroke: var(--sl-color-gray-5);
+  }
+  .frame {
+    fill: color-mix(in srgb, var(--sl-color-accent) 5%, transparent);
+    stroke: var(--sl-color-accent);
+    stroke-dasharray: 5 5;
+    stroke-opacity: 0.55;
+  }
+  .frame-label {
+    text-anchor: start;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    fill: var(--sl-color-accent-high);
+  }
+  .frame-label .mono {
+    text-transform: none;
+  }
+  .frame-note {
+    font-size: 10.5px;
+    fill: var(--sl-color-gray-3);
+  }
+  .wires path {
+    fill: none;
+    stroke: var(--sl-color-gray-4);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 4;
+  }
+  .chip rect,
+  .store path,
+  .store rect {
+    fill: var(--sl-color-gray-6);
+    stroke: var(--sl-color-gray-5);
+    stroke-width: 1.5;
+    animation: pulse var(--cycle) linear infinite;
+    animation-delay: var(--pulse);
+  }
+  .store .lid {
+    fill: var(--sl-color-gray-5);
+    stroke: var(--sl-color-gray-4);
+  }
+  .chip-title {
+    text-anchor: start;
+    font-family: var(--sl-font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    fill: var(--sl-color-white);
+  }
+  .chip-sub {
+    text-anchor: start;
+    font-size: 9px;
+  }
+  .store-sub {
+    font-size: 9.5px;
+  }
+  .packet {
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+  .req {
+    fill: var(--sl-color-accent);
+    color: var(--sl-color-accent);
+    background: var(--sl-color-accent);
+  }
+  .job {
+    fill: #38bdf8;
+    color: #38bdf8;
+    background: #38bdf8;
+  }
+  .obs {
+    fill: #a3e635;
+    color: #a3e635;
+    background: #a3e635;
+  }
+  :global([data-theme='light']) .job {
+    fill: #0284c7;
+    background: #0284c7;
+  }
+  :global([data-theme='light']) .obs {
+    fill: #4d7c0f;
+    background: #4d7c0f;
+  }
+  /* A box lights up for a moment when a packet reaches it. The delay puts
+     the flash at that moment of the cycle; the keyframes keep it short. */
+  @keyframes pulse {
+    0%,
+    9% {
+      stroke: var(--sl-color-accent);
+    }
+    14%,
+    100% {
+      stroke: var(--sl-color-gray-5);
+    }
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.3rem 1rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .packets {
+      display: none;
+    }
+    .chip rect,
+    .store path,
+    .store rect {
+      animation: none;
+    }
+  }
+</style>

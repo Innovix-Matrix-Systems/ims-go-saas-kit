@@ -1,0 +1,9 @@
+{{.Data.title}}
+{{if .Data.body}}
+{{.Data.body}}
+{{end}}{{if .Data.url}}
+Open it: {{.Data.url}}
+{{end}}{{if .Data.unsubscribe}}
+--
+You get this because of your notification settings. Stop these e-mails: {{.Data.unsubscribe}}
+{{end}}

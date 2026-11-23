@@ -1,0 +1,28 @@
+# Binaries
+/bin/
+
+# Air hot-reload build output
+/tmp/
+
+# Runtime state (SQLite, uploads, cache, logs)
+/var/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test artifacts
+coverage.out
+coverage.html
+*.test
+*.out
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Planning specs: kept locally, not published (they reference other projects).
+/specs/

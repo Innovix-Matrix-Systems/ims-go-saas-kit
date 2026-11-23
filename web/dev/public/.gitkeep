@@ -1,0 +1,1 @@
+Placeholder copied into dist/client/ by Vite so go:embed all:dist/client always resolves.

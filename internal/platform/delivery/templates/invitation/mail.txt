@@ -1,0 +1,9 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+{{if .Data.inviter}}{{.Data.inviter}} has invited you{{else}}You have been invited{{end}} to {{.Brand.Name}}. Open this link to choose your password and activate your account:
+
+{{.Data.link}}
+
+The link works once and expires in {{duration .Data.minutes}}. After that, sign in with your e-mail address and the password you chose.
+
+If you were not expecting this invitation, you can ignore this e-mail.

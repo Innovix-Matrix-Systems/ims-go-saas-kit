@@ -1,0 +1,12 @@
+/* ── Scheduler ───────────────────────────────────────── */
+.task-id { font-size: var(--fs-md); font-weight: var(--fw-medium); }
+.task-description { max-width: 420px; }
+.task-error { display: block; max-width: 420px; }
+
+/* The last ten runs of a task: one square each, oldest left. */
+.run-strip { display: inline-flex; gap: 2px; }
+.run-mark { display: block; width: 8px; height: 14px; border-radius: 2px; background: var(--border-strong); }
+.run-mark.ok { background: var(--ok-fg); }
+.run-mark.danger { background: var(--danger-fg); }
+.run-mark.warn { background: var(--warn-fg); }
+.run-mark.accent { background: var(--accent); }

@@ -1,0 +1,1 @@
+{"title": {{json .Data.title}}, "body": {{json .Data.body}}}

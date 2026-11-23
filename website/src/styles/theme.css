@@ -1,0 +1,112 @@
+/* The docs share the developer dashboard's look: near-black panels and the
+   orange accent (#ff5c1a). Starlight reads these custom properties. */
+:root {
+  --sl-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'SFMono-Regular', Menlo, monospace;
+  --ims-accent: #ff5c1a;
+}
+
+/* Dark (default) */
+:root,
+::backdrop {
+  --sl-color-accent-low: #3a1606;
+  --sl-color-accent: #ff5c1a;
+  --sl-color-accent-high: #ffc7ae;
+  --sl-color-white: #f5f5f7;
+  --sl-color-gray-1: #e4e4e8;
+  --sl-color-gray-2: #c2c2c8;
+  --sl-color-gray-3: #8c8c96;
+  --sl-color-gray-4: #55555e;
+  --sl-color-gray-5: #2a2a31;
+  --sl-color-gray-6: #16161a;
+  --sl-color-black: #0b0b0d;
+}
+
+/* Light */
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-accent-low: #ffe1d3;
+  --sl-color-accent: #d9480f;
+  --sl-color-accent-high: #6b2100;
+  --sl-color-white: #141416;
+  --sl-color-gray-1: #26262b;
+  --sl-color-gray-2: #3c3c44;
+  --sl-color-gray-3: #62626c;
+  --sl-color-gray-4: #9b9ba5;
+  --sl-color-gray-5: #d6d6dc;
+  --sl-color-gray-6: #eeeef1;
+  --sl-color-gray-7: #f7f7f9;
+  --sl-color-black: #ffffff;
+}
+
+.sl-markdown-content table {
+  font-size: var(--sl-text-sm);
+}
+.sl-markdown-content table code {
+  white-space: nowrap;
+}
+
+/* Screenshots get a frame so they read as UI, not page content. */
+.sl-markdown-content img.screenshot,
+.sl-markdown-content p > img[src*='images/'] {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* Splash page hero tweaks */
+.hero .tagline {
+  max-width: 44rem;
+}
+.hero img {
+  border-radius: 12px;
+  border: 1px solid var(--sl-color-gray-5);
+  box-shadow: 0 20px 60px rgba(255, 92, 26, 0.12);
+}
+
+.version-badge {
+  font-family: var(--sl-font-mono);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--sl-color-accent);
+  color: var(--sl-color-accent-high);
+  background: var(--sl-color-accent-low);
+  white-space: nowrap;
+}
+
+/* Primary buttons use the brand orange, like the dashboard. */
+.sl-link-button.primary,
+.action.primary {
+  background: var(--ims-accent);
+  border-color: var(--ims-accent);
+  color: #0b0b0d;
+}
+.sl-link-button.primary:hover,
+.action.primary:hover {
+  background: #ff743d;
+  border-color: #ff743d;
+  color: #0b0b0d;
+}
+
+/* Small screens: the title needs the room more than the version does. */
+@media (max-width: 50rem) {
+  .version-badge {
+    display: none;
+  }
+}
+
+/* Sidebar entries with a badge (tutorial durations): a long title wraps on its
+   own and the badge stays on the first line, at the right edge, instead of
+   dropping onto a line of its own. */
+.top-level a:has(> .sl-badge) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.top-level a > .sl-badge {
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-top: 0.1em;
+}

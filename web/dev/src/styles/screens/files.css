@@ -1,0 +1,49 @@
+/* ── Files: grid and list views ──────────────────────── */
+.file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.file-card {
+  position: relative; display: flex; flex-direction: column; min-width: 0;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface-1); box-shadow: var(--shadow-sm);
+  overflow: hidden; cursor: pointer; outline: none;
+  transition: border-color var(--ease);
+}
+.file-card:hover, .file-card:focus-visible { border-color: var(--border-strong); }
+.file-card:focus-visible { box-shadow: 0 0 0 2px var(--focus-ring); }
+.file-card-preview { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface-inset); border-bottom: 1px solid var(--border); }
+.file-card-preview > .file-thumb { width: 100%; height: 100%; }
+.file-card-type { position: absolute; top: 8px; left: 8px; }
+.file-card-actions {
+  position: absolute; top: 6px; right: 6px; display: flex; gap: 2px;
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 7px; opacity: 0;
+  transition: opacity var(--ease);
+}
+.file-card:hover .file-card-actions, .file-card:focus-within .file-card-actions { opacity: 1; }
+.file-card-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.file-card-name { font-size: var(--fs-base); font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-card-meta { display: flex; gap: 6px; font-size: var(--fs-sm); color: var(--text-2); }
+.file-card-sub { font-size: var(--fs-sm); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot-sep { opacity: 0.5; }
+
+.file-thumb { display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--surface-inset); }
+.file-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.file-thumb.card { width: 100%; height: 100%; }
+.file-thumb.row { width: 38px; height: 38px; flex: none; border: 1px solid var(--border); border-radius: 6px; }
+.file-thumb-fallback { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: var(--text-3); }
+.file-thumb-fallback svg { width: 24px; height: 24px; }
+.file-thumb-fallback span { font-family: var(--mono); font-size: var(--fs-xs); }
+.file-thumb.row .file-thumb-fallback { gap: 0; }
+.file-thumb.row .file-thumb-fallback svg { width: 16px; height: 16px; }
+.file-thumb.row .file-thumb-fallback span { display: none; }
+.file-thumb-fallback.large svg { width: 48px; height: 48px; }
+.file-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.file-preview {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-inset); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); min-height: 180px; overflow: hidden;
+}
+.file-preview img, .file-preview video { max-width: 100%; max-height: 360px; display: block; }
+/* A PDF renders on white whatever the theme. */
+.file-preview iframe { width: 100%; height: 420px; border: none; background: #ffffff; /* fixed: document page */ }
+.file-preview.empty { flex-direction: column; gap: 10px; padding: 24px; }
+.file-preview audio { width: 100%; padding: 24px; }

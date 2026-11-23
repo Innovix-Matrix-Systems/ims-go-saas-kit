@@ -1,0 +1,19 @@
+/* ── Feature flags: targets + flags ──────────────────── */
+.flags-split { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.target-list { display: flex; flex-direction: column; gap: 6px; max-height: 560px; overflow-y: auto; padding-right: 2px; }
+.target-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-1); color: var(--text-1); cursor: pointer;
+  transition: border-color var(--ease), background var(--ease);
+}
+.target-row:hover { background: var(--surface-2); }
+.target-row.selected { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.target-row svg { width: 15px; height: 15px; color: var(--text-2); flex: none; }
+.flag-row { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; border-top: 1px solid var(--border); }
+.flag-row:first-of-type { border-top: none; }
+.flag-row .green { color: var(--ok-fg); }
+@media (max-width: 1100px) {
+  .flags-split { grid-template-columns: 1fr; }
+  .target-list { max-height: 360px; }
+}

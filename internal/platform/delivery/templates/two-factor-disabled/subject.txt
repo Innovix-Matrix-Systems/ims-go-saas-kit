@@ -1,0 +1,1 @@
+Two-factor sign-in is off for your {{.Brand.Name}} account

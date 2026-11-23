@@ -1,0 +1,20 @@
+/* ── Login and the error page: a plain centred card ──── */
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--surface-0); }
+.login-card { width: min(420px, 100%); }
+.login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.login-title { font-size: var(--fs-xl); font-weight: var(--fw-semibold); line-height: var(--lh-heading); margin: 0 0 6px; }
+.login-sub { color: var(--text-2); font-size: var(--fs-base); margin: 0 0 20px; }
+.login-links { margin-top: 16px; font-size: var(--fs-sm); color: var(--text-3); display: flex; justify-content: space-between; }
+
+.error-wrap { min-height: calc(100vh - var(--topbar-height)); display: grid; place-items: center; padding: 32px; }
+.error-card { width: min(600px, 100%); }
+.error-icon {
+  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+  background: var(--danger-subtle); border: 1px solid var(--danger-border); color: var(--danger-fg);
+}
+.error-icon svg { width: 22px; height: 22px; }
+.error-code {
+  margin-top: 4px; font-family: var(--mono); font-size: var(--fs-md); color: var(--danger-fg);
+  background: var(--danger-subtle); border: 1px solid var(--danger-border);
+  border-radius: var(--radius-sm); padding: 10px 12px; white-space: pre-wrap; word-break: break-word;
+}

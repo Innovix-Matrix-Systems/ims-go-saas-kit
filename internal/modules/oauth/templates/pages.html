@@ -1,0 +1,99 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{.Heading}} · {{.Product}}</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2330; --muted:#5d6675; --line:#dde1e7; --accent:#2457c5; --accent-text:#fff; --warn-bg:#fff6e0; --warn:#7a5600; --err-bg:#fdecec; --err:#a12626; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#12151b; --card:#1b2029; --text:#e7eaf0; --muted:#9aa3b2; --line:#2c3340; --accent:#6d97f2; --accent-text:#0d1117; --warn-bg:#3a2f12; --warn:#f2cf7a; --err-bg:#3d1a1a; --err:#f3a5a5; } }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { width:100%; max-width:420px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:28px; }
+  .product { font-size:13px; color:var(--muted); margin:0 0 4px; }
+  h1 { font-size:20px; margin:0 0 16px; }
+  p { margin:0 0 12px; }
+  label { display:block; font-weight:600; margin:14px 0 6px; }
+  input[type=email], input[type=password], input[type=text], select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:transparent; color:inherit; font:inherit; }
+  .check { display:flex; gap:10px; align-items:flex-start; font-weight:400; margin:16px 0 0; }
+  .check input { margin-top:4px; }
+  .actions { display:flex; gap:10px; margin-top:22px; }
+  button { flex:1; padding:10px 14px; border-radius:8px; border:1px solid var(--line); background:transparent; color:inherit; font:inherit; font-weight:600; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-text); }
+  .muted { color:var(--muted); font-size:13px; }
+  .box { border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin:12px 0; }
+  .warn { background:var(--warn-bg); color:var(--warn); border-radius:8px; padding:10px 12px; margin:12px 0; font-size:14px; }
+  .error { background:var(--err-bg); color:var(--err); border-radius:8px; padding:10px 12px; margin:12px 0; font-size:14px; }
+  ul { margin:6px 0 0; padding-left:20px; }
+  code { font-size:13px; word-break:break-all; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <p class="product">{{.Product}}</p>
+  <h1>{{.Heading}}</h1>
+  {{if .Error}}<div class="error" role="alert">{{.Error}}</div>{{end}}
+  {{template "content" .}}
+</main>
+</body>
+</html>{{end}}
+
+{{define "error"}}{{template "layout" .}}{{end}}
+{{define "error_content"}}<p>{{.Message}}</p><p class="muted">{{.T "oauth.error_hint" "Go back to the app you were connecting and try again."}}</p>{{end}}
+
+{{define "signin_content"}}
+  <p>{{.T "oauth.signin_intro" "Sign in to connect {{.client}} to your account." .ClientParams}}</p>
+  <form method="post" action="/oauth/authorize/login" autocomplete="on">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <label for="email">{{.T "oauth.email" "E-mail"}}</label>
+    <input id="email" name="email" type="email" value="{{.Email}}" required autofocus autocomplete="username">
+    <label for="password">{{.T "oauth.password" "Password"}}</label>
+    <input id="password" name="password" type="password" required autocomplete="current-password">
+    <div class="actions"><button class="primary" type="submit">{{.T "oauth.signin" "Sign in"}}</button></div>
+  </form>
+  {{if .ResetURL}}<p class="muted" style="margin-top:16px"><a href="{{.ResetURL}}" target="_blank" rel="noopener">{{.T "oauth.forgot" "Forgot your password?"}}</a></p>{{end}}
+{{end}}
+
+{{define "otp_content"}}
+  <p>{{.T "oauth.otp_intro" "We sent a one-time code to your registered contact. Enter it to continue."}}</p>
+  <form method="post" action="/oauth/authorize/login" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <label for="code">{{.T "oauth.otp_code" "One-time code"}}</label>
+    <input id="code" name="code" type="text" inputmode="numeric" required autofocus autocomplete="one-time-code">
+    <div class="actions"><button class="primary" type="submit">{{.T "oauth.continue" "Continue"}}</button></div>
+  </form>
+{{end}}
+
+{{define "consent_content"}}
+  <p>{{.T "oauth.consent_intro" "{{.client}} wants to access your account, {{.user}}." .ConsentParams}}</p>
+  <div class="box">
+    <div class="muted">{{.T "oauth.returns_to" "After you allow it, you go back to"}}</div>
+    <div><strong>{{.RedirectHost}}</strong></div>
+    <div class="muted" title="{{.ClientID}}"><code>{{.ClientID}}</code></div>
+  </div>
+  {{if .LoopbackOnly}}<div class="warn">{{.T "oauth.loopback_warning" "This is an app running on this computer, not a website. Allow it only if you started the connection yourself."}}</div>{{end}}
+  <form method="post" action="/oauth/authorize/consent">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <div class="box">
+      <div><strong>{{.T "oauth.can_read" "It can read what you can see"}}</strong></div>
+      <div class="muted">{{.T "oauth.can_read_detail" "With your permissions, in your tenant. It can never do more than you can."}}</div>
+      {{if .OfferWrite}}
+      <label class="check"><input type="checkbox" name="allow_write" value="1"> <span>{{.T "oauth.allow_write" "Allow changes: create and update records for you"}}</span></label>
+      {{end}}
+    </div>
+    {{if .PickTenant}}
+    <label for="tenant_id">{{.T "oauth.tenant" "Work in tenant"}}</label>
+    <select id="tenant_id" name="tenant_id">
+      <option value="0">{{.T "oauth.no_tenant" "No tenant: system work only"}}</option>
+      {{range .Tenants}}<option value="{{.ID}}">{{.Name}} ({{.Code}})</option>{{end}}
+    </select>
+    {{end}}
+    <div class="actions">
+      <button type="submit" name="decision" value="deny">{{.T "oauth.deny" "Deny"}}</button>
+      <button class="primary" type="submit" name="decision" value="allow">{{.T "oauth.allow" "Allow"}}</button>
+    </div>
+  </form>
+  <p class="muted" style="margin-top:16px">{{.T "oauth.revoke_hint" "You can disconnect it at any time; the app then loses access."}}</p>
+{{end}}

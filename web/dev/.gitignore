@@ -1,0 +1,9 @@
+dist/*
+!dist/.gitkeep
+!dist/client/
+dist/client/*
+!dist/client/.gitkeep
+*.local
+.DS_Store
+node_modules/
+.tanstack/

@@ -1,0 +1,131 @@
+---
+/**
+ * The one rule, animated: a request travels down the layers and the
+ * response travels back up. Each layer lists what it owns and the file it
+ * lives in. Pure CSS; static for reduced motion.
+ */
+const layers = [
+  { name: 'Middleware', owns: 'request id, logging, auth, tenancy, permissions', file: 'internal/app/routes.go' },
+  { name: 'Handler', owns: 'bind + validate → call service → respond', file: 'modules/<m>/handler.go' },
+  { name: 'Service', owns: 'business rules, tenancy, transactions, activity', file: 'modules/<m>/service.go' },
+  { name: 'Repository', owns: 'SQL via sqlc, maps rows ↔ domain', file: 'modules/<m>/repository.go' },
+  { name: 'PostgreSQL', owns: 'generated queries (internal/dbgen)', file: 'migrations/ + sql/queries/' },
+]
+---
+
+<div class="flow not-content" role="img" aria-label="Request flow: middleware, handler, service, repository, PostgreSQL">
+  <div class="rail" aria-hidden="true"><span class="packet"></span></div>
+  <ol>
+    {
+      layers.map((layer, i) => (
+        <li style={`--i:${i}`}>
+          <span class="name">{layer.name}</span>
+          <span class="owns">{layer.owns}</span>
+          <code class="file">{layer.file}</code>
+        </li>
+      ))
+    }
+  </ol>
+</div>
+
+<style>
+  .flow {
+    position: relative;
+    margin: 1.5rem 0;
+    padding: 0.5rem 0 0.5rem 2.4rem;
+  }
+  .rail {
+    position: absolute;
+    left: 0.9rem;
+    top: 1.2rem;
+    bottom: 1.2rem;
+    width: 2px;
+    background: linear-gradient(var(--sl-color-accent), var(--sl-color-gray-5));
+    border-radius: 2px;
+  }
+  .packet {
+    position: absolute;
+    left: -5px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--sl-color-accent);
+    box-shadow: 0 0 14px var(--sl-color-accent);
+    animation: travel 4.5s ease-in-out infinite;
+  }
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  li {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: 0.15rem 1rem;
+    align-items: baseline;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 8px;
+    background: var(--sl-color-gray-6);
+    animation: glow 4.5s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.45s);
+  }
+  .name {
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  .owns {
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+  }
+  .file {
+    grid-column: 2;
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-3);
+    background: none;
+    padding: 0;
+  }
+  @keyframes travel {
+    0%,
+    5% {
+      top: 0;
+    }
+    45%,
+    55% {
+      top: calc(100% - 12px);
+    }
+    95%,
+    100% {
+      top: 0;
+    }
+  }
+  @keyframes glow {
+    0%,
+    100% {
+      border-color: var(--sl-color-gray-5);
+    }
+    8% {
+      border-color: var(--sl-color-accent);
+    }
+    20% {
+      border-color: var(--sl-color-gray-5);
+    }
+  }
+  @media (max-width: 40rem) {
+    li {
+      grid-template-columns: 1fr;
+    }
+    .file {
+      grid-column: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .packet,
+    li {
+      animation: none;
+    }
+  }
+</style>

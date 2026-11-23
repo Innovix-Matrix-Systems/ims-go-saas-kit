@@ -1,0 +1,16 @@
+/* ── Audit log ───────────────────────────────────────── */
+.audit-filters { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(150px, 1fr)); gap: 12px 14px; align-items: end; }
+.audit-filters .audit-search .inspector-search { display: block; }
+.audit-count { grid-column: 3 / -1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-bottom: 6px; }
+.audit-action { display: inline-flex; align-items: center; gap: 8px; }
+.audit-action .tag { font-weight: var(--fw-medium); }
+.audit-table tbody tr.selected { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.audit-kv { border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 0; grid-template-columns: 130px 1fr; gap: 0; }
+.audit-kv dt, .audit-kv dd { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+.audit-kv dt:nth-last-of-type(1), .audit-kv dd:last-of-type { border-bottom: 0; }
+.audit-kv dd { font-family: var(--sans); font-size: var(--fs-base); }
+.audit-quick { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+@media (max-width: 1000px) {
+  .audit-filters { grid-template-columns: 1fr 1fr; }
+  .audit-count { grid-column: 1 / -1; }
+}

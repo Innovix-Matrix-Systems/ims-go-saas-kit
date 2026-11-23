@@ -1,0 +1,340 @@
+---
+title: Connect an AI agent
+description: Step by step — turn on the MCP server, connect Claude Desktop, Claude Code or OpenCode to your local API, sign in, and watch the agent work with your data.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components'
+
+In this tutorial you connect an AI app to the API running on your computer, sign in, and watch it
+read and change data as you. No prior MCP knowledge needed.
+
+**You will:**
+
+- turn on the MCP server and check it answers,
+- connect Claude Desktop (and, if you use them, Claude Code or OpenCode),
+- sign in and approve access in the browser,
+- ask the agent to read and create data,
+- check on the server what it did and how it is recorded,
+- disconnect it again.
+
+<Aside>
+  Finish the [Quick start](../getting-started/quick-start.mdx) first: Postgres running,
+  `make migrate seed` done and `make dev` working. Commands run from the repository root; use
+  `go run ./cmd/app …` while developing (a built binary is `ims …`).
+</Aside>
+
+## How it fits together
+
+There are three pieces, and you only configure the second:
+
+| Piece | What it is here |
+| --- | --- |
+| **MCP server** | your API. With `MCP_ENABLED=true` it answers at `http://localhost:8080/mcp`. Nothing extra to start. |
+| **MCP client** | the AI app: Claude Desktop, Claude Code, OpenCode, Cursor… You give it the address. It asks the server which **tools** exist and calls them when you chat. |
+| **Sign-in** | the first time, the app opens your browser on the API's own sign-in page. You sign in with your normal account and click **Allow**. From then on the agent acts **as you**: your permissions, your tenant, nothing more. |
+
+The starter ships five tools: `whoami`, `list_branches`, `create_branch`, `list_users` and
+`create_user`. Each one runs the matching REST endpoint, so the same permission checks, tenant
+filter, validation and activity log apply. ([How a tool call runs](../guides/mcp.md#how-a-tool-call-runs).)
+
+### Which way does my app connect?
+
+Apps identify themselves to the sign-in in one of two ways:
+
+- **No registration.** The app publishes a small document about itself (a *Client ID Metadata
+  Document*) and the server reads it. Nothing to set up. Claude Code works this way.
+- **A registered client.** You create a client once with one command and paste its `client_id`
+  into the app. Needed for apps that don't publish such a document.
+
+| App | On your local API | Section |
+| --- | --- | --- |
+| Claude Desktop | through the `mcp-remote` bridge, with a registered client | [Claude Desktop](#3-connect-claude-desktop) |
+| Claude Code | direct, no registration | [Claude Code](#claude-code) |
+| OpenCode 1.x | direct, with a registered client | [OpenCode](#opencode) |
+| claude.ai, and Claude Desktop's **Add custom connector** button | needs a public https URL | [The connector button](#later-the-connector-button) |
+
+<Aside type="caution" title="Why not Claude Desktop's “Add custom connector” button?">
+  That button doesn't connect from your computer: Anthropic's servers make the connection, and
+  they can't reach `localhost`. For a local API, Claude Desktop starts a small bridge program
+  (`mcp-remote`) on your computer instead. Once your API is deployed on https, the button is the
+  simplest way, with no registration at all.
+</Aside>
+
+## 1. Turn the MCP server on
+
+<Steps>
+
+1. **Apply the migration** for the sign-in tables (once):
+
+   ```bash
+   go run ./cmd/app migrate
+   ```
+
+2. **Turn it on** in `.env`:
+
+   ```bash
+   MCP_ENABLED=true
+   ```
+
+   Keep `APP_URL=http://localhost:8080`: the server tells apps to sign in there.
+
+3. **Restart `make dev`** so the API reads the change.
+
+</Steps>
+
+## 2. Check that it answers
+
+Before involving any app, ask the server directly.
+
+<Tabs>
+<TabItem label="PowerShell">
+
+```powershell
+Invoke-RestMethod http://localhost:8080/.well-known/oauth-authorization-server
+try { Invoke-WebRequest http://localhost:8080/mcp -Method Post } catch { $_.Exception.Response.StatusCode.value__ }
+```
+
+</TabItem>
+<TabItem label="bash">
+
+```bash
+curl -s localhost:8080/.well-known/oauth-authorization-server | jq
+curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:8080/mcp
+```
+
+</TabItem>
+</Tabs>
+
+You should see a JSON document listing `authorization_endpoint`, `token_endpoint` and
+`"client_id_metadata_document_supported": true`, and then **401**. The 401 is good news: `/mcp`
+is there and asks for a sign-in. A **404** means the server is off (see
+[Troubleshooting](#troubleshooting)).
+
+<Aside type="note" title="What is this document?">
+  It is how an app learns where to send you to sign in. An app calls `/mcp`, gets 401 with a
+  pointer to `/.well-known/oauth-protected-resource/mcp`, follows it to this document, and opens
+  your browser on `/oauth/authorize`. You never type these addresses yourself.
+</Aside>
+
+## 3. Connect Claude Desktop
+
+<Steps>
+
+1. **Register a client for Claude Desktop.** In a terminal in the project folder:
+
+   ```bash
+   go run ./cmd/app oauth:client:create --name "Claude Desktop" --redirect http://localhost/oauth/callback
+   ```
+
+   It prints a `client_id` like `ims_4b9736f53cee7a09aa0dc07a226ba795`. Copy it. The name is what
+   you will see on the consent page. The redirect is where the browser goes back after you allow
+   access: `mcp-remote` listens there, on a port it picks (any port on `localhost` or `127.0.0.1`
+   matches).
+
+2. **Open Claude Desktop's config file.** In Claude Desktop: **Settings → Developer → Edit
+   Config**. A file named `claude_desktop_config.json` opens.
+
+3. **Add the server**, with your `client_id`. If the file already has `"mcpServers"`, add the
+   `ims-local` entry inside it, next to the others:
+
+   ```json
+   {
+     "mcpServers": {
+       "ims-local": {
+         "command": "npx",
+         "args": [
+           "-y",
+           "mcp-remote",
+           "http://localhost:8080/mcp",
+           "--allow-http",
+           "--static-oauth-client-info",
+           "{\"client_id\":\"ims_PASTE_YOURS\"}"
+         ]
+       }
+     }
+   }
+   ```
+
+   What each part does: `npx -y mcp-remote` downloads and runs the bridge (it needs Node.js);
+   the URL is your API; `--allow-http` lets it use `http://localhost`; and
+   `--static-oauth-client-info` passes the registered client. Keep that JSON without spaces:
+   Claude Desktop on Windows doesn't escape spaces inside `args`.
+
+4. **Quit Claude Desktop completely and open it again.** Use the tray icon's **Quit**; closing
+   the window is not enough. Claude Desktop starts `mcp-remote`, which opens your browser.
+
+5. **Sign in.** The page is your API's own, titled with `APP_NAME`. Use your normal account, for
+   example `superadmin@ims.com` and the seed password. The same rules as the API login apply:
+   lockout after failed attempts, inactive accounts refused, an OTP step if OTP is on.
+
+6. **Approve on the consent page.** It shows:
+
+   - **who** wants access ("Claude Desktop") and **where** it returns ("an app on this computer",
+     with a warning, because a local app is not a website you can check);
+   - **Allow changes**, unticked by default. Without it the agent can only read. Tick it so it
+     can create branches and users;
+   - **Work in tenant**, only for platform accounts such as the super admin: pick the tenant the
+     agent works in (for example *Main Tenant*), or "No tenant: system work only". A tenant user
+     doesn't see this: their tenant is their own.
+
+   Click **Allow**. The browser says you can close the tab.
+
+7. **Check the tools are there.** In a new chat, open the tools menu under the message box.
+   **ims-local** is listed with five tools.
+
+</Steps>
+
+## 4. Watch it work
+
+Ask Claude, one at a time. Claude asks your permission before each tool call.
+
+| Ask | Tool | What you should see |
+| --- | --- | --- |
+| "Use ims-local: who am I?" | `whoami` | your name, e-mail and role |
+| "List my branches" | `list_branches` | only the branches of the tenant you picked |
+| "Create a branch called Made by Claude" | `create_branch` | the new branch, with its id |
+| "Create a user with no name" | `create_user` | a refusal listing the missing fields: the agent can read it and fix its input |
+
+Now check on the server what happened:
+
+- **Developer dashboard** ([localhost:8080/dev/](http://localhost:8080/dev/)) → **Telescope**:
+  the calls appear as `POST /mcp` with a blue **MCP** chip. Open one to see the request, the SQL it
+  ran and who it ran as.
+- **Activity log**: the `branch.created` entry has you as the actor and says an agent did it:
+
+  ```json
+  "_via": { "source": "mcp", "tool": "create_branch", "client": "Claude Desktop" }
+  ```
+
+  Read it with `GET /api/v1/activity` (in the tenant), or straight from the database:
+
+  ```sql
+  SELECT action, tenant_id, actor_id, changes->'_via' FROM activity_log ORDER BY id DESC LIMIT 5;
+  ```
+
+- **Your connection**: `GET /api/v1/user/connections` (with your normal token) lists it: the
+  client name, the scopes (`mcp:read`, plus `mcp:write` if you allowed changes), the tenant and
+  when it was last used.
+- **The access log** in the `make dev` terminal tags each call `via=mcp mcp_tool=create_branch`.
+
+<Aside type="tip" title="See the guard rails">
+  Connect again *without* ticking **Allow changes** and ask for a branch: the server refuses with
+  `insufficient_scope`. Sign in as a tenant user with fewer permissions and ask for something they
+  can't do: you get the same "not allowed" answer the REST API gives. The agent can never do more
+  than the person who signed in.
+</Aside>
+
+## Other apps
+
+### Claude Code
+
+Claude Code publishes its own metadata document, so it needs **no registered client**.
+
+<Steps>
+
+1. Add the server once:
+
+   ```bash
+   claude mcp add --transport http ims-local http://localhost:8080/mcp
+   ```
+
+2. Start `claude`, type `/mcp`, pick **ims-local** and choose **Authenticate**. Your browser opens
+   the same sign-in and consent pages; the consent page names **Claude Code**.
+
+3. Ask the same questions as above.
+
+</Steps>
+
+### OpenCode
+
+OpenCode 1.x needs a registered client, and returns to `http://127.0.0.1:19876/mcp/oauth/callback`.
+
+<Steps>
+
+1. Register a client:
+
+   ```bash
+   go run ./cmd/app oauth:client:create --name "OpenCode" --redirect http://127.0.0.1/mcp/oauth/callback
+   ```
+
+2. Add the server to `~/.config/opencode/opencode.json` (on Windows
+   `C:\Users\<you>\.config\opencode\opencode.json`), inside the existing `{ }`, with your
+   `client_id`:
+
+   ```json
+   "mcp": {
+     "ims-local": {
+       "type": "remote",
+       "url": "http://localhost:8080/mcp",
+       "oauth": { "clientId": "ims_PASTE_YOURS" }
+     }
+   }
+   ```
+
+3. Sign in, then start OpenCode and ask away:
+
+   ```bash
+   opencode mcp auth ims-local
+   opencode
+   ```
+
+</Steps>
+
+### Any other MCP app
+
+If it supports remote (HTTP) MCP servers with OAuth, give it `http://localhost:8080/mcp`. If its
+sign-in fails because it can't register, create a client for it with the redirect URI it uses
+(the error page shows it) and paste the `client_id` into its settings.
+
+## Disconnect and clean up
+
+- **Disconnect the agent**: `DELETE /api/v1/user/connections/{id}` (the id from the list above).
+  Its next call gets 401. Changing your password or "log out other devices" disconnects every
+  agent too.
+- **Remove a registered client**: `go run ./cmd/app oauth:client:list`, then
+  `go run ./cmd/app oauth:client:delete <id>`. Every connection made with it ends.
+- **Forget the sign-in in the app**: Claude Desktop (mcp-remote): delete the `.mcp-auth` folder in
+  your home folder and restart Claude Desktop. OpenCode: `opencode mcp logout ims-local`. Claude
+  Code: `/mcp` → **ims-local** → clear authentication.
+
+## Troubleshooting
+
+| You see | Why | Fix |
+| --- | --- | --- |
+| `404` from `/mcp` or `/.well-known/…` | the server is off | set `MCP_ENABLED=true` and restart `make dev` |
+| The sign-in page says *The app asked to return to an address it has not declared (…)* | the client's registered redirect doesn't match the one the app uses | register a client with the address shown in brackets (the port doesn't matter on `localhost` / `127.0.0.1`) |
+| *This client is not registered* / *has been deactivated* | wrong or deleted `client_id` | `oauth:client:list`, then paste the right one |
+| *This sign-in has expired* | more than 10 minutes on the page, or the cookie was lost | go back to the app and connect again |
+| No browser opens from Claude Desktop | the bridge didn't start | **Settings → Developer → ims-local** shows its status and log; check Node.js is installed; on Windows try `"command": "cmd"` with `"/c", "npx",` first in `args` |
+| Tools vanished after a while | the sign-in was revoked (password change, disconnect, client deleted) | sign in again (delete `.mcp-auth` for Claude Desktop) |
+| `403` with `insufficient_scope` | the connection is read-only | reconnect and tick **Allow changes** |
+| A tool answers *not allowed* (`INSUFFICIENT_PERMISSIONS`) | the account lacks that permission | give the role the permission, or sign in as someone who has it |
+
+## Later: the connector button
+
+When your API runs on a public https address (deployed, or through a tunnel such as Cloudflare
+Tunnel or ngrok), apps that connect from the cloud work too, with no registration:
+
+<Steps>
+
+1. Point the tunnel at the API itself. Under `make dev` that is port **8081** (the dashboard's dev
+   server on 8080 refuses other host names). With `ims serve`, it is your `APP_LISTEN_ADDR`.
+2. Set `APP_URL` to the public https address and restart the API. The sign-in and the tokens are
+   issued for that address.
+3. In Claude Desktop or claude.ai: **Customize → Connectors → Add custom connector**, paste
+   `https://<your-address>/mcp`, then **Connect**. The same sign-in and consent pages follow.
+
+</Steps>
+
+## What you learned
+
+| You did | What it means |
+| --- | --- |
+| set `MCP_ENABLED=true` | the API is also an MCP server and an OAuth sign-in server; nothing else runs |
+| registered a client | apps without a metadata document get a `client_id` from you; others need nothing |
+| signed in and consented | the agent acts as you, read-only unless you allow changes, in one tenant |
+| watched the dashboard and activity log | every agent call is a normal API request, recorded with the tool and the app |
+| disconnected | access ends at once, server side |
+
+Next: expose your own operations as tools with one line of OpenAPI. See
+[Tools come from the OpenAPI document](../guides/mcp.md#tools-come-from-the-openapi-document).

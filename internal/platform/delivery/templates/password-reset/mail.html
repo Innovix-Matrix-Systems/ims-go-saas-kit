@@ -1,0 +1,5 @@
+<p>Hello{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>We received a request to reset your password. Use the button below to choose a new one.</p>
+<p style="margin:24px 0;"><a href="{{.Data.link}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Reset password</a></p>
+<p style="font-size:13px;color:#6b7785;">Or open this link: <a href="{{.Data.link}}">{{.Data.link}}</a></p>
+<p>The link expires in {{duration .Data.minutes}}. If you did not ask for this, you can ignore this e-mail.</p>

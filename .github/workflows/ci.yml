@@ -1,0 +1,192 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# One run per branch/PR: a new push cancels the outdated run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          # Latest 1.26 patch: go.mod states the minimum, CI and releases
+          # build with every standard-library security fix.
+          go-version: "1.26"
+          check-latest: true
+
+      - name: gofmt
+        run: test -z "$(gofmt -l .)"
+
+      - name: vet
+        run: go vet ./...
+
+      - name: build
+        run: go build ./...
+
+      - name: generated code is current (sqlc)
+        run: |
+          go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate
+          git diff --exit-code -- internal/dbgen
+
+      - name: generated code is current (openapi)
+        run: |
+          go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.1 -config api/oapi-codegen.yaml api/openapi.yaml
+          git diff --exit-code -- internal/contract
+
+      - name: generated OpenAPI regions are current (no DB)
+        run: go run ./cmd/app gen openapi --all --check
+
+      - name: agent skills are in sync (.agents/skills = .claude/skills)
+        run: diff -r .agents/skills .claude/skills
+
+      - name: generated docs reference pages are current
+        run: go run ./cmd/app gen docs --check
+
+      - name: test (race)
+        run: go test -race ./...
+
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.8
+          install-mode: goinstall # build with the toolchain from setup-go (targets Go 1.26)
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/dev/package-lock.json
+
+      - name: install
+        run: npm ci
+        working-directory: web/dev
+
+      - name: typecheck
+        run: npm run typecheck
+        working-directory: web/dev
+
+      - name: style check (contrast, type scale, tokens)
+        run: npm run check:style
+        working-directory: web/dev
+
+      - name: build
+        run: npm run build
+        working-directory: web/dev
+
+      - name: generated OpenAPI types are current
+        run: |
+          npm run openapi:gen
+          git diff --exit-code -- src/api/schema.d.ts
+        working-directory: web/dev
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: install
+        run: npm ci
+        working-directory: website
+
+      - name: build and check every link
+        run: npm run build
+        working-directory: website
+
+  # Docker is optional, but it must keep working: build the image, bring the
+  # whole compose stack up and probe it.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: start the stack (postgres → migrate → api, worker, scheduler)
+        run: docker compose up -d --build --wait --wait-timeout 180 api worker scheduler
+
+      - name: probe the API and seed it
+        run: |
+          curl -fsS http://localhost:8080/up
+          docker compose run --rm api db:seed
+          docker compose run --rm api version
+
+      - name: logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: stop
+        if: always()
+        run: docker compose down -v
+
+  cross-compile:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          # Latest 1.26 patch: go.mod states the minimum, CI and releases
+          # build with every standard-library security fix.
+          go-version: "1.26"
+          check-latest: true
+
+      - name: static build (linux/${{ matrix.goarch }})
+        env:
+          CGO_ENABLED: "0"
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+        run: go build -trimpath -ldflags "-X github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/version.Version=ci" -o /tmp/ims-linux-${{ matrix.goarch }} ./cmd/app
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ims_go_api_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          # Latest 1.26 patch: go.mod states the minimum, CI and releases
+          # build with every standard-library security fix.
+          go-version: "1.26"
+          check-latest: true
+
+      - name: integration tests (race)
+        run: go test -race -count=1 ./...
+        env:
+          DATABASE_TEST_DSN: postgres://postgres:postgres@127.0.0.1:5432/ims_go_api_test?sslmode=disable

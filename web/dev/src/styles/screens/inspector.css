@@ -1,0 +1,31 @@
+/* ── Inspector ───────────────────────────────────────── */
+.inspector-bar { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 16px; }
+.inspector-bar .tabs { margin-bottom: 0; flex: none; overflow: visible; box-shadow: none; }
+.inspector-search { position: relative; flex: 1; display: block; }
+.inspector-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-3); }
+.inspector-search .input { width: 100%; padding-left: 30px; }
+.inspector-global { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.inspector-global .field-label { margin-right: 6px; }
+.mw-chip { font-family: var(--mono); font-size: var(--fs-sm); padding: 1px 7px; border-radius: 5px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-1); }
+.method-pill { display: inline-block; min-width: 54px; text-align: center; padding: 2px 6px; border-radius: 5px; background: var(--surface-2); border: 1px solid var(--border); }
+.route-path { font-size: var(--fs-md); color: var(--text-1); }
+.route-mw { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.route-mw span { font-size: var(--fs-sm); color: var(--text-3); }
+.route-mw span:not(:last-child)::after { content: "·"; margin-left: 4px; }
+.perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.perm-group { font-size: var(--fs-base); color: var(--text-1); font-weight: var(--fw-semibold); margin-bottom: 10px; }
+.perm-item { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; }
+.perm-item .dot { margin-top: 7px; }
+.perm-item .chip { margin-left: 4px; }
+.config-rows { margin: 10px -14px -14px; border-top: 1px solid var(--border); }
+.config-row { display: grid; grid-template-columns: minmax(220px, 38%) 1fr auto; gap: 14px; align-items: center; padding: 7px 14px; border-bottom: 1px solid var(--border); }
+.config-row:last-child { border-bottom: 0; }
+.config-row > span:nth-child(2) { word-break: break-all; color: var(--text-1); }
+.config-row .masked { color: var(--text-3); letter-spacing: .1em; }
+.eco { font-size: var(--fs-xs); padding: 0 5px; border-radius: 4px; margin-right: 6px; }
+.eco.go { color: var(--info-fg); background: var(--info-subtle); }
+.eco.npm { color: var(--danger-fg); background: var(--danger-subtle); }
+@media (max-width: 900px) {
+  .inspector-bar { flex-direction: column; align-items: stretch; }
+  .config-row { grid-template-columns: 1fr; gap: 2px; }
+}

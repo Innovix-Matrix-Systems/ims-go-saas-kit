@@ -1,0 +1,10 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+Your account was just signed in from a new place:
+
+  When:    {{.Data.when}}
+  Where:   {{.Data.ip}}
+  Browser: {{if .Data.browser}}{{.Data.browser}}{{else}}unknown{{end}}
+  Device:  {{.Data.device}}
+
+If this was you, there is nothing to do. If it was not, change your password now and sign out your other sessions.

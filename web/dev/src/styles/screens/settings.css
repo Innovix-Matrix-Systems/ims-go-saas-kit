@@ -1,0 +1,75 @@
+/* ── Settings: group list + detail ───────────────────── */
+.settings-layout { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.group-pane .card-header { margin-bottom: 10px; }
+.group-list { display: flex; flex-direction: column; gap: 2px; max-height: calc(100vh - 430px); min-height: 220px; overflow-y: auto; margin-top: 10px; padding-right: 2px; }
+.group-list-item {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  border-radius: var(--radius-sm); cursor: pointer;
+  transition: background var(--ease);
+}
+.group-list-item:hover { background: var(--surface-2); }
+.group-list-item.selected { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.group-list-item.drop-target { background: var(--accent-subtle); box-shadow: inset 0 0 0 1px var(--accent-border); }
+.group-list-item .drag-handle { opacity: 0.45; }
+.group-list-item:hover .drag-handle, .group-list-item.selected .drag-handle { opacity: 1; }
+.group-name { font-size: var(--fs-base); font-weight: var(--fw-medium); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.group-name.active { color: var(--accent); }
+.group-detail .setting-list { display: flex; flex-direction: column; }
+.setting-list { display: flex; flex-direction: column; }
+.setting-row.dragging { opacity: 0.45; }
+.setting-row:active { cursor: grabbing; }
+.setting-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.setting-key { font-family: var(--mono); font-size: var(--fs-md); }
+.setting-value { font-family: var(--mono); font-size: var(--fs-sm); color: var(--text-2); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drag-handle { color: var(--text-3); cursor: grab; display: inline-flex; flex: none; }
+.drag-handle:active { cursor: grabbing; }
+.drag-handle svg { width: 15px; height: 15px; }
+
+/* Settings list (components/SettingsList.tsx). */
+.setting-group-head { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; }
+.setting-group-head b { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+.setting-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 420px); gap: 24px; padding: 14px; margin: 0 -14px; border-top: 1px solid var(--border); cursor: grab; }
+.setting-row:hover { background: var(--surface-2); }
+.setting-row.readonly .setting-control { opacity: .65; }
+.setting-info b { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+.setting-control { display: flex; flex-direction: column; gap: 6px; }
+.setting-control .input { flex: 1; }
+.setting-control .input.invalid { border-color: var(--danger-fg); }
+.setting-meta { display: flex; align-items: center; gap: 4px; font-size: var(--fs-sm); color: var(--text-3); flex-wrap: wrap; }
+.setting-meta > span { margin-right: 6px; }
+.setting-meta .btn.sm { padding: 0 6px; font-size: var(--fs-sm); color: var(--text-2); }
+.json-preview { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; text-align: left; background: var(--surface-inset); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 7px 10px; cursor: pointer; }
+.json-preview .mono { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.json-preview svg { width: 13px; height: 13px; color: var(--text-2); }
+
+/* Drag and drop between groups. */
+.settings-dnd { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px; align-items: start; }
+.settings-rail { position: sticky; top: 76px; }
+.rail-title { display: flex; align-items: center; gap: 8px; font-weight: var(--fw-semibold); margin-bottom: 8px; }
+.rail-drop { border: 1px dashed transparent; border-radius: var(--radius-sm); margin: -6px; padding: 6px; transition: border-color var(--ease), background var(--ease); }
+.rail-drop.over, .rail-group.over, .setting-group-drop.over { border-color: var(--accent-border); background: var(--accent-subtle); }
+.rail-item, .rail-group { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-1); margin-bottom: 6px; cursor: grab; font-size: var(--fs-base); }
+.rail-item svg, .rail-group svg, .drag-grip svg { width: 14px; height: 14px; color: var(--text-3); flex: none; }
+.rail-group.unsynced { opacity: .55; cursor: not-allowed; }
+.setting-group-drop { border: 1px dashed transparent; border-radius: var(--radius); margin: -14px; padding: 14px; transition: border-color var(--ease), background var(--ease); }
+.drop-hint { padding: 14px; text-align: center; font-size: var(--fs-base); color: var(--text-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); }
+.dnd-row { position: relative; display: flex; align-items: stretch; margin: 0 -14px; }
+.dnd-row > .setting-row { flex: 1; margin: 0; }
+.dnd-row.over { box-shadow: inset 0 2px 0 var(--accent); }
+.dnd-row.dragging { opacity: .4; }
+.drag-grip { display: flex; align-items: center; padding: 0 2px 0 8px; cursor: grab; border-top: 1px solid var(--border); }
+.drag-grip:hover svg { color: var(--text-1); }
+
+@media (max-width: 1100px) {
+  .settings-layout, .settings-dnd { grid-template-columns: 1fr; }
+  .settings-rail { position: static; }
+  .group-list { max-height: 360px; }
+}
+@media (max-width: 900px) { .setting-row { grid-template-columns: 1fr; gap: 10px; } }
+
+/* Rename/delete on a rail group, shown on hover or keyboard focus. */
+.rail-title .btn { margin-left: auto; }
+.rail-actions { display: inline-flex; gap: 2px; opacity: 0; transition: opacity var(--ease); }
+.rail-group:hover .rail-actions, .rail-group:focus-within .rail-actions { opacity: 1; }
+.rail-actions .icon-btn { width: 24px; height: 24px; border: 0; }
+.rail-actions .icon-btn svg { width: 13px; height: 13px; }

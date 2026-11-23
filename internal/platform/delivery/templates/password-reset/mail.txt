@@ -1,0 +1,7 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+We received a request to reset your password. Open this link to choose a new one:
+
+{{.Data.link}}
+
+The link expires in {{duration .Data.minutes}}. If you did not ask for this, you can ignore this e-mail.

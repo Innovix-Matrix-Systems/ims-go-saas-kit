@@ -1,0 +1,8 @@
+/* ── Maintenance mode ────────────────────────────────── */
+.maintenance-pill { color: var(--danger-fg); border-color: var(--danger-border); background: var(--danger-subtle); }
+.maintenance-card { margin-bottom: 16px; border-left: 3px solid var(--ok-fg); }
+.maintenance-card.down { border-left-color: var(--danger-fg); background: var(--danger-subtle); }
+.maintenance-pairs { margin-top: 12px; }
+.maintenance-pairs .maintenance-message { flex-basis: 100%; }
+.maintenance-secret { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 12px; border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); }
+.maintenance-secret code { font-family: var(--mono); word-break: break-all; }

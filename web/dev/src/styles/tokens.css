@@ -1,0 +1,130 @@
+/* ── Design tokens ──────────────────────────────────────
+   Components use these names only, never a raw colour, so a theme, an
+   accent preset or a fork's rebrand changes the whole dashboard here.
+
+   The theme is set on <html> before first paint (routes/__root.tsx):
+   data-theme="light|dark" (the resolved theme, "system" follows the OS),
+   data-accent="indigo|blue|teal|violet|slate" and
+   data-density="comfortable|compact". */
+
+:root {
+  /* Type: six sizes, three weights. */
+  --fs-xs: 11px;   /* table headers, sidebar section titles */
+  --fs-sm: 12px;   /* meta, labels, badges, kbd */
+  --fs-md: 13px;   /* dense tables, code, compact body */
+  --fs-base: 14px; /* body, inputs, table cells, card titles */
+  --fs-lg: 20px;   /* page titles */
+  --fs-xl: 24px;   /* stat values, login title */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --lh-body: 1.5;
+  --lh-heading: 1.25;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Shape and spacing (4 px grid). */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --sidebar-width: 240px;
+  --sidebar-rail: 56px;
+  --topbar-height: 52px;
+
+  /* Density: comfortable by default. */
+  --fs-body: var(--fs-base);
+  --row-pad-y: 10px;
+  --row-pad-x: 14px;
+
+  /* Motion: only when something changes. */
+  --ease: 120ms ease;
+
+  /* Light theme (also the base: dark overrides below). */
+  color-scheme: light;
+  --surface-0: #f6f6f7;
+  --surface-1: #ffffff;
+  --surface-2: #f1f1f3;
+  --surface-inset: #fafafa;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text-1: #18181b;
+  --text-2: #52525b;
+  --text-3: #6b6b73;
+  --accent: var(--accent-light);
+  --accent-fg: #ffffff;
+  --overlay: rgba(24, 24, 27, 0.32);
+  --shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.05);
+  --shadow: 0 16px 40px rgba(24, 24, 27, 0.14), 0 2px 6px rgba(24, 24, 27, 0.06);
+  --subtle-mix: 9%;
+  --border-mix: 30%;
+  --ok-fg: #127535;
+  --warn-fg: #935a06;
+  --danger-fg: #c42727;
+  --info-fg: #1d4ed8;
+  --violet-fg: #6d28d9;
+}
+
+/* Accent presets: a light and a dark value each, both passing AA on the
+   card surface (scripts/contrast.mjs). The first is the default; a fork
+   changes it, or adds a preset (and its name in components/appearance.ts).
+   Not :root-only, so a swatch can show a preset other than the current one. */
+:root, [data-accent="indigo"] { --accent-light: #4f46e5; --accent-dark: #818cf8; }
+[data-accent="blue"] { --accent-light: #2563eb; --accent-dark: #7aa7f7; }
+[data-accent="teal"] { --accent-light: #0f766e; --accent-dark: #4fd1c0; }
+[data-accent="violet"] { --accent-light: #7c3aed; --accent-dark: #a78bfa; }
+[data-accent="slate"] { --accent-light: #475569; --accent-dark: #a3b1c6; }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-0: #111113;
+  --surface-1: #18181b;
+  --surface-2: #202024;
+  --surface-inset: #141416;
+  --border: #2a2a2f;
+  --border-strong: #3a3a41;
+  --text-1: #e4e4e7;
+  --text-2: #a1a1aa;
+  --text-3: #8a8a94;
+  --accent: var(--accent-dark);
+  --accent-fg: #111113;
+  --overlay: rgba(0, 0, 0, 0.5);
+  --shadow-sm: none;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+  --subtle-mix: 13%;
+  --border-mix: 34%;
+  /* Desaturated for dark surfaces. */
+  --ok-fg: #6ccb93;
+  --warn-fg: #e0b45c;
+  --danger-fg: #f0787f;
+  --info-fg: #7fa8f2;
+  --violet-fg: #b39cf0;
+}
+
+:root[data-density="compact"] {
+  --fs-body: var(--fs-md);
+  --row-pad-y: 6px;
+  --row-pad-x: 12px;
+}
+
+/* Shades derived from the colours above (resolved per theme). */
+:root {
+  --accent-hover: color-mix(in srgb, var(--accent) 86%, var(--text-1));
+  --accent-subtle: color-mix(in srgb, var(--accent) var(--subtle-mix), var(--surface-1));
+  --accent-border: color-mix(in srgb, var(--accent) var(--border-mix), var(--surface-1));
+  --focus-ring: color-mix(in srgb, var(--accent) 30%, transparent);
+  --ok-subtle: color-mix(in srgb, var(--ok-fg) var(--subtle-mix), var(--surface-1));
+  --ok-border: color-mix(in srgb, var(--ok-fg) var(--border-mix), var(--surface-1));
+  --warn-subtle: color-mix(in srgb, var(--warn-fg) var(--subtle-mix), var(--surface-1));
+  --warn-border: color-mix(in srgb, var(--warn-fg) var(--border-mix), var(--surface-1));
+  --danger-subtle: color-mix(in srgb, var(--danger-fg) var(--subtle-mix), var(--surface-1));
+  --danger-border: color-mix(in srgb, var(--danger-fg) var(--border-mix), var(--surface-1));
+  --info-subtle: color-mix(in srgb, var(--info-fg) var(--subtle-mix), var(--surface-1));
+  --info-border: color-mix(in srgb, var(--info-fg) var(--border-mix), var(--surface-1));
+  --violet-subtle: color-mix(in srgb, var(--violet-fg) var(--subtle-mix), var(--surface-1));
+  --violet-border: color-mix(in srgb, var(--violet-fg) var(--border-mix), var(--surface-1));
+}

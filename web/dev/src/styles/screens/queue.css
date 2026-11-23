@@ -1,0 +1,7 @@
+/* ── Queue: one tile per queue, then the jobs ──────────── */
+.queue-tile { display: flex; flex-direction: column; gap: 12px; }
+.queue-tile.paused { border-color: var(--warn-border); }
+.queue-name { font-family: var(--mono); font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+.queue-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.queue-count { font-size: var(--fs-lg); font-weight: var(--fw-semibold); line-height: var(--lh-heading); font-variant-numeric: tabular-nums; }
+.row-actions { flex-wrap: nowrap; }

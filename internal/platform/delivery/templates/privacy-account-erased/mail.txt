@@ -1,0 +1,5 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+Your {{.Brand.Name}} account has been deleted and your personal data erased. This is the last message we send to this address.
+
+Records the organisation must keep, such as invoices and its audit log, remain without your name, e-mail address or phone number.

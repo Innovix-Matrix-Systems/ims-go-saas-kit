@@ -1,0 +1,116 @@
+---
+title: How it works
+description: The one rule every request follows, the layers it passes through, and what each layer is allowed to do.
+---
+
+import RequestFlow from '@components/RequestFlow.astro'
+import { Aside } from '@astrojs/starlight/components'
+
+## The one rule
+
+Data flows in **one direction**, layer by layer, and **no layer is skipped**:
+
+<RequestFlow />
+
+- **Handlers** don't touch SQL. They decode the request, call one service method and write the
+  response.
+- **Services** don't know about HTTP. They hold the business rules, so the same method serves an
+  HTTP request, a CLI command, a queue job or a scheduled task.
+- **Repositories** don't know about HTTP or the current user. They take explicit parameters
+  (`tenantID`, `tenancy.Filter`) and run generated SQL.
+
+That is the whole architecture. Everything else is a consequence of it.
+
+## A request, end to end
+
+Here is `POST /api/v1/branch` from the wire to the database and back.
+
+**1. The route declares the permission** (`internal/modules/branches/routes.go`) — Laravel's
+`->middleware('can:branch.create')`:
+
+```go
+r.With(h.can(authz.PermBranchCreate)).Post("/branch", h.store)
+```
+
+Before the handler runs, middleware has already assigned a request id, authenticated the bearer
+token and **resolved the tenant** for this request.
+
+**2. The handler binds and delegates** (`handler.go`):
+
+```go
+func (h *Handler) store(w http.ResponseWriter, r *http.Request) {
+	var req InsertUpdateRequest
+	if !h.Bind(w, r, &req) { // decode + validate; the 400/415/422 is already written
+		return
+	}
+	branch, err := h.service.Create(r.Context(), tenancy.From(r), authn.UserID(r), req.toInput())
+	if err != nil {
+		h.Error(w, r, err) // any error becomes an RFC 9457 problem response
+		return
+	}
+	h.Data(w, r, http.StatusCreated, NewResponse(*branch)) // {"data": {...}}
+}
+```
+
+**3. The service applies the rules** (`service.go`): it reads the tenant from the scope it was
+given, checks the plan's `branches.max` quota, writes inside a transaction and records an
+activity entry.
+
+**4. The repository runs generated SQL** (`repository.go`), calling `internal/dbgen` — code that
+[sqlc](https://sqlc.dev) generates from the SQL in `sql/queries/branches.sql`. The tenant id is a
+parameter of every tenant-scoped query.
+
+**5. The response** goes back up the same path: domain struct → response DTO → JSON envelope.
+
+## Laravel → this codebase
+
+The short version; [Coming from Laravel](./coming-from-laravel.md) has the full map, the packages,
+what is left out on purpose and why.
+
+| Laravel | Here |
+| --- | --- |
+| Controller method | handler method on a type embedding `httpx.Kit` |
+| Form request (`$request->validated()`) | `h.Bind(w, r, &req)` with `validate:"…"` struct tags |
+| `->middleware('can:x')` | `r.With(h.can("x"))` on the route |
+| `auth()->id()` | `authn.UserID(r)` |
+| Eloquent model + global scope | repository + explicit `tenancy.Filter` in SQL |
+| `DB::transaction()` | `s.tx.WithTx(ctx, func(q *dbgen.Queries) error { … })` |
+| `config/*.php` | `internal/config/*.go`, one file per section |
+| Artisan command | Cobra command in `internal/cli` (`ims <command>`; [add one](../guides/cli-commands.md)) |
+| Queued job | `queue.Definition` registered in a `queue.Registry` |
+| `Kernel::schedule()` | the task list in `internal/app/schedule.go` |
+| `Cache::remember()` | `cache.Remember(ctx, store, key, ttl, fn)` |
+| Feature test | `testkit.New(t)` + `app.As(user).Post(...)` |
+| spatie/laravel-activitylog | `activity.Recorder.Record(ctx, activity.Entry{…})` |
+| Telescope / Horizon | the developer dashboard at `/dev` |
+
+## Two places things get wired
+
+The composition root (`internal/app`) builds every dependency explicitly — there is no container
+or reflection:
+
+- **`platform.go`** builds what every mode shares (HTTP, CLI, workers, scheduler): database pools,
+  cache, queue, storage, mail and the shared services. They hang off the `Platform` struct.
+- **`wiring.go`** builds the HTTP-only pieces — handlers — on the `Dependencies` struct, and
+  **`routes.go`** mounts them into route groups.
+
+<Aside type="caution" title="New shared service? Do both steps.">
+  A service used by HTTP *and* jobs or commands must be constructed in `platform.go` **and** put on
+  `Platform`. `platform_wiring_test.go` asserts the shared services are non-nil, so a missed
+  assignment fails a test instead of surfacing as a confusing 503.
+</Aside>
+
+## Route groups
+
+Every route lives in one of these groups (`internal/app/routes.go`):
+
+| Group | Middleware | Examples |
+| --- | --- | --- |
+| Public | none | `/up`, `/api/health`, login, password reset, public packages, gateway callbacks |
+| Public tenant | `X-Tenant-Code` → resolve tenant (no token) | `/api/v1/public/tenant` and each module's `RegisterPublicTenantRoutes` |
+| Authenticated | bearer token | logout |
+| Tenant-resolved | token → resolve tenant & branch (acting headers apply here) | users, branches, roles, settings, flags, activity, billing status |
+| Tenant-exempt | token → exempt (+ internal-only) | tenants, permissions, internal users/roles, packages, internal billing |
+| Dashboard | dashboard enabled → token → exempt → `dev.view` | `/dev`, `/dev/api/*` (mutations add `dev.manage`) |
+
+Next: find your way around the folders in the [Project tour](./project-tour.mdx).

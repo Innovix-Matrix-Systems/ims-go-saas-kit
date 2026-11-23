@@ -1,0 +1,234 @@
+---
+/**
+ * An animated terminal: commands type out, output lines fade in, and the
+ * whole thing replays from the ↻ button. It starts when scrolled into view
+ * and shows everything at once for people who prefer reduced motion.
+ *
+ *   <Terminal title="make dev" lines={[
+ *     { cmd: 'make migrate seed' },
+ *     { out: 'seeded 73 permissions', tone: 'ok' },
+ *   ]} />
+ */
+interface Line {
+  cmd?: string
+  out?: string
+  tone?: 'ok' | 'dim' | 'warn' | 'accent'
+  /** Pause before this line, in ms (default: 350 for output, 600 for commands). */
+  pause?: number
+}
+interface Props {
+  title?: string
+  lines: Line[]
+  /** Typing speed, ms per character. */
+  speed?: number
+}
+
+const { title = 'terminal', lines, speed = 28 } = Astro.props
+
+let t = 300
+const timed = lines.map((line) => {
+  const isCmd = line.cmd !== undefined
+  t += line.pause ?? (isCmd ? 600 : 350)
+  const start = t
+  const chars = isCmd ? line.cmd!.length : 0
+  const duration = isCmd ? Math.max(chars * speed, 200) : 250
+  t += duration
+  return { ...line, isCmd, start, duration, chars }
+})
+---
+
+<figure class="term not-content" data-terminal>
+  <figcaption class="term-bar">
+    <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="term-title">{title}</span>
+    <button class="replay" type="button" aria-label="Replay animation" title="Replay">↻</button>
+  </figcaption>
+  <pre class="term-body"><code>{
+    timed.map((line) =>
+      line.isCmd ? (
+        <span
+          class="line cmd"
+          style={`--start:${line.start}ms;--dur:${line.duration}ms;--chars:${line.chars}`}
+        ><span class="prompt">$ </span><span class="typed">{line.cmd}</span></span>
+      ) : (
+        <span class={`line out ${line.tone ?? ''}`} style={`--start:${line.start}ms`}>{line.out}</span>
+      ),
+    )
+  }</code></pre>
+</figure>
+
+<script>
+  const terms = document.querySelectorAll<HTMLElement>('[data-terminal]')
+  const play = (el: HTMLElement) => {
+    el.classList.remove('play')
+    void el.offsetWidth // restart CSS animations
+    el.classList.add('play')
+  }
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          play(entry.target as HTMLElement)
+          io.unobserve(entry.target)
+        }
+      }
+    },
+    { threshold: 0.4 },
+  )
+  terms.forEach((el) => {
+    io.observe(el)
+    el.querySelector('.replay')?.addEventListener('click', () => play(el))
+  })
+</script>
+
+<style>
+  .term {
+    margin: 1.5rem 0;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0d0d10;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  }
+  .term-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.8rem;
+    background: #17171b;
+    border-bottom: 1px solid #26262c;
+    font-family: var(--sl-font-mono);
+    font-size: 0.75rem;
+    color: #8c8c96;
+  }
+  .dots {
+    display: inline-flex;
+    gap: 6px;
+  }
+  .dots i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #3a3a42;
+  }
+  .dots i:first-child {
+    background: #ff5c1a;
+  }
+  .term-title {
+    flex: 1;
+  }
+  .replay {
+    background: none;
+    border: 0;
+    color: #8c8c96;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+  .replay:hover {
+    color: #ff5c1a;
+  }
+  .term-body {
+    margin: 0;
+    padding: 1rem 1.1rem 1.2rem;
+    font-family: var(--sl-font-mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: #e4e4e8;
+    background: transparent;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .term-body code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+  }
+  .line {
+    display: block;
+    min-height: 1.7em;
+  }
+  .prompt {
+    color: #ff5c1a;
+    user-select: none;
+  }
+  .out {
+    color: #a7a7b0;
+  }
+  .out.ok {
+    color: #3ddc97;
+  }
+  .out.dim {
+    color: #6b6b74;
+  }
+  .out.warn {
+    color: #f5c451;
+  }
+  .out.accent {
+    color: #ff8a57;
+  }
+
+  /* Before play: hidden. While playing: animate. Reduced motion: shown. */
+  .term .line {
+    visibility: hidden;
+  }
+  .term.play .line {
+    animation: show 1ms linear forwards;
+    animation-delay: var(--start);
+  }
+  .term .typed {
+    display: inline-block;
+    vertical-align: bottom;
+    overflow: hidden;
+    white-space: pre;
+  }
+  .term.play .cmd .typed {
+    width: 0;
+    animation: type var(--dur) steps(var(--chars), end) forwards;
+    animation-delay: var(--start);
+  }
+  .term.play .out {
+    opacity: 0;
+    animation: fade 250ms ease-out forwards;
+    animation-delay: var(--start);
+  }
+  @keyframes show {
+    to {
+      visibility: visible;
+    }
+  }
+  @keyframes type {
+    to {
+      width: calc(var(--chars) * 1ch);
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+      visibility: visible;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .term .line,
+    .term.play .line {
+      visibility: visible;
+      animation: none;
+    }
+    .term.play .cmd .typed,
+    .term.play .out {
+      width: auto;
+      opacity: 1;
+      animation: none;
+    }
+    .replay {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,5 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+Your sign-in code is: {{.Data.code}}
+
+It expires in {{duration .Data.minutes}}. If you did not try to sign in, you can ignore this e-mail and consider changing your password.

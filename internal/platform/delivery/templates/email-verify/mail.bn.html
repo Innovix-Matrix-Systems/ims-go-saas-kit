@@ -1,0 +1,5 @@
+<p>প্রিয়{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>অনুগ্রহ করে আপনার ই-মেইল ঠিকানা নিশ্চিত করুন।</p>
+<p style="margin:24px 0;"><a href="{{.Data.link}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">ই-মেইল যাচাই করুন</a></p>
+<p style="font-size:13px;color:#6b7785;">অথবা এই লিংকটি খুলুন: <a href="{{.Data.link}}">{{.Data.link}}</a></p>
+<p>লিংকটির মেয়াদ {{duration .Data.minutes}}।</p>

@@ -1,0 +1,1 @@
+{{.Brand.Name}}: {{.Data.title}}{{if .Data.url}} {{.Data.url}}{{end}}
