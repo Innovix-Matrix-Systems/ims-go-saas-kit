@@ -84,7 +84,12 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   organization with log in as, payment approvals (approve or reject with a note), plans with a
   feature editor, staff accounts (invite with a platform role) and platform settings (including the
   bank details). Impersonating an organization and logging in as a user each show a banner with
-  the way back; logging in as a user renders the app as that user sees it.
+  the way back; logging in as a user renders the app as that user sees it. Billing adds invoice
+  downloads, withdrawing a payment that waits for confirmation, and moving to a free plan at once;
+  the console adds feature flags (for everyone or one organization, with rollout and reset) and
+  announcements (to every or chosen organizations); staff get a platform home with counts; the
+  plan editor reads the feature catalog from the API; the date picker and select follow the
+  app's language.
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.

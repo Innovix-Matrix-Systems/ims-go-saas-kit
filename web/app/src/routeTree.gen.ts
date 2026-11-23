@@ -24,7 +24,9 @@ import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppConsoleAnnouncementsRouteImport } from './routes/_app.console.announcements'
 import { Route as AppConsoleApprovalsRouteImport } from './routes/_app.console.approvals'
+import { Route as AppConsoleFlagsRouteImport } from './routes/_app.console.flags'
 import { Route as AppConsoleOrganizationsRouteImport } from './routes/_app.console.organizations'
 import { Route as AppConsolePlansRouteImport } from './routes/_app.console.plans'
 import { Route as AppConsoleSettingsRouteImport } from './routes/_app.console.settings'
@@ -117,9 +119,19 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConsoleAnnouncementsRoute = AppConsoleAnnouncementsRouteImport.update({
+  id: '/console/announcements',
+  path: '/console/announcements',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppConsoleApprovalsRoute = AppConsoleApprovalsRouteImport.update({
   id: '/console/approvals',
   path: '/console/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleFlagsRoute = AppConsoleFlagsRouteImport.update({
+  id: '/console/flags',
+  path: '/console/flags',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConsoleOrganizationsRoute = AppConsoleOrganizationsRouteImport.update({
@@ -224,7 +236,9 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/console/approvals': typeof AppConsoleApprovalsRoute
+  '/console/flags': typeof AppConsoleFlagsRoute
   '/console/organizations': typeof AppConsoleOrganizationsRoute
   '/console/plans': typeof AppConsolePlansRoute
   '/console/settings': typeof AppConsoleSettingsRoute
@@ -258,7 +272,9 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/': typeof AppIndexRoute
+  '/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/console/approvals': typeof AppConsoleApprovalsRoute
+  '/console/flags': typeof AppConsoleFlagsRoute
   '/console/organizations': typeof AppConsoleOrganizationsRoute
   '/console/plans': typeof AppConsolePlansRoute
   '/console/settings': typeof AppConsoleSettingsRoute
@@ -294,7 +310,9 @@ export interface FileRoutesById {
   '/_app/onboarding': typeof AppOnboardingRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/': typeof AppIndexRoute
+  '/_app/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/_app/console/approvals': typeof AppConsoleApprovalsRoute
+  '/_app/console/flags': typeof AppConsoleFlagsRoute
   '/_app/console/organizations': typeof AppConsoleOrganizationsRoute
   '/_app/console/plans': typeof AppConsolePlansRoute
   '/_app/console/settings': typeof AppConsoleSettingsRoute
@@ -330,7 +348,9 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/settings'
+    | '/console/announcements'
     | '/console/approvals'
+    | '/console/flags'
     | '/console/organizations'
     | '/console/plans'
     | '/console/settings'
@@ -364,7 +384,9 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/'
+    | '/console/announcements'
     | '/console/approvals'
+    | '/console/flags'
     | '/console/organizations'
     | '/console/plans'
     | '/console/settings'
@@ -399,7 +421,9 @@ export interface FileRouteTypes {
     | '/_app/onboarding'
     | '/_app/settings'
     | '/_app/'
+    | '/_app/console/announcements'
     | '/_app/console/approvals'
+    | '/_app/console/flags'
     | '/_app/console/organizations'
     | '/_app/console/plans'
     | '/_app/console/settings'
@@ -540,11 +564,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/console/announcements': {
+      id: '/_app/console/announcements'
+      path: '/console/announcements'
+      fullPath: '/console/announcements'
+      preLoaderRoute: typeof AppConsoleAnnouncementsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/console/approvals': {
       id: '/_app/console/approvals'
       path: '/console/approvals'
       fullPath: '/console/approvals'
       preLoaderRoute: typeof AppConsoleApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/console/flags': {
+      id: '/_app/console/flags'
+      path: '/console/flags'
+      fullPath: '/console/flags'
+      preLoaderRoute: typeof AppConsoleFlagsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/console/organizations': {
@@ -692,7 +730,9 @@ interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
+  AppConsoleAnnouncementsRoute: typeof AppConsoleAnnouncementsRoute
   AppConsoleApprovalsRoute: typeof AppConsoleApprovalsRoute
+  AppConsoleFlagsRoute: typeof AppConsoleFlagsRoute
   AppConsoleOrganizationsRoute: typeof AppConsoleOrganizationsRoute
   AppConsolePlansRoute: typeof AppConsolePlansRoute
   AppConsoleSettingsRoute: typeof AppConsoleSettingsRoute
@@ -713,7 +753,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
+  AppConsoleAnnouncementsRoute: AppConsoleAnnouncementsRoute,
   AppConsoleApprovalsRoute: AppConsoleApprovalsRoute,
+  AppConsoleFlagsRoute: AppConsoleFlagsRoute,
   AppConsoleOrganizationsRoute: AppConsoleOrganizationsRoute,
   AppConsolePlansRoute: AppConsolePlansRoute,
   AppConsoleSettingsRoute: AppConsoleSettingsRoute,

@@ -44,10 +44,11 @@ function ProfileForm({ user }: { user: User }) {
       await api<User>('/user/profile/update', {
         method: 'POST',
         body: {
-          first_name: firstName.trim() || null,
-          last_name: lastName.trim() || null,
+          // An empty string clears a field; the API keeps one it is not sent.
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
           name: name.trim(),
-          phone: phone.trim() || null,
+          phone: phone.trim(),
           locale,
         },
       })

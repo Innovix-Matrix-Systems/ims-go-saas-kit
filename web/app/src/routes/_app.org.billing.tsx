@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { api, type Schemas } from '../api/client'
+import { api, apiBlob, saveBlob, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { formatBytes } from '../format'
 import {
@@ -17,7 +17,7 @@ import {
 } from '../components/billing'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, EmptyState, Modal, PageHeader, Spinner, type BadgeTone } from '../components/ui'
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Modal, PageHeader, Spinner, type BadgeTone } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 
 export const Route = createFileRoute('/_app/org/billing')({
@@ -73,7 +73,8 @@ function BillingPage() {
         {waiting ? (
           <div className="banner">
             <span className="status-dot warn" />
-            {t('billing.pendingNotice', { amount: money(waiting.amount, waiting.currency), invoice: waiting.invoice_number })}
+            <span className="fill">{t('billing.pendingNotice', { amount: money(waiting.amount, waiting.currency), invoice: waiting.invoice_number })}</span>
+            {can(session, 'billing.manage') ? <WithdrawButton payment={waiting} /> : null}
           </div>
         ) : null}
         <div className="billing-top">
@@ -177,9 +178,28 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
   const { push } = useToast()
   const packages = useQuery(publicPackagesQuery)
   const [checkout, setCheckout] = useState<Package | null>(null)
+  const [free, setFree] = useState<Package | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  // A free plan has nothing to pay: it starts as soon as it is chosen.
+  const switchToFree = async (pkg: Package) => {
+    setBusy(true)
+    try {
+      await api('/billing/subscribe', { method: 'POST', idempotent: true, body: { package_id: pkg.id } })
+      await client.invalidateQueries({ queryKey: ['subscription-status'] })
+      await client.invalidateQueries({ queryKey: ['billing-usage'] })
+      await client.invalidateQueries({ queryKey: ['payments'] })
+      push(t('billing.switched', { name: pkg.name }), 'success')
+    } catch (cause) {
+      push(cause instanceof Error ? cause.message : String(cause), 'error')
+    } finally {
+      setBusy(false)
+      setFree(null)
+    }
+  }
 
   return (
-    <Card title={t('billing.plans')} description={canManage ? t('billing.freeHint') : t('billing.manageHint')}>
+    <Card title={t('billing.plans')} description={canManage ? t('billing.plansHint') : t('billing.manageHint')}>
       {!packages.data ? (
         <Spinner />
       ) : (
@@ -202,7 +222,7 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
                     ))}
                 </ul>
                 {canManage ? (
-                  <Button variant={current ? 'ghost' : 'default'} disabled={current || pkg.price === 0} onClick={() => setCheckout(pkg)}>
+                  <Button variant={current ? 'ghost' : 'default'} disabled={current} onClick={() => (pkg.price === 0 ? setFree(pkg) : setCheckout(pkg))}>
                     {current ? t('onboarding.chosen') : t('billing.switch')}
                   </Button>
                 ) : null}
@@ -211,6 +231,15 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
           })}
         </div>
       )}
+      <ConfirmDialog
+        open={free != null}
+        title={free ? t('billing.freeTitle', { name: free.name }) : ''}
+        description={free ? t('billing.freeConfirm', { name: free.name }) : ''}
+        confirmLabel={t('billing.switch')}
+        busy={busy}
+        onConfirm={() => free && void switchToFree(free)}
+        onCancel={() => setFree(null)}
+      />
       <Modal open={checkout != null} title={checkout ? t('billing.checkoutTitle', { name: checkout.name }) : ''} onClose={() => setCheckout(null)}>
         {checkout ? (
           <BankTransferForm
@@ -229,8 +258,60 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
   )
 }
 
+// The invoice is an HTML document; saved as a file it opens styled and prints.
+async function downloadInvoice(payment: Payment) {
+  try {
+    saveBlob(await apiBlob(`/billing/payments/${payment.id}/invoice`), `invoice-${payment.invoice_number}.html`)
+  } catch {
+    // apiBlob reports the error.
+  }
+}
+
+/** Withdraws a payment nobody has confirmed yet, after asking. */
+function WithdrawButton({ payment }: { payment: Payment }) {
+  const t = useT()
+  const money = useMoney()
+  const client = useQueryClient()
+  const { push } = useToast()
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const withdraw = async () => {
+    setBusy(true)
+    try {
+      await api(`/billing/payments/${payment.id}/cancel`, { method: 'POST' })
+      await client.invalidateQueries({ queryKey: ['payments'] })
+      await client.invalidateQueries({ queryKey: ['subscription-status'] })
+      push(t('billing.withdrawn'), 'success')
+    } catch (cause) {
+      push(cause instanceof Error ? cause.message : String(cause), 'error')
+    } finally {
+      setBusy(false)
+      setOpen(false)
+    }
+  }
+  return (
+    <>
+      <Button size="sm" variant="ghost" icon="x" onClick={() => setOpen(true)}>
+        {t('billing.withdraw')}
+      </Button>
+      <ConfirmDialog
+        open={open}
+        title={t('billing.withdrawTitle')}
+        description={t('billing.withdrawConfirm', { amount: money(payment.amount, payment.currency), invoice: payment.invoice_number })}
+        confirmLabel={t('billing.withdraw')}
+        danger
+        busy={busy}
+        onConfirm={() => void withdraw()}
+        onCancel={() => setOpen(false)}
+      />
+    </>
+  )
+}
+
 function PaymentsCard() {
   const t = useT()
+  const session = useSession()
+  const canManage = can(session, 'billing.manage')
   const money = useMoney()
   const date = useDate()
   const [page, setPage] = useState(1)
@@ -258,6 +339,7 @@ function PaymentsCard() {
                 <th>{t('billing.colMethod')}</th>
                 <th className="right">{t('billing.colAmount')}</th>
                 <th>{t('billing.colStatus')}</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -269,6 +351,14 @@ function PaymentsCard() {
                   <td className="right">{money(payment.amount, payment.currency)}</td>
                   <td>
                     <Badge tone={paymentTones[payment.status]}>{t(`billing.payment.${payment.status}` as MessageKey)}</Badge>
+                  </td>
+                  <td className="right">
+                    <div className="flex justify-end">
+                      <Button size="sm" variant="ghost" icon="download" onClick={() => void downloadInvoice(payment)}>
+                        {t('billing.invoice')}
+                      </Button>
+                      {canManage && payment.status === 'pending' ? <WithdrawButton payment={payment} /> : null}
+                    </div>
                   </td>
                 </tr>
               ))}

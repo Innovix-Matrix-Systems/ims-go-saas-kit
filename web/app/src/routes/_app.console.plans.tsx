@@ -15,23 +15,18 @@ export const Route = createFileRoute('/_app/console/plans')({
   component: PlansPage,
 })
 
-// The billing feature catalog (internal/modules/billing/domain/features.go).
-const catalog = [
-  'users.max',
-  'branches.max',
-  'storage.mb',
-  'api.access',
-  'audit.log',
-  'custom.branding',
-  'sms.notifications',
-  'reports.basic',
-  'reports.advanced',
-  'reports.export',
-  'patients.manage',
-  'appointments.manage',
-  'invoices.manage',
-] as const
-const limits = new Set<string>(['users.max', 'branches.max', 'storage.mb'])
+interface CatalogFeature {
+  key: string
+  description: string
+  is_limit: boolean
+}
+
+// What a package can grant comes from the API, so a new feature appears here by itself.
+const catalogQuery = {
+  queryKey: ['console', 'package-features'],
+  queryFn: () => api<CatalogFeature[]>('/packages/features', { asStaff: true }),
+  staleTime: 300_000,
+}
 
 const packagesQuery = { queryKey: ['console', 'packages'], queryFn: () => api<Package[]>('/packages', { asStaff: true }) }
 
@@ -41,6 +36,7 @@ function PlansPage() {
   const price = usePrice()
   const featureText = useFeatureText()
   const packages = useQuery(packagesQuery)
+  const catalog = useQuery(catalogQuery)
   const [editing, setEditing] = useState<Package | 'new' | null>(null)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
@@ -112,7 +108,7 @@ function PlansPage() {
           />
         ) : null}
       </Card>
-      {editing ? <PlanDrawer pkg={editing === 'new' ? null : editing} onClose={() => setEditing(null)} /> : null}
+      {editing && catalog.data ? <PlanDrawer pkg={editing === 'new' ? null : editing} catalog={catalog.data} onClose={() => setEditing(null)} /> : null}
     </>
   )
 }
@@ -122,7 +118,8 @@ interface FeatureState {
   limit: string
 }
 
-function PlanDrawer({ pkg, onClose }: { pkg: Package | null; onClose: () => void }) {
+function PlanDrawer({ pkg, catalog, onClose }: { pkg: Package | null; catalog: CatalogFeature[]; onClose: () => void }) {
+  const limits = new Set(catalog.filter((feature) => feature.is_limit).map((feature) => feature.key))
   const t = useT()
   const session = useSession()
   const client = useQueryClient()
@@ -138,7 +135,7 @@ function PlanDrawer({ pkg, onClose }: { pkg: Package | null; onClose: () => void
   const [active, setActive] = useState(pkg?.is_active ?? true)
   const [features, setFeatures] = useState<Record<string, FeatureState>>(() => {
     const out: Record<string, FeatureState> = {}
-    for (const key of catalog) {
+    for (const { key } of catalog) {
       const found = pkg?.features.find((feature) => feature.feature_key === key)
       out[key] = { enabled: found?.is_enabled ?? false, limit: String(found?.limit_value ?? (limits.has(key) ? -1 : 0)) }
     }
@@ -167,6 +164,7 @@ function PlanDrawer({ pkg, onClose }: { pkg: Package | null; onClose: () => void
       sort_order: Number(order || 0),
       is_active: active,
       features: catalog
+        .map((feature) => feature.key)
         .filter((key) => features[key].enabled)
         .map((key) => ({ feature_key: key, is_enabled: true, limit_value: limits.has(key) ? Number(features[key].limit || 0) : 0 })),
     }
@@ -237,8 +235,8 @@ function PlanDrawer({ pkg, onClose }: { pkg: Package | null; onClose: () => void
         <div className="stack-tight">
           <div className="field-label">{t('console.features')}</div>
           <div className="plan-feature-list">
-            {catalog.map((key) => (
-              <div key={key} className="plan-feature-row">
+            {catalog.map(({ key, description }) => (
+              <div key={key} className="plan-feature-row" title={description}>
                 <label className="check-row">
                   <input
                     type="checkbox"
@@ -247,7 +245,7 @@ function PlanDrawer({ pkg, onClose }: { pkg: Package | null; onClose: () => void
                     onChange={(e) => setFeatures((current) => ({ ...current, [key]: { ...current[key], enabled: e.target.checked } }))}
                   />
                   <span className="permission-meta">
-                    <span>{featureName(t, key)}</span>
+                    <span>{featureName(t, key).toLowerCase() === key ? description : featureName(t, key)}</span>
                     <span className="small muted mono">{key}</span>
                   </span>
                 </label>

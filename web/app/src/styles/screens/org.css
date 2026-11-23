@@ -110,3 +110,9 @@
 .setting-row.wide .setting-control { flex: 1 1 auto; justify-content: stretch; }
 .setting-row.wide .setting-control textarea { width: 100%; }
 .setting-row.wide .setting-meta, .setting-row.wide .setting-control { flex: none; }
+.flag-list > .flag-row + .flag-row { border-top: 1px solid var(--border); }
+.flag-row { display: flex; align-items: center; gap: 16px; padding: 12px 16px; flex-wrap: wrap; }
+.flag-row .setting-meta { flex: 1 1 260px; }
+.flag-rollout { display: inline-flex; align-items: center; gap: 6px; }
+.flag-rollout .input { width: 72px; }
+.field-error { color: var(--danger-fg); font-size: var(--fs-sm); }

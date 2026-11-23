@@ -9,6 +9,7 @@ import React, {
   type KeyboardEvent,
   type ReactNode,
 } from 'react'
+import { intlLocale, useLocale, useT } from '../i18n'
 import { Icon, useEscape } from './ui'
 
 /* Dashboard form controls that follow the theme everywhere (native
@@ -60,7 +61,7 @@ export function Select<T extends string = string>({
   value,
   onChange,
   options,
-  placeholder = 'Select…',
+  placeholder,
   searchable,
   disabled,
   className,
@@ -78,6 +79,7 @@ export function Select<T extends string = string>({
   ariaLabel?: string
   size?: 'sm'
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
@@ -154,7 +156,7 @@ export function Select<T extends string = string>({
         onClick={() => (open ? close() : setOpen(true))}
       >
         <span className={`ui-select-value ${selected ? '' : 'placeholder'}`}>
-          {selected ? selected.label : placeholder}
+          {selected ? selected.label : (placeholder ?? t('inputs.select'))}
         </span>
         <Icon name="chevron" className="ui-select-caret" />
       </button>
@@ -166,7 +168,7 @@ export function Select<T extends string = string>({
               <input
                 autoFocus
                 value={query}
-                placeholder="Filter…"
+                placeholder={t('inputs.filter')}
                 onChange={(event) => {
                   setQuery(event.target.value)
                   setActive(0)
@@ -175,7 +177,7 @@ export function Select<T extends string = string>({
             </div>
           ) : null}
           <div ref={listRef} id={listId} role="listbox" className="ui-select-list" tabIndex={-1}>
-            {filtered.length === 0 ? <div className="ui-select-empty">No matches</div> : null}
+            {filtered.length === 0 ? <div className="ui-select-empty">{t('inputs.noMatches')}</div> : null}
             {filtered.map((option, index) => (
               <div
                 key={option.value}
@@ -214,7 +216,11 @@ function parseISODate(value: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+/** Short weekday names, Monday first, in the app's language. */
+function weekdayNames(locale: string): string[] {
+  const format = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+  return Array.from({ length: 7 }, (_, i) => format.format(new Date(2024, 0, 1 + i)))
+}
 
 function monthGrid(year: number, month: number): Date[] {
   const first = new Date(year, month, 1)
@@ -227,7 +233,7 @@ function monthGrid(year: number, month: number): Date[] {
 export function DatePicker({
   value,
   onChange,
-  placeholder = 'Pick a date',
+  placeholder,
   min,
   max,
   clearable = true,
@@ -241,6 +247,9 @@ export function DatePicker({
   clearable?: boolean
   ariaLabel?: string
 }) {
+  const t = useT()
+  const locale = intlLocale(useLocale())
+  const digits = new Intl.NumberFormat(locale)
   const [open, setOpen] = useState(false)
   const close = useCallback(() => setOpen(false), [])
   const ref = useDismiss(open, close)
@@ -275,15 +284,15 @@ export function DatePicker({
         <Icon name="calendar" className="ui-date-icon" />
         <span className={`ui-select-value ${value ? '' : 'placeholder'}`}>
           {selected
-            ? selected.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-            : placeholder}
+            ? selected.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
+            : (placeholder ?? t('inputs.pickDate'))}
         </span>
         {clearable && value ? (
           <span
             role="button"
             tabIndex={-1}
             className="ui-clear"
-            aria-label="Clear date"
+            aria-label={t('inputs.clearDate')}
             onClick={(event) => {
               event.stopPropagation()
               onChange('')
@@ -294,18 +303,18 @@ export function DatePicker({
         ) : null}
       </button>
       {open ? (
-        <div className={`ui-popover ui-calendar${align}`} role="dialog" aria-label="Choose a date" onClick={stopLabel}>
+        <div className={`ui-popover ui-calendar${align}`} role="dialog" aria-label={t('inputs.chooseDate')} onClick={stopLabel}>
           <div className="ui-calendar-head">
-            <button type="button" className="icon-btn flip" aria-label="Previous month" onClick={() => shift(-1)}>
+            <button type="button" className="icon-btn flip" aria-label={t('inputs.previousMonth')} onClick={() => shift(-1)}>
               <Icon name="chevron" />
             </button>
-            <span>{view.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>
-            <button type="button" className="icon-btn" aria-label="Next month" onClick={() => shift(1)}>
+            <span>{view.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}</span>
+            <button type="button" className="icon-btn" aria-label={t('inputs.nextMonth')} onClick={() => shift(1)}>
               <Icon name="chevron" />
             </button>
           </div>
           <div className="ui-calendar-grid">
-            {weekdays.map((day) => (
+            {weekdayNames(locale).map((day) => (
               <span key={day} className="ui-calendar-weekday">
                 {day}
               </span>
@@ -321,14 +330,14 @@ export function DatePicker({
               ].join(' ')
               return (
                 <button key={iso} type="button" className={classes} onClick={() => pick(iso)}>
-                  {day.getDate()}
+                  {digits.format(day.getDate())}
                 </button>
               )
             })}
           </div>
           <div className="ui-calendar-foot">
             <button type="button" className="link-btn" onClick={() => pick(today)}>
-              Today
+              {t('inputs.today')}
             </button>
             {clearable ? (
               <button
@@ -339,7 +348,7 @@ export function DatePicker({
                   close()
                 }}
               >
-                Clear
+                {t('inputs.clear')}
               </button>
             ) : null}
           </div>
@@ -353,7 +362,7 @@ export function DatePicker({
 export function TimePicker({
   value,
   onChange,
-  placeholder = 'Pick a time',
+  placeholder,
   minuteStep = 5,
   clearable = true,
   ariaLabel,
@@ -365,6 +374,7 @@ export function TimePicker({
   clearable?: boolean
   ariaLabel?: string
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const close = useCallback(() => setOpen(false), [])
   const ref = useDismiss(open, close)
@@ -386,7 +396,7 @@ export function TimePicker({
         onClick={() => setOpen(!open)}
       >
         <Icon name="clock" className="ui-date-icon" />
-        <span className={`ui-select-value mono ${value ? '' : 'placeholder'}`}>{value || placeholder}</span>
+        <span className={`ui-select-value mono ${value ? '' : 'placeholder'}`}>{value || placeholder || t('inputs.pickTime')}</span>
         {clearable && value ? (
           <span
             role="button"
@@ -405,7 +415,7 @@ export function TimePicker({
       {open ? (
         <div className={`ui-popover ui-timegrid${align}`} role="dialog" aria-label="Choose a time" onClick={stopLabel}>
           <div className="ui-time-col">
-            <div className="ui-time-head">Hour</div>
+            <div className="ui-time-head">{t('inputs.hour')}</div>
             {Array.from({ length: 24 }, (_, h) => (
               <button
                 key={h}
@@ -418,7 +428,7 @@ export function TimePicker({
             ))}
           </div>
           <div className="ui-time-col">
-            <div className="ui-time-head">Min</div>
+            <div className="ui-time-head">{t('inputs.minute')}</div>
             {minutes.map((m) => (
               <button
                 key={m}

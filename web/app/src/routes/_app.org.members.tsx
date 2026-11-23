@@ -274,10 +274,10 @@ function InviteDialog({ open, roles, onClose }: { open: boolean; roles: Role[]; 
   )
 }
 
-// PATCH /user/{id} clears optional fields it is not sent (first and last
-// name, phone), so every update sends the member's current values.
+// PATCH /user/{id} needs the name and e-mail; other fields it is not sent
+// keep their value, and an empty string clears one.
 function updateBody(user: User, changes: Record<string, unknown>) {
-  return { name: user.name, email: user.email, first_name: user.first_name ?? null, last_name: user.last_name ?? null, phone: user.phone ?? null, ...changes }
+  return { name: user.name, email: user.email, ...changes }
 }
 
 function MemberDrawer({
@@ -329,7 +329,7 @@ function MemberDrawer({
     void run(async () => {
       await api(`/user/${user.id}`, {
         method: 'PATCH',
-        body: updateBody(user, { name: name.trim(), phone: phone.trim() || null, ...(branchId ? { branch_id: Number(branchId) } : {}) }),
+        body: updateBody(user, { name: name.trim(), phone: phone.trim(), ...(branchId ? { branch_id: Number(branchId) } : {}) }),
       })
       const original = (user.roles ?? []).map((role) => role.id).sort().join(',')
       if (canAssign && roleIds.length > 0 && [...roleIds].sort().join(',') !== original) {

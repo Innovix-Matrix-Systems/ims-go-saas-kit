@@ -42,6 +42,8 @@ export const pages: Page[] = [
   { to: '/console/approvals', label: 'console.approvals', icon: 'check', group: 'console', key: 'v', keywords: 'payments bank transfer review approve reject', permission: 'payment_approval.view.all', platformOnly: true },
   { to: '/console/plans', label: 'console.plans', icon: 'package', group: 'console', key: 'l', keywords: 'packages pricing features limits', permission: 'package.view.all', platformOnly: true },
   { to: '/console/staff', label: 'console.staff', icon: 'shield', group: 'console', key: 'x', keywords: 'internal users team admins', permission: 'user.internal.create', platformOnly: true },
+  { to: '/console/announcements', label: 'console.announcements', icon: 'bell', group: 'console', key: 'k', keywords: 'broadcast notify maintenance news message', permission: 'notification.create', platformOnly: true },
+  { to: '/console/flags', label: 'console.flags', icon: 'flags', group: 'console', key: 'e', keywords: 'feature toggles rollout', permission: 'feature_flag.internal.update', platformOnly: true },
   { to: '/console/settings', label: 'console.settings', icon: 'settings', group: 'console', key: 'y', keywords: 'platform global bank details payment instructions', permission: 'setting.internal.view', platformOnly: true },
   { to: '/org/members', label: 'org.members', icon: 'users', group: 'organization', key: 'm', keywords: 'users team invite people', permission: 'user.view.all', tenantOnly: true },
   { to: '/org/roles', label: 'org.roles', icon: 'shield', group: 'organization', key: 'r', keywords: 'permissions access', permission: 'role.view.all', tenantOnly: true },
