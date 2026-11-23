@@ -5,8 +5,9 @@ import { api } from '../api/client'
 import { allTenantsQuery } from '../components/console'
 import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, PageHeader, Spinner } from '../components/ui'
+import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { useT, type MessageKey } from '../i18n'
+import { SettingsSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/console/flags')({
   component: FlagsPage,
@@ -47,9 +48,7 @@ function FlagsPage() {
       </div>
       <Card flush>
         {!flags.data ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <SettingsSkeleton rows={3} />
         ) : (
           <div className="flag-list">
             {flags.data.map((flag) => (

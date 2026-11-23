@@ -3,8 +3,9 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useState } from 'react'
 import { feedKey, fetchFeed, markAllRead, markRead, type FeedItem } from '../components/notifications'
 import { CursorPagination, useCursorPages } from '../components/Pagination'
-import { Badge, Button, Card, EmptyState, PageHeader, Spinner } from '../components/ui'
+import { Badge, Button, Card, EmptyState, PageHeader } from '../components/ui'
 import { intlLocale, useLocale, useT } from '../i18n'
+import { ListSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/notifications')({
   component: NotificationsPage,
@@ -64,9 +65,7 @@ function NotificationsPage() {
       />
       <Card flush>
         {feed.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <ListSkeleton rows={6} />
         ) : items.length === 0 ? (
           <EmptyState icon="bell" title={t('notifications.empty')} />
         ) : (

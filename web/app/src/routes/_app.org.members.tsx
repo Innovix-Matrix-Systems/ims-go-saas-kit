@@ -11,6 +11,7 @@ import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT } from '../i18n'
+import { TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/org/members')({
   component: MembersPage,
@@ -102,9 +103,7 @@ function MembersPage() {
       </div>
       <Card flush>
         {members.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={4} />
         ) : (members.data?.data ?? []).length === 0 ? (
           <EmptyState icon="users" title={t('members.empty')} />
         ) : (

@@ -8,6 +8,7 @@ import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, EmptyState, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/org/files')({
   component: FilesPage,
@@ -127,9 +128,7 @@ function FilesPage() {
       </div>
       <Card flush>
         {files.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={5} avatar={false} />
         ) : (files.data?.data ?? []).length === 0 ? (
           <EmptyState icon="files" title={t('files.empty')} />
         ) : (

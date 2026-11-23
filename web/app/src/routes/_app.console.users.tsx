@@ -6,9 +6,10 @@ import { can, useSession } from '../auth/session'
 import { allTenantsQuery, useStartActing } from '../components/console'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, ConfirmDialog, EmptyState, PageHeader, Spinner } from '../components/ui'
+import { Badge, Button, Card, ConfirmDialog, EmptyState, PageHeader } from '../components/ui'
 import { initials } from '../format'
 import { useT } from '../i18n'
+import { TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/console/users')({
   component: UsersPage,
@@ -55,9 +56,7 @@ function UsersPage() {
       </div>
       <Card flush>
         {users.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={5} />
         ) : (users.data?.data ?? []).length === 0 ? (
           <EmptyState icon="users" title={t('members.empty')} />
         ) : (

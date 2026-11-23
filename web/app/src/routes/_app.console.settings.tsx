@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { api, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { useToast } from '../components/Toasts'
-import { Badge, Card, PageHeader, Spinner } from '../components/ui'
+import { Badge, Card, PageHeader } from '../components/ui'
 import { useT } from '../i18n'
+import { SettingsSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/console/settings')({
   component: PlatformSettingsPage,
@@ -33,7 +34,9 @@ function PlatformSettingsPage() {
     <>
       <PageHeader title={t('console.settings')} description={t('console.settingsSubtitle')} />
       {!settings.data ? (
-        <Spinner />
+        <Card>
+          <SettingsSkeleton rows={6} />
+        </Card>
       ) : (
         <div className="stack g-4">
           {ordered.map(([slug, group]) => (

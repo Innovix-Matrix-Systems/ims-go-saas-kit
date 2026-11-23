@@ -8,6 +8,7 @@ import { pageSlice, Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, CopyButton, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { FormSkeleton, ListSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/org/webhooks')({
   component: WebhooksPage,
@@ -49,9 +50,7 @@ function WebhooksPage() {
       />
       <Card flush>
         {endpoints.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <ListSkeleton rows={3} />
         ) : (endpoints.data ?? []).length === 0 ? (
           <EmptyState icon="actions" title={t('webhooks.empty')} />
         ) : (
@@ -260,7 +259,7 @@ function EndpointDrawer({ id, onSecret, onClose }: { id: number; onSecret: (secr
   return (
     <Drawer open title={data?.url ?? '…'} subtitle={data?.description || undefined} onClose={onClose} size="lg">
       {!data ? (
-        <Spinner />
+        <FormSkeleton fields={3} />
       ) : (
         <div className="stack g-4">
           <div className="flex wrap">
@@ -305,9 +304,7 @@ function EndpointDrawer({ id, onSecret, onClose }: { id: number; onSecret: (secr
           </Card>
           <Card title={t('webhooks.deliveries')} flush>
             {!deliveries.data ? (
-              <div className="p-4">
-                <Spinner />
-              </div>
+              <ListSkeleton rows={4} />
             ) : deliveries.data.length === 0 ? (
               <EmptyState icon="queue" title={t('webhooks.noDeliveries')} />
             ) : (

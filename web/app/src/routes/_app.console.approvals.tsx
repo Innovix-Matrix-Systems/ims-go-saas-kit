@@ -9,6 +9,7 @@ import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, EmptyState, Modal, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/console/approvals')({
   component: ApprovalsPage,
@@ -69,9 +70,7 @@ function ApprovalsPage() {
       </div>
       <Card flush>
         {approvals.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={6} avatar={false} />
         ) : (approvals.data?.data ?? []).length === 0 ? (
           <EmptyState icon="check" title={t('console.noApprovals')} />
         ) : (

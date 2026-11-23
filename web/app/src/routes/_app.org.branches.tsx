@@ -9,6 +9,7 @@ import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, PageHeader, Spinner } from '../components/ui'
 import { useT } from '../i18n'
+import { TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/org/branches')({
   component: BranchesPage,
@@ -63,9 +64,7 @@ function BranchesPage() {
       </div>
       <Card flush>
         {branches.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={3} avatar={false} />
         ) : (branches.data?.data ?? []).length === 0 ? (
           <EmptyState icon="building" title={t('branches.empty')} />
         ) : (

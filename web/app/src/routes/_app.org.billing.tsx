@@ -17,8 +17,9 @@ import {
 } from '../components/billing'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Modal, PageHeader, Spinner, type BadgeTone } from '../components/ui'
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Modal, PageHeader, type BadgeTone } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { CardsSkeleton, ListSkeleton, TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/org/billing')({
   component: BillingPage,
@@ -95,7 +96,7 @@ function PlanCard({ status }: { status?: Schemas['SubscriptionStatusEnvelope']['
   if (!status) {
     return (
       <Card title={t('billing.currentPlan')}>
-        <Spinner />
+        <ListSkeleton rows={3} />
       </Card>
     )
   }
@@ -135,7 +136,7 @@ function UsageCard({ usage }: { usage?: Usage }) {
   return (
     <Card title={t('billing.usage')}>
       {!usage ? (
-        <Spinner />
+        <ListSkeleton rows={3} />
       ) : (
         <div className="stack">
           {usage.limits.map((item) => {
@@ -201,7 +202,7 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
   return (
     <Card title={t('billing.plans')} description={canManage ? t('billing.plansHint') : t('billing.manageHint')}>
       {!packages.data ? (
-        <Spinner />
+        <CardsSkeleton count={3} />
       ) : (
         <div className="plan-grid">
           {packages.data.map((pkg) => {
@@ -324,9 +325,7 @@ function PaymentsCard() {
   return (
     <Card title={t('billing.payments')} flush>
       {payments.isLoading ? (
-        <div className="p-4">
-          <Spinner />
-        </div>
+        <TableSkeleton columns={5} avatar={false} />
       ) : (payments.data?.data ?? []).length === 0 ? (
         <EmptyState icon="list" title={t('billing.noPayments')} />
       ) : (

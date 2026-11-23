@@ -2,6 +2,7 @@ import { createFileRoute, redirect, type ErrorComponentProps } from '@tanstack/r
 import { ApiError, getActing, setActing } from '../api/client'
 import { forgetSession, isSignedIn, sessionQuery } from '../auth/session'
 import { AppShell } from '../components/AppShell'
+import { ShellSkeleton } from '../components/Skeleton'
 import { StatusScreen } from '../components/StatusScreen'
 import { Button } from '../components/ui'
 import { useT } from '../i18n'
@@ -38,6 +39,8 @@ export const Route = createFileRoute('/_app')({
     }
   },
   component: AppShell,
+  // The first load waits for the session: show the whole frame meanwhile.
+  pendingComponent: ShellSkeleton,
   errorComponent: AppError,
 })
 

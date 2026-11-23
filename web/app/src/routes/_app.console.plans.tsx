@@ -10,6 +10,7 @@ import { pageSlice, Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, PageHeader, Spinner } from '../components/ui'
 import { useT } from '../i18n'
+import { TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/console/plans')({
   component: PlansPage,
@@ -56,9 +57,7 @@ function PlansPage() {
       />
       <Card flush>
         {!packages.data ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={4} avatar={false} />
         ) : packages.data.length === 0 ? (
           <EmptyState icon="package" title={t('console.noApprovals')} />
         ) : (

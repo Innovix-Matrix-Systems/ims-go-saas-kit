@@ -10,6 +10,7 @@ import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, EmptyState, Icon, Modal, PageHeader, Spinner, type BadgeTone } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/console/announcements')({
   component: AnnouncementsPage,
@@ -55,9 +56,7 @@ function AnnouncementsPage() {
       />
       <Card title={t('console.sentHistory')} flush>
         {sent.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={4} avatar={false} />
         ) : rows.length === 0 ? (
           <EmptyState icon="bell" title={t('console.noAnnouncements')} />
         ) : (

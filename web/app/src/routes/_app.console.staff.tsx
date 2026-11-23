@@ -10,6 +10,7 @@ import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { initials } from '../format'
 import { useT } from '../i18n'
+import { TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/console/staff')({
   component: StaffPage,
@@ -47,9 +48,7 @@ function StaffPage() {
       />
       <Card flush>
         {staff.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={3} />
         ) : (staff.data?.data ?? []).length === 0 ? (
           <EmptyState icon="shield" title={t('members.empty')} />
         ) : (

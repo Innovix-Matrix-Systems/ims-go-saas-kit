@@ -8,6 +8,7 @@ import { pageSlice, Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { useT } from '../i18n'
+import { FormSkeleton, ListSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/org/roles')({
   component: RolesPage,
@@ -45,9 +46,7 @@ function RolesPage() {
       />
       <Card flush>
         {roles.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <ListSkeleton rows={4} />
         ) : (roles.data ?? []).length === 0 ? (
           <EmptyState icon="shield" title={t('roles.empty')} />
         ) : (
@@ -149,7 +148,7 @@ function RoleDrawer({ id, onClose }: { id: number; onClose: () => void }) {
   return (
     <Drawer open title={role.data?.name ?? '…'} subtitle={role.data?.description ?? undefined} onClose={onClose} size="lg">
       {!role.data || (canUpdate && !grantable.data) ? (
-        <Spinner />
+        <FormSkeleton fields={2} />
       ) : (
         <RoleEditor key={role.data.updated_at} role={role.data} grantable={grantable.data ?? []} editable={canUpdate && !role.data.managed} onDeleted={onClose} />
       )}

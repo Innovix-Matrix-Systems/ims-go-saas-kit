@@ -11,6 +11,7 @@ import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { ListSkeleton, TableSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/console/organizations')({
   component: OrganizationsPage,
@@ -72,9 +73,7 @@ function OrganizationsPage() {
       </div>
       <Card flush>
         {tenants.isLoading ? (
-          <div className="p-4">
-            <Spinner />
-          </div>
+          <TableSkeleton columns={4} avatar={false} />
         ) : (tenants.data?.data ?? []).length === 0 ? (
           <EmptyState icon="tenants" title={t('branches.empty')} />
         ) : (
@@ -294,9 +293,7 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
 
         <Card title={t('console.members')} flush>
           {!members.data ? (
-            <div className="p-4">
-              <Spinner />
-            </div>
+            <ListSkeleton rows={3} avatar />
           ) : members.data.length === 0 ? (
             <EmptyState icon="users" title={t('members.empty')} />
           ) : (

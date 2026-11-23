@@ -97,6 +97,8 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   setting keys; a staff account reads its own notifications through the internal routes.
   The sidebar is resized by dragging its edge (remembered; double-click resets) and pinned open or
   folded to a rail with a pin button beside the logo.
+  Every page shows a skeleton in its own shape (tables, lists, settings, forms, cards, tiles)
+  while it loads; a page's outline shows while its code loads and the whole frame on first load.
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.

@@ -8,6 +8,7 @@ import { TwoFactorSetup } from '../components/TwoFactorSetup'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, Icon, Modal, Spinner } from '../components/ui'
 import { intlLocale, useLocale, useT } from '../i18n'
+import { FormSkeleton, ListSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/settings/security')({
   component: SecurityPage,
@@ -92,7 +93,7 @@ function TwoFactorCard() {
       }
     >
       {!data ? (
-        <Spinner />
+        <FormSkeleton fields={1} />
       ) : (
         <div className="stack">
           {data.required ? <span className="small muted">{t('twoFactor.required')}</span> : null}
@@ -280,9 +281,7 @@ function SessionsCard() {
       flush
     >
       {!sessions.data ? (
-        <div className="p-4">
-          <Spinner />
-        </div>
+        <ListSkeleton rows={3} />
       ) : (
         <ul className="session-list">
           {sessions.data.map((session) => (

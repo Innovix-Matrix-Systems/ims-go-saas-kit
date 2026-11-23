@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { notificationPath } from '../components/notifications'
 import { api, type Schemas } from '../api/client'
 import { useToast } from '../components/Toasts'
-import { Badge, Card, Spinner } from '../components/ui'
+import { Badge, Card } from '../components/ui'
 import { useT, type MessageKey } from '../i18n'
+import { SettingsSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/settings/notifications')({
   component: NotificationsPage,
@@ -51,9 +52,7 @@ function NotificationsPage() {
   return (
     <Card title={t('notifications.preferences')} flush>
       {!prefs.data ? (
-        <div className="p-4">
-          <Spinner />
-        </div>
+        <SettingsSkeleton rows={4} />
       ) : (
         <ul className="pref-list">
           {[...events.entries()].map(([event, items]) => (

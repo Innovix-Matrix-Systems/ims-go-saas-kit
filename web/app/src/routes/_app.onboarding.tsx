@@ -9,6 +9,7 @@ import { TwoFactorSetup } from '../components/TwoFactorSetup'
 import { Badge, Button, Card, Icon, PageHeader, Spinner } from '../components/ui'
 import { useT, type MessageKey } from '../i18n'
 import { queryClient } from '../query'
+import { CardsSkeleton, FormSkeleton } from '../components/Skeleton'
 
 export interface OnboardingProgress {
   completed: boolean
@@ -129,7 +130,7 @@ function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
   if (!packages.data || !status.data) {
     return (
       <Card title={t('onboarding.step.package')}>
-        <Spinner />
+        <CardsSkeleton count={3} />
       </Card>
     )
   }
@@ -253,7 +254,7 @@ function TwoFactorStep({ onNext }: { onNext: (skip: boolean) => void }) {
   return (
     <Card title={t('onboarding.step.twoFactor')} description={t('onboarding.twoFactorHint')}>
       {!status.data ? (
-        <Spinner />
+        <FormSkeleton fields={2} />
       ) : status.data.enabled ? (
         <div className="stack">
           <div className="success-box">{t('onboarding.twoFactorEnabled')}</div>

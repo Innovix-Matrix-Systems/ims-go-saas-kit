@@ -429,7 +429,10 @@ pre.json {
 .error-box-text { flex: 1; min-width: 0; }
 .error-box .btn { color: var(--danger-fg); }
 .skeleton, .skeleton-row {
-  background: linear-gradient(90deg, var(--surface-2), var(--border), var(--surface-2));
+  /* Mixed from the text colour so it reads clearly in light and dark themes. */
+  --skeleton-base: color-mix(in srgb, var(--text-3) 22%, var(--surface-1));
+  --skeleton-shine: color-mix(in srgb, var(--text-3) 8%, var(--surface-1));
+  background: linear-gradient(90deg, var(--skeleton-base), var(--skeleton-shine), var(--skeleton-base));
   background-size: 200% 100%; animation: shimmer 1.4s ease infinite; border-radius: 6px;
 }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -631,3 +634,18 @@ pre.json {
 @media (max-width: 860px) {
   .sidebar-resizer, .brand .sidebar-pin { display: none; }
 }
+
+/* Skeletons: the shape of what is loading. */
+.skeleton-table td, .skeleton-table th { vertical-align: middle; }
+.skeleton-person { display: flex; align-items: center; gap: 10px; }
+.skeleton-lines { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.skeleton-list { display: flex; flex-direction: column; }
+.skeleton-list-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+.skeleton-list-row + .skeleton-list-row { border-top: 1px solid var(--border); }
+.skeleton-form { display: flex; flex-direction: column; gap: 14px; max-width: 520px; }
+.skeleton-field { display: flex; flex-direction: column; gap: 6px; }
+.skeleton-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); }
+.skeleton-nav { display: flex; flex-direction: column; gap: 14px; padding-top: 14px; }
+.skeleton-nav-item { display: flex; align-items: center; gap: 10px; padding: 0 10px; }
+.skeleton-page .page-header { margin-bottom: 20px; }
+@media (prefers-reduced-motion: reduce) { .skeleton, .skeleton-row { animation: none; } }

@@ -9,6 +9,7 @@ import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
 import { Badge, Card, Icon, PageHeader, Spinner } from '../components/ui'
 import { useT } from '../i18n'
+import { FormSkeleton, ListSkeleton, SettingsSkeleton } from '../components/Skeleton'
 
 export const Route = createFileRoute('/_app/org/settings')({
   component: OrganizationSettingsPage,
@@ -38,7 +39,14 @@ function OrganizationSettingsPage() {
     <>
       <PageHeader title={t('org.settings')} description={organization.data?.name} />
       {!organization.data ? (
-        <Spinner />
+        <div className="stack g-4">
+          <Card>
+            <FormSkeleton fields={3} />
+          </Card>
+          <Card>
+            <ListSkeleton rows={1} avatar />
+          </Card>
+        </div>
       ) : (
         <div className="stack g-4">
           <ProfileCard organization={organization.data} editable={can(session, 'organization.update')} />
@@ -203,7 +211,7 @@ function PoliciesCard() {
   return (
     <Card title={t('org.policiesTitle')} description={t('org.policiesHint')}>
       {!settings.data ? (
-        <Spinner />
+        <SettingsSkeleton rows={5} />
       ) : (
         <div className="stack g-4">
           {sections.map((section) => (
