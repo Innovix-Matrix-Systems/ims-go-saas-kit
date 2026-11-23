@@ -126,7 +126,7 @@ func collectInternalRoutes(t *testing.T, router http.Handler) []internalRoute {
 			return nil
 		}
 		path := route
-		for _, param := range []string{"id", "key"} {
+		for _, param := range []string{"id", "key", "jobId"} {
 			path = strings.ReplaceAll(path, "{"+param+"}", "1")
 		}
 		if strings.Contains(path, "{") {

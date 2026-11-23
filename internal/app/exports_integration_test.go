@@ -97,6 +97,30 @@ func TestProcessingJobRetryAndRemove(t *testing.T) {
 	app.As(admin).Get("/api/v1/data-processing/job/"+job.JobID).Status(t, http.StatusNotFound)
 }
 
+// Staff not acting in an organization retry and remove their own jobs through
+// the internal routes; the organization routes refuse their writes.
+func TestProcessingJobStaffRetryAndRemove(t *testing.T) {
+	app := testkit.New(t)
+	staff := app.SuperAdmin(t)
+	admin := app.User(t)
+
+	var job processingJob
+	app.As(staff).Post("/api/v1/internal/activity/export", map[string]any{"tenant_id": "system"}).Status(t, http.StatusAccepted).Data(t, &job)
+	finishActivityExport(t, app, staff, job)
+	if _, err := app.Pool.Exec(context.Background(), `UPDATE data_processing_jobs SET status = 'failed' WHERE id = $1`, job.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	app.As(staff).Post("/api/v1/data-processing/job/"+job.JobID+"/retry", nil).Status(t, http.StatusForbidden)
+	app.As(admin).Post("/api/v1/internal/data-processing/job/"+job.JobID+"/retry", nil).Status(t, http.StatusForbidden)
+	app.As(staff).Post("/api/v1/internal/data-processing/job/"+job.JobID+"/retry", nil).Status(t, http.StatusOK)
+	if done := finishActivityExport(t, app, staff, job); done.Status != "completed" {
+		t.Fatalf("after retry = %+v", done)
+	}
+	app.As(staff).Delete("/api/v1/internal/data-processing/job/"+job.JobID).Status(t, http.StatusNoContent)
+	app.As(staff).Get("/api/v1/data-processing/job/"+job.JobID).Status(t, http.StatusNotFound)
+}
+
 // An organization's own retention days decide when its jobs are deleted.
 func TestProcessingRetentionPerOrganization(t *testing.T) {
 	app := testkit.New(t)

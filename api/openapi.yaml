@@ -4468,6 +4468,44 @@ paths:
         "404": *notFound
         "409": *conflict
 
+  /api/v1/internal/data-processing/job/{jobId}:
+    parameters:
+      - $ref: "#/components/parameters/PathJobID"
+    delete:
+      tags: [Data Processing]
+      summary: Remove one of your finished jobs (staff)
+      description: For staff not acting in an organization. 409 while it is still pending or running.
+      operationId: removeInternalProcessingJob
+      responses:
+        "204": {description: Removed.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
+  /api/v1/internal/data-processing/job/{jobId}/retry:
+    parameters:
+      - $ref: "#/components/parameters/PathJobID"
+    post:
+      tags: [Data Processing]
+      summary: Run one of your failed jobs again (staff)
+      description: For staff not acting in an organization. 409 unless it failed, or when its kind cannot be retried.
+      operationId: retryInternalProcessingJob
+      responses:
+        "200":
+          description: The job, pending again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ProcessingJob"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
   /api/v1/data-processing/job/{jobId}/download:
     parameters:
       - $ref: "#/components/parameters/PathJobID"

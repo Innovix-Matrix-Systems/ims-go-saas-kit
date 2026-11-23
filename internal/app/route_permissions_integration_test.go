@@ -80,23 +80,25 @@ var routesWithoutPermission = map[string]bool{
 	"GET /api/v1/notification/unsubscribe":                true, // public: the sealed token names the user
 	"POST /api/v1/notification/unsubscribe":               true,
 	// owner-scoped: the service only returns the caller's own records
-	"GET /api/v1/data-processing/jobs/user":            true,
-	"GET /api/v1/data-processing/job/{jobId}":          true,
-	"GET /api/v1/data-processing/job/{jobId}/download": true,
-	"POST /api/v1/data-processing/job/{jobId}/retry":   true, // the job owner (checked in the handler)
-	"DELETE /api/v1/data-processing/job/{jobId}":       true, // the job owner (checked in the handler)
-	"GET /api/v1/files/{id}":                           true, // creator or file.view
-	"DELETE /api/v1/files/{id}":                        true, // creator or file.delete
-	"GET /api/v1/files/{id}/download":                  true, // same rule as show
-	"GET /api/v1/internal/files/{id}":                  true, // creator or file.internal.view
-	"DELETE /api/v1/internal/files/{id}":               true, // creator or file.internal.delete
-	"GET /api/v1/internal/files/{id}/download":         true, // same rule as show
-	"GET /api/v1/feature-flags":                        true,
-	"GET /api/v1/billing/subscription/status":          true,
-	"GET /api/v1/onboarding":                           true, // the caller's own organization's setup
-	"POST /api/v1/onboarding/complete":                 true, // only the organization's owner (checked in the service)
-	"GET /api/v1/organization":                         true, // every member reads their own organization
-	"POST /api/v1/organization/transfer-ownership":     true, // only the owner (checked in the service)
+	"GET /api/v1/data-processing/jobs/user":                   true,
+	"GET /api/v1/data-processing/job/{jobId}":                 true,
+	"GET /api/v1/data-processing/job/{jobId}/download":        true,
+	"POST /api/v1/data-processing/job/{jobId}/retry":          true, // the job owner (checked in the handler)
+	"DELETE /api/v1/data-processing/job/{jobId}":              true, // the job owner (checked in the handler)
+	"POST /api/v1/internal/data-processing/job/{jobId}/retry": true, // staff, their own job (checked in the handler)
+	"DELETE /api/v1/internal/data-processing/job/{jobId}":     true, // staff, their own job (checked in the handler)
+	"GET /api/v1/files/{id}":                                  true, // creator or file.view
+	"DELETE /api/v1/files/{id}":                               true, // creator or file.delete
+	"GET /api/v1/files/{id}/download":                         true, // same rule as show
+	"GET /api/v1/internal/files/{id}":                         true, // creator or file.internal.view
+	"DELETE /api/v1/internal/files/{id}":                      true, // creator or file.internal.delete
+	"GET /api/v1/internal/files/{id}/download":                true, // same rule as show
+	"GET /api/v1/feature-flags":                               true,
+	"GET /api/v1/billing/subscription/status":                 true,
+	"GET /api/v1/onboarding":                                  true, // the caller's own organization's setup
+	"POST /api/v1/onboarding/complete":                        true, // only the organization's owner (checked in the service)
+	"GET /api/v1/organization":                                true, // every member reads their own organization
+	"POST /api/v1/organization/transfer-ownership":            true, // only the owner (checked in the service)
 }
 
 // TestEveryProtectedRouteRequiresAPermission logs in a tenant user that holds
