@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, type ErrorComponentProps } from '@tanstack/react-router'
-import { ApiError } from '../api/client'
+import { ApiError, getActing, setActing } from '../api/client'
 import { forgetSession, isSignedIn, sessionQuery } from '../auth/session'
 import { AppShell } from '../components/AppShell'
 import { StatusScreen } from '../components/StatusScreen'
@@ -27,6 +27,13 @@ export const Route = createFileRoute('/_app')({
       if (error instanceof ApiError && error.code === 'TWO_FACTOR_SETUP_REQUIRED') throw redirect({ to: '/setup-two-factor' })
       if (error instanceof ApiError && error.code === 'TENANT_SUSPENDED') throw redirect({ to: '/suspended' })
       if (error instanceof ApiError && error.code === 'MAINTENANCE_MODE') throw redirect({ to: '/maintenance' })
+      // Acting as someone who can no longer be acted as (deactivated, gone):
+      // drop back to the staff account instead of failing every page.
+      if (getActing()) {
+        setActing(null)
+        queryClient.clear()
+        return await queryClient.ensureQueryData(sessionQuery)
+      }
       throw error
     }
   },

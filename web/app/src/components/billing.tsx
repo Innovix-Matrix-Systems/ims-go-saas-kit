@@ -56,8 +56,10 @@ export function useFeatureText() {
   }
 }
 
+/** A feature's name on its own, as a label ("Members", not "members"). */
 export function featureName(t: (key: MessageKey) => string, key: string): string {
-  return featureLabels[key] ? t(featureLabels[key]) : key
+  const name = featureLabels[key] ? t(featureLabels[key]) : key
+  return name.charAt(0).toLocaleUpperCase() + name.slice(1)
 }
 
 export function formatMB(mb: number): string {

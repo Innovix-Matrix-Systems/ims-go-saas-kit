@@ -91,6 +91,7 @@ export function setToken(token: string, remember: boolean): void {
 
 export function clearToken(): void {
   for (const store of stores()) store.removeItem(TOKEN_KEY)
+  setActing(null)
 }
 
 /** Whether the current token was stored with "keep me signed in". */
@@ -130,6 +131,36 @@ function report(error: ApiError): void {
   else if (error.status === 503 && error.code === 'MAINTENANCE_MODE') emit({ type: 'maintenance', message: error.message })
 }
 
+// ── Acting as an organization or a user (staff only) ────────────────────────
+// Impersonating an organization sends X-Acting-Tenant: staff keep their own
+// account and permissions inside it. Logging in as a user sends
+// X-Acting-User: every request runs as that user. Kept per tab (sessionStorage)
+// and never across a sign-out.
+
+export type Acting =
+  | { kind: 'tenant'; tenantId: number; name: string }
+  | { kind: 'user'; userId: number; name: string; email: string; tenantName?: string }
+
+const ACTING_KEY = 'ims.app.acting'
+
+export function getActing(): Acting | null {
+  try {
+    const raw = window.sessionStorage.getItem(ACTING_KEY)
+    return raw ? (JSON.parse(raw) as Acting) : null
+  } catch {
+    return null
+  }
+}
+
+export function setActing(acting: Acting | null): void {
+  try {
+    if (acting) window.sessionStorage.setItem(ACTING_KEY, JSON.stringify(acting))
+    else window.sessionStorage.removeItem(ACTING_KEY)
+  } catch {
+    // Storage may be unavailable; acting then lasts for this page only.
+  }
+}
+
 // ── Requests ─────────────────────────────────────────────────────────────────
 
 type QueryValue = string | number | boolean | undefined | null
@@ -147,6 +178,10 @@ export interface RequestOptions {
   quiet?: boolean
   /** Use this token instead of the stored one (e.g. a setup-only token). */
   token?: string | null
+  /** Leave out the acting headers (console screens that work as staff). */
+  asStaff?: boolean
+  /** Read one organization from the console (X-Acting-Tenant for this call only). */
+  actingTenant?: number
 }
 
 function buildURL(path: string, query?: Record<string, QueryValue>): string {
@@ -166,6 +201,13 @@ function headersFor(options: RequestOptions): Headers {
   const token = options.token === undefined ? getToken() : options.token
   if (token) headers.set('Authorization', `Bearer ${token}`)
   if (options.idempotent) headers.set('Idempotency-Key', crypto.randomUUID())
+  if (options.actingTenant) {
+    headers.set('X-Acting-Tenant', String(options.actingTenant))
+    return headers
+  }
+  const acting = options.asStaff || options.token === null ? null : getActing()
+  if (acting?.kind === 'tenant') headers.set('X-Acting-Tenant', String(acting.tenantId))
+  if (acting?.kind === 'user') headers.set('X-Acting-User', String(acting.userId))
   return headers
 }
 

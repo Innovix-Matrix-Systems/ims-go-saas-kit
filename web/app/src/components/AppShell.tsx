@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { signOut, useSession } from '../auth/session'
 import { initials } from '../format'
 import { useT } from '../i18n'
+import { ActingBanner } from './ActingBanner'
 import { AppearanceMenu } from './AppearanceMenu'
 import { BranchSwitcher } from './BranchSwitcher'
 import { CommandPalette } from './CommandPalette'
@@ -136,6 +137,7 @@ export function AppShell() {
       </aside>
       <div className="sidebar-scrim" onClick={() => setMenuOpen(false)} role="presentation" />
       <div className="main">
+        <ActingBanner />
         <header className="topbar">
           <button type="button" className="icon-btn menu-btn" aria-label={t('nav.openMenu')} onClick={() => setMenuOpen(true)}>
             <Icon name="list" />

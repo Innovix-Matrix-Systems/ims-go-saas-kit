@@ -1,4 +1,4 @@
-import type { Session } from '../auth/session'
+import { can, type Session } from '../auth/session'
 import type { MessageKey } from '../i18n'
 import type { IconName } from './ui'
 
@@ -7,12 +7,13 @@ import type { IconName } from './ui'
 // adds itself here with its group, icon, `g` shortcut letter (unique; checked
 // below) and the permission it needs, if any.
 
-export type NavGroup = 'workspace' | 'organization' | 'account'
+export type NavGroup = 'workspace' | 'console' | 'organization' | 'account'
 
-export const navGroups: NavGroup[] = ['workspace', 'organization', 'account']
+export const navGroups: NavGroup[] = ['workspace', 'console', 'organization', 'account']
 
 export const navGroupLabels: Record<NavGroup, MessageKey> = {
   workspace: 'nav.group.workspace',
+  console: 'nav.group.console',
   organization: 'nav.group.organization',
   account: 'nav.group.account',
 }
@@ -36,6 +37,12 @@ export interface Page {
 
 export const pages: Page[] = [
   { to: '/', label: 'nav.home', icon: 'home', group: 'workspace', key: 'h', keywords: 'dashboard overview' },
+  { to: '/console/organizations', label: 'console.organizations', icon: 'tenants', group: 'console', key: 'c', keywords: 'tenants customers companies impersonate suspend', permission: 'tenant.view.all', platformOnly: true },
+  { to: '/console/users', label: 'console.users', icon: 'users', group: 'console', key: 'u', keywords: 'people accounts log in as support', permission: 'user.view.all', platformOnly: true },
+  { to: '/console/approvals', label: 'console.approvals', icon: 'check', group: 'console', key: 'v', keywords: 'payments bank transfer review approve reject', permission: 'payment_approval.view.all', platformOnly: true },
+  { to: '/console/plans', label: 'console.plans', icon: 'package', group: 'console', key: 'l', keywords: 'packages pricing features limits', permission: 'package.view.all', platformOnly: true },
+  { to: '/console/staff', label: 'console.staff', icon: 'shield', group: 'console', key: 'x', keywords: 'internal users team admins', permission: 'user.internal.create', platformOnly: true },
+  { to: '/console/settings', label: 'console.settings', icon: 'settings', group: 'console', key: 'y', keywords: 'platform global bank details payment instructions', permission: 'setting.internal.view', platformOnly: true },
   { to: '/org/members', label: 'org.members', icon: 'users', group: 'organization', key: 'm', keywords: 'users team invite people', permission: 'user.view.all', tenantOnly: true },
   { to: '/org/roles', label: 'org.roles', icon: 'shield', group: 'organization', key: 'r', keywords: 'permissions access', permission: 'role.view.all', tenantOnly: true },
   { to: '/org/branches', label: 'org.branches', icon: 'tenants', group: 'organization', key: 'b', keywords: 'locations offices shops', permission: 'branch.view.all', tenantOnly: true },
@@ -61,8 +68,9 @@ if (import.meta.env.DEV) {
 export function visiblePages(session: Session | undefined): Page[] {
   return pages.filter((page) => {
     if (page.platformOnly && !session?.isPlatformUser) return false
-    if (page.tenantOnly && session?.isPlatformUser !== false) return false
-    if (page.permission && !session?.permissions.has(page.permission)) return false
+    // Organization pages: members, and staff while impersonating one.
+    if (page.tenantOnly && session?.isPlatformUser !== false && session?.acting?.kind !== 'tenant') return false
+    if (page.permission && !can(session, page.permission)) return false
     return true
   })
 }

@@ -24,6 +24,12 @@ import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppConsoleApprovalsRouteImport } from './routes/_app.console.approvals'
+import { Route as AppConsoleOrganizationsRouteImport } from './routes/_app.console.organizations'
+import { Route as AppConsolePlansRouteImport } from './routes/_app.console.plans'
+import { Route as AppConsoleSettingsRouteImport } from './routes/_app.console.settings'
+import { Route as AppConsoleStaffRouteImport } from './routes/_app.console.staff'
+import { Route as AppConsoleUsersRouteImport } from './routes/_app.console.users'
 import { Route as AppOrgActivityRouteImport } from './routes/_app.org.activity'
 import { Route as AppOrgBillingRouteImport } from './routes/_app.org.billing'
 import { Route as AppOrgBranchesRouteImport } from './routes/_app.org.branches'
@@ -111,6 +117,36 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConsoleApprovalsRoute = AppConsoleApprovalsRouteImport.update({
+  id: '/console/approvals',
+  path: '/console/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleOrganizationsRoute = AppConsoleOrganizationsRouteImport.update({
+  id: '/console/organizations',
+  path: '/console/organizations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsolePlansRoute = AppConsolePlansRouteImport.update({
+  id: '/console/plans',
+  path: '/console/plans',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleSettingsRoute = AppConsoleSettingsRouteImport.update({
+  id: '/console/settings',
+  path: '/console/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleStaffRoute = AppConsoleStaffRouteImport.update({
+  id: '/console/staff',
+  path: '/console/staff',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleUsersRoute = AppConsoleUsersRouteImport.update({
+  id: '/console/users',
+  path: '/console/users',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrgActivityRoute = AppOrgActivityRouteImport.update({
   id: '/org/activity',
   path: '/org/activity',
@@ -188,6 +224,12 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/console/approvals': typeof AppConsoleApprovalsRoute
+  '/console/organizations': typeof AppConsoleOrganizationsRoute
+  '/console/plans': typeof AppConsolePlansRoute
+  '/console/settings': typeof AppConsoleSettingsRoute
+  '/console/staff': typeof AppConsoleStaffRoute
+  '/console/users': typeof AppConsoleUsersRoute
   '/org/activity': typeof AppOrgActivityRoute
   '/org/billing': typeof AppOrgBillingRoute
   '/org/branches': typeof AppOrgBranchesRoute
@@ -216,6 +258,12 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/': typeof AppIndexRoute
+  '/console/approvals': typeof AppConsoleApprovalsRoute
+  '/console/organizations': typeof AppConsoleOrganizationsRoute
+  '/console/plans': typeof AppConsolePlansRoute
+  '/console/settings': typeof AppConsoleSettingsRoute
+  '/console/staff': typeof AppConsoleStaffRoute
+  '/console/users': typeof AppConsoleUsersRoute
   '/org/activity': typeof AppOrgActivityRoute
   '/org/billing': typeof AppOrgBillingRoute
   '/org/branches': typeof AppOrgBranchesRoute
@@ -246,6 +294,12 @@ export interface FileRoutesById {
   '/_app/onboarding': typeof AppOnboardingRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/': typeof AppIndexRoute
+  '/_app/console/approvals': typeof AppConsoleApprovalsRoute
+  '/_app/console/organizations': typeof AppConsoleOrganizationsRoute
+  '/_app/console/plans': typeof AppConsolePlansRoute
+  '/_app/console/settings': typeof AppConsoleSettingsRoute
+  '/_app/console/staff': typeof AppConsoleStaffRoute
+  '/_app/console/users': typeof AppConsoleUsersRoute
   '/_app/org/activity': typeof AppOrgActivityRoute
   '/_app/org/billing': typeof AppOrgBillingRoute
   '/_app/org/branches': typeof AppOrgBranchesRoute
@@ -276,6 +330,12 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/settings'
+    | '/console/approvals'
+    | '/console/organizations'
+    | '/console/plans'
+    | '/console/settings'
+    | '/console/staff'
+    | '/console/users'
     | '/org/activity'
     | '/org/billing'
     | '/org/branches'
@@ -304,6 +364,12 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/'
+    | '/console/approvals'
+    | '/console/organizations'
+    | '/console/plans'
+    | '/console/settings'
+    | '/console/staff'
+    | '/console/users'
     | '/org/activity'
     | '/org/billing'
     | '/org/branches'
@@ -333,6 +399,12 @@ export interface FileRouteTypes {
     | '/_app/onboarding'
     | '/_app/settings'
     | '/_app/'
+    | '/_app/console/approvals'
+    | '/_app/console/organizations'
+    | '/_app/console/plans'
+    | '/_app/console/settings'
+    | '/_app/console/staff'
+    | '/_app/console/users'
     | '/_app/org/activity'
     | '/_app/org/billing'
     | '/_app/org/branches'
@@ -468,6 +540,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/console/approvals': {
+      id: '/_app/console/approvals'
+      path: '/console/approvals'
+      fullPath: '/console/approvals'
+      preLoaderRoute: typeof AppConsoleApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/console/organizations': {
+      id: '/_app/console/organizations'
+      path: '/console/organizations'
+      fullPath: '/console/organizations'
+      preLoaderRoute: typeof AppConsoleOrganizationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/console/plans': {
+      id: '/_app/console/plans'
+      path: '/console/plans'
+      fullPath: '/console/plans'
+      preLoaderRoute: typeof AppConsolePlansRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/console/settings': {
+      id: '/_app/console/settings'
+      path: '/console/settings'
+      fullPath: '/console/settings'
+      preLoaderRoute: typeof AppConsoleSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/console/staff': {
+      id: '/_app/console/staff'
+      path: '/console/staff'
+      fullPath: '/console/staff'
+      preLoaderRoute: typeof AppConsoleStaffRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/console/users': {
+      id: '/_app/console/users'
+      path: '/console/users'
+      fullPath: '/console/users'
+      preLoaderRoute: typeof AppConsoleUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/org/activity': {
       id: '/_app/org/activity'
       path: '/org/activity'
@@ -578,6 +692,12 @@ interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
+  AppConsoleApprovalsRoute: typeof AppConsoleApprovalsRoute
+  AppConsoleOrganizationsRoute: typeof AppConsoleOrganizationsRoute
+  AppConsolePlansRoute: typeof AppConsolePlansRoute
+  AppConsoleSettingsRoute: typeof AppConsoleSettingsRoute
+  AppConsoleStaffRoute: typeof AppConsoleStaffRoute
+  AppConsoleUsersRoute: typeof AppConsoleUsersRoute
   AppOrgActivityRoute: typeof AppOrgActivityRoute
   AppOrgBillingRoute: typeof AppOrgBillingRoute
   AppOrgBranchesRoute: typeof AppOrgBranchesRoute
@@ -593,6 +713,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
+  AppConsoleApprovalsRoute: AppConsoleApprovalsRoute,
+  AppConsoleOrganizationsRoute: AppConsoleOrganizationsRoute,
+  AppConsolePlansRoute: AppConsolePlansRoute,
+  AppConsoleSettingsRoute: AppConsoleSettingsRoute,
+  AppConsoleStaffRoute: AppConsoleStaffRoute,
+  AppConsoleUsersRoute: AppConsoleUsersRoute,
   AppOrgActivityRoute: AppOrgActivityRoute,
   AppOrgBillingRoute: AppOrgBillingRoute,
   AppOrgBranchesRoute: AppOrgBranchesRoute,

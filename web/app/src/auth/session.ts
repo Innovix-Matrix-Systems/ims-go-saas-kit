@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { api, clearToken, getToken, setToken, type LoginResult, type User } from '../api/client'
+import { api, clearToken, getActing, getToken, setActing, setToken, type Acting, type LoginResult, type User } from '../api/client'
 import { queryClient } from '../query'
 
 // The signed-in session: who the user is and what they may do. The token is in
@@ -13,7 +13,12 @@ export interface Permission {
 export interface Session {
   user: User
   permissions: Set<string>
+  /** Super-Admins pass every permission check. */
+  superAdmin: boolean
+  /** The account has no organization (staff), and nobody is acting as a user. */
   isPlatformUser: boolean
+  /** Staff impersonating an organization or logged in as a user. */
+  acting: Acting | null
 }
 
 const DEVICE = deviceName()
@@ -124,16 +129,34 @@ export function isSignedIn(): boolean {
   return Boolean(getToken())
 }
 
+interface ProfilePermissions {
+  super_admin: boolean
+  permissions: string[]
+  acting_as: boolean
+}
+
+// Both calls carry the acting headers, so logging in as a user loads that
+// user's profile and permissions and the app renders as they see it.
 async function loadSession(): Promise<Session> {
-  const [user, permissions] = await Promise.all([
+  const [user, granted] = await Promise.all([
     api<User>('/user/profile'),
-    api<Permission[]>('/permission/user').catch(() => [] as Permission[]),
+    api<ProfilePermissions>('/user/profile/permissions').catch(() => ({ super_admin: false, permissions: [], acting_as: false })),
   ])
   return {
     user,
-    permissions: new Set(permissions.map((permission) => permission.name)),
+    permissions: new Set(granted.permissions),
+    superAdmin: granted.super_admin,
     isPlatformUser: user.tenant_id == null,
+    acting: getActing(),
   }
+}
+
+/** Starts impersonating an organization or logging in as a user, or stops (null). */
+export async function changeActing(acting: Acting | null): Promise<void> {
+  setActing(acting)
+  // Everything cached belongs to whoever the app was acting as before.
+  queryClient.clear()
+  await queryClient.fetchQuery(sessionQuery)
 }
 
 export const sessionQuery = {
@@ -149,5 +172,5 @@ export function useSession(): Session | undefined {
 
 /** Whether the session holds a permission (UI hint only; the API enforces). */
 export function can(session: Session | undefined, permission: string): boolean {
-  return Boolean(session?.permissions.has(permission))
+  return Boolean(session && (session.superAdmin || session.permissions.has(permission)))
 }

@@ -83,7 +83,7 @@
 .billing-kv { grid-template-columns: 140px 1fr; }
 .billing-kv dd { font-family: var(--sans); font-size: var(--fs-base); }
 .usage-row { display: flex; flex-direction: column; gap: 6px; }
-.usage-name { font-weight: var(--fw-medium); text-transform: capitalize; }
+.usage-name { font-weight: var(--fw-medium); }
 .meter { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 .meter-fill { display: block; height: 100%; border-radius: 999px; background: var(--ok-fg); }
 .meter-fill.warn { background: var(--warn-fg); }
@@ -91,3 +91,22 @@
 .pay-instructions { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
 .pay-instructions-text { white-space: pre-wrap; font-size: var(--fs-base); color: var(--text-1); }
 .plan-card.chosen { border-color: var(--accent); }
+.acting-banner {
+  display: flex; align-items: center; gap: 10px; padding: 8px 16px; position: sticky; top: 0; z-index: 30;
+  background: var(--warn-subtle); color: var(--warn-fg); border-bottom: 1px solid var(--warn-border); font-size: var(--fs-base);
+}
+.acting-banner.user { background: var(--danger-subtle); color: var(--danger-fg); border-bottom-color: var(--danger-border); }
+.acting-banner > svg { width: 16px; height: 16px; flex: none; }
+.acting-text { flex: 1; min-width: 0; }
+.usage-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .usage-grid { grid-template-columns: 1fr; } }
+.console-member { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; }
+.plan-feature-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; }
+.plan-feature-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 34px; }
+.plan-limit { width: 96px; flex: none; }
+.form-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .form-grid-3 { grid-template-columns: 1fr; } }
+.setting-row.wide { flex-direction: column; align-items: stretch; }
+.setting-row.wide .setting-control { flex: 1 1 auto; justify-content: stretch; }
+.setting-row.wide .setting-control textarea { width: 100%; }
+.setting-row.wide .setting-meta, .setting-row.wide .setting-control { flex: none; }

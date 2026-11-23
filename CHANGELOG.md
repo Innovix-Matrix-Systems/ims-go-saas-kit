@@ -67,7 +67,13 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   drawer with previous and next, CSV export); dropdowns use the custom select, and checkboxes
   and radios are drawn to match the theme. Billing shows the current plan, usage of each limit,
   the plans with a bank-transfer checkout (with the bank details) and the payment history; the
-  setup wizard's plan step uses the same checkout.
+  setup wizard's plan step uses the same checkout. A staff console for platform accounts:
+  organizations (search, create, details with owner, plan, usage and members, suspend or
+  reactivate, change plan with an optional recorded payment, impersonate), users across every
+  organization with log in as, payment approvals (approve or reject with a note), plans with a
+  feature editor, staff accounts (invite with a platform role) and platform settings (including the
+  bank details). Impersonating an organization and logging in as a user each show a banner with
+  the way back; logging in as a user renders the app as that user sees it.
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.
