@@ -178,6 +178,30 @@ function BranchDrawer({ branch, onClose }: { branch: Branch | null; onClose: () 
     }
   }
 
+  // Those who may only look get the branch as text, not a form they cannot use.
+  if (branch && !editable) {
+    const manager = members.data?.find((user) => user.id === branch.manager_id)
+    const none = <span className="muted">{t('profilePage.notSet')}</span>
+    return (
+      <Drawer open title={branch.name} onClose={onClose} size="md">
+        <dl className="details">
+          <dt>{t('branches.name')}</dt>
+          <dd>{branch.name}</dd>
+          <dt>{t('branches.address')}</dt>
+          <dd>{branch.address || none}</dd>
+          <dt>{t('branches.phone')}</dt>
+          <dd>{branch.phone ? <a href={`tel:${branch.phone}`}>{branch.phone}</a> : none}</dd>
+          <dt>{t('branches.email')}</dt>
+          <dd>{branch.email ? <a href={`mailto:${branch.email}`}>{branch.email}</a> : none}</dd>
+          <dt>{t('branches.manager')}</dt>
+          <dd>{manager?.name ?? (branch.manager_id ? `#${branch.manager_id}` : none)}</dd>
+          <dt>{t('branches.description')}</dt>
+          <dd>{branch.description || none}</dd>
+        </dl>
+      </Drawer>
+    )
+  }
+
   return (
     <Drawer open title={branch ? branch.name : t('branches.createTitle')} onClose={onClose} size="md">
       <form onSubmit={submit} className="stack">
