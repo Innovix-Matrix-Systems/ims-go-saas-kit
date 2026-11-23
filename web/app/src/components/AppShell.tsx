@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { signOut, useSession } from '../auth/session'
 import { initials } from '../format'
 import { useT } from '../i18n'
@@ -14,6 +14,21 @@ import { useShortcuts } from './shortcuts'
 import { Icon, Kbd, Spinner } from './ui'
 
 const SIDEBAR_KEY = 'ims.app.sidebar'
+const WIDTH_KEY = 'ims.app.sidebar-width'
+const DEFAULT_WIDTH = 240
+const MIN_WIDTH = 200
+const MAX_WIDTH = 400
+
+const clampWidth = (value: number) => Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, value)))
+
+function readWidth(): number {
+  try {
+    const stored = Number(localStorage.getItem(WIDTH_KEY))
+    return stored ? clampWidth(stored) : DEFAULT_WIDTH
+  } catch {
+    return DEFAULT_WIDTH
+  }
+}
 
 function readCollapsed(): boolean {
   try {
@@ -32,6 +47,10 @@ export function AppShell() {
   const [commandOpen, setCommandOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(readCollapsed)
+  const [width, setWidth] = useState(readWidth)
+  const [resizing, setResizing] = useState(false)
+  const startX = useRef(0)
+  const startWidth = useRef(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const pages = visiblePages(session)
   const current = pageFor(pathname)
@@ -44,6 +63,32 @@ export function AppShell() {
       /* storage disabled */
     }
   }, [collapsed])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(WIDTH_KEY, String(width))
+    } catch {
+      /* storage disabled */
+    }
+  }, [width])
+
+  // Drag the sidebar's edge to resize it (pointer capture keeps the drag
+  // going over the page); double-click resets the width.
+  const startResize = (event: PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId)
+    startX.current = event.clientX
+    startWidth.current = width
+    setResizing(true)
+  }
+  const resize = (event: PointerEvent<HTMLDivElement>) => {
+    if (resizing) setWidth(clampWidth(startWidth.current + event.clientX - startX.current))
+  }
+  const resizeWithKeys = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault()
+      setWidth((value) => clampWidth(value + (event.key === 'ArrowRight' ? 16 : -16)))
+    }
+  }
 
   // The off-canvas menu (narrow screens) closes once a page is picked.
   useEffect(() => setMenuOpen(false), [pathname])
@@ -94,13 +139,26 @@ export function AppShell() {
     : (user?.roles?.map((role) => role.name).join(', ') || t('role.member'))
 
   return (
-    <div className={`app ${collapsed ? 'sidebar-collapsed' : ''} ${menuOpen ? 'menu-open' : ''}`}>
+    <div
+      className={`app ${collapsed ? 'sidebar-collapsed' : ''} ${menuOpen ? 'menu-open' : ''} ${resizing ? 'sidebar-resizing' : ''}`}
+      style={{ '--sidebar-width': `${width}px` } as CSSProperties}
+    >
       <aside className="sidebar" aria-label="Navigation">
         <div className="brand">
           <div className="brand-mark">I</div>
           <div className="brand-text">
             <div className="brand-title">{t('app.name')}</div>
           </div>
+          <button
+            type="button"
+            className={`icon-btn sidebar-pin ${collapsed ? '' : 'pinned'}`}
+            onClick={() => setCollapsed((value) => !value)}
+            aria-pressed={!collapsed}
+            aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
+            title={`${collapsed ? t('nav.expand') : t('nav.collapse')} ([)`}
+          >
+            <Icon name="pin" />
+          </button>
         </div>
         <nav className="nav">{navGroups.map(navGroup)}</nav>
         <div className="sidebar-footer">
@@ -122,18 +180,26 @@ export function AppShell() {
               <Icon name="logout" />
             </button>
           </div>
-          <button
-            type="button"
-            className="sidebar-toggle"
-            onClick={() => setCollapsed((value) => !value)}
-            aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
-            title={`${collapsed ? t('nav.expand') : t('nav.collapse')} ([)`}
-          >
-            <Icon name="chevron" className={collapsed ? '' : 'flip-x'} />
-            <span className="nav-label">{t('nav.collapse')}</span>
-            <Kbd>[</Kbd>
-          </button>
         </div>
+        {collapsed ? null : (
+          <div
+            className="sidebar-resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t('nav.resize')}
+            aria-valuemin={MIN_WIDTH}
+            aria-valuemax={MAX_WIDTH}
+            aria-valuenow={width}
+            tabIndex={0}
+            title={t('nav.resize')}
+            onPointerDown={startResize}
+            onPointerMove={resize}
+            onPointerUp={() => setResizing(false)}
+            onPointerCancel={() => setResizing(false)}
+            onDoubleClick={() => setWidth(DEFAULT_WIDTH)}
+            onKeyDown={resizeWithKeys}
+          />
+        )}
       </aside>
       <div className="sidebar-scrim" onClick={() => setMenuOpen(false)} role="presentation" />
       <div className="main">

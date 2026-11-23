@@ -652,6 +652,7 @@ export const en = {
   'console.systemActivity': 'System only',
   'console.actedBy': 'By {name} (staff)',
   'console.actingStaff': 'Staff member',
+  'nav.resize': 'Drag to resize the sidebar',
 }
 
 export type MessageKey = keyof typeof en

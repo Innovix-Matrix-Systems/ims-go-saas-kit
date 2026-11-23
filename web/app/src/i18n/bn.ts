@@ -654,4 +654,5 @@ export const bn: Messages = {
   'console.systemActivity': 'শুধু সিস্টেম',
   'console.actedBy': '{name} (স্টাফ)-এর দ্বারা',
   'console.actingStaff': 'স্টাফ সদস্য',
+  'nav.resize': 'সাইডবারের আকার বদলাতে টেনে নিন',
 }

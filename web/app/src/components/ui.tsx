@@ -61,6 +61,7 @@ export type IconName =
   | 'globe'
   | 'key'
   | 'building'
+  | 'pin'
 
 const paths: Record<IconName, ReactNode> = {
   home: <><path d="M3.5 11 12 4l8.5 7" /><path d="M5.5 9.5V20h13V9.5M10 20v-5h4v5" /></>,
@@ -95,6 +96,7 @@ const paths: Record<IconName, ReactNode> = {
   developers: <><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><path d="M17 8h4M19 6v4" /></>,
   docs: <><path d="M6 3h9l4 4v14H6z" /><path d="M9 12h6M9 16h6M9 8h3" /></>,
   logout: <><path d="M10 4H5v16h5" /><path d="M15 8l4 4-4 4M9 12h10" /></>,
+  pin: <><path d="M9 4h6l-1 6 3 3H7l3-3z" /><path d="M12 13v7" /></>,
   refresh: <><path d="M20 11a8 8 0 1 0-2.3 6.3" /><path d="M20 4v7h-7" /></>,
   search: <><circle cx="11" cy="11" r="6" /><path d="m20 20-4.2-4.2" /></>,
   copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4V4h11v1" /></>,
