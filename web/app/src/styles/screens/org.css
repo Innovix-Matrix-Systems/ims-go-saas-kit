@@ -1,0 +1,12 @@
+/* Organization screens: members and organization settings. */
+.toolbar-search { flex: 1; min-width: 200px; max-width: 360px; }
+.member-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.member-meta { display: flex; flex-direction: column; min-width: 0; }
+.member-name { display: flex; align-items: center; gap: 6px; font-weight: var(--fw-medium); }
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border); }
+.role-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.flex.align-center { align-items: center; }
+.owner-card { display: flex; align-items: center; gap: 12px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.setting-meta { min-width: 0; flex: 1 1 260px; }
+.setting-control { flex: 0 1 220px; display: flex; justify-content: flex-end; }

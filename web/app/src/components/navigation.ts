@@ -7,12 +7,13 @@ import type { IconName } from './ui'
 // adds itself here with its group, icon, `g` shortcut letter (unique; checked
 // below) and the permission it needs, if any.
 
-export type NavGroup = 'workspace' | 'account'
+export type NavGroup = 'workspace' | 'organization' | 'account'
 
-export const navGroups: NavGroup[] = ['workspace', 'account']
+export const navGroups: NavGroup[] = ['workspace', 'organization', 'account']
 
 export const navGroupLabels: Record<NavGroup, MessageKey> = {
   workspace: 'nav.group.workspace',
+  organization: 'nav.group.organization',
   account: 'nav.group.account',
 }
 
@@ -29,10 +30,14 @@ export interface Page {
   permission?: string
   /** Shown only to platform staff (accounts without an organization). */
   platformOnly?: boolean
+  /** Shown only to members of an organization. */
+  tenantOnly?: boolean
 }
 
 export const pages: Page[] = [
   { to: '/', label: 'nav.home', icon: 'home', group: 'workspace', key: 'h', keywords: 'dashboard overview' },
+  { to: '/org/members', label: 'org.members', icon: 'users', group: 'organization', key: 'm', keywords: 'users team invite people', permission: 'user.view.all', tenantOnly: true },
+  { to: '/org/settings', label: 'org.settings', icon: 'building', group: 'organization', key: 'o', keywords: 'organization company owner transfer policies', tenantOnly: true },
   { to: '/settings/profile', label: 'settings.profile', icon: 'user', group: 'account', key: 'p', keywords: 'name language e-mail' },
   { to: '/settings/security', label: 'settings.security', icon: 'shield', group: 'account', key: 's', keywords: 'password two-factor 2fa sessions devices' },
   { to: '/notifications', label: 'notifications.title', icon: 'bell', group: 'workspace', key: 'n', keywords: 'inbox alerts' },
@@ -50,6 +55,7 @@ if (import.meta.env.DEV) {
 export function visiblePages(session: Session | undefined): Page[] {
   return pages.filter((page) => {
     if (page.platformOnly && !session?.isPlatformUser) return false
+    if (page.tenantOnly && session?.isPlatformUser !== false) return false
     if (page.permission && !session?.permissions.has(page.permission)) return false
     return true
   })

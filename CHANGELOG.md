@@ -35,6 +35,10 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (authenticator app with QR code or e-mail codes, recovery codes), signed-in devices,
   notification preferences, personal-data export and account deletion. Signing in applies the
   user's saved language and sends a new owner to the setup wizard.
+- Client app organization screens: members (search, invited or joined filter, invite with roles,
+  edit, deactivate, resend an invitation, reset two-factor, remove) and organization settings
+  (profile and contact details, the owner and ownership transfer, and the organization's own
+  values for tenant settings such as branding, two-factor and privacy).
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.
