@@ -1,9 +1,9 @@
 ---
 title: Introduction
-description: What the IMS Go API Starter is, who it is for, and the ideas behind it.
+description: What the IMS Go Admin Starter is, who it is for, and the ideas behind it.
 ---
 
-The IMS Go API Starter is a **production-ready, multi-tenant HTTP API** written in Go:
+The IMS Go Admin Starter is a **production-ready, multi-tenant HTTP API** written in Go:
 **Laravel's batteries and workflow, Go's runtime, without the magic.** It is organised the way a
 Laravel developer expects, and built the way Go code should be: explicit, typed and compiled into
 one binary. You get a working application on day one — authentication

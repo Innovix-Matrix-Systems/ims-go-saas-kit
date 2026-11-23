@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 )
 
 func discardLogger() *slog.Logger {
@@ -55,7 +55,7 @@ func TestSMTPDriverSendsAgainstListener(t *testing.T) {
 		Host:        "127.0.0.1",
 		Port:        port,
 		FromAddress: "from@example.com",
-		FromName:    "IMS Test",
+		FromName:    "IMS Go Admin Starter Test",
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

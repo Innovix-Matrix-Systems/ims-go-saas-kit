@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/notifications"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/webhooks"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/notifications"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/webhooks"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // eventWebhookDisabled is the notification sent when an endpoint is

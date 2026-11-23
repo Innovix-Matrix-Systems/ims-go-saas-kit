@@ -11,8 +11,8 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
-	api "github.com/Innovix-Matrix-Systems/ims-go-api-starter/api"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
+	api "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/api"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
 )
 
 // loadSpec parses and validates the embedded canonical OpenAPI document.

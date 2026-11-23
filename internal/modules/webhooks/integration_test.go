@@ -15,8 +15,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/webhooks"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/testkit"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/webhooks"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
 // receiver records the webhooks it gets and answers with status.

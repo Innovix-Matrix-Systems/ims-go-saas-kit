@@ -32,7 +32,7 @@ type Field struct {
 
 // Options configures a generation run.
 type Options struct {
-	ModulePath string // e.g. github.com/you/ims-go-api-starter
+	ModulePath string // e.g. github.com/you/ims-go-admin-starter
 	Package    string // go package name (defaults to Name)
 	Name       string // singular, lower_snake (e.g. product)
 	Table      string // table name (defaults to a naive plural of Name)

@@ -117,7 +117,7 @@ const card = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
   <rect width="1200" height="630" fill="url(#glow)"/>
   <rect x="0" y="0" width="1200" height="6" fill="#ff5c1a"/>
   <g font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif">
-    <text x="80" y="250" font-size="76" font-weight="700" fill="#f5f5f7">IMS Go API Starter</text>
+    <text x="80" y="250" font-size="76" font-weight="700" fill="#f5f5f7">IMS Go Admin Starter</text>
     <text x="80" y="320" font-size="34" fill="#c2c2c8">Laravel's developer experience, Go's performance.</text>
     <text x="80" y="372" font-size="26" fill="#8c8c96">Multi-tenant API · one binary · developer dashboard · docs and tutorial</text>
     <text x="80" y="560" font-size="24" fill="#8c8c96">ims-go-api-starter.innovixmatrixsystem.com</text>

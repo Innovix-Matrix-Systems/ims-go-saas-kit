@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 )
 
 type FileItem struct {

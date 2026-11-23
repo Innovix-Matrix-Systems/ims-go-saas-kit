@@ -1,4 +1,4 @@
-module github.com/Innovix-Matrix-Systems/ims-go-api-starter
+module github.com/Innovix-Matrix-Systems/ims-go-admin-starter
 
 go 1.26.1
 

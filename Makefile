@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-#  IMS Go API Starter — developer commands
+#  IMS Go Admin Starter — developer commands
 #
 #  Run `make` (or `make help`) for the full list. Recipes use only portable
 #  tools (go, gofmt, and optionally air / golangci-lint / docker), so they work
@@ -7,7 +7,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 APP                    := ims
-MODULE                 := github.com/Innovix-Matrix-Systems/ims-go-api-starter
+MODULE                 := github.com/Innovix-Matrix-Systems/ims-go-admin-starter
 VERSION                ?= $(strip $(file < VERSION))
 
 GOEXE                  := $(shell go env GOEXE)
@@ -45,7 +45,7 @@ endif
 
 # ── Help ─────────────────────────────────────────────────────────────────────
 help:
-	@echo IMS Go API Starter - developer commands
+	@echo IMS Go Admin Starter - developer commands
 	@echo --- Setup ---
 	@echo   make tools             Install dev tools: air, golangci-lint
 	@echo   make rename MODULE=... Rename the starter to your app, once after creating it

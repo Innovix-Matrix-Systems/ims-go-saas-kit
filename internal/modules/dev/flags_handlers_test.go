@@ -3,7 +3,7 @@ package dev
 import (
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/featureflags"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/featureflags"
 )
 
 func TestParseFlagTarget(t *testing.T) {

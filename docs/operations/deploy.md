@@ -8,12 +8,12 @@ the queue worker. Prefer containers? The same binary runs from one image, see [D
 ## Layout
 
 ```
-/opt/ims/ims-go-api/
+/opt/ims/ims-go-admin-starter/
   releases/<timestamp>-<version>/ims     # immutable release binaries
   current -> releases/<...>              # atomic symlink, what units run
-/etc/ims/ims-go-api/.env                 # environment (root:ims, 0640)
-/var/lib/ims/ims-go-api/                 # writable state (uploads/exports)
-/var/log/ims/ims-go-api/                 # optional file logs (else journald)
+/etc/ims/ims-go-admin-starter/.env                 # environment (root:ims, 0640)
+/var/lib/ims/ims-go-admin-starter/                 # writable state (uploads/exports)
+/var/log/ims/ims-go-admin-starter/                 # optional file logs (else journald)
 ```
 
 Nothing writable lives inside a release directory. Logs go to journald unless `APP_LOG_DIR` is set.
@@ -22,13 +22,13 @@ Nothing writable lives inside a release directory. Logs go to journald unless `A
 
 ```bash
 sudo deploy/scripts/install.sh          # user, dirs, systemd units, seeds .env
-sudoedit /etc/ims/ims-go-api/.env       # DATABASE_DSN, APP_URL, APP_TIMEZONE, ...
-sudo deploy/scripts/release.sh --source /srv/src/ims-go-api-starter
+sudoedit /etc/ims/ims-go-admin-starter/.env       # DATABASE_DSN, APP_URL, APP_TIMEZONE, ...
+sudo deploy/scripts/release.sh --source /srv/src/ims-go-admin-starter
 ```
 
 `install.sh` creates the `ims` user, the directory layout (release tree owned by root — the service
-can run the binary but never rewrite it; state under `/var/lib/ims/ims-go-api`), installs and
-enables the three units, and seeds `/etc/ims/ims-go-api/.env` from `deploy/.env.production`
+can run the binary but never rewrite it; state under `/var/lib/ims/ims-go-admin-starter`), installs and
+enables the three units, and seeds `/etc/ims/ims-go-admin-starter/.env` from `deploy/.env.production`
 (`APP_ENV=production`, state paths under `/var/lib`, no default secrets). Fill in every
 `MUST SET` value; the app refuses to boot with unsafe production settings.
 
@@ -52,10 +52,10 @@ check a build yourself, run `go run golang.org/x/vuln/cmd/govulncheck@latest ./.
 
 ```bash
 # from a local checkout (build-on-server):
-sudo deploy/scripts/release.sh --source /srv/src/ims-go-api-starter
+sudo deploy/scripts/release.sh --source /srv/src/ims-go-admin-starter
 
 # from git (clones the ref on the host):
-sudo deploy/scripts/release.sh --repo git@github.com:your-org/ims-go-api-starter.git --ref v1.4.0
+sudo deploy/scripts/release.sh --repo git@github.com:your-org/ims-go-admin-starter.git --ref v1.4.0
 ```
 
 The script: builds a static binary → runs `ims migrate` (gated) → atomically switches `current` →
@@ -75,17 +75,17 @@ Useful flags: `--dry-run` (print the plan, validate prerequisites), `--skip-migr
 
 | Unit | Command |
 |---|---|
-| `ims-go-api` | `ims serve` |
-| `ims-go-api-scheduler` | `ims schedule` |
-| `ims-go-api-worker` | `ims queue:work --queues=critical,default,heavy` |
+| `ims-go-admin-starter` | `ims serve` |
+| `ims-go-admin-starter-scheduler` | `ims schedule` |
+| `ims-go-admin-starter-worker` | `ims queue:work --queues=critical,default,heavy` |
 
 Exactly **one** scheduler must run per deployment — enforced: a second `ims schedule` exits
 because another process holds the scheduler's Postgres advisory lock. The queue worker may be scaled (add more
-`ims-go-api-worker@.service` instances or run `ims queue:work` elsewhere).
+`ims-go-admin-starter-worker@.service` instances or run `ims queue:work` elsewhere).
 
 ```bash
-systemctl status ims-go-api ims-go-api-scheduler ims-go-api-worker
-journalctl -u ims-go-api -f
+systemctl status ims-go-admin-starter ims-go-admin-starter-scheduler ims-go-admin-starter-worker
+journalctl -u ims-go-admin-starter -f
 ```
 
 ## Reverse proxy & client IPs
@@ -102,6 +102,6 @@ everything else uses the socket address. This drives login throttling, rate limi
 ## Troubleshooting
 
 - Health: `curl -fsS http://127.0.0.1:8080/api/health?fresh=1 | jq`.
-- Config echo: `sudo -u ims /opt/ims/ims-go-api/current/ims config:show` (DSN password masked).
+- Config echo: `sudo -u ims /opt/ims/ims-go-admin-starter/current/ims config:show` (DSN password masked).
 - Contract check: `ims openapi:check` (needs the DB up).
 - A release that fails its health check is not marked good — roll back (see `rollback.md`).

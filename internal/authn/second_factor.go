@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 )
 
 // StatusTwoFactorSetup is a sign-in that succeeded with a setup-only token:

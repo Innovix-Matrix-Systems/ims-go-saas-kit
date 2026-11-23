@@ -5,9 +5,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/mcp"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 )
 
 // Client types a registered client can have.

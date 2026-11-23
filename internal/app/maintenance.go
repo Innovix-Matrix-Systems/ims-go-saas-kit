@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
 )
 
 // Output shared by `ims down|up|maintenance:status` and the matching

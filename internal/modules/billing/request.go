@@ -3,7 +3,7 @@ package billing
 import (
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
 )
 
 // FeatureRequest defines one package feature in create/update payloads.

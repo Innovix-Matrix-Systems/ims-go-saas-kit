@@ -15,10 +15,10 @@ health check). It does **not** reverse migrations.
 ## Manual rollback
 
 ```bash
-ls -1 /opt/ims/ims-go-api/releases            # newest last (sorted by timestamp)
-sudo ln -sfn /opt/ims/ims-go-api/releases/<PREVIOUS> /opt/ims/ims-go-api/current.new
-sudo mv -T /opt/ims/ims-go-api/current.new /opt/ims/ims-go-api/current
-sudo systemctl restart ims-go-api ims-go-api-scheduler ims-go-api-worker
+ls -1 /opt/ims/ims-go-admin-starter/releases            # newest last (sorted by timestamp)
+sudo ln -sfn /opt/ims/ims-go-admin-starter/releases/<PREVIOUS> /opt/ims/ims-go-admin-starter/current.new
+sudo mv -T /opt/ims/ims-go-admin-starter/current.new /opt/ims/ims-go-admin-starter/current
+sudo systemctl restart ims-go-admin-starter ims-go-admin-starter-scheduler ims-go-admin-starter-worker
 curl -fsS http://127.0.0.1:8080/up
 ```
 
@@ -48,5 +48,5 @@ fix is deployed:
 ```bash
 sudo deploy/scripts/release.sh --rollback          # previous
 # then, after the fix:
-sudo deploy/scripts/release.sh --source /srv/src/ims-go-api-starter
+sudo deploy/scripts/release.sh --source /srv/src/ims-go-admin-starter
 ```

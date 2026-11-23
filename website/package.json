@@ -1,8 +1,8 @@
 {
-  "name": "ims-go-api-starter",
+  "name": "ims-go-admin-starter",
   "private": true,
   "type": "module",
-  "description": "Documentation site for the IMS Go API Starter (Astro Starlight, content in ../docs).",
+  "description": "Documentation site for the IMS Go Admin Starter (Astro Starlight, content in ../docs).",
   "engines": {
     "node": ">=22.23.4"
   },

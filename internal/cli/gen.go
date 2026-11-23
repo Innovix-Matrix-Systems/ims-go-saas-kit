@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/scaffold"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/scaffold"
 )
 
 // sqlcVersion must match the Makefile/CI pin so generated code stays in sync.

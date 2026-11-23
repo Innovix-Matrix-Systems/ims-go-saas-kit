@@ -7142,7 +7142,7 @@ export interface components {
             secret?: string;
             /**
              * @description totp: render as a QR code for the authenticator app.
-             * @example otpauth://totp/IMS%20Go%20API:jane@acme.test?algorithm=SHA1&digits=6&issuer=IMS+Go+API&period=30&secret=JBSWY3DPEHPK3PXP
+             * @example otpauth://totp/IMS%20Go%20Admin%20Starter:jane@acme.test?algorithm=SHA1&digits=6&issuer=IMS+Go+Admin+Starter&period=30&secret=JBSWY3DPEHPK3PXP
              */
             otpauth_url?: string;
         };

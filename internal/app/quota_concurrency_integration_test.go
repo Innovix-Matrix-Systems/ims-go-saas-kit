@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/domain"
-	billingservice "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/service"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/testkit"
+	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	billingservice "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
 // TestQuotaUnderConcurrency fires more concurrent creates than the pool has

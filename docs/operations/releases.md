@@ -71,7 +71,7 @@ workflow by hand from the **Actions** tab, e.g. after a docs-only fix.
 3. **Workers & Pages → Your subdomain** must be registered once per Cloudflare account, or the
    first deploy fails with "You need to register a workers.dev subdomain".
 
-The first deploy creates the `ims-go-api-starter` Worker. The site is published at
+The first deploy creates the `ims-go-admin-starter` Worker. The site is published at
 **[ims-go-api-starter.innovixmatrixsystem.com](https://ims-go-api-starter.innovixmatrixsystem.com)**, a **Custom Domain** attached to the Worker in the Cloudflare
 dashboard (**Worker → Settings → Domains & Routes → Add → Custom domain**). Cloudflare creates the DNS
 record and certificate. The domain is not in `wrangler.jsonc`, so the deploy token needs no zone

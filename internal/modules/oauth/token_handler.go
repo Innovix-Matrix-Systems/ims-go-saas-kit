@@ -9,7 +9,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/mcp"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
 )
 
 // Endpoint paths.

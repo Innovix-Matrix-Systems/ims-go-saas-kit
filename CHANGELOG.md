@@ -483,12 +483,12 @@ The first versioned release: the full starter, its developer dashboard and its d
   per-tenant lock every query runs on the locked transaction.
 - A failed backup run reports `destinations: []` instead of `null`.
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/compare/v0.2.1...HEAD
-[0.2.1]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/compare/v0.1.9...v0.2.0
-[0.1.9]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/compare/v0.1.7...v0.1.9
-[0.1.7]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/compare/v0.1.6...v0.1.7
-[0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/compare/v0.1.5...v0.1.6
-[0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/compare/v0.1.2...v0.1.5
-[0.1.2]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/compare/v0.1.0...v0.1.2
-[0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-api-starter/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.9...v0.2.0
+[0.1.9]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.7...v0.1.9
+[0.1.7]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.6...v0.1.7
+[0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...v0.1.6
+[0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.2...v0.1.5
+[0.1.2]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.0...v0.1.2
+[0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/releases/tag/v0.1.0

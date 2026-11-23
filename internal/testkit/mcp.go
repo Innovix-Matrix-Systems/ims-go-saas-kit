@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/oauth"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
 )
 
 // MCP (phase 22). An Agent is an AI client connected to /mcp as a user,

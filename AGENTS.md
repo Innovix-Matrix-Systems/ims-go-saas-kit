@@ -1,6 +1,6 @@
 # AGENTS.md — Working Guide for This Repository
 
-Instructions for AI coding agents (and humans) working on the IMS Go API Starter. Read this before
+Instructions for AI coding agents (and humans) working on the IMS Go Admin Starter. Read this before
 writing code. The human documentation lives in [`docs/`](docs/README.md) (rendered as a site by
 `website/`): start with the [tutorial](docs/tutorial/first-module.mdx), the
 [guides](docs/guides/modules.md) and the [design decisions](docs/architecture/decisions.md). Task

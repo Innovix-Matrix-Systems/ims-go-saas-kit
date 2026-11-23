@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 )
 
 // MapError converts driver errors into application errors. Constraint

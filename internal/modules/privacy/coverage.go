@@ -5,7 +5,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	contracts "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/privacy"
+	contracts "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
 )
 
 // WriteCoverage prints the coverage table (`ims privacy:coverage` and the

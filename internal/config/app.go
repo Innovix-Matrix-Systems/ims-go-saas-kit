@@ -46,7 +46,7 @@ func (c *Config) loadApp(envFile string) error {
 		return err
 	}
 	c.App = App{
-		Name:             getString("APP_NAME", "ims-go-api"),
+		Name:             getString("APP_NAME", "ims-go-admin-starter"),
 		Env:              env,
 		URL:              getString("APP_URL", "http://localhost:8080"),
 		Timezone:         getString("APP_TIMEZONE", "UTC"),

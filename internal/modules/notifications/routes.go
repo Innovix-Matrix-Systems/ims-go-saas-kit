@@ -3,7 +3,7 @@ package notifications
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 )
 
 // RegisterRoutesResolve mounts tenant-scoped notification routes (feed and

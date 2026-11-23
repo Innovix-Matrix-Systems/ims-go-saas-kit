@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-jose/go-jose/v4"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 )
 
 // fakeIssuer is an OpenID Connect provider in a test: it publishes one

@@ -5,7 +5,7 @@ export const company = {
   website: 'https://innovixmatrixsystem.com',
   github: 'https://github.com/Innovix-Matrix-Systems',
   // This project's repository (public, a GitHub template).
-  repo: 'https://github.com/Innovix-Matrix-Systems/ims-go-api-starter',
+  repo: 'https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter',
   // One address per purpose: new work, help with the starter, everything else.
   emails: {
     hello: 'hello@innovixmatrixsystem.com',

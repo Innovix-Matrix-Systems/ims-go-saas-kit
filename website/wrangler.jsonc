@@ -5,7 +5,7 @@
   // the Cloudflare dashboard (Worker → Settings → Domains & Routes). It is not
   // listed here, so the deploy token needs no zone permissions; deploys keep it.
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "ims-go-api-starter",
+  "name": "ims-go-admin-starter",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist",

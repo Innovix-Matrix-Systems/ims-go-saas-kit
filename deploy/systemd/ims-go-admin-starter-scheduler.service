@@ -1,0 +1,26 @@
+[Unit]
+Description=IMS Go Admin Starter (cron scheduler)
+Documentation=https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ims
+Group=ims
+WorkingDirectory=/opt/ims/ims-go-admin-starter/current
+EnvironmentFile=/etc/ims/ims-go-admin-starter/.env
+ExecStart=/opt/ims/ims-go-admin-starter/current/ims schedule
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+
+# Exactly one scheduler must run per deployment (see docs/runbooks/deploy.md).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ims/ims-go-admin-starter /var/log/ims/ims-go-admin-starter
+
+[Install]
+WantedBy=multi-user.target

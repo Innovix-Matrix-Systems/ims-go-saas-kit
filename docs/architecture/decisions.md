@@ -59,11 +59,11 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     scoping is the only isolation boundary**: every tenant-scoped query MUST receive and filter on
     an explicit `tenant_id` (and `branch_id` when branch-scoped), and a missing filter is a
     security bug. Coverage is enforced by the per-module isolation tests, not by the database.
-19. **Deployment.** Single binary + systemd (units: `ims-go-api`, `-scheduler`,
+19. **Deployment.** Single binary + systemd (units: `ims-go-admin-starter`, `-scheduler`,
     `-worker`); a **build-on-server** `deploy/scripts/release.sh` (no container/artifact host) that
     builds a static binary, runs migrations as a gated release step, atomically switches the
     `current` symlink, restarts units and health-checks. Writable state lives under
-    `/var/lib/ims/ims-go-api` (never inside a release directory). Runbooks live in
+    `/var/lib/ims/ims-go-admin-starter` (never inside a release directory). Runbooks live in
     [Operations](../operations/deploy.md).
 20. **Trusted proxies.** Forwarded headers (`X-Forwarded-For`/`X-Real-IP`) are honoured
     **only** when the immediate peer is listed in `HTTP_TRUSTED_PROXIES`, and the client IP is

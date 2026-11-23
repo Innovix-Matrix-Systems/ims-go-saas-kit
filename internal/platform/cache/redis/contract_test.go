@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/cachetest"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/cachetest"
 )
 
 // TestContract runs against a real Redis server when REDIS_TEST_ADDR is set

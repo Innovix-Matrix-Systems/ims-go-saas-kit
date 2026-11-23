@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database/dbtest"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database/dbtest"
 )
 
 func TestFileRepository(t *testing.T) {
