@@ -870,6 +870,10 @@ export const en = {
   'policy.termsVersionHint': 'Recorded when a new owner accepts the terms. Change it when you publish new terms.',
   'policy.paymentInstructions': 'Bank transfer instructions',
   'policy.paymentInstructionsHint': 'Shown at checkout: the bank, account name and number, and branch.',
+  'members.detailsTitle': 'Details',
+  'members.accessTitle': 'Access',
+  'members.deleteHint': 'Takes them out of the organization. Their past activity stays in the log.',
+  'members.deleteShort': 'Remove',
 }
 
 export type MessageKey = keyof typeof en

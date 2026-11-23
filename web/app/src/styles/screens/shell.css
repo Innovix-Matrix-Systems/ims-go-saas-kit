@@ -124,3 +124,14 @@
 .org-mark { overflow: hidden; }
 .org-mark.has-logo { background: var(--surface-1); border: 1px solid var(--border); }
 .org-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* Member drawer */
+.member-head { display: flex; align-items: center; gap: 14px; }
+.member-head-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.member-head-name { font-size: var(--fs-lg); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+.drawer-section { display: flex; flex-direction: column; gap: 12px; padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.drawer-section-title { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-2); }
+.danger-zone {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; border: 1px solid var(--danger-border); border-radius: var(--radius-sm); background: var(--danger-subtle);
+}

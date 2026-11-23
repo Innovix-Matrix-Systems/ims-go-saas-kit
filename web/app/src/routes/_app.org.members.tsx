@@ -9,7 +9,8 @@ import { Field, useApiErrors } from '../components/form'
 import { Select } from '../components/inputs'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Avatar, Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
+import { Avatar, Badge, Button, Card, ConfirmDialog, CopyField, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
+import { relativeTimeIn } from '../format'
 import { intlLocale, useLocale, useT } from '../i18n'
 import { TableSkeleton } from '../components/Skeleton'
 
@@ -321,6 +322,8 @@ function MemberDrawer({
   const canUpdate = can(session, 'user.update')
   const canAssign = can(session, 'user.role.assign') && !isSelf
   const branches = useQuery({ ...branchesQuery, enabled: can(session, 'branch.view.all') })
+  const locale = useLocale()
+  const date = (value: string) => new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'long' }).format(new Date(value))
 
   const run = async (action: () => Promise<unknown>, closeAfter = false) => {
     setBusy(true)
@@ -355,44 +358,83 @@ function MemberDrawer({
   return (
     <Drawer open title={user.name} subtitle={user.email} onClose={onClose} size="md">
       <div className="stack g-4">
-        <div className="flex g-2 align-center">
-          <MemberStatus user={user} />
-          {isOwner ? <Badge tone="info">{t('members.owner')}</Badge> : null}
-        </div>
-        <form onSubmit={save} className="stack">
-          <Field label={t('members.name')} error={errors.field('name')}>
-            <input className="input" name="name" disabled={!canUpdate} value={name} onChange={(e) => setName(e.target.value)} />
-          </Field>
-          <Field label={t('signup.phone')} error={errors.field('phone')}>
-            <input className="input" type="tel" name="phone" disabled={!canUpdate} value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </Field>
-          {branches.data && branches.data.length > 1 ? (
-            <Field label={t('members.branch')} error={errors.field('branch_id')}>
-              <Select
-                value={branchId}
-                disabled={!canUpdate}
-                ariaLabel={t('members.branch')}
-                onChange={setBranchId}
-                options={branches.data.map((branch) => ({ value: String(branch.id), label: branch.name }))}
-              />
-            </Field>
-          ) : null}
-          {roles.length > 0 ? (
-            <Field label={t('members.roles')} error={errors.field('roles')}>
-              {canAssign ? <RolePicker roles={roles} value={roleIds} onChange={setRoleIds} /> : <span className="small">{(user.roles ?? []).map((r) => r.name).join(', ')}</span>}
-            </Field>
-          ) : null}
-          {errors.box}
-          {canUpdate ? (
-            <div>
-              <Button variant="primary" type="submit" disabled={busy || name.trim().length < 2}>
-                {busy ? <Spinner /> : <Icon name="check" />} {t('members.save')}
-              </Button>
+        <div className="member-head">
+          <Avatar name={user.name} photo={user.photo} size="lg" />
+          <div className="member-head-text">
+            <span className="member-head-name">{user.name}</span>
+            <a className="small" href={`mailto:${user.email}`}>
+              {user.email}
+            </a>
+            <div className="flex g-2 wrap">
+              <MemberStatus user={user} />
+              {isOwner ? <Badge tone="info">{t('members.owner')}</Badge> : null}
+              {isSelf ? <Badge tone="neutral">{t('members.you')}</Badge> : null}
             </div>
-          ) : null}
-        </form>
-        {!isSelf ? (
-          <div className="stack">
+          </div>
+        </div>
+
+        <dl className="details">
+          <dt>{t('profilePage.memberSince')}</dt>
+          <dd>{date(user.created_at)}</dd>
+          <dt>{t('home.lastSignIn')}</dt>
+          <dd>{user.last_login_at ? relativeTimeIn(intlLocale(locale), user.last_login_at) : t('home.never')}</dd>
+          <dt>{t('profilePage.emailCheck')}</dt>
+          <dd>{user.email_verified_at ? <Badge tone="ok">{t('profilePage.verified')}</Badge> : <Badge tone="warn">{t('profilePage.unverified')}</Badge>}</dd>
+          <dt>{t('profilePage.userId')}</dt>
+          <dd>
+            <CopyField value={String(user.id)} />
+          </dd>
+        </dl>
+
+        <section className="drawer-section">
+          <h3 className="drawer-section-title">{t('members.detailsTitle')}</h3>
+          {canUpdate ? (
+            <form onSubmit={save} className="stack">
+              <Field label={t('members.name')} error={errors.field('name')}>
+                <input className="input" name="name" value={name} onChange={(e) => setName(e.target.value)} />
+              </Field>
+              <Field label={t('signup.phone')} error={errors.field('phone')}>
+                <input className="input" type="tel" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </Field>
+              {branches.data && branches.data.length > 1 ? (
+                <Field label={t('members.branch')} error={errors.field('branch_id')}>
+                  <Select
+                    value={branchId}
+                    ariaLabel={t('members.branch')}
+                    onChange={setBranchId}
+                    options={branches.data.map((branch) => ({ value: String(branch.id), label: branch.name }))}
+                  />
+                </Field>
+              ) : null}
+              {roles.length > 0 ? (
+                <Field label={t('members.roles')} error={errors.field('roles')}>
+                  {canAssign ? <RolePicker roles={roles} value={roleIds} onChange={setRoleIds} /> : <span className="small">{(user.roles ?? []).map((r) => r.name).join(', ')}</span>}
+                </Field>
+              ) : null}
+              {errors.box}
+              <div>
+                <Button variant="primary" type="submit" disabled={busy || name.trim().length < 2}>
+                  {busy ? <Spinner /> : <Icon name="check" />} {t('members.save')}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <dl className="details">
+              <dt>{t('members.name')}</dt>
+              <dd>{user.name}</dd>
+              <dt>{t('signup.phone')}</dt>
+              <dd>{user.phone || <span className="muted">{t('profilePage.notSet')}</span>}</dd>
+              <dt>{t('members.branch')}</dt>
+              <dd>{branches.data?.find((branch) => String(branch.id) === branchId)?.name ?? <span className="muted">—</span>}</dd>
+              <dt>{t('members.roles')}</dt>
+              <dd>{(user.roles ?? []).map((r) => r.name).join(', ') || t('role.member')}</dd>
+            </dl>
+          )}
+        </section>
+
+        {!isSelf && (canUpdate || can(session, 'user.two_factor.reset') || can(session, 'user.delete')) ? (
+          <section className="drawer-section">
+            <h3 className="drawer-section-title">{t('members.accessTitle')}</h3>
             <div className="flex g-2 wrap">
               {canUpdate && user.invitation_status === 'pending' ? (
                 <Button icon="mail" disabled={busy} onClick={() => void run(() => api(`/user/${user.id}/invitation`, { method: 'POST' }))}>
@@ -415,13 +457,19 @@ function MemberDrawer({
                   {t('members.resetTwoFactor')}
                 </Button>
               ) : null}
-              {can(session, 'user.delete') ? (
-                <Button variant="danger" icon="trash" disabled={busy} onClick={() => setConfirm('delete')}>
-                  {t('members.delete')}
-                </Button>
-              ) : null}
             </div>
-          </div>
+            {can(session, 'user.delete') ? (
+              <div className="danger-zone">
+                <div>
+                  <div className="strong">{t('members.delete')}</div>
+                  <div className="small muted">{t('members.deleteHint')}</div>
+                </div>
+                <Button variant="danger" icon="trash" disabled={busy} onClick={() => setConfirm('delete')}>
+                  {t('members.deleteShort')}
+                </Button>
+              </div>
+            ) : null}
+          </section>
         ) : null}
       </div>
       <ConfirmDialog

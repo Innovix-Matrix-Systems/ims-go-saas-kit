@@ -872,4 +872,8 @@ export const bn: Messages = {
   'policy.termsVersionHint': 'নতুন মালিক শর্ত মেনে নিলে রেকর্ড হয়। নতুন শর্ত প্রকাশ করলে এটি বদলান।',
   'policy.paymentInstructions': 'ব্যাংক ট্রান্সফারের নির্দেশনা',
   'policy.paymentInstructionsHint': 'চেকআউটে দেখানো হয়: ব্যাংক, অ্যাকাউন্টের নাম ও নম্বর, এবং শাখা।',
+  'members.detailsTitle': 'বিবরণ',
+  'members.accessTitle': 'অ্যাক্সেস',
+  'members.deleteHint': 'তাকে সংস্থা থেকে সরিয়ে দেয়। আগের কার্যকলাপ লগে থেকে যায়।',
+  'members.deleteShort': 'সরান',
 }
