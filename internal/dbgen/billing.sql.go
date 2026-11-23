@@ -1024,6 +1024,28 @@ func (q *Queries) SuspendLapsedTenants(ctx context.Context, arg SuspendLapsedTen
 	return items, nil
 }
 
+const tenantUsage = `-- name: TenantUsage :one
+SELECT
+    (SELECT count(*) FROM users u WHERE u.tenant_id = $1::bigint AND u.deleted_at IS NULL)::bigint AS users,
+    (SELECT count(*) FROM branches b WHERE b.tenant_id = $1::bigint AND b.deleted_at IS NULL)::bigint AS branches,
+    (SELECT COALESCE(sum(f.size), 0) FROM files f WHERE f.tenant_id = $1::bigint)::bigint AS storage_bytes
+`
+
+type TenantUsageRow struct {
+	Users        int64 `json:"users"`
+	Branches     int64 `json:"branches"`
+	StorageBytes int64 `json:"storage_bytes"`
+}
+
+// What a tenant uses of its plan's limits (users.max, branches.max,
+// storage.mb): the same rows the limit checks count.
+func (q *Queries) TenantUsage(ctx context.Context, tenantID int64) (TenantUsageRow, error) {
+	row := q.db.QueryRow(ctx, tenantUsage, tenantID)
+	var i TenantUsageRow
+	err := row.Scan(&i.Users, &i.Branches, &i.StorageBytes)
+	return i, err
+}
+
 const updatePackage = `-- name: UpdatePackage :one
 UPDATE packages
 SET name          = $1,

@@ -62,6 +62,7 @@ var Groups = []Group{
 	{Slug: "security", Name: "Security", Description: "Account security: sign-in alerts and two-factor policy.", SortOrder: 5},
 	{Slug: "privacy", Name: "Privacy", Description: "Account deletion and personal-data export.", SortOrder: 6},
 	{Slug: "signup", Name: "Sign-up", Description: "Self-service organization sign-up.", SortOrder: 7},
+	{Slug: "billing", Name: "Billing", Description: "What organizations see when they pay for a plan.", SortOrder: 8},
 }
 
 // Catalog is the application setting catalog; `settings:sync` upserts globals.
@@ -127,6 +128,14 @@ var Catalog = []Key{
 		Description: "The package a new organization starts on. 0 picks the first active free package (by sort order); sign-up is unavailable while there is none.",
 		Group:       "signup",
 		SortOrder:   20,
+	},
+	{
+		Name:        "billing.payment_instructions",
+		Type:        TypeString,
+		Default:     "",
+		Description: "How to pay by bank transfer (bank, account name and number, branch), shown to organizations at checkout. Empty hides bank transfer details.",
+		Group:       "billing",
+		SortOrder:   10,
 	},
 	{
 		Name:        "signup.terms_version",

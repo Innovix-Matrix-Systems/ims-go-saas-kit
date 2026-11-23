@@ -21,6 +21,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/auth"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing"
+	billingservice "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
@@ -294,7 +295,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			platform.BillingApprovals,
 			checker,
 			kit,
-		),
+		).WithUsage(billingservice.NewUsageService(platform.BillingGuard, queries)),
 	}
 	deps.Onboarding = onboarding.NewHandler(
 		onboarding.NewService(onboarding.Deps{

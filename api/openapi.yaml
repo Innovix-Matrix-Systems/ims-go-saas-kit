@@ -3076,6 +3076,29 @@ paths:
         "422": *validationFailed
         "503": *serviceUnavailable
 
+  /api/v1/billing/usage:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Billing]
+      summary: What the resolved tenant uses of its plan's limits
+      description: "Each limit feature (users.max, branches.max, storage.mb) with the plan's limit (-1 unlimited, 0 not in the plan) and what the tenant uses: the same counts the limit checks make. Storage is in whole megabytes, rounded up; storage_bytes is exact."
+      operationId: billingUsage
+      responses:
+        "200":
+          description: The usage.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/BillingUsage"}
+        "401": *unauthorized
+        "403": *forbidden
+
   /api/v1/billing/subscription/status:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -7632,6 +7655,22 @@ components:
             subscription: {$ref: "#/components/schemas/Subscription"}
             package: {$ref: "#/components/schemas/Package"}
             active: {type: boolean}
+
+    BillingUsage:
+      type: object
+      required: [limits, storage_bytes]
+      properties:
+        limits:
+          type: array
+          items:
+            type: object
+            required: [feature_key, description, limit, used]
+            properties:
+              feature_key: {type: string, example: users.max}
+              description: {type: string}
+              limit: {type: integer, format: int64, description: "-1 unlimited, 0 not in the plan."}
+              used: {type: integer, format: int64}
+        storage_bytes: {type: integer, format: int64}
 
     SubscribeRequest:
       type: object

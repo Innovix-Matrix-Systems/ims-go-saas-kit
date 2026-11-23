@@ -20,8 +20,45 @@ type Handler struct {
 	subscriptions *service.SubscriptionService
 	payments      *service.PaymentService
 	approvals     *service.ApprovalService
+	usage         *service.UsageService
 	checker       *authz.Checker
 	httpx.Kit
+}
+
+// WithUsage serves GET /billing/usage.
+func (h *Handler) WithUsage(usage *service.UsageService) *Handler {
+	h.usage = usage
+	return h
+}
+
+// UsageItemResponse is one plan limit and its use.
+type UsageItemResponse struct {
+	FeatureKey  string `json:"feature_key"`
+	Description string `json:"description"`
+	// Limit is -1 for unlimited and 0 when the plan does not include it.
+	Limit int64 `json:"limit"`
+	Used  int64 `json:"used"`
+}
+
+// UsageResponse is the organization's use of its plan.
+type UsageResponse struct {
+	Limits       []UsageItemResponse `json:"limits"`
+	StorageBytes int64               `json:"storage_bytes"`
+}
+
+func (h *Handler) tenantUsage(w http.ResponseWriter, r *http.Request) {
+	usage, err := h.usage.For(r.Context(), tenancy.From(r).EffectiveTenantID())
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	out := UsageResponse{StorageBytes: usage.StorageBytes, Limits: make([]UsageItemResponse, 0, len(usage.Items))}
+	for _, item := range usage.Items {
+		out.Limits = append(out.Limits, UsageItemResponse{
+			FeatureKey: string(item.Feature), Description: item.Feature.Description(), Limit: item.Limit, Used: item.Used,
+		})
+	}
+	h.Data(w, r, http.StatusOK, out)
 }
 
 // NewHandler creates the billing handler.

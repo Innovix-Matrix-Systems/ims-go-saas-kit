@@ -246,3 +246,11 @@ SET status        = @status,
     updated_at    = now()
 WHERE id = @id AND status = 'pending'
 RETURNING *;
+
+-- name: TenantUsage :one
+-- What a tenant uses of its plan's limits (users.max, branches.max,
+-- storage.mb): the same rows the limit checks count.
+SELECT
+    (SELECT count(*) FROM users u WHERE u.tenant_id = @tenant_id::bigint AND u.deleted_at IS NULL)::bigint AS users,
+    (SELECT count(*) FROM branches b WHERE b.tenant_id = @tenant_id::bigint AND b.deleted_at IS NULL)::bigint AS branches,
+    (SELECT COALESCE(sum(f.size), 0) FROM files f WHERE f.tenant_id = @tenant_id::bigint)::bigint AS storage_bytes;

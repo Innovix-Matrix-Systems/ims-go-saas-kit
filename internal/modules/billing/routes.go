@@ -18,6 +18,7 @@ func (h *Handler) RegisterPublicRoutes(r chi.Router) {
 func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.Get("/billing/subscription/status", h.status)
 	r.With(h.can(authz.PermBillingView)).Get("/billing/payments", h.listTenantPayments)
+	r.With(h.can(authz.PermBillingView)).Get("/billing/usage", h.tenantUsage)
 	r.With(h.can(authz.PermBillingManage)).Post("/billing/subscribe", h.subscribe)
 }
 

@@ -9,7 +9,7 @@ All notable changes to this project are documented here. The format follows
 **Upgrading:** run `ims migrate` (migrations `00037_create_onboarding`: `tenant_onboarding` and
 `user_agreements`; `00038_user_locale`: `users.locale`; `00039_tenant_owner`: `tenants.owner_user_id`), `ims permission:sync` (adds `billing.view`, `billing.manage` and `organization.update`, and now also
 grants every tenant Admin role the permissions it is missing) and `ims settings:sync` (the new
-**Sign-up** group).
+**Sign-up** and **Billing** groups).
 
 ### Changed
 
@@ -41,6 +41,8 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (authenticator app with QR code or e-mail codes, recovery codes), signed-in devices,
   notification preferences, personal-data export and account deletion. Signing in applies the
   user's saved language and sends a new owner to the setup wizard.
+- `GET /api/v1/billing/usage` (`billing.view`) reports an organization's use of each plan limit,
+  and the global setting `billing.payment_instructions` holds the bank details shown at checkout.
 - `GET /api/v1/activity` filters by `action`, `from`, `to` and `search` and reports `meta.total`;
   `GET /api/v1/activity/facets` lists the actions, subject types and people in the feed with
   counts, and the entries of the last 24 hours.
