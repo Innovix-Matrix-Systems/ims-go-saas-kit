@@ -3,10 +3,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api, ApiError, type Schemas } from '../api/client'
 import { useSession } from '../auth/session'
-import { Field, useApiErrors } from '../components/form'
+import { BankTransferForm, publicPackagesQuery, subscriptionStatusQuery, useFeatureText, usePrice, type Package } from '../components/billing'
+import { Field } from '../components/form'
 import { TwoFactorSetup } from '../components/TwoFactorSetup'
 import { Badge, Button, Card, Icon, PageHeader, Spinner } from '../components/ui'
-import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { useT, type MessageKey } from '../i18n'
 import { queryClient } from '../query'
 
 export interface OnboardingProgress {
@@ -46,13 +47,6 @@ const steps: { key: Step; label: MessageKey }[] = [
   { key: 'two_factor', label: 'onboarding.step.twoFactor' },
   { key: 'done', label: 'onboarding.step.done' },
 ]
-
-type Package = Schemas['Package']
-interface Status {
-  subscription?: Schemas['Subscription']
-  package?: Package
-  active: boolean
-}
 
 function OnboardingPage() {
   const t = useT()
@@ -122,44 +116,15 @@ function StepActions({ onNext, canContinue = true }: { onNext: (skip: boolean) =
   )
 }
 
-function useMoney() {
-  const locale = useLocale()
-  return (minor: number, currency = 'BDT') =>
-    new Intl.NumberFormat(intlLocale(locale), { style: 'currency', currency, maximumFractionDigits: 2 }).format(minor / 100)
-}
-
 function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
   const t = useT()
-  const money = useMoney()
-  const errors = useApiErrors()
-  const packages = useQuery({ queryKey: ['public-packages'], queryFn: () => api<Package[]>('/public/packages', { token: null }) })
-  const status = useQuery({ queryKey: ['subscription-status'], queryFn: () => api<Status>('/billing/subscription/status') })
+  const price = usePrice()
+  const featureText = useFeatureText()
+  const packages = useQuery(publicPackagesQuery)
+  const status = useQuery(subscriptionStatusQuery)
   const [chosen, setChosen] = useState<Package | null>(null)
-  const [reference, setReference] = useState('')
-  const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState(false)
   const currentId = status.data?.package?.id
-  const cycle = (pkg: Package) =>
-    pkg.billing_cycle === 'monthly' ? t('onboarding.perMonth') : pkg.billing_cycle === 'yearly' ? t('onboarding.perYear') : t('onboarding.oneTime')
-
-  const pay = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!chosen) return
-    setBusy(true)
-    errors.clear()
-    try {
-      await api('/billing/subscribe', {
-        method: 'POST',
-        idempotent: true,
-        body: { package_id: chosen.id, payment_method: 'bank_transfer', payment_data: { reference_number: reference.trim() } },
-      })
-      setPending(true)
-    } catch (cause) {
-      errors.setError(cause instanceof Error ? cause : new Error(String(cause)))
-    } finally {
-      setBusy(false)
-    }
-  }
 
   if (!packages.data || !status.data) {
     return (
@@ -176,24 +141,18 @@ function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
           {packages.data.map((pkg) => {
             const current = pkg.id === currentId
             return (
-              <div key={pkg.id} className={`plan-card ${current ? 'current' : ''}`}>
+              <div key={pkg.id} className={`plan-card ${current ? 'current' : ''} ${chosen?.id === pkg.id ? 'chosen' : ''}`}>
                 <div className="flex g-2 align-center">
                   <strong>{pkg.name}</strong>
                   {current ? <Badge tone="info">{t('onboarding.currentPlan')}</Badge> : null}
                 </div>
-                <div className="plan-price">
-                  {pkg.price === 0 ? t('onboarding.free') : money(pkg.price)}{' '}
-                  {pkg.price > 0 ? <span className="small muted">{cycle(pkg)}</span> : null}
-                </div>
+                <div className="plan-price">{price(pkg)}</div>
                 {pkg.description ? <p className="small muted">{pkg.description}</p> : null}
                 <ul className="plan-features">
                   {pkg.features
                     .filter((feature) => feature.is_enabled)
                     .map((feature) => (
-                      <li key={feature.feature_key}>
-                        {feature.feature_key}
-                        {feature.limit_value > 0 ? `: ${feature.limit_value}` : feature.limit_value === -1 ? ': ∞' : ''}
-                      </li>
+                      <li key={feature.feature_key}>{featureText(feature.feature_key, feature.limit_value)}</li>
                     ))}
                 </ul>
                 <Button
@@ -214,19 +173,10 @@ function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
           pending ? (
             <div className="success-box">{t('onboarding.paymentPending')}</div>
           ) : (
-            <form onSubmit={pay} className="stack form-narrow">
+            <div className="stack form-narrow">
               <h3 className="card-title">{t('onboarding.payTitle')}</h3>
-              <p className="small muted">{t('onboarding.payBody', { amount: money(chosen.price) })}</p>
-              <Field label={t('onboarding.reference')} error={errors.field('payment_data')}>
-                <input className="input mono" required value={reference} onChange={(e) => setReference(e.target.value)} />
-              </Field>
-              {errors.box}
-              <div>
-                <button type="submit" className="btn primary" disabled={busy || !reference.trim()}>
-                  {busy ? <Spinner /> : <Icon name="check" />} {t('onboarding.submitPayment')}
-                </button>
-              </div>
-            </form>
+              <BankTransferForm key={chosen.id} pkg={chosen} onSubmitted={() => setPending(true)} />
+            </div>
           )
         ) : null}
         <StepActions onNext={onNext} />

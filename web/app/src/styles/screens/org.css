@@ -77,3 +77,17 @@
 .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .page-btn svg { width: 14px; height: 14px; }
 .page-gap { padding: 0 4px; color: var(--text-3); }
+.billing-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
+@media (max-width: 900px) { .billing-top { grid-template-columns: 1fr; } }
+.plan-name { font-size: var(--fs-lg); font-weight: var(--fw-semibold); }
+.billing-kv { grid-template-columns: 140px 1fr; }
+.billing-kv dd { font-family: var(--sans); font-size: var(--fs-base); }
+.usage-row { display: flex; flex-direction: column; gap: 6px; }
+.usage-name { font-weight: var(--fw-medium); text-transform: capitalize; }
+.meter { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.meter-fill { display: block; height: 100%; border-radius: 999px; background: var(--ok-fg); }
+.meter-fill.warn { background: var(--warn-fg); }
+.meter-fill.danger { background: var(--danger-fg); }
+.pay-instructions { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.pay-instructions-text { white-space: pre-wrap; font-size: var(--fs-base); color: var(--text-1); }
+.plan-card.chosen { border-color: var(--accent); }

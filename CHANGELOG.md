@@ -62,7 +62,9 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   has a pagination footer (count, rows per page, pages); the activity log follows the developer
   dashboard's audit log (counters, search, action, person, area and date filters, a details
   drawer with previous and next, CSV export); dropdowns use the custom select, and checkboxes
-  and radios are drawn to match the theme.
+  and radios are drawn to match the theme. Billing shows the current plan, usage of each limit,
+  the plans with a bank-transfer checkout (with the bank details) and the payment history; the
+  setup wizard's plan step uses the same checkout.
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.

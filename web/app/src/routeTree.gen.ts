@@ -25,6 +25,7 @@ import { Route as AppNotificationsRouteImport } from './routes/_app.notification
 import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppOrgActivityRouteImport } from './routes/_app.org.activity'
+import { Route as AppOrgBillingRouteImport } from './routes/_app.org.billing'
 import { Route as AppOrgBranchesRouteImport } from './routes/_app.org.branches'
 import { Route as AppOrgFilesRouteImport } from './routes/_app.org.files'
 import { Route as AppOrgMembersRouteImport } from './routes/_app.org.members'
@@ -115,6 +116,11 @@ const AppOrgActivityRoute = AppOrgActivityRouteImport.update({
   path: '/org/activity',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOrgBillingRoute = AppOrgBillingRouteImport.update({
+  id: '/org/billing',
+  path: '/org/billing',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrgBranchesRoute = AppOrgBranchesRouteImport.update({
   id: '/org/branches',
   path: '/org/branches',
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/org/activity': typeof AppOrgActivityRoute
+  '/org/billing': typeof AppOrgBillingRoute
   '/org/branches': typeof AppOrgBranchesRoute
   '/org/files': typeof AppOrgFilesRoute
   '/org/members': typeof AppOrgMembersRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRouteWithChildren
   '/': typeof AppIndexRoute
   '/org/activity': typeof AppOrgActivityRoute
+  '/org/billing': typeof AppOrgBillingRoute
   '/org/branches': typeof AppOrgBranchesRoute
   '/org/files': typeof AppOrgFilesRoute
   '/org/members': typeof AppOrgMembersRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/': typeof AppIndexRoute
   '/_app/org/activity': typeof AppOrgActivityRoute
+  '/_app/org/billing': typeof AppOrgBillingRoute
   '/_app/org/branches': typeof AppOrgBranchesRoute
   '/_app/org/files': typeof AppOrgFilesRoute
   '/_app/org/members': typeof AppOrgMembersRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/org/activity'
+    | '/org/billing'
     | '/org/branches'
     | '/org/files'
     | '/org/members'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/org/activity'
+    | '/org/billing'
     | '/org/branches'
     | '/org/files'
     | '/org/members'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/'
     | '/_app/org/activity'
+    | '/_app/org/billing'
     | '/_app/org/branches'
     | '/_app/org/files'
     | '/_app/org/members'
@@ -463,6 +475,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgActivityRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/org/billing': {
+      id: '/_app/org/billing'
+      path: '/org/billing'
+      fullPath: '/org/billing'
+      preLoaderRoute: typeof AppOrgBillingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/org/branches': {
       id: '/_app/org/branches'
       path: '/org/branches'
@@ -560,6 +579,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   AppOrgActivityRoute: typeof AppOrgActivityRoute
+  AppOrgBillingRoute: typeof AppOrgBillingRoute
   AppOrgBranchesRoute: typeof AppOrgBranchesRoute
   AppOrgFilesRoute: typeof AppOrgFilesRoute
   AppOrgMembersRoute: typeof AppOrgMembersRoute
@@ -574,6 +594,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   AppOrgActivityRoute: AppOrgActivityRoute,
+  AppOrgBillingRoute: AppOrgBillingRoute,
   AppOrgBranchesRoute: AppOrgBranchesRoute,
   AppOrgFilesRoute: AppOrgFilesRoute,
   AppOrgMembersRoute: AppOrgMembersRoute,
