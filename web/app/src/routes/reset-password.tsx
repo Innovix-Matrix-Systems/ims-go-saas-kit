@@ -61,11 +61,13 @@ function ResetPasswordPage() {
         </div>
       ) : (
         <form onSubmit={submit} className="stack">
+          {/* Tells password managers which account the new password is for. */}
+          <input type="email" name="email" autoComplete="username" value={email} readOnly hidden />
           <Field label={t('form.newPassword')} error={errors.field('password') ?? weak} hint={t('form.passwordHint')}>
-            <PasswordInput autoComplete="new-password" required autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput name="password" autoComplete="new-password" required autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
           </Field>
           <Field label={t('form.confirmPassword')} error={errors.field('password_confirmation') ?? differs}>
-            <PasswordInput autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <PasswordInput name="password_confirmation" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </Field>
           {errors.field('token') ? <div className="small danger-text">{errors.field('token')}</div> : errors.box}
           <button type="submit" className="btn primary mt-4" disabled={busy || Boolean(weak) || !password || confirm !== password}>

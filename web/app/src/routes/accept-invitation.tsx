@@ -93,13 +93,13 @@ function AcceptInvitationPage() {
       ) : (
         <form onSubmit={submit} className="stack">
           <Field label={t('auth.email')}>
-            <input className="input" type="email" value={preview.email} readOnly autoComplete="username" />
+            <input className="input" type="email" value={preview.email} readOnly name="email" autoComplete="username" />
           </Field>
           <Field label={t('auth.password')} error={errors.field('password') ?? weak} hint={t('form.passwordHint')}>
-            <PasswordInput autoComplete="new-password" required autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput name="password" autoComplete="new-password" required autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
           </Field>
           <Field label={t('form.confirmPassword')} error={errors.field('password_confirmation') ?? differs}>
-            <PasswordInput autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <PasswordInput name="password_confirmation" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </Field>
           {errors.field('token') ? <div className="small danger-text">{errors.field('token')}</div> : errors.box}
           <button type="submit" className="btn primary mt-4" disabled={busy || Boolean(weak) || !password || confirm !== password}>

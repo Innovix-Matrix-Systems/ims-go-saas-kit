@@ -127,7 +127,7 @@ export function TwoFactorSetup({
           <input
             className="input mono"
             inputMode="numeric"
-            autoComplete="one-time-code"
+            name="code" autoComplete="one-time-code"
             autoFocus
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -154,7 +154,7 @@ export function TwoFactorSetup({
         </label>
       ))}
       <Field label={t('auth.password')} error={errors.field('password')} hint={t('twoFactor.passwordPrompt')}>
-        <PasswordInput autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PasswordInput name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
       {errors.box}
       <button type="submit" className="btn primary" disabled={busy || !password}>

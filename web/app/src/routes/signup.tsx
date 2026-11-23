@@ -74,19 +74,19 @@ function SignUpPage() {
     >
       <form onSubmit={submit} className="stack">
         <Field label={t('signup.name')} error={errors.field('name')}>
-          <input className="input" autoComplete="name" required autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="input" name="name" autoComplete="name" required autoFocus value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field label={t('auth.email')} error={errors.field('email')}>
-          <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="input" type="email" name="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         <Field label={t('signup.organization')} error={errors.field('organization_name')}>
-          <input className="input" autoComplete="organization" required value={organization} onChange={(e) => setOrganization(e.target.value)} />
+          <input className="input" name="organization" autoComplete="organization" required value={organization} onChange={(e) => setOrganization(e.target.value)} />
         </Field>
         <Field label={`${t('signup.phone')} (${t('form.optional')})`} error={errors.field('phone')}>
-          <input className="input" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input className="input" type="tel" name="phone" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
         <Field label={t('auth.password')} error={errors.field('password') ?? weak} hint={t('form.passwordHint')}>
-          <PasswordInput autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <PasswordInput name="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         <label className="terms-row">
           <input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} />

@@ -60,7 +60,7 @@ function VerifyEmailPage() {
         <form onSubmit={resend} className="stack">
           <p className="login-sub">{t('verify.failed')}</p>
           <Field label={t('auth.email')}>
-            <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input className="input" type="email" name="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
           <button type="submit" className="btn primary" disabled={busy || !email.trim()}>
             {busy ? <Spinner /> : <Icon name="mail" />} {t('verify.resend')}

@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api, type Schemas } from '../api/client'
+import { useSession } from '../auth/session'
 import { Field, PasswordInput, passwordProblem, useApiErrors } from '../components/form'
 import { TwoFactorSetup } from '../components/TwoFactorSetup'
 import { useToast } from '../components/Toasts'
@@ -27,6 +28,7 @@ function SecurityPage() {
 
 function ChangePasswordCard() {
   const t = useT()
+  const session = useSession()
   const { push } = useToast()
   const errors = useApiErrors()
   const [current, setCurrent] = useState('')
@@ -53,11 +55,13 @@ function ChangePasswordCard() {
   return (
     <Card title={t('security.changePassword')} description={t('security.changePasswordHint')}>
       <form onSubmit={submit} className="stack form-narrow">
+        {/* Tells password managers which account the new password is for. */}
+        <input type="email" name="email" autoComplete="username" value={session?.user.email ?? ''} readOnly hidden />
         <Field label={t('form.currentPassword')} error={errors.field('current_password')}>
-          <PasswordInput autoComplete="current-password" required value={current} onChange={(e) => setCurrent(e.target.value)} />
+          <PasswordInput name="password" autoComplete="current-password" required value={current} onChange={(e) => setCurrent(e.target.value)} />
         </Field>
         <Field label={t('form.newPassword')} error={errors.field('password') ?? weak} hint={t('form.passwordHint')}>
-          <PasswordInput autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <PasswordInput name="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         {errors.box}
         <div>
@@ -188,7 +192,7 @@ function PasswordAction({
     <Modal open={open} title={title} description={description} onClose={close}>
       <form onSubmit={submit} className="stack">
         <Field label={t('auth.password')} error={errors.field('password')}>
-          <PasswordInput autoComplete="current-password" required autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
+          <PasswordInput name="password" autoComplete="current-password" required autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         {errors.box}
         <div className="modal-actions">

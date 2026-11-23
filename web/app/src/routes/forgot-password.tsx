@@ -37,7 +37,7 @@ function ForgotPasswordPage() {
       ) : (
         <form onSubmit={submit} className="stack">
           <Field label={t('auth.email')} error={errors.field('email')}>
-            <input className="input" type="email" autoComplete="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input className="input" type="email" name="email" autoComplete="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
           {errors.box}
           <button type="submit" className="btn primary mt-4" disabled={busy || !email.trim()}>

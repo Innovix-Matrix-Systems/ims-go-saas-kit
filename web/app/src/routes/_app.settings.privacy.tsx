@@ -86,7 +86,7 @@ function ExportCard() {
       ) : (
         <form onSubmit={start} className="stack form-narrow">
           <Field label={t('auth.password')} error={errors.field('password')}>
-            <PasswordInput autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           </Field>
           {errors.box}
           <div>
@@ -170,7 +170,7 @@ function DeletionCard() {
       <Modal open={open} title={t('privacy.deleteTitle')} description={t('privacy.deleteBody')} onClose={() => setOpen(false)}>
         <form onSubmit={request} className="stack">
           <Field label={t('auth.password')} error={errors.field('password')}>
-            <PasswordInput autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           </Field>
           <Field label={t('privacy.deleteConfirmLabel')}>
             <input className="input mono" value={confirm} onChange={(e) => setConfirm(e.target.value)} />

@@ -65,17 +65,17 @@ function ProfileForm({ user }: { user: User }) {
       <form onSubmit={submit} className="stack form-narrow">
         <div className="form-grid-2">
           <Field label={t('profile.firstName')} error={errors.field('first_name')}>
-            <input className="input" autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <input className="input" name="first_name" autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </Field>
           <Field label={t('profile.lastName')} error={errors.field('last_name')}>
-            <input className="input" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <input className="input" name="last_name" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </Field>
         </div>
         <Field label={t('profile.displayName')} error={errors.field('name')}>
-          <input className="input" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="input" name="name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field label={`${t('signup.phone')} (${t('form.optional')})`} error={errors.field('phone')}>
-          <input className="input" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input className="input" type="tel" name="phone" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
         <Field label={t('profile.language')} error={errors.field('locale')}>
           <select className="input" value={locale} onChange={(e) => setLocaleChoice(e.target.value)}>
@@ -128,10 +128,10 @@ function ChangeEmailForm({ current }: { current: string }) {
       ) : (
         <form onSubmit={submit} className="stack form-narrow">
           <Field label={t('profile.newEmail')} error={errors.field('email')}>
-            <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input className="input" type="email" name="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
           <Field label={t('form.currentPassword')} error={errors.field('password')}>
-            <PasswordInput autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           </Field>
           {errors.box}
           <div>

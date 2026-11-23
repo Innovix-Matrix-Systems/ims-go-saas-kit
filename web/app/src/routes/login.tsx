@@ -115,7 +115,7 @@ function LoginPage() {
                   <input
                     className="input mono"
                     inputMode="text"
-                    autoComplete="one-time-code"
+                    name="code" autoComplete="one-time-code"
                     placeholder="123456"
                     autoFocus
                     value={code}
@@ -152,7 +152,7 @@ function LoginPage() {
                   <input
                     className="input"
                     type="email"
-                    autoComplete="username"
+                    name="email" autoComplete="username"
                     required
                     autoFocus
                     value={email}
@@ -165,7 +165,7 @@ function LoginPage() {
                   <input
                     className="input"
                     type="password"
-                    autoComplete="current-password"
+                    name="password" autoComplete="current-password"
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
