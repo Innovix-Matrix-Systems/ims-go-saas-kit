@@ -141,6 +141,18 @@ func TestStaffBroadcastsAnnouncement(t *testing.T) {
 	app.As(member).Post("/api/v1/internal/notification/broadcast", map[string]any{"priority": "INFO", "title": "x"}).
 		Status(t, http.StatusForbidden)
 
+	// A staff account's own feed holds no organization's announcements.
+	var staffFeed []struct {
+		Title string `json:"title"`
+	}
+	app.As(staff).Get("/api/v1/internal/notification/feed").Status(t, http.StatusOK).Data(t, &staffFeed)
+	app.As(staff).Get("/api/v1/notification/feed").Status(t, http.StatusOK)
+	for _, item := range staffFeed {
+		if item.Title == "Planned maintenance" || item.Title == "Only for Listeners" {
+			t.Fatalf("staff feed shows the organizations' announcement %q", item.Title)
+		}
+	}
+
 	// Staff list the announcements they sent, without other notifications.
 	var page struct {
 		Data []struct {

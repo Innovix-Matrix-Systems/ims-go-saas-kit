@@ -478,7 +478,9 @@ WHERE ($2::boolean OR n.tenant_id = $3)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY($7::bigint[]))
             OR (t.target_type = 'BRANCH' AND $8::bigint > 0 AND t.target_id = $8::bigint)
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
-                AND ($2::boolean OR n.tenant_id = $3))
+                -- An organization-wide notice reaches that organization's members only,
+                -- never a staff account reading across organizations.
+                AND NOT $9::boolean AND n.tenant_id = $3)
             OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $9::boolean)
         )
   )
@@ -579,7 +581,9 @@ WHERE ($2::boolean OR n.tenant_id = $3)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY($7::bigint[]))
             OR (t.target_type = 'BRANCH' AND $8::bigint > 0 AND t.target_id = $8::bigint)
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
-                AND ($2::boolean OR n.tenant_id = $3))
+                -- An organization-wide notice reaches that organization's members only,
+                -- never a staff account reading across organizations.
+                AND NOT $9::boolean AND n.tenant_id = $3)
             OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $9::boolean)
         )
   )
@@ -1072,7 +1076,9 @@ WHERE (n.expires_at IS NULL OR n.expires_at > $4)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY($6::bigint[]))
             OR (t.target_type = 'BRANCH' AND $2::bigint > 0 AND t.target_id = $2::bigint)
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
-                AND ($5::boolean OR n.tenant_id = $1))
+                -- An organization-wide notice reaches that organization's members only,
+                -- never a staff account reading across organizations.
+                AND NOT $7::boolean AND n.tenant_id = $1)
             OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $7::boolean)
         )
   )
@@ -1120,7 +1126,9 @@ SELECT EXISTS (
                 OR (t.target_type = 'ROLE' AND t.target_id = ANY($5::bigint[]))
                 OR (t.target_type = 'BRANCH' AND $6::bigint > 0 AND t.target_id = $6::bigint)
                 OR (t.target_type = 'TENANT' AND t.target_id IS NULL
-                    AND ($2::boolean OR n.tenant_id = $3))
+                    -- An organization-wide notice reaches that organization's members only,
+                    -- never a staff account reading across organizations.
+                    AND NOT $7::boolean AND n.tenant_id = $3)
                 OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $7::boolean)
             )
       )

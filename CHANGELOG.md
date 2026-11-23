@@ -24,6 +24,8 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   to clear one.
 - Subscribing to a free package starts it at once, with no payment (`payment_method` is only
   required for paid packages and `payment` is null).
+- A staff account's notification feed no longer includes every organization's organization-wide
+  notifications; those reach that organization's members (and staff acting in it) only.
 - A tenant's Admin role is managed: it cannot be renamed, deleted or given other permissions
   (403), and no other role can be renamed to Admin. Role responses carry `managed`.
 - `POST /api/v1/role/assign-permission` only adds permissions the caller holds (403 otherwise;
