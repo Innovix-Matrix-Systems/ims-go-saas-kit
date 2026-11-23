@@ -2132,6 +2132,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/activity/facets": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the activity log holds, for filters and counters
+         * @description The actions, subject types and people in the feed the caller may read (same tenant rules as GET /activity), with how many entries each has, and how many entries the last 24 hours brought.
+         */
+        get: operations["listActivityFacets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/branch": {
         parameters: {
             query?: never;
@@ -6431,6 +6472,27 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        ActivityFacets: {
+            actions: components["schemas"]["ActivityFacetCount"][];
+            subjects: components["schemas"]["ActivityFacetCount"][];
+            actors: {
+                /** Format: int64 */
+                id: number;
+                name: string;
+                /** Format: int64 */
+                total: number;
+            }[];
+            /**
+             * Format: int64
+             * @description Entries in the last 24 hours.
+             */
+            last_day: number;
+        };
+        ActivityFacetCount: {
+            value: string;
+            /** Format: int64 */
+            total: number;
+        };
         ActivityFeedEnvelope: {
             data: components["schemas"]["ActivityEntry"][];
             links: {
@@ -6440,6 +6502,11 @@ export interface components {
                 path: string;
                 per_page: number;
                 next_cursor: string | null;
+                /**
+                 * Format: int64
+                 * @description Entries matching the filters, across every page.
+                 */
+                total: number;
             };
         };
         BranchPageEnvelope: {
@@ -14201,6 +14268,17 @@ export interface operations {
                 subject_type?: string;
                 subject_id?: number;
                 actor_id?: number;
+                /**
+                 * @description One action key.
+                 * @example user.created
+                 */
+                action?: string;
+                /** @description Entries at or after this time. */
+                from?: string;
+                /** @description Entries at or before this time. */
+                to?: string;
+                /** @description Matches the action, subject type, IP, actor name and the changes. */
+                search?: string;
             };
             header?: {
                 /**
@@ -14269,6 +14347,70 @@ export interface operations {
             429: {
                 headers: {
                     "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listActivityFacets: {
+        parameters: {
+            query?: {
+                /** @description As on GET /activity (`activity.view.all` only). */
+                tenant_id?: string;
+            };
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The facets. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ActivityFacets"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
                     [name: string]: unknown;
                 };
                 content: {

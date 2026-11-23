@@ -41,6 +41,9 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (authenticator app with QR code or e-mail codes, recovery codes), signed-in devices,
   notification preferences, personal-data export and account deletion. Signing in applies the
   user's saved language and sends a new owner to the setup wizard.
+- `GET /api/v1/activity` filters by `action`, `from`, `to` and `search` and reports `meta.total`;
+  `GET /api/v1/activity/facets` lists the actions, subject types and people in the feed with
+  counts, and the entries of the last 24 hours.
 - `GET /api/v1/role/{id}` includes the role's `permissions`, and
   `GET /api/v1/role/grantable-permissions` (`role.update`) lists the permissions the caller may
   put on a role.

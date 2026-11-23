@@ -44,7 +44,14 @@ changes, plan changes (`subscription.assigned`, `subscription.cancelled`). Don't
 GET /api/v1/activity?per_page=25&cursor=…        (activity.view or activity.view.all)
 ```
 
-A newest-first **cursor** feed. Filter with `?subject_type=`, `?subject_id=` and `?actor_id=`.
+A newest-first **cursor** feed. Filter with `?subject_type=`, `?subject_id=`, `?actor_id=`,
+`?action=` (one action key), `?from=` / `?to=` (RFC 3339 times, inclusive) and `?search=` (matches
+the action, subject type, IP, actor name and the recorded changes). `meta.total` is how many
+entries match across every page.
+
+`GET /api/v1/activity/facets` (same permissions and tenant rules) summarises the feed for filter
+menus and counters: the actions, subject types and people in it with how many entries each has,
+and `last_day`, the entries of the last 24 hours.
 
 Entries with no tenant (`tenant_id: null`) are the **system audit log**: internal users and
 roles, system settings, act-as. Who reads what:

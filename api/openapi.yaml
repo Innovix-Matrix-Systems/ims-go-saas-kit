@@ -2417,6 +2417,10 @@ paths:
         - {name: subject_type, in: query, required: false, schema: {type: string}, example: user}
         - {name: subject_id, in: query, required: false, schema: {type: integer, format: int64}}
         - {name: actor_id, in: query, required: false, schema: {type: integer, format: int64}}
+        - {name: action, in: query, required: false, schema: {type: string}, example: user.created, description: One action key.}
+        - {name: from, in: query, required: false, schema: {type: string, format: date-time}, description: Entries at or after this time.}
+        - {name: to, in: query, required: false, schema: {type: string, format: date-time}, description: Entries at or before this time.}
+        - {name: search, in: query, required: false, schema: {type: string}, description: "Matches the action, subject type, IP, actor name and the changes."}
       responses:
         "200":
           description: One page of activity.
@@ -2428,6 +2432,35 @@ paths:
         "422": *validationFailed
         "429": *tooManyRequests
 
+
+  /api/v1/activity/facets:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Activity]
+      summary: What the activity log holds, for filters and counters
+      description: The actions, subject types and people in the feed the caller may read (same tenant rules as GET /activity), with how many entries each has, and how many entries the last 24 hours brought.
+      operationId: listActivityFacets
+      parameters:
+        - name: tenant_id
+          in: query
+          required: false
+          schema: {type: string}
+          description: As on GET /activity (`activity.view.all` only).
+      responses:
+        "200":
+          description: The facets.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ActivityFacets"}
+        "401": *unauthorized
+        "403": *forbidden
   /api/v1/branch:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -7261,6 +7294,34 @@ components:
         request_id: {type: string, nullable: true}
         created_at: {type: string, format: date-time}
 
+    ActivityFacets:
+      type: object
+      required: [actions, subjects, actors, last_day]
+      properties:
+        actions:
+          type: array
+          items: {$ref: "#/components/schemas/ActivityFacetCount"}
+        subjects:
+          type: array
+          items: {$ref: "#/components/schemas/ActivityFacetCount"}
+        actors:
+          type: array
+          items:
+            type: object
+            required: [id, name, total]
+            properties:
+              id: {type: integer, format: int64}
+              name: {type: string}
+              total: {type: integer, format: int64}
+        last_day: {type: integer, format: int64, description: Entries in the last 24 hours.}
+
+    ActivityFacetCount:
+      type: object
+      required: [value, total]
+      properties:
+        value: {type: string}
+        total: {type: integer, format: int64}
+
     ActivityFeedEnvelope:
       type: object
       required: [data, links, meta]
@@ -7275,11 +7336,12 @@ components:
             next: {type: string, nullable: true}
         meta:
           type: object
-          required: [path, per_page, next_cursor]
+          required: [path, per_page, next_cursor, total]
           properties:
             path: {type: string}
             per_page: {type: integer}
             next_cursor: {type: string, nullable: true}
+            total: {type: integer, format: int64, description: "Entries matching the filters, across every page."}
 
     BranchPageEnvelope:
       type: object

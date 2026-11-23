@@ -22,10 +22,84 @@ WHERE CASE
   AND (sqlc.narg('actor_id')::bigint IS NULL OR a.actor_id = sqlc.narg('actor_id'))
   AND (sqlc.narg('impersonator_id')::bigint IS NULL OR a.impersonator_id = sqlc.narg('impersonator_id'))
   AND (NOT @impersonated_only::boolean OR a.impersonator_id IS NOT NULL OR a.action LIKE 'impersonation.%')
+  AND (sqlc.narg('action')::text IS NULL OR a.action = sqlc.narg('action'))
+  AND (sqlc.narg('from_at')::timestamptz IS NULL OR a.created_at >= sqlc.narg('from_at'))
+  AND (sqlc.narg('to_at')::timestamptz IS NULL OR a.created_at <= sqlc.narg('to_at'))
+  AND (sqlc.narg('search')::text IS NULL
+       OR a.action ILIKE '%' || sqlc.narg('search') || '%'
+       OR a.subject_type ILIKE '%' || sqlc.narg('search') || '%'
+       OR a.ip ILIKE '%' || sqlc.narg('search') || '%'
+       OR u.name ILIKE '%' || sqlc.narg('search') || '%'
+       OR a.changes::text ILIKE '%' || sqlc.narg('search') || '%')
   AND (sqlc.narg('before_at')::timestamptz IS NULL
        OR (a.created_at, a.id) < (sqlc.narg('before_at')::timestamptz, sqlc.narg('before_id')::bigint))
 ORDER BY a.created_at DESC, a.id DESC
 LIMIT @row_limit;
+
+-- name: CountActivity :one
+-- The rows ListActivity would page through (same predicates, no cursor).
+SELECT count(*) FROM activity_log a
+LEFT JOIN users u ON u.id = a.actor_id
+WHERE CASE
+        WHEN @system_only::boolean THEN a.tenant_id IS NULL
+        ELSE (@all_tenants::boolean OR a.tenant_id = sqlc.narg('tenant_id')::bigint)
+      END
+  AND (sqlc.narg('subject_type')::text IS NULL OR a.subject_type = sqlc.narg('subject_type'))
+  AND (sqlc.narg('subject_id')::bigint IS NULL OR a.subject_id = sqlc.narg('subject_id'))
+  AND (sqlc.narg('actor_id')::bigint IS NULL OR a.actor_id = sqlc.narg('actor_id'))
+  AND (sqlc.narg('impersonator_id')::bigint IS NULL OR a.impersonator_id = sqlc.narg('impersonator_id'))
+  AND (NOT @impersonated_only::boolean OR a.impersonator_id IS NOT NULL OR a.action LIKE 'impersonation.%')
+  AND (sqlc.narg('action')::text IS NULL OR a.action = sqlc.narg('action'))
+  AND (sqlc.narg('from_at')::timestamptz IS NULL OR a.created_at >= sqlc.narg('from_at'))
+  AND (sqlc.narg('to_at')::timestamptz IS NULL OR a.created_at <= sqlc.narg('to_at'))
+  AND (sqlc.narg('search')::text IS NULL
+       OR a.action ILIKE '%' || sqlc.narg('search') || '%'
+       OR a.subject_type ILIKE '%' || sqlc.narg('search') || '%'
+       OR a.ip ILIKE '%' || sqlc.narg('search') || '%'
+       OR u.name ILIKE '%' || sqlc.narg('search') || '%'
+       OR a.changes::text ILIKE '%' || sqlc.narg('search') || '%');
+
+-- name: ActivityActionFacets :many
+-- The actions in the reader's scope, most frequent first.
+SELECT a.action, count(*) AS total FROM activity_log a
+WHERE CASE
+        WHEN @system_only::boolean THEN a.tenant_id IS NULL
+        ELSE (@all_tenants::boolean OR a.tenant_id = sqlc.narg('tenant_id')::bigint)
+      END
+GROUP BY a.action
+ORDER BY total DESC, a.action
+LIMIT 200;
+
+-- name: ActivityActorFacets :many
+-- Who acted in the reader's scope, most active first.
+SELECT a.actor_id::bigint AS actor_id, COALESCE(max(u.name), '')::text AS actor_name, count(*) AS total
+FROM activity_log a
+LEFT JOIN users u ON u.id = a.actor_id
+WHERE CASE
+        WHEN @system_only::boolean THEN a.tenant_id IS NULL
+        ELSE (@all_tenants::boolean OR a.tenant_id = sqlc.narg('tenant_id')::bigint)
+      END
+  AND a.actor_id IS NOT NULL
+GROUP BY a.actor_id
+ORDER BY total DESC
+LIMIT 200;
+
+-- name: ActivitySubjectFacets :many
+SELECT a.subject_type, count(*) AS total FROM activity_log a
+WHERE CASE
+        WHEN @system_only::boolean THEN a.tenant_id IS NULL
+        ELSE (@all_tenants::boolean OR a.tenant_id = sqlc.narg('tenant_id')::bigint)
+      END
+GROUP BY a.subject_type
+ORDER BY total DESC, a.subject_type;
+
+-- name: ActivityLastDay :one
+SELECT count(*) FROM activity_log a
+WHERE CASE
+        WHEN @system_only::boolean THEN a.tenant_id IS NULL
+        ELSE (@all_tenants::boolean OR a.tenant_id = sqlc.narg('tenant_id')::bigint)
+      END
+  AND a.created_at > now() - interval '24 hours';
 
 -- name: PurgeActivity :execrows
 DELETE FROM activity_log WHERE created_at < now() - make_interval(days => @days::int);
