@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/onboarding"
 	webapp "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/web/app"
 	webdev "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/web/dev"
 
@@ -78,6 +79,7 @@ type Dependencies struct {
 	Roles         *access.RoleHandler
 	Permissions   *access.PermissionHandler
 	Billing       *billing.Handler
+	Onboarding    *onboarding.Handler
 	Files         *files.Handler
 	Notifications *notifications.Handler
 	Webhooks      *webhooks.Handler
@@ -293,6 +295,25 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			kit,
 		),
 	}
+	deps.Onboarding = onboarding.NewHandler(
+		onboarding.NewService(onboarding.Deps{
+			Repo:      onboarding.NewRepository(queries),
+			Tenants:   tenantService,
+			Plans:     platform.BillingSubs,
+			Packages:  platform.BillingPackages,
+			Users:     userService,
+			Accounts:  identityRepo,
+			Roles:     roleRepo,
+			Branches:  branchRepo,
+			Settings:  platform.Settings,
+			Mailer:    platform.Delivery,
+			ClientURL: onboarding.ClientOrigin(cfg.Auth.PasswordResetURL),
+			Logger:    logger,
+		}).WithActivity(platform.Activity),
+		// Sign-up is anonymous and creates rows: ten attempts per IP an hour.
+		ratelimit.NewCacheLimiter(store, 10, time.Hour),
+		kit,
+	)
 	deps.Auth.WithSignInRecorder(deps.Dev.Auditor())
 	cleanup := func() {
 		limiter.Close()

@@ -546,6 +546,16 @@ type Tenant struct {
 	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type TenantOnboarding struct {
+	TenantID     int64              `json:"tenant_id"`
+	OwnerUserID  *int64             `json:"owner_user_id"`
+	Source       string             `json:"source"`
+	CompletedAt  pgtype.Timestamptz `json:"completed_at"`
+	SkippedSteps []string           `json:"skipped_steps"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
 type User struct {
 	ID                   int64              `json:"id"`
 	TenantID             *int64             `json:"tenant_id"`
@@ -573,6 +583,17 @@ type User struct {
 	InvitedBy            *int64             `json:"invited_by"`
 	InvitationAcceptedAt pgtype.Timestamptz `json:"invitation_accepted_at"`
 	ErasedAt             pgtype.Timestamptz `json:"erased_at"`
+}
+
+type UserAgreement struct {
+	ID         int64              `json:"id"`
+	UserID     int64              `json:"user_id"`
+	TenantID   *int64             `json:"tenant_id"`
+	Document   string             `json:"document"`
+	Version    string             `json:"version"`
+	AcceptedAt pgtype.Timestamptz `json:"accepted_at"`
+	IpAddress  *string            `json:"ip_address"`
+	UserAgent  *string            `json:"user_agent"`
 }
 
 type UserTwoFactor struct {

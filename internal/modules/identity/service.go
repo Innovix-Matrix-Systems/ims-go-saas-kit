@@ -126,6 +126,10 @@ type CreateParams struct {
 	// and mails an invitation: setting a password from it activates the
 	// account.
 	SendInvitation bool
+	// RequireVerification creates the user unverified and mails the
+	// verification link, whatever AUTH_NEW_USERS_VERIFIED says (self-service
+	// sign-up: the address must be proven before the first sign-in).
+	RequireVerification bool
 }
 
 // Create adds a user with role assignments.
@@ -186,7 +190,7 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 	activeBranch := branchID
 
 	var verifiedAt time.Time
-	if s.cfg.NewUsersVerified && !input.SendInvitation {
+	if s.cfg.NewUsersVerified && !input.SendInvitation && !input.RequireVerification {
 		verifiedAt = time.Now()
 	}
 	var invitedBy *int64

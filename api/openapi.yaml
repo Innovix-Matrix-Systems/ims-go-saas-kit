@@ -45,6 +45,8 @@ tags:
     description: Tenant activity log (who did what).
   - name: Roles & Permissions
   - name: Tenants
+  - name: Onboarding
+    description: Self-service organization sign-up and the new organization's first-run setup.
   - name: Billing
     description: Packages, subscriptions, payments and manual approvals.
   - name: Notifications
@@ -389,6 +391,107 @@ paths:
               schema: {$ref: "#/components/schemas/MessageEnvelope"}
         "422": *validationFailed
         "429": *tooManyRequests
+
+  /api/v1/signup:
+    post:
+      tags: [Onboarding]
+      summary: Create an organization and its owner (self-service sign-up)
+      description: >-
+        Creates the organization (with its default branch and roles), starts it on the sign-up
+        package (setting `signup.package_id`, or the first active free package) and creates the
+        caller as its owner: an Admin who must confirm the e-mail address before signing in.
+        Always answers 202 with the same message when the request is valid, whether or not the
+        address already has an account (that owner is mailed instead): sign-up never reveals
+        which addresses exist. Records the accepted terms and privacy policy version. Ten
+        attempts per IP address an hour.
+      operationId: signUp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, organization_name, accept_terms]
+              properties:
+                name: {type: string, minLength: 2, maxLength: 255}
+                email: {type: string, format: email, maxLength: 255}
+                password: {type: string, minLength: 8, maxLength: 72}
+                organization_name: {type: string, minLength: 2, maxLength: 100}
+                phone: {type: string, maxLength: 50, nullable: true}
+                locale: {type: string, enum: [en, bn]}
+                accept_terms:
+                  type: boolean
+                  description: Must be true (terms of service and privacy policy).
+      responses:
+        "202":
+          description: Accepted; the next step is in the caller's mailbox.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [message]
+                    properties:
+                      message: {type: string}
+        "403": *forbidden
+        "422": *validationFailed
+        "429": *tooManyRequests
+        "503": *serviceUnavailable
+
+  /api/v1/onboarding:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Onboarding]
+      summary: Get the organization's first-run setup progress
+      description: Any member may read it; `is_owner` says whether the caller finishes it.
+      operationId: getOnboarding
+      responses:
+        "200":
+          description: The setup progress.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OnboardingEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /api/v1/onboarding/complete:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+    post:
+      tags: [Onboarding]
+      summary: Finish the organization's first-run setup
+      description: Only the owner, and not while someone acts as them. Repeating it keeps the first completion time.
+      operationId: completeOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skipped_steps:
+                  type: array
+                  maxItems: 10
+                  items: {type: string, enum: [organization, package, invite, two_factor]}
+      responses:
+        "200":
+          description: The completed setup.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OnboardingEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "422": *validationFailed
 
   /api/v1/reset-password:
     post:
@@ -6426,6 +6529,21 @@ components:
               type: array
               items: {type: string}
 
+    OnboardingEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [completed, skipped_steps, source, is_owner]
+          properties:
+            completed: {type: boolean}
+            completed_at: {type: string, format: date-time, nullable: true}
+            skipped_steps:
+              type: array
+              items: {type: string}
+            source: {type: string, enum: [signup, staff]}
+            is_owner: {type: boolean}
     MessageEnvelope:
       type: object
       required: [message]

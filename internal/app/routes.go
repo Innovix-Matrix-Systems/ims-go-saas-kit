@@ -110,6 +110,7 @@ func (d *Dependencies) Router() http.Handler {
 		d.Auth.RegisterPublicRoutes(r)
 		d.Billing.RegisterPublicRoutes(r)
 		d.Notifications.RegisterPublicRoutes(r)
+		d.Onboarding.RegisterPublicRoutes(r)
 
 		// Public tenant-scoped routes: no sign-in, the tenant comes from
 		// X-Tenant-Code (and optionally X-Branch-Id).
@@ -150,6 +151,7 @@ func (d *Dependencies) Router() http.Handler {
 				d.Processing.RegisterRoutes(r)
 				d.Settings.RegisterRoutes(r)
 				d.Flags.RegisterRoutes(r)
+				d.Onboarding.RegisterRoutes(r)
 			})
 
 			r.Group(func(r chi.Router) {

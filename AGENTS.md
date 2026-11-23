@@ -121,7 +121,7 @@ internal/
     health/ i18n/ mail/ (smtp/log transport) sms/ (log/twilio transport) ratelimit/ metrics/
   modules/    business features (see "Module anatomy"):
     access activity auth backup billing branches dataprocessing dev featureflags files
-    identity notifications privacy settings system tenants webhooks
+    identity notifications onboarding privacy settings system tenants webhooks
   privacy/    leaf registry for erasure/export: Contributor, Guard, Writer (modules declare, modules/privacy runs)
   scaffold/   `ims gen module` + `ims gen openapi` generators
   dbgen/      sqlc generated code (never edit)

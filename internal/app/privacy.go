@@ -16,6 +16,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/notifications"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/onboarding"
 	privacymodule "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/privacy"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/webhooks"
@@ -41,6 +42,7 @@ func newPrivacy(cfg *config.Config, tx *database.TxManager, disks *storage.Regis
 		oauth.PrivacyContributor{},
 		access.PrivacyContributor{},
 		notifications.PrivacyContributor{},
+		onboarding.PrivacyContributor{},
 		files.NewPrivacyContributor(disks),
 		delivery.PrivacyContributor{},
 		activity.PrivacyContributor{},

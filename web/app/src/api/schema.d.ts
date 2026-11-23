@@ -265,6 +265,99 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an organization and its owner (self-service sign-up)
+         * @description Creates the organization (with its default branch and roles), starts it on the sign-up package (setting `signup.package_id`, or the first active free package) and creates the caller as its owner: an Admin who must confirm the e-mail address before signing in. Always answers 202 with the same message when the request is valid, whether or not the address already has an account (that owner is mailed instead): sign-up never reveals which addresses exist. Records the accepted terms and privacy policy version. Ten attempts per IP address an hour.
+         */
+        post: operations["signUp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/onboarding": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the organization's first-run setup progress
+         * @description Any member may read it; `is_owner` says whether the caller finishes it.
+         */
+        get: operations["getOnboarding"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/onboarding/complete": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish the organization's first-run setup
+         * @description Only the owner, and not while someone acts as them. Repeating it keeps the first completion time.
+         */
+        post: operations["completeOnboarding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reset-password": {
         parameters: {
             query?: never;
@@ -5674,6 +5767,17 @@ export interface components {
                 stack?: string[];
             };
         };
+        OnboardingEnvelope: {
+            data: {
+                completed: boolean;
+                /** Format: date-time */
+                completed_at?: string | null;
+                skipped_steps: string[];
+                /** @enum {string} */
+                source: "signup" | "staff";
+                is_owner: boolean;
+            };
+        };
         /**
          * @example {
          *       "message": "Logged out successfully."
@@ -8812,6 +8916,224 @@ export interface operations {
             429: {
                 headers: {
                     "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    signUp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    /** Format: email */
+                    email: string;
+                    password: string;
+                    organization_name: string;
+                    phone?: string | null;
+                    /** @enum {string} */
+                    locale?: "en" | "bn";
+                    /** @description Must be true (terms of service and privacy policy). */
+                    accept_terms: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Accepted; the next step is in the caller's mailbox. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            message: string;
+                        };
+                    };
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Rate limit exceeded; see `retry_after`. */
+            429: {
+                headers: {
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description A dependency or gateway is unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getOnboarding: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The setup progress. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    completeOnboarding: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    skipped_steps?: ("organization" | "package" | "invite" | "two_factor")[];
+                };
+            };
+        };
+        responses: {
+            /** @description The completed setup. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
                     [name: string]: unknown;
                 };
                 content: {

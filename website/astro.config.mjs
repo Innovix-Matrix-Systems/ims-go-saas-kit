@@ -105,6 +105,7 @@ export default defineConfig({
           label: 'Features',
           items: [
             'guides/billing',
+            'guides/sign-up',
             'guides/settings',
             'guides/feature-flags',
             'guides/queue-and-scheduler',

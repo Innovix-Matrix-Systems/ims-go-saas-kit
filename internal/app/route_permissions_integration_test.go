@@ -34,6 +34,7 @@ var routesWithoutPermission = map[string]bool{
 	"POST /api/v1/email/verification-notification": true,
 	"POST /api/v1/email/verify":                    true,
 	"POST /api/v1/invitation/accept":               true,
+	"POST /api/v1/signup":                          true, // creates a new organization, rate-limited per IP
 	"GET /api/v1/public/packages":                  true,
 	"GET /api/v1/public/tenant":                    true, // tenant from X-Tenant-Code, no sign-in
 	"POST /api/v1/billing/{gateway}/callback":      true,
@@ -86,6 +87,8 @@ var routesWithoutPermission = map[string]bool{
 	"GET /api/v1/internal/files/{id}/download":         true, // same rule as show
 	"GET /api/v1/feature-flags":                        true,
 	"GET /api/v1/billing/subscription/status":          true,
+	"GET /api/v1/onboarding":                           true, // the caller's own organization's setup
+	"POST /api/v1/onboarding/complete":                 true, // only the organization's owner (checked in the service)
 }
 
 // TestEveryProtectedRouteRequiresAPermission logs in a tenant user that holds
