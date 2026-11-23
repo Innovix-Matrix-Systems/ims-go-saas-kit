@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	webapp "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/web/app"
 	webdev "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/web/dev"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
@@ -93,6 +94,7 @@ type Dependencies struct {
 	// routes is the built router, read by the dashboard's route inspector.
 	routes chi.Routes
 	DevUI  *webui.Handler
+	AppUI  *webui.Handler
 }
 
 // NewDependencies constructs the dependency graph for the HTTP API mode. The
@@ -142,6 +144,13 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		return nil, nil, err
 	}
 	devUI := webui.New(http.FS(distFS))
+
+	appFS, err := webapp.Dist()
+	if err != nil {
+		platformCleanup()
+		return nil, nil, err
+	}
+	appUI := webui.NewClient(http.FS(appFS))
 
 	// Repositories
 	identityRepo := platform.IdentityRepo
@@ -270,6 +279,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			Kit:         kit,
 		}),
 		DevUI:        devUI,
+		AppUI:        appUI,
 		OAuth:        oauth.NewHandler(oauthService, oauthPages, checker, kit),
 		OAuthService: oauthService,
 		MCPTools:     mcpTools,

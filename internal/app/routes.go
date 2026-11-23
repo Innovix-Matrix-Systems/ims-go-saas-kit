@@ -23,6 +23,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/ratelimit"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/webui"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -182,7 +183,17 @@ func (d *Dependencies) Router() http.Handler {
 
 	mcpEndpoint.set(d.mcpHandler(apiRouter))
 
+	// The client app owns the site root and every other path outside the API
+	// and tool prefixes, so its client-side routes (and deep links in mails)
+	// load the app; unknown API paths still answer a JSON 404.
+	if d.AppUI != nil {
+		r.Get("/", d.AppUI.ServeHTTP)
+	}
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		if d.AppUI != nil && (r.Method == http.MethodGet || r.Method == http.MethodHead) && webui.OwnsPath(r.URL.Path) {
+			d.AppUI.ServeHTTP(w, r)
+			return
+		}
 		d.Responder.Error(w, r, apperr.New(apperr.ResourceNotFound, "The requested resource was not found."))
 	})
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {

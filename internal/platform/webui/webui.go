@@ -1,4 +1,5 @@
-// Package webui serves the embedded developer dashboard single-page app.
+// Package webui serves embedded single-page apps: the developer dashboard
+// under /dev and the client app at the site root.
 package webui
 
 import (
@@ -10,20 +11,43 @@ import (
 	"time"
 )
 
-const (
-	shellPath = "_shell.html"
-	prefix    = "/dev"
-)
+// Options describe one embedded SPA.
+type Options struct {
+	// Prefix is the URL path the app is mounted under ("" for the root).
+	Prefix string
+	// Shell is the HTML file served for every route the app owns.
+	Shell string
+	// ShellHeaders are added to the shell response only (for example a
+	// Content-Security-Policy that the JSON API does not need).
+	ShellHeaders map[string]string
+	// SetupPage is written when the build is missing (only the placeholder
+	// is embedded). Nil uses the developer dashboard's page.
+	SetupPage func(w http.ResponseWriter)
+}
 
-// Handler serves dist/client with hashed-asset caching and SPA fallback. A
+// Handler serves a client build with hashed-asset caching and SPA fallback. A
 // missing build (only the placeholder is embedded) renders a small setup page.
 type Handler struct {
 	fsys http.FileSystem
+	opts Options
 }
 
-// New creates the SPA handler over a filesystem rooted at the client build.
+// New creates the developer dashboard handler over a filesystem rooted at its
+// client build.
 func New(fsys http.FileSystem) *Handler {
-	return &Handler{fsys: fsys}
+	return NewWithOptions(fsys, Options{Prefix: "/dev", Shell: "_shell.html"})
+}
+
+// NewWithOptions creates an SPA handler for any mount point.
+func NewWithOptions(fsys http.FileSystem, opts Options) *Handler {
+	opts.Prefix = strings.TrimRight(opts.Prefix, "/")
+	if opts.Shell == "" {
+		opts.Shell = "index.html"
+	}
+	if opts.SetupPage == nil {
+		opts.SetupPage = writeSetupPage
+	}
+	return &Handler{fsys: fsys, opts: opts}
 }
 
 // ServeHTTP implements http.Handler.
@@ -33,6 +57,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "The HTTP method is not supported for this resource.")
 		return
 	}
+	prefix := h.opts.Prefix
 	if r.URL.Path == prefix+"/api" || strings.HasPrefix(r.URL.Path, prefix+"/api/") {
 		writeProblem(w, http.StatusNotFound, "RESOURCE_NOT_FOUND", "The requested resource was not found.")
 		return
@@ -40,7 +65,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	name := strings.TrimPrefix(r.URL.Path, prefix)
 	name = strings.TrimPrefix(path.Clean("/"+name), "/")
-	if name == "" || name == "." {
+	if name == "" || name == "." || name == h.opts.Shell {
 		h.serveShell(w, r)
 		return
 	}
@@ -79,20 +104,23 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, name string)
 }
 
 func (h *Handler) serveShell(w http.ResponseWriter, r *http.Request) {
-	file, err := h.fsys.Open("/" + shellPath)
+	file, err := h.fsys.Open("/" + h.opts.Shell)
 	if err != nil {
-		writeSetupPage(w)
+		h.opts.SetupPage(w)
 		return
 	}
 	defer func() { _ = file.Close() }()
 	info, err := file.Stat()
 	if err != nil || info.IsDir() {
-		writeSetupPage(w)
+		h.opts.SetupPage(w)
 		return
+	}
+	for key, value := range h.opts.ShellHeaders {
+		w.Header().Set(key, value)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
-	http.ServeContent(w, r, shellPath, info.ModTime(), file)
+	http.ServeContent(w, r, h.opts.Shell, info.ModTime(), file)
 }
 
 func writeSetupPage(w http.ResponseWriter) {
