@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, type Schemas, type User } from '../api/client'
+import { branchesQuery } from '../components/BranchSwitcher'
 import { can, useSession } from '../auth/session'
 import { initials } from '../format'
 import { Field, useApiErrors } from '../components/form'
@@ -269,6 +270,12 @@ function InviteDialog({ open, roles, onClose }: { open: boolean; roles: Role[]; 
   )
 }
 
+// PATCH /user/{id} clears optional fields it is not sent (first and last
+// name, phone), so every update sends the member's current values.
+function updateBody(user: User, changes: Record<string, unknown>) {
+  return { name: user.name, email: user.email, first_name: user.first_name ?? null, last_name: user.last_name ?? null, phone: user.phone ?? null, ...changes }
+}
+
 function MemberDrawer({
   user,
   roles,
@@ -289,11 +296,13 @@ function MemberDrawer({
   const errors = useApiErrors()
   const [name, setName] = useState(user.name)
   const [phone, setPhone] = useState(user.phone ?? '')
+  const [branchId, setBranchId] = useState(user.branch_id ? String(user.branch_id) : '')
   const [roleIds, setRoleIds] = useState<number[]>((user.roles ?? []).map((role) => role.id))
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState<'delete' | 'reset2fa' | null>(null)
   const canUpdate = can(session, 'user.update')
   const canAssign = can(session, 'user.role.assign') && !isSelf
+  const branches = useQuery({ ...branchesQuery, enabled: can(session, 'branch.view.all') })
 
   const run = async (action: () => Promise<unknown>, closeAfter = false) => {
     setBusy(true)
@@ -314,7 +323,10 @@ function MemberDrawer({
   const save = (event: FormEvent) => {
     event.preventDefault()
     void run(async () => {
-      await api(`/user/${user.id}`, { method: 'PATCH', body: { name: name.trim(), email: user.email, phone: phone.trim() || null } })
+      await api(`/user/${user.id}`, {
+        method: 'PATCH',
+        body: updateBody(user, { name: name.trim(), phone: phone.trim() || null, ...(branchId ? { branch_id: Number(branchId) } : {}) }),
+      })
       const original = (user.roles ?? []).map((role) => role.id).sort().join(',')
       if (canAssign && roleIds.length > 0 && [...roleIds].sort().join(',') !== original) {
         await api('/user/assign-role', { method: 'POST', body: { user_id: user.id, roles: roleIds } })
@@ -336,6 +348,17 @@ function MemberDrawer({
           <Field label={t('signup.phone')} error={errors.field('phone')}>
             <input className="input" type="tel" name="phone" disabled={!canUpdate} value={phone} onChange={(e) => setPhone(e.target.value)} />
           </Field>
+          {branches.data && branches.data.length > 1 ? (
+            <Field label={t('members.branch')} error={errors.field('branch_id')}>
+              <select className="input" disabled={!canUpdate} value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+                {branches.data.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : null}
           {roles.length > 0 ? (
             <Field label={t('members.roles')} error={errors.field('roles')}>
               {canAssign ? <RolePicker roles={roles} value={roleIds} onChange={setRoleIds} /> : <span className="small">{(user.roles ?? []).map((r) => r.name).join(', ')}</span>}
@@ -363,7 +386,7 @@ function MemberDrawer({
                   icon={user.is_active ? 'pause' : 'play'}
                   disabled={busy}
                   onClick={() =>
-                    void run(() => api(`/user/${user.id}`, { method: 'PATCH', body: { name: user.name, email: user.email, is_active: !user.is_active } }), true)
+                    void run(() => api(`/user/${user.id}`, { method: 'PATCH', body: updateBody(user, { is_active: !user.is_active }) }), true)
                   }
                 >
                   {user.is_active ? t('members.deactivate') : t('members.activate')}

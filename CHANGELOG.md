@@ -47,7 +47,10 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
 - Client app organization screens: members (search, invited or joined filter, invite with roles,
   edit, deactivate, resend an invitation, reset two-factor, remove) and organization settings
   (profile and contact details, the owner and ownership transfer, and the organization's own
-  values for tenant settings such as branding, two-factor and privacy).
+  values for tenant settings such as branding, two-factor and privacy), roles (create, rename,
+  delete, and a permission editor grouped by area that offers only what the editor may grant; the
+  managed Admin role is read-only) and branches (create, edit with a manager, delete), plus a
+  branch switcher in the top bar and moving a member to another branch.
 - The binary serves the client app at `/` and on every path outside the API and tool prefixes
   (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`, `/.well-known`, `/metrics`, `/up`),
   so client routes and links in e-mails open the app; unknown API paths still answer a JSON 404.

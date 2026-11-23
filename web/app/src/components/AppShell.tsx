@@ -4,6 +4,7 @@ import { signOut, useSession } from '../auth/session'
 import { initials } from '../format'
 import { useT } from '../i18n'
 import { AppearanceMenu } from './AppearanceMenu'
+import { BranchSwitcher } from './BranchSwitcher'
 import { CommandPalette } from './CommandPalette'
 import { navGroupLabels, navGroups, pageFor, visiblePages, type NavGroup } from './navigation'
 import { NotificationBell } from './NotificationBell'
@@ -149,6 +150,7 @@ export function AppShell() {
                 <Kbd>k</Kbd>
               </span>
             </button>
+            <BranchSwitcher />
             <NotificationBell />
             <AppearanceMenu />
             <button
