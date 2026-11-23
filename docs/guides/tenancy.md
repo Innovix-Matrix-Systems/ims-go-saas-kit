@@ -80,6 +80,9 @@ the activity recorder all see the target):
 - Account changes are refused while acting (`authn.DenyImpersonated`): profile update, avatar,
   password, branch switch. Mount it on any new endpoint that changes the account itself.
 - Everything is audited in the system log: see the [activity log](activity-log.md#acting-as-a-user).
+- `GET /api/v1/user/profile/permissions` answers for the target, so a client acting as a user can
+  show that user's screens (`GET /permission/user` is tenant-exempt and refuses the header).
+- Staff accounts are listed with `GET /api/v1/user?platform=true` (only a global reader sees any).
 
 **Tenant-exempt routes** (`tenancy.Exempt(responder)`) skip resolution — tenants, permissions, packages,
 internal users. `tenancy.InternalOnly` additionally rejects tenant-bound identities, so a granted

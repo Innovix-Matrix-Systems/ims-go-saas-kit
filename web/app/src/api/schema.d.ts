@@ -1091,6 +1091,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/user/profile/permissions": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the signed-in user may do
+         * @description The effective user's permissions: the target's when staff act as a user (X-Acting-User), unlike GET /permission/user, which is tenant-exempt and refuses that header.
+         */
+        get: operations["getProfilePermissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/user/profile/update": {
         parameters: {
             query?: never;
@@ -6965,6 +7006,18 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+            /** @description In lists only. Who pays, how much and for which plan. */
+            details?: {
+                tenant_name: string;
+                package_name: string;
+                /**
+                 * Format: int64
+                 * @description Minor units (paisa).
+                 */
+                amount: number;
+                currency: string;
+                invoice_number: string;
+            };
         };
         ApprovalEnvelope: {
             data: components["schemas"]["Approval"];
@@ -11314,6 +11367,8 @@ export interface operations {
             query?: {
                 page?: components["parameters"]["Page"];
                 per_page?: components["parameters"]["PerPage"];
+                /** @description Staff accounts only (no tenant). Only a global reader (staff without acting headers) sees any. */
+                platform?: boolean;
                 search?: components["parameters"]["Search"];
                 order_by?: components["parameters"]["OrderByUser"];
                 order_direction?: components["parameters"]["OrderDirection"];
@@ -11523,6 +11578,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getProfilePermissions: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The permissions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** @description Bypasses every permission check. */
+                            super_admin: boolean;
+                            permissions: string[];
+                            /** @description True while staff act as this user. */
+                            acting_as: boolean;
+                        };
+                    };
                 };
             };
             /** @description Missing, invalid or expired bearer token. */
@@ -17203,6 +17316,7 @@ export interface operations {
             query?: {
                 page?: components["parameters"]["Page"];
                 per_page?: components["parameters"]["PerPage"];
+                status?: "pending" | "approved" | "rejected";
             };
             header?: {
                 /**

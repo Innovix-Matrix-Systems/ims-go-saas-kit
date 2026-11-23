@@ -41,6 +41,9 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (authenticator app with QR code or e-mail codes, recovery codes), signed-in devices,
   notification preferences, personal-data export and account deletion. Signing in applies the
   user's saved language and sends a new owner to the setup wizard.
+- `GET /api/v1/user/profile/permissions` returns the effective user's permissions, the target's
+  while staff act as a user; `GET /api/v1/user?platform=true` lists staff accounts; payment
+  approvals carry `details` (organization, plan, amount, invoice) and filter by `status`.
 - `GET /api/v1/billing/usage` (`billing.view`) reports an organization's use of each plan limit,
   and the global setting `billing.payment_instructions` holds the bank details shown at checkout.
 - `GET /api/v1/activity` filters by `action`, `from`, `to` and `search` and reports `meta.total`;

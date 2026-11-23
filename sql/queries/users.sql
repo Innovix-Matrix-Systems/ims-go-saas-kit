@@ -27,6 +27,7 @@ WHERE lower(u.email) = lower(@email) AND u.deleted_at IS NULL;
 SELECT * FROM users
 WHERE deleted_at IS NULL
   AND (@all_tenants::boolean OR users.tenant_id = @tenant_id)
+  AND (NOT @platform_only::boolean OR users.tenant_id IS NULL)
   AND (
     sqlc.narg('search')::text IS NULL
     OR name ILIKE '%' || sqlc.narg('search')::text || '%'
@@ -64,6 +65,7 @@ LIMIT @page_limit OFFSET @page_offset;
 SELECT count(*) FROM users
 WHERE deleted_at IS NULL
   AND (@all_tenants::boolean OR users.tenant_id = @tenant_id)
+  AND (NOT @platform_only::boolean OR users.tenant_id IS NULL)
   AND (
     sqlc.narg('search')::text IS NULL
     OR name ILIKE '%' || sqlc.narg('search')::text || '%'

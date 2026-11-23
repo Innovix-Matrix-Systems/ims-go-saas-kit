@@ -50,6 +50,55 @@ func (q *Queries) ActivateSubscription(ctx context.Context, arg ActivateSubscrip
 	return i, err
 }
 
+const approvalDetailsByIDs = `-- name: ApprovalDetailsByIDs :many
+SELECT a.id, COALESCE(t.name, '')::text AS tenant_name, p.amount, p.currency, p.invoice_number,
+       COALESCE(k.name, '')::text AS package_name
+FROM payment_approval_requests a
+JOIN payments p ON p.id = a.payment_id
+LEFT JOIN tenants t ON t.id = a.tenant_id
+LEFT JOIN subscriptions s ON s.id = a.subscription_id
+LEFT JOIN packages k ON k.id = s.package_id
+WHERE a.id = ANY($1::bigint[])
+`
+
+type ApprovalDetailsByIDsRow struct {
+	ID            int64  `json:"id"`
+	TenantName    string `json:"tenant_name"`
+	Amount        int64  `json:"amount"`
+	Currency      string `json:"currency"`
+	InvoiceNumber string `json:"invoice_number"`
+	PackageName   string `json:"package_name"`
+}
+
+// What a reviewer needs beside each approval: who pays, how much, for which
+// plan, and the invoice.
+func (q *Queries) ApprovalDetailsByIDs(ctx context.Context, ids []int64) ([]ApprovalDetailsByIDsRow, error) {
+	rows, err := q.db.Query(ctx, approvalDetailsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ApprovalDetailsByIDsRow{}
+	for rows.Next() {
+		var i ApprovalDetailsByIDsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantName,
+			&i.Amount,
+			&i.Currency,
+			&i.InvoiceNumber,
+			&i.PackageName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countPaymentApprovals = `-- name: CountPaymentApprovals :one
 SELECT count(*) FROM payment_approval_requests
 WHERE ($1::text IS NULL OR status = $1::text)

@@ -11,6 +11,9 @@ import (
 func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.With(h.can(authz.PermUserViewAll)).Get("/user", h.index)
 	r.Get("/user/profile", h.profile)
+	// What the caller may do, resolved like every other tenant route, so it
+	// answers for the user when staff act as them (X-Acting-User).
+	r.Get("/user/profile/permissions", h.profilePermissions)
 	// Account changes are refused while someone acts as the user (phase 21).
 	own := r.With(authn.DenyImpersonated(h.Responder))
 	own.Post("/user/profile/update", h.profileUpdate)

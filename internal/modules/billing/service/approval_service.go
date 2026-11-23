@@ -26,6 +26,33 @@ func NewApprovalService(approvals domain.ApprovalRepository, payments domain.Pay
 	return &ApprovalService{approvals: approvals, payments: payments, subscriptions: subscriptions, tx: tx}
 }
 
+// ApprovalDetail is what a reviewer sees beside an approval.
+type ApprovalDetail struct {
+	TenantName    string
+	PackageName   string
+	Amount        int64
+	Currency      string
+	InvoiceNumber string
+}
+
+// Details returns the payer, plan, amount and invoice for approvals by id.
+// It reads nothing when the tx manager is absent (unit tests).
+func (s *ApprovalService) Details(ctx context.Context, ids []int64) (map[int64]ApprovalDetail, error) {
+	out := make(map[int64]ApprovalDetail, len(ids))
+	if s.tx == nil || len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.tx.Queries().ApprovalDetailsByIDs(ctx, ids)
+	if err != nil {
+		return nil, database.MapError("billing.approval_details", err)
+	}
+	for _, row := range rows {
+		out[row.ID] = ApprovalDetail{TenantName: row.TenantName, PackageName: row.PackageName,
+			Amount: row.Amount, Currency: row.Currency, InvoiceNumber: row.InvoiceNumber}
+	}
+	return out, nil
+}
+
 // List returns approval requests with pagination.
 func (s *ApprovalService) List(ctx context.Context, status string, limit, offset int32) ([]domain.Approval, int64, error) {
 	return s.approvals.List(ctx, status, limit, offset)

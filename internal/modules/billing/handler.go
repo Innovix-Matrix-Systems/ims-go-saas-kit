@@ -373,9 +373,23 @@ func (h *Handler) listApprovals(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
+	ids := make([]int64, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.ID)
+	}
+	details, err := h.approvals.Details(r.Context(), ids)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
 	data := make([]ApprovalResponse, 0, len(items))
 	for _, item := range items {
-		data = append(data, NewApprovalResponse(item))
+		response := NewApprovalResponse(item)
+		if detail, ok := details[item.ID]; ok {
+			response.Details = &ApprovalDetailResponse{TenantName: detail.TenantName, PackageName: detail.PackageName,
+				Amount: detail.Amount, Currency: detail.Currency, InvoiceNumber: detail.InvoiceNumber}
+		}
+		data = append(data, response)
 	}
 	meta, links := httpx.NewPagination(r, page, perPage, total)
 	h.Paginated(w, r, http.StatusOK, data, meta, links)

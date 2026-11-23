@@ -1364,6 +1364,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: platform, in: query, required: false, schema: {type: boolean}, description: "Staff accounts only (no tenant). Only a global reader (staff without acting headers) sees any."}
         - $ref: "#/components/parameters/Search"
         - $ref: "#/components/parameters/OrderByUser"
         - $ref: "#/components/parameters/OrderDirection"
@@ -1416,6 +1417,34 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/UserEnvelope"}
+        "401": *unauthorized
+
+  /api/v1/user/profile/permissions:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Users]
+      summary: What the signed-in user may do
+      description: "The effective user's permissions: the target's when staff act as a user (X-Acting-User), unlike GET /permission/user, which is tenant-exempt and refuses that header."
+      operationId: getProfilePermissions
+      responses:
+        "200":
+          description: The permissions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [super_admin, permissions, acting_as]
+                    properties:
+                      super_admin: {type: boolean, description: Bypasses every permission check.}
+                      permissions: {type: array, items: {type: string}}
+                      acting_as: {type: boolean, description: True while staff act as this user.}
         "401": *unauthorized
 
   /api/v1/user/profile/update:
@@ -3341,6 +3370,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: status, in: query, required: false, schema: {type: string, enum: [pending, approved, rejected]}}
       responses:
         "200":
           description: Paginated approvals.
@@ -7804,6 +7834,16 @@ components:
         reviewed_at: {type: string, format: date-time, nullable: true}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+        details:
+          type: object
+          description: In lists only. Who pays, how much and for which plan.
+          required: [tenant_name, package_name, amount, currency, invoice_number]
+          properties:
+            tenant_name: {type: string}
+            package_name: {type: string}
+            amount: {type: integer, format: int64, description: Minor units (paisa).}
+            currency: {type: string}
+            invoice_number: {type: string}
 
     ApprovalEnvelope:
       type: object

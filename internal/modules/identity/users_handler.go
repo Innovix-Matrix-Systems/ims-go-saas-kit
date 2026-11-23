@@ -32,6 +32,8 @@ func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 			filter.IsActive = &value
 		}
 	}
+	// Staff accounts only (no tenant); only a global reader sees any.
+	filter.PlatformOnly, _ = strconv.ParseBool(r.URL.Query().Get("platform"))
 	switch raw := r.URL.Query().Get("invitation"); raw {
 	case "", InvitationPending, InvitationAccepted:
 		filter.Invitation = raw

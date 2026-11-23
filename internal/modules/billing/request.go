@@ -236,6 +236,17 @@ type ApprovalResponse struct {
 	ReviewedAt     *time.Time     `json:"reviewed_at"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
+	// Details is filled in lists: who pays, how much, for which plan.
+	Details *ApprovalDetailResponse `json:"details,omitempty"`
+}
+
+// ApprovalDetailResponse is the payer, plan, amount and invoice of an approval.
+type ApprovalDetailResponse struct {
+	TenantName    string `json:"tenant_name"`
+	PackageName   string `json:"package_name"`
+	Amount        int64  `json:"amount"`
+	Currency      string `json:"currency"`
+	InvoiceNumber string `json:"invoice_number"`
 }
 
 // NewApprovalResponse maps an approval to its public representation.

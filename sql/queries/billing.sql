@@ -254,3 +254,15 @@ SELECT
     (SELECT count(*) FROM users u WHERE u.tenant_id = @tenant_id::bigint AND u.deleted_at IS NULL)::bigint AS users,
     (SELECT count(*) FROM branches b WHERE b.tenant_id = @tenant_id::bigint AND b.deleted_at IS NULL)::bigint AS branches,
     (SELECT COALESCE(sum(f.size), 0) FROM files f WHERE f.tenant_id = @tenant_id::bigint)::bigint AS storage_bytes;
+
+-- name: ApprovalDetailsByIDs :many
+-- What a reviewer needs beside each approval: who pays, how much, for which
+-- plan, and the invoice.
+SELECT a.id, COALESCE(t.name, '')::text AS tenant_name, p.amount, p.currency, p.invoice_number,
+       COALESCE(k.name, '')::text AS package_name
+FROM payment_approval_requests a
+JOIN payments p ON p.id = a.payment_id
+LEFT JOIN tenants t ON t.id = a.tenant_id
+LEFT JOIN subscriptions s ON s.id = a.subscription_id
+LEFT JOIN packages k ON k.id = s.package_id
+WHERE a.id = ANY(@ids::bigint[]);

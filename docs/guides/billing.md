@@ -118,7 +118,9 @@ An **orchestrator** picks a driver per method:
 - **Bank details** for transfers are the global setting `billing.payment_instructions` (group
   **Billing**): bank, account name and number. Clients show it at checkout; members read it from
   `GET /api/v1/settings?group=billing`.
-- **Approvals**: `POST …/payment-approvals/{id}/approve|reject` update the payment and the
+- **Approvals**: `GET …/payment-approvals?status=pending` lists them with `details` (organization,
+  plan, amount, currency, invoice) so a reviewer needs no second lookup;
+  `POST …/payment-approvals/{id}/approve|reject` update the payment and the
   subscription atomically.
 - **Invoices** are `INV-XXXX-timestamp` from `crypto/rand`; cash and bank payments get
   unguessable `CASH-…` / `BANK-…` references.

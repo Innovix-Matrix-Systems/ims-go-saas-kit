@@ -71,10 +71,12 @@ type ListFilter struct {
 	RoleName   string
 	// Invitation is "", pending or accepted.
 	Invitation string
-	OrderBy    string
-	OrderDir   string
-	Limit      int32
-	Offset     int32
+	// PlatformOnly keeps accounts without a tenant (staff).
+	PlatformOnly bool
+	OrderBy      string
+	OrderDir     string
+	Limit        int32
+	Offset       int32
 }
 
 // ExportFilter carries user export filters (a snapshot of the request).
@@ -164,16 +166,17 @@ func (r *repository) GetByEmail(ctx context.Context, email string) (*User, error
 
 func (r *repository) List(ctx context.Context, filter ListFilter) ([]User, error) {
 	rows, err := r.queries.ListUsers(ctx, dbgen.ListUsersParams{
-		AllTenants: filter.AllTenants,
-		TenantID:   optionalInt64(filter.TenantID),
-		Search:     optionalString(filter.Search),
-		IsActive:   boolToSmallint(filter.IsActive),
-		RoleName:   optionalString(filter.RoleName),
-		Invitation: filter.Invitation,
-		OrderBy:    filter.OrderBy,
-		OrderDir:   filter.OrderDir,
-		PageLimit:  filter.Limit,
-		PageOffset: filter.Offset,
+		AllTenants:   filter.AllTenants,
+		PlatformOnly: filter.PlatformOnly,
+		TenantID:     optionalInt64(filter.TenantID),
+		Search:       optionalString(filter.Search),
+		IsActive:     boolToSmallint(filter.IsActive),
+		RoleName:     optionalString(filter.RoleName),
+		Invitation:   filter.Invitation,
+		OrderBy:      filter.OrderBy,
+		OrderDir:     filter.OrderDir,
+		PageLimit:    filter.Limit,
+		PageOffset:   filter.Offset,
 	})
 	if err != nil {
 		return nil, database.MapError("users.list", err)
@@ -187,12 +190,13 @@ func (r *repository) List(ctx context.Context, filter ListFilter) ([]User, error
 
 func (r *repository) Count(ctx context.Context, filter ListFilter) (int64, error) {
 	total, err := r.queries.CountUsers(ctx, dbgen.CountUsersParams{
-		AllTenants: filter.AllTenants,
-		TenantID:   optionalInt64(filter.TenantID),
-		Search:     optionalString(filter.Search),
-		IsActive:   boolToSmallint(filter.IsActive),
-		RoleName:   optionalString(filter.RoleName),
-		Invitation: filter.Invitation,
+		AllTenants:   filter.AllTenants,
+		PlatformOnly: filter.PlatformOnly,
+		TenantID:     optionalInt64(filter.TenantID),
+		Search:       optionalString(filter.Search),
+		IsActive:     boolToSmallint(filter.IsActive),
+		RoleName:     optionalString(filter.RoleName),
+		Invitation:   filter.Invitation,
 	})
 	if err != nil {
 		return 0, database.MapError("users.count", err)

@@ -57,6 +57,7 @@ var routesWithoutPermission = map[string]bool{
 	"DELETE /api/v1/user/privacy/deletion":                true,
 	"POST /api/v1/user/privacy/export":                    true, // the caller's own data export
 	"GET /api/v1/user/profile":                            true,
+	"GET /api/v1/user/profile/permissions":                true, // the caller's own permissions
 	"GET /api/v1/user/connections":                        true, // the caller's own MCP connections
 	"DELETE /api/v1/user/connections/{id}":                true,
 	"POST /api/v1/user/profile/update":                    true,

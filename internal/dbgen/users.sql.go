@@ -92,42 +92,45 @@ const countUsers = `-- name: CountUsers :one
 SELECT count(*) FROM users
 WHERE deleted_at IS NULL
   AND ($1::boolean OR users.tenant_id = $2)
+  AND (NOT $3::boolean OR users.tenant_id IS NULL)
   AND (
-    $3::text IS NULL
-    OR name ILIKE '%' || $3::text || '%'
-    OR email ILIKE '%' || $3::text || '%'
-    OR COALESCE(phone, '') ILIKE '%' || $3::text || '%'
+    $4::text IS NULL
+    OR name ILIKE '%' || $4::text || '%'
+    OR email ILIKE '%' || $4::text || '%'
+    OR COALESCE(phone, '') ILIKE '%' || $4::text || '%'
   )
-  AND ($4::smallint IS NULL OR is_active = $4::smallint)
+  AND ($5::smallint IS NULL OR is_active = $5::smallint)
   AND (
-    $5::text IS NULL
+    $6::text IS NULL
     OR EXISTS (
       SELECT 1 FROM model_has_roles mr
       JOIN roles r ON r.id = mr.role_id
       WHERE mr.model_type = 'user' AND mr.model_id = users.id
-        AND r.name = $5::text
+        AND r.name = $6::text
     )
   )
   AND (
-    $6::text = ''
-    OR ($6::text = 'pending' AND invited_at IS NOT NULL AND invitation_accepted_at IS NULL)
-    OR ($6::text = 'accepted' AND invitation_accepted_at IS NOT NULL)
+    $7::text = ''
+    OR ($7::text = 'pending' AND invited_at IS NOT NULL AND invitation_accepted_at IS NULL)
+    OR ($7::text = 'accepted' AND invitation_accepted_at IS NOT NULL)
   )
 `
 
 type CountUsersParams struct {
-	AllTenants bool    `json:"all_tenants"`
-	TenantID   *int64  `json:"tenant_id"`
-	Search     *string `json:"search"`
-	IsActive   *int16  `json:"is_active"`
-	RoleName   *string `json:"role_name"`
-	Invitation string  `json:"invitation"`
+	AllTenants   bool    `json:"all_tenants"`
+	TenantID     *int64  `json:"tenant_id"`
+	PlatformOnly bool    `json:"platform_only"`
+	Search       *string `json:"search"`
+	IsActive     *int16  `json:"is_active"`
+	RoleName     *string `json:"role_name"`
+	Invitation   string  `json:"invitation"`
 }
 
 func (q *Queries) CountUsers(ctx context.Context, arg CountUsersParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countUsers,
 		arg.AllTenants,
 		arg.TenantID,
+		arg.PlatformOnly,
 		arg.Search,
 		arg.IsActive,
 		arg.RoleName,
@@ -562,57 +565,60 @@ const listUsers = `-- name: ListUsers :many
 SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_name, name, email, email_verified_at, phone, phone_verified_at, password, is_active, last_login_at, last_active_device, remember_token, created_by, updated_by, created_at, updated_at, deleted_at, invited_at, invited_by, invitation_accepted_at, erased_at, locale FROM users
 WHERE deleted_at IS NULL
   AND ($1::boolean OR users.tenant_id = $2)
+  AND (NOT $3::boolean OR users.tenant_id IS NULL)
   AND (
-    $3::text IS NULL
-    OR name ILIKE '%' || $3::text || '%'
-    OR email ILIKE '%' || $3::text || '%'
-    OR COALESCE(phone, '') ILIKE '%' || $3::text || '%'
+    $4::text IS NULL
+    OR name ILIKE '%' || $4::text || '%'
+    OR email ILIKE '%' || $4::text || '%'
+    OR COALESCE(phone, '') ILIKE '%' || $4::text || '%'
   )
-  AND ($4::smallint IS NULL OR is_active = $4::smallint)
+  AND ($5::smallint IS NULL OR is_active = $5::smallint)
   AND (
-    $5::text IS NULL
+    $6::text IS NULL
     OR EXISTS (
       SELECT 1 FROM model_has_roles mr
       JOIN roles r ON r.id = mr.role_id
       WHERE mr.model_type = 'user' AND mr.model_id = users.id
-        AND r.name = $5::text
+        AND r.name = $6::text
     )
   )
   AND (
-    $6::text = ''
-    OR ($6::text = 'pending' AND invited_at IS NOT NULL AND invitation_accepted_at IS NULL)
-    OR ($6::text = 'accepted' AND invitation_accepted_at IS NOT NULL)
+    $7::text = ''
+    OR ($7::text = 'pending' AND invited_at IS NOT NULL AND invitation_accepted_at IS NULL)
+    OR ($7::text = 'accepted' AND invitation_accepted_at IS NOT NULL)
   )
 ORDER BY
-  CASE WHEN $7::text = 'id' AND $8::text = 'asc' THEN id END ASC,
-  CASE WHEN $7::text = 'id' AND $8::text = 'desc' THEN id END DESC,
-  CASE WHEN $7::text = 'name' AND $8::text = 'asc' THEN name END ASC,
-  CASE WHEN $7::text = 'name' AND $8::text = 'desc' THEN name END DESC,
-  CASE WHEN $7::text = 'email' AND $8::text = 'asc' THEN lower(email) END ASC,
-  CASE WHEN $7::text = 'email' AND $8::text = 'desc' THEN lower(email) END DESC,
-  CASE WHEN $7::text = 'created_at' AND $8::text = 'asc' THEN created_at END ASC,
-  CASE WHEN $7::text = 'created_at' AND $8::text = 'desc' THEN created_at END DESC,
+  CASE WHEN $8::text = 'id' AND $9::text = 'asc' THEN id END ASC,
+  CASE WHEN $8::text = 'id' AND $9::text = 'desc' THEN id END DESC,
+  CASE WHEN $8::text = 'name' AND $9::text = 'asc' THEN name END ASC,
+  CASE WHEN $8::text = 'name' AND $9::text = 'desc' THEN name END DESC,
+  CASE WHEN $8::text = 'email' AND $9::text = 'asc' THEN lower(email) END ASC,
+  CASE WHEN $8::text = 'email' AND $9::text = 'desc' THEN lower(email) END DESC,
+  CASE WHEN $8::text = 'created_at' AND $9::text = 'asc' THEN created_at END ASC,
+  CASE WHEN $8::text = 'created_at' AND $9::text = 'desc' THEN created_at END DESC,
   id DESC
-LIMIT $10 OFFSET $9
+LIMIT $11 OFFSET $10
 `
 
 type ListUsersParams struct {
-	AllTenants bool    `json:"all_tenants"`
-	TenantID   *int64  `json:"tenant_id"`
-	Search     *string `json:"search"`
-	IsActive   *int16  `json:"is_active"`
-	RoleName   *string `json:"role_name"`
-	Invitation string  `json:"invitation"`
-	OrderBy    string  `json:"order_by"`
-	OrderDir   string  `json:"order_dir"`
-	PageOffset int32   `json:"page_offset"`
-	PageLimit  int32   `json:"page_limit"`
+	AllTenants   bool    `json:"all_tenants"`
+	TenantID     *int64  `json:"tenant_id"`
+	PlatformOnly bool    `json:"platform_only"`
+	Search       *string `json:"search"`
+	IsActive     *int16  `json:"is_active"`
+	RoleName     *string `json:"role_name"`
+	Invitation   string  `json:"invitation"`
+	OrderBy      string  `json:"order_by"`
+	OrderDir     string  `json:"order_dir"`
+	PageOffset   int32   `json:"page_offset"`
+	PageLimit    int32   `json:"page_limit"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
 	rows, err := q.db.Query(ctx, listUsers,
 		arg.AllTenants,
 		arg.TenantID,
+		arg.PlatformOnly,
 		arg.Search,
 		arg.IsActive,
 		arg.RoleName,
