@@ -56,7 +56,17 @@ notifications.RegisterEvent("billing.payment_failed", notifications.Event{
 })
 ```
 
-The starter ships `renewal.reminder` (mail and SMS); billing sends it by mail.
+The starter ships `renewal.reminder` (mail and SMS; billing sends it by mail) and
+`platform.announcement` (mail) for staff announcements.
+
+## Announcements to organizations
+
+Every notification belongs to one organization, and a `GLOBAL` target reaches platform staff
+only. To tell organizations something (planned maintenance, a policy change), staff call
+`POST /api/v1/internal/notification/broadcast` (`notification.create`) with a `priority`,
+`title`, optional `body` and `channels`, and optional `tenant_ids`: it creates one
+`platform.announcement` per organization, addressed to all its members, and answers how many
+organizations it reached. Without `tenant_ids` it reaches every active organization.
 
 ## Mail, SMS and push
 

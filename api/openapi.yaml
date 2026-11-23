@@ -3024,6 +3024,34 @@ paths:
         "403": *forbidden
         "422": *validationFailed
 
+  /api/v1/packages/features:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+    get:
+      tags: [Billing]
+      summary: The feature catalog packages can grant
+      operationId: listPackageFeatures
+      responses:
+        "200":
+          description: Every feature, with whether it is a numeric limit.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [key, description, is_limit]
+                      properties:
+                        key: {type: string, example: users.max}
+                        description: {type: string}
+                        is_limit: {type: boolean, description: "A numeric limit (limit_value counts; -1 is unlimited)."}
+        "401": *unauthorized
+        "403": *forbidden
+
   /api/v1/packages/{id}:
     parameters:
       - $ref: "#/components/parameters/PathID"
@@ -3164,6 +3192,45 @@ paths:
             application/json:
               schema: {$ref: "#/components/schemas/PaymentPageEnvelope"}
         "401": *unauthorized
+
+  /api/v1/billing/payments/{id}/cancel:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+      - $ref: "#/components/parameters/PathID"
+    post:
+      tags: [Billing]
+      summary: Withdraw a checkout nobody has confirmed yet
+      description: "Cancels the organization's own pending payment (a wrong transfer reference, a change of mind) and its pending subscription, and closes the approval request (rejected, noted as withdrawn). 409 once the payment is no longer pending."
+      operationId: cancelBillingPayment
+      responses:
+        "204": {description: Withdrawn.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
+  /api/v1/billing/payments/{id}/invoice:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+      - $ref: "#/components/parameters/PathID"
+    get:
+      tags: [Billing]
+      summary: The invoice of one of the organization's payments
+      description: "A printable HTML document (download), issued under the platform's name (system.name). An unpaid payment's invoice says it is not paid yet."
+      operationId: getBillingInvoice
+      responses:
+        "200":
+          description: The invoice.
+          content:
+            text/html:
+              schema: {type: string}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
 
   /api/v1/billing/subscribe:
     parameters:
@@ -3928,6 +3995,48 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/NotificationEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
+  /api/v1/internal/notification/broadcast:
+    post:
+      tags: [Notifications]
+      summary: Send an announcement to organizations
+      description: "Creates one platform.announcement notification per organization (every notification belongs to one; GLOBAL targets reach platform staff only), addressed to all its members. Without tenant_ids it reaches every active organization."
+      operationId: broadcastNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [priority, title]
+              properties:
+                priority: {type: string, enum: [INFO, WARNING, CRITICAL]}
+                title: {type: string, maxLength: 255}
+                body: {type: string, maxLength: 5000, nullable: true}
+                channels:
+                  type: array
+                  maxItems: 4
+                  items: {type: string, enum: [database, mail, sms, push]}
+                tenant_ids:
+                  type: array
+                  items: {type: integer, format: int64}
+      responses:
+        "201":
+          description: How many organizations it reached.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [organizations]
+                    properties:
+                      organizations: {type: integer}
         "401": *unauthorized
         "403": *forbidden
         "422": *validationFailed
@@ -7168,7 +7277,7 @@ components:
       type: object
       required: [name, email]
       properties:
-        first_name: {type: string, maxLength: 100, nullable: true}
+        first_name: {type: string, maxLength: 100, nullable: true, description: "On update, omitted or null keeps the value and an empty string clears it (also last_name and phone)."}
         last_name: {type: string, maxLength: 100, nullable: true}
         user_name: {type: string, maxLength: 100, nullable: true}
         name: {type: string, minLength: 2, maxLength: 255}
@@ -7704,10 +7813,10 @@ components:
 
     SubscribeRequest:
       type: object
-      required: [package_id, payment_method]
+      required: [package_id]
       properties:
         package_id: {type: integer, format: int64}
-        payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer]}
+        payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer], description: "Required for a paid package. A free package starts at once, with no payment."}
         payment_data:
           type: object
           additionalProperties: true
@@ -7725,7 +7834,10 @@ components:
           required: [subscription, payment]
           properties:
             subscription: {$ref: "#/components/schemas/Subscription"}
-            payment: {$ref: "#/components/schemas/Payment"}
+            payment:
+              allOf: [{$ref: "#/components/schemas/Payment"}]
+              nullable: true
+              description: Null for a free package, which starts at once.
 
     AssignPlanRequest:
       type: object

@@ -94,3 +94,50 @@ func TestApprovalListCarriesDetails(t *testing.T) {
 		t.Fatalf("details = %+v", d)
 	}
 }
+
+// Staff broadcast an announcement: to every active organization by default,
+// or to the ones they pick. Members see it in their feed; others do not.
+func TestStaffBroadcastsAnnouncement(t *testing.T) {
+	app := testkit.New(t)
+	staff := app.SuperAdmin(t)
+	listeners := app.Tenant(t, "Listeners")
+	member := app.User(t, testkit.InTenant(listeners))
+	other := app.User(t, testkit.InTenant(app.Tenant(t, "Others")))
+
+	titles := func(user *testkit.User) []string {
+		var feed []struct {
+			Title     string `json:"title"`
+			EventType string `json:"event_type"`
+		}
+		app.As(user).Get("/api/v1/notification/feed").Status(t, http.StatusOK).Data(t, &feed)
+		out := []string{}
+		for _, item := range feed {
+			if item.EventType == "platform.announcement" {
+				out = append(out, item.Title)
+			}
+		}
+		return out
+	}
+
+	var sent struct {
+		Organizations int `json:"organizations"`
+	}
+	app.As(staff).Post("/api/v1/internal/notification/broadcast", map[string]any{
+		"priority": "INFO", "title": "Planned maintenance", "body": "Saturday 02:00 to 03:00.",
+	}).Status(t, http.StatusCreated).Data(t, &sent)
+	if sent.Organizations < 3 {
+		t.Fatalf("reached %d organizations, want every active one (at least 3)", sent.Organizations)
+	}
+	app.As(staff).Post("/api/v1/internal/notification/broadcast", map[string]any{
+		"priority": "WARNING", "title": "Only for Listeners", "tenant_ids": []int64{listeners},
+	}).Status(t, http.StatusCreated)
+
+	if got := titles(member); !slices.Contains(got, "Planned maintenance") || !slices.Contains(got, "Only for Listeners") {
+		t.Fatalf("member's announcements = %v", got)
+	}
+	if got := titles(other); !slices.Contains(got, "Planned maintenance") || slices.Contains(got, "Only for Listeners") {
+		t.Fatalf("other organization's announcements = %v", got)
+	}
+	app.As(member).Post("/api/v1/internal/notification/broadcast", map[string]any{"priority": "INFO", "title": "x"}).
+		Status(t, http.StatusForbidden)
+}

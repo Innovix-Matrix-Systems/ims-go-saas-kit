@@ -151,6 +151,16 @@ func (s *SubscriptionService) StartTrial(ctx context.Context, tenantID, packageI
 // per tenant + package + method: while a checkout is still pending, a retry
 // or double click returns that checkout instead of charging again (H11).
 func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (*domain.Subscription, *domain.Payment, error) {
+	// A free plan has nothing to pay or approve: it starts at once, the way
+	// staff assign a plan (no payment is recorded).
+	if pkg, err := s.packages.Get(ctx, packageID); err != nil {
+		return nil, nil, err
+	} else if pkg.Price == 0 {
+		if !pkg.IsActive {
+			return nil, nil, apperr.New(apperr.BusinessLogicError, "This package is not available.")
+		}
+		return s.Assign(ctx, AssignInput{TenantID: tenantID, PackageID: packageID, ActorID: actorID})
+	}
 	// An example span (phase 26.9) with a child around the gateway charge.
 	ctx, span := tracing.Start(ctx, "billing.subscribe",
 		attribute.Int64("tenant.id", tenantID),

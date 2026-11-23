@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
@@ -295,7 +296,13 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			platform.BillingApprovals,
 			checker,
 			kit,
-		).WithUsage(billingservice.NewUsageService(platform.BillingGuard, queries)),
+		).WithUsage(billingservice.NewUsageService(platform.BillingGuard, queries)).
+			WithInvoices(billingservice.NewInvoiceService(queries, func(ctx context.Context) string {
+				// The platform issues invoices under its own name (system.name).
+				value, _ := platform.Settings.Get(ctx, tenancy.Scope{}, "system.name")
+				name, _ := value.(string)
+				return name
+			})),
 	}
 	deps.Onboarding = onboarding.NewHandler(
 		onboarding.NewService(onboarding.Deps{

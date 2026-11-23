@@ -7,7 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 **Upgrading:** run `ims migrate` (migrations `00037_create_onboarding`: `tenant_onboarding` and
-`user_agreements`; `00038_user_locale`: `users.locale`; `00039_tenant_owner`: `tenants.owner_user_id`), `ims permission:sync` (adds `billing.view`, `billing.manage` and `organization.update`, and now also
+`user_agreements`; `00038_user_locale`: `users.locale`; `00039_tenant_owner`: `tenants.owner_user_id`;
+`00040_payment_cancelled`: payments may be `cancelled`), `ims permission:sync` (adds `billing.view`, `billing.manage` and `organization.update`, and now also
 grants every tenant Admin role the permissions it is missing) and `ims settings:sync` (the new
 **Sign-up** and **Billing** groups).
 
@@ -18,6 +19,11 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   which no tenant role could hold).
 - Signing in no longer checks the password's length (it only must be sent), so accounts with
   passwords from older rules keep working; setting a password follows the new rule below.
+- `PATCH /api/v1/user/{id}` and `POST /api/v1/user/profile/update` keep `first_name`,
+  `last_name` and `phone` when they are omitted or null (they were cleared); send an empty string
+  to clear one.
+- Subscribing to a free package starts it at once, with no payment (`payment_method` is only
+  required for paid packages and `payment` is null).
 - A tenant's Admin role is managed: it cannot be renamed, deleted or given other permissions
   (403), and no other role can be renamed to Admin. Role responses carry `managed`.
 - `POST /api/v1/role/assign-permission` only adds permissions the caller holds (403 otherwise;
@@ -41,6 +47,11 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   (authenticator app with QR code or e-mail codes, recovery codes), signed-in devices,
   notification preferences, personal-data export and account deletion. Signing in applies the
   user's saved language and sends a new owner to the setup wizard.
+- Organizations withdraw a pending checkout (`POST /api/v1/billing/payments/{id}/cancel`) and
+  download invoices (`GET /api/v1/billing/payments/{id}/invoice`, printable HTML);
+  `GET /api/v1/packages/features` lists the feature catalog; staff send announcements to every
+  or chosen organizations (`POST /api/v1/internal/notification/broadcast`, event
+  `platform.announcement`).
 - `GET /api/v1/user/profile/permissions` returns the effective user's permissions, the target's
   while staff act as a user; `GET /api/v1/user?platform=true` lists staff accounts; payment
   approvals carry `details` (organization, plan, amount, invoice) and filter by `status`.

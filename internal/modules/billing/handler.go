@@ -21,6 +21,7 @@ type Handler struct {
 	payments      *service.PaymentService
 	approvals     *service.ApprovalService
 	usage         *service.UsageService
+	invoices      *service.InvoiceService
 	checker       *authz.Checker
 	httpx.Kit
 }
@@ -139,10 +140,25 @@ func (h *Handler) subscribe(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
-	h.Data(w, r, http.StatusCreated, map[string]any{
-		"subscription": NewSubscriptionResponse(*subscription),
-		"payment":      NewPaymentResponse(*payment),
-	})
+	out := map[string]any{"subscription": NewSubscriptionResponse(*subscription), "payment": nil}
+	if payment != nil {
+		out["payment"] = NewPaymentResponse(*payment)
+	}
+	h.Data(w, r, http.StatusCreated, out)
+}
+
+// cancelPayment withdraws the organization's own checkout that is still
+// waiting (for staff approval or the gateway).
+func (h *Handler) cancelPayment(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.PathID(w, r, "id")
+	if !ok {
+		return
+	}
+	if err := h.approvals.Withdraw(r.Context(), tenancy.From(r).EffectiveTenantID(), id, authn.UserID(r)); err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.NoContent(w)
 }
 
 func (h *Handler) callback(w http.ResponseWriter, r *http.Request) {

@@ -26,6 +26,55 @@ func NewApprovalService(approvals domain.ApprovalRepository, payments domain.Pay
 	return &ApprovalService{approvals: approvals, payments: payments, subscriptions: subscriptions, tx: tx}
 }
 
+// Withdraw lets an organization take back a checkout nobody has confirmed yet
+// (a wrong transfer reference, a change of mind): the pending payment and its
+// pending subscription are cancelled and the approval request is closed as
+// rejected with a note, so staff no longer see it waiting.
+func (s *ApprovalService) Withdraw(ctx context.Context, tenantID, paymentID, actorID int64) error {
+	payment, err := s.payments.Get(ctx, paymentID)
+	if err != nil {
+		return err
+	}
+	if payment.TenantID != tenantID {
+		return apperr.Newf(apperr.ResourceNotFound, "Payment with ID '%d' was not found.", paymentID)
+	}
+	if payment.Status != domain.PaymentPending {
+		return apperr.New(apperr.InvalidState, "Only a payment that is still waiting can be withdrawn.")
+	}
+	note := "Withdrawn by the organization."
+	gatewayStatus := "withdrawn by the organization"
+	return s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
+		if approval, err := q.PendingApprovalForPayment(ctx, payment.ID); err == nil {
+			if _, err := q.UpdatePaymentApproval(ctx, dbgen.UpdatePaymentApprovalParams{
+				ID: approval.ID, Status: domain.ApprovalRejected, ReviewerNote: &note, UpdatedBy: &actorID,
+			}); err != nil {
+				return err
+			}
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+		if _, err := q.UpdatePaymentStatus(ctx, dbgen.UpdatePaymentStatusParams{
+			ID: payment.ID, Status: domain.PaymentCancelled, GatewayStatus: &gatewayStatus,
+		}); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return apperr.New(apperr.InvalidState, "Only a payment that is still waiting can be withdrawn.")
+			}
+			return err
+		}
+		if payment.SubscriptionID == nil {
+			return nil
+		}
+		subscription, err := q.GetSubscription(ctx, *payment.SubscriptionID)
+		if err != nil || subscription.Status != domain.StatusPending {
+			return err
+		}
+		_, err = q.UpdateSubscriptionStatus(ctx, dbgen.UpdateSubscriptionStatusParams{
+			ID: subscription.ID, Status: domain.StatusCancelled, CancelledAt: timestamptz(time.Now()), CancellationReason: &note,
+		})
+		return err
+	})
+}
+
 // ApprovalDetail is what a reviewer sees beside an approval.
 type ApprovalDetail struct {
 	TenantName    string

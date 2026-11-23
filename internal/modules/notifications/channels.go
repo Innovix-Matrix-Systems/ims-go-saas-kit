@@ -35,8 +35,16 @@ type Event struct {
 	Mandatory bool
 }
 
+// EventAnnouncement is what staff broadcast to everyone, one organization
+// or a role: news, planned maintenance, policy changes.
+const EventAnnouncement = "platform.announcement"
+
 // Events is the event-type catalog; RegisterEvent adds a module's events.
 var Events = map[string]Event{
+	EventAnnouncement: {
+		Description: "Announcements from the people who run the platform.",
+		Channels:    []delivery.Channel{delivery.Mail},
+	},
 	EventRenewalReminder: {
 		Description: "A subscription is about to renew or expire.",
 		Channels:    []delivery.Channel{delivery.Mail, delivery.SMS},

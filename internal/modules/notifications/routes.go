@@ -36,6 +36,7 @@ func (h *Handler) RegisterRoutesExempt(r chi.Router) {
 	r.With(h.can(authz.PermNotificationViewAll)).Get("/internal/notification", h.index)
 	r.With(h.can(authz.PermNotificationView)).Get("/internal/notification/{id}", h.show)
 	r.With(h.can(authz.PermNotificationCreate)).Post("/internal/notification", h.store)
+	r.With(h.can(authz.PermNotificationCreate)).Post("/internal/notification/broadcast", h.broadcast)
 	r.With(h.can(authz.PermNotificationUpdate)).Patch("/internal/notification/{id}", h.update)
 	r.With(h.can(authz.PermNotificationDelete)).Delete("/internal/notification/{id}", h.destroy)
 }

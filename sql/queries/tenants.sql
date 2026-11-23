@@ -76,3 +76,7 @@ SELECT u.id, u.name, u.email
 FROM tenants t
 JOIN users u ON u.id = t.owner_user_id AND u.deleted_at IS NULL
 WHERE t.id = @tenant_id AND t.deleted_at IS NULL;
+
+-- name: ListActiveTenantIDs :many
+-- Every organization that is live (a staff broadcast reaches these).
+SELECT id FROM tenants WHERE deleted_at IS NULL AND is_active ORDER BY id;

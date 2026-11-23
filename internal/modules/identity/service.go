@@ -338,6 +338,18 @@ type UpdateParams struct {
 	Locale *string
 }
 
+// keepOrClear resolves an optional text field of an update: nil keeps the
+// current value, an empty (or blank) string clears it.
+func keepOrClear(input, current *string) *string {
+	if input == nil {
+		return current
+	}
+	if strings.TrimSpace(*input) == "" {
+		return nil
+	}
+	return input
+}
+
 // Update modifies a user; super admins are protected from non-super actors.
 func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateParams) (*User, error) {
 	target, err := s.Get(ctx, scope, id)
@@ -361,7 +373,12 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 		}
 	}
 
-	if err := s.validatePhoneUnique(ctx, input.Phone, target.ID); err != nil {
+	// Like branch_id and is_active, an omitted (nil) first name, last name or
+	// phone keeps its value; an empty string clears it.
+	firstName := keepOrClear(input.FirstName, target.FirstName)
+	lastName := keepOrClear(input.LastName, target.LastName)
+	phone := keepOrClear(input.Phone, target.Phone)
+	if err := s.validatePhoneUnique(ctx, phone, target.ID); err != nil {
 		return nil, err
 	}
 	tenantID := target.TenantIDValue()
@@ -384,10 +401,10 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 	updated, err := s.repo.Update(ctx, UpdateInput{
 		Tenant:    scope.Filter(),
 		ID:        target.ID,
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
+		FirstName: firstName,
+		LastName:  lastName,
 		Name:      input.Name,
-		Phone:     input.Phone,
+		Phone:     phone,
 		IsActive:  isActive,
 		BranchID:  branchID,
 		ActorID:   &actorID,
@@ -612,16 +629,19 @@ func (s *Service) ProfileUpdate(ctx context.Context, userID int64, input UpdateP
 	if err != nil {
 		return nil, err
 	}
-	if err := s.validatePhoneUnique(ctx, input.Phone, target.ID); err != nil {
+	firstName := keepOrClear(input.FirstName, target.FirstName)
+	lastName := keepOrClear(input.LastName, target.LastName)
+	phone := keepOrClear(input.Phone, target.Phone)
+	if err := s.validatePhoneUnique(ctx, phone, target.ID); err != nil {
 		return nil, err
 	}
 	updated, err := s.repo.Update(ctx, UpdateInput{
 		Tenant:    tenancy.Unscoped(),
 		ID:        target.ID,
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
+		FirstName: firstName,
+		LastName:  lastName,
 		Name:      input.Name,
-		Phone:     input.Phone,
+		Phone:     phone,
 		IsActive:  target.IsActive,
 		BranchID:  target.BranchID,
 		ActorID:   &userID,

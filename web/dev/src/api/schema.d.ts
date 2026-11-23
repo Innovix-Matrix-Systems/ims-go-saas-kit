@@ -2787,6 +2787,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/packages/features": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /** The feature catalog packages can grant */
+        get: operations["listPackageFeatures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/packages/{id}": {
         parameters: {
             query?: never;
@@ -2961,6 +2985,92 @@ export interface paths {
         };
         /** List the resolved tenant's payments */
         get: operations["listTenantPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/payments/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw a checkout nobody has confirmed yet
+         * @description Cancels the organization's own pending payment (a wrong transfer reference, a change of mind) and its pending subscription, and closes the approval request (rejected, noted as withdrawn). 409 once the payment is no longer pending.
+         */
+        post: operations["cancelBillingPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/payments/{id}/invoice": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The invoice of one of the organization's payments
+         * @description A printable HTML document (download), issued under the platform's name (system.name). An unpaid payment's invoice says it is not paid yet.
+         */
+        get: operations["getBillingInvoice"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3865,6 +3975,26 @@ export interface paths {
         put?: never;
         /** Create a notification and fan it out */
         post: operations["createNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/notification/broadcast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send an announcement to organizations
+         * @description Creates one platform.announcement notification per organization (every notification belongs to one; GLOBAL targets reach platform staff only), addressed to all its members. Without tenant_ids it reaches every active organization.
+         */
+        post: operations["broadcastNotification"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6384,6 +6514,7 @@ export interface components {
          *     }
          */
         UserUpsertRequest: {
+            /** @description On update, omitted or null keeps the value and an empty string clears it (also last_name and phone). */
             first_name?: string | null;
             last_name?: string | null;
             user_name?: string | null;
@@ -6878,8 +7009,11 @@ export interface components {
         SubscribeRequest: {
             /** Format: int64 */
             package_id: number;
-            /** @enum {string} */
-            payment_method: "bkash" | "nagad" | "cash" | "bank_transfer";
+            /**
+             * @description Required for a paid package. A free package starts at once, with no payment.
+             * @enum {string}
+             */
+            payment_method?: "bkash" | "nagad" | "cash" | "bank_transfer";
             payment_data?: {
                 [key: string]: unknown;
             };
@@ -6887,7 +7021,8 @@ export interface components {
         SubscribeEnvelope: {
             data: {
                 subscription: components["schemas"]["Subscription"];
-                payment: components["schemas"]["Payment"];
+                /** @description Null for a free package, which starts at once. */
+                payment: components["schemas"]["Payment"] | null;
             };
         };
         /**
@@ -16382,6 +16517,59 @@ export interface operations {
             };
         };
     };
+    listPackageFeatures: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every feature, with whether it is a numeric limit. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** @example users.max */
+                            key: string;
+                            description: string;
+                            /** @description A numeric limit (limit_value counts; -1 is unlimited). */
+                            is_limit: boolean;
+                        }[];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     getPackage: {
         parameters: {
             query?: never;
@@ -16804,6 +16992,153 @@ export interface operations {
             };
             /** @description Missing, invalid or expired bearer token. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    cancelBillingPayment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Withdrawn. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getBillingInvoice: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invoice. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18952,6 +19287,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    broadcastNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    priority: "INFO" | "WARNING" | "CRITICAL";
+                    title: string;
+                    body?: string | null;
+                    channels?: ("database" | "mail" | "sms" | "push")[];
+                    tenant_ids?: number[];
+                };
+            };
+        };
+        responses: {
+            /** @description How many organizations it reached. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            organizations: number;
+                        };
+                    };
                 };
             };
             /** @description Missing, invalid or expired bearer token. */

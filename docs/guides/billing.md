@@ -65,6 +65,8 @@ Statuses: `trial`, `pending`, `active`, `past_due`, `cancelled`, `expired`. Only
 | tenant subscribes | `POST /api/v1/billing/subscribe` `{package_id, payment_method, payment_data}` (`billing.manage`) |
 | tenant payment history | `GET /api/v1/billing/payments` (`billing.view`) |
 | see the current plan | `GET /api/v1/billing/subscription/status` |
+| withdraw a checkout nobody confirmed yet | `POST /api/v1/billing/payments/{id}/cancel` (`billing.manage`): the payment and its pending subscription are cancelled, the approval request closed as withdrawn |
+| download an invoice | `GET /api/v1/billing/payments/{id}/invoice` (`billing.view`): a printable HTML document under the platform's name |
 | see the use of each plan limit | `GET /api/v1/billing/usage` (`billing.view`): `users.max`, `branches.max` and `storage.mb` with the limit (-1 unlimited, 0 not in the plan) and what is used, counted as the limit checks count |
 | staff assigns a plan | `POST /api/v1/billing/internal/tenants/{tenant_id}/subscription` |
 | staff cancels | `POST /api/v1/billing/internal/subscriptions/{id}/cancel` — immediate |
@@ -115,6 +117,10 @@ An **orchestrator** picks a driver per method:
   is always asked for the real status. Only a status bKash reports as failed or cancelled fails a
   payment; a gateway error is a retryable 503 that changes nothing. Completion and activation are
   one transaction.
+- **Free packages** start at once when an organization subscribes to one (no payment method,
+  no approval), the way staff assign a plan.
+- **Feature catalog**: `GET /api/v1/packages/features` (`package.view.all`) lists every feature
+  with `is_limit`, for package editors.
 - **Bank details** for transfers are the global setting `billing.payment_instructions` (group
   **Billing**): bank, account name and number. Clients show it at checkout; members read it from
   `GET /api/v1/settings?group=billing`.

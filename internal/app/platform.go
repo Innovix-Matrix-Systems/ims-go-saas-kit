@@ -210,6 +210,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		settingsService,
 		logger,
 	)
+	notificationsService.WithTenantLister(txManager.Queries().ListActiveTenantIDs)
 	if err := notificationsService.RegisterJobs(queueRegistry); err != nil {
 		return nil, nil, err
 	}

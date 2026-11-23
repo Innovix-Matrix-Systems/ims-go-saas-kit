@@ -20,11 +20,14 @@ func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.With(h.can(authz.PermBillingView)).Get("/billing/payments", h.listTenantPayments)
 	r.With(h.can(authz.PermBillingView)).Get("/billing/usage", h.tenantUsage)
 	r.With(h.can(authz.PermBillingManage)).Post("/billing/subscribe", h.subscribe)
+	r.With(h.can(authz.PermBillingManage)).Post("/billing/payments/{id}/cancel", h.cancelPayment)
+	r.With(h.can(authz.PermBillingView)).Get("/billing/payments/{id}/invoice", h.invoice)
 }
 
 // RegisterRoutesExempt mounts system billing management routes.
 func (h *Handler) RegisterRoutesExempt(r chi.Router) {
 	r.With(h.can("package.view.all")).Get("/packages", h.listPackages)
+	r.With(h.can("package.view.all")).Get("/packages/features", h.features)
 	r.With(h.can("package.create")).Post("/packages", h.storePackage)
 	r.With(h.can("package.view")).Get("/packages/{id}", h.showPackage)
 	r.With(h.can("package.update")).Patch("/packages/{id}", h.updatePackage)

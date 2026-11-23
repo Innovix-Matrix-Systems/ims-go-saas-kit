@@ -95,6 +95,7 @@ const (
 	PaymentCompleted = "completed"
 	PaymentFailed    = "failed"
 	PaymentRefunded  = "refunded"
+	PaymentCancelled = "cancelled"
 )
 
 // Approval statuses.

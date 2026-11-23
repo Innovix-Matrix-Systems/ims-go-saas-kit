@@ -59,7 +59,7 @@ func (r PackageInsertRequest) toFeatures() []domain.FeatureInput {
 // SubscribeRequest starts a subscription.
 type SubscribeRequest struct {
 	PackageID     int64          `json:"package_id" validate:"required,gt=0"`
-	PaymentMethod string         `json:"payment_method" validate:"required,oneof=bkash nagad cash bank_transfer"`
+	PaymentMethod string         `json:"payment_method" validate:"omitempty,oneof=bkash nagad cash bank_transfer"`
 	PaymentData   map[string]any `json:"payment_data"`
 }
 
