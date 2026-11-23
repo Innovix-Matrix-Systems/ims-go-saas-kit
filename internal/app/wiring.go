@@ -235,7 +235,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			WithSessions(platform.Sessions),
 		Users:         identity.NewHandler(userService, platform.Files, platform.Exchange, checker, kit),
 		Privacy:       privacy.NewHandler(platform.Privacy, authService, checker, kit),
-		Tenants:       tenants.NewHandler(tenantService, checker, kit),
+		Tenants:       tenants.NewHandler(tenantService, checker, kit).WithSettings(platform.Settings),
 		Branches:      branches.NewHandler(branchService, checker, kit),
 		Activity:      activity.NewHandler(activity.NewService(queries), checker, kit),
 		Roles:         access.NewRoleHandler(roleService, checker, tenantLookup, kit),

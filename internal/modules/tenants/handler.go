@@ -54,8 +54,9 @@ func NewResponse(tenant Tenant) Response {
 
 // Handler serves tenant endpoints (tenant-exempt group).
 type Handler struct {
-	service *Service
-	checker *authz.Checker
+	service  *Service
+	checker  *authz.Checker
+	settings SettingReader
 	httpx.Kit
 }
 

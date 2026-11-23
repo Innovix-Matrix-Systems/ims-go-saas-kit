@@ -75,3 +75,29 @@ func TestOrganizationProfileAndOwnership(t *testing.T) {
 		t.Fatal("cross-tenant organization read")
 	}
 }
+
+// The organization carries its e-mail branding (logo, colour) for clients to
+// show as its mark; unset values are null.
+func TestOrganizationBranding(t *testing.T) {
+	app := testkit.New(t)
+	admin := app.User(t)
+
+	var out struct {
+		Branding struct {
+			LogoURL *string `json:"logo_url"`
+			Color   *string `json:"color"`
+		} `json:"branding"`
+	}
+	app.As(admin).Patch("/api/v1/settings/tenant/branding.logo_url", map[string]any{"value": "https://example.com/logo.png"}).Status(t, http.StatusOK)
+	app.As(admin).Patch("/api/v1/settings/tenant/branding.color", map[string]any{"value": "#0f766e"}).Status(t, http.StatusOK)
+	app.As(admin).Get("/api/v1/organization").Status(t, http.StatusOK).Data(t, &out)
+	if out.Branding.LogoURL == nil || *out.Branding.LogoURL != "https://example.com/logo.png" || out.Branding.Color == nil || *out.Branding.Color != "#0f766e" {
+		t.Fatalf("branding = %+v", out.Branding)
+	}
+
+	app.As(admin).Patch("/api/v1/settings/tenant/branding.logo_url", map[string]any{"value": ""}).Status(t, http.StatusOK)
+	app.As(admin).Get("/api/v1/organization").Status(t, http.StatusOK).Data(t, &out)
+	if out.Branding.LogoURL != nil {
+		t.Fatalf("an empty logo is null, got %q", *out.Branding.LogoURL)
+	}
+}

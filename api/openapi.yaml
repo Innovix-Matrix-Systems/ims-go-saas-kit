@@ -7164,7 +7164,7 @@ components:
       properties:
         data:
           type: object
-          required: [id, name, code, is_active, is_owner, created_at]
+          required: [id, name, code, is_active, is_owner, branding, created_at]
           properties:
             id: {type: integer, format: int64}
             name: {type: string}
@@ -7181,6 +7181,13 @@ components:
                 name: {type: string}
                 email: {type: string}
             is_owner: {type: boolean}
+            branding:
+              type: object
+              description: The organization's e-mail branding (`branding.logo_url`, `branding.color` settings), for its mark in clients. Null when unset.
+              required: [logo_url, color]
+              properties:
+                logo_url: {type: string, nullable: true}
+                color: {type: string, nullable: true, example: "#2563eb"}
             created_at: {type: string, format: date-time}
     MessageEnvelope:
       type: object
