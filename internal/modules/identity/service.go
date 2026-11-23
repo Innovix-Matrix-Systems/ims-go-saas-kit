@@ -702,8 +702,6 @@ func (s *Service) GetRecord(ctx context.Context, id int64) (*User, error) {
 	return s.repo.Get(ctx, tenancy.Unscoped(), id)
 }
 
-// guardSuperAdmin is a business invariant, not a permission: only a
-// super-admin may modify a super-admin account, whoever the caller is.
 // guardOwner protects an organization's owner: other members cannot delete
 // them, deactivate them, change their roles, set their password or reset
 // their two-factor; ownership has to be transferred first. Platform super
@@ -729,6 +727,8 @@ func (s *Service) refuseOwner(ctx context.Context, actorID, targetID int64) erro
 	return apperr.New(apperr.Forbidden, "This user owns the organization. Transfer ownership to another administrator first.")
 }
 
+// guardSuperAdmin is a business invariant, not a permission: only a
+// super-admin may modify a super-admin account, whoever the caller is.
 func (s *Service) guardSuperAdmin(ctx context.Context, actorID, targetID int64) error {
 	targetIsSuper, err := s.checker.IsSuperAdmin(ctx, targetID)
 	if err != nil || !targetIsSuper {
