@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-24
+
+One frontend setup instead of two. The developer dashboard now builds the same way as the app, so
+both are plain single-page apps on Vite and the TanStack Router plugin. Nothing in the API changes.
+
+### Changed
+
+- **The developer dashboard no longer uses TanStack Start.** It only ran Start in SPA mode, so it
+  used none of Start's server features. It now has an `index.html` and `src/main.tsx` like the
+  app, and the `@tanstack/react-start` package is gone. The pages, routes and look are unchanged.
+- **The dashboard's theme script is a file.** The saved theme, accent and density are applied
+  before first paint from `/dev/appearance.js` instead of an inline script, so a strict
+  Content Security Policy can cover the dashboard too.
+- **The `/dev` handler serves `index.html`** (it served Start's `_shell.html`).
+
 ## [0.1.5] - 2026-11-24
 
 A tidy-up and visibility release. Every change to your data now shows up as a named step in a
@@ -174,6 +189,7 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.0...v0.1.5
 [0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/releases/tag/v0.1.0
