@@ -55,6 +55,16 @@ var unspannedOperations = map[string]string{
 	"dataprocessing.Service.UpdateProgress":    "runs per imported row",
 	"oauth.Service.AuthenticateClient":         "a credential check inside Token, which has the span",
 	"oauth.Service.VerifyMCP":                  "runs on every MCP request",
+	"queue.dispatcherWorker.Work":              "opens the job span (job <kind>) itself, linked to the request that queued it",
+	"queue.RiverEngine.Enqueue":                "every queued job; its job span links back to this request",
+	"queue.RiverEngine.EnqueueTx":              "every queued job; its job span links back to this request",
+	"queue.RiverEngine.Start":                  "worker start-up",
+	"queue.RiverEngine.Stop":                   "worker shutdown",
+	"queue.RiverEngine.Once":                   "runs the queue once in tests and tools; each job has its span",
+	"queue.SyncEngine.Enqueue":                 "runs the job inline; the job's own service spans show it",
+	"queue.SyncEngine.EnqueueTx":               "runs the job inline; the job's own service spans show it",
+	"queue.HealthCheck.Run":                    "runs on every health probe",
+	"maintenance.Checker.Current":              "a cached read on every request",
 	// The payment drivers: bKash is HTTP (client spans, under billing.charge);
 	// the manual methods do no I/O at all.
 	"billing.BkashDriver.Initiate":              "HTTP client spans under billing.charge",
@@ -103,13 +113,17 @@ var unspannedOperations = map[string]string{
 }
 
 // TestServiceWritesOpenASpan keeps tracing complete: every exported write of
-// a module service (and of authn) opens a span with tracing.Begin, or is
+// a module service, of authn, of maintenance mode and of the queue admin
+// opens a span with tracing.Begin, or is
 // listed above with the reason it does not. Reads, handlers, routes,
 // repositories and privacy contributors are not checked; the developer
 // dashboard is tooling and is skipped.
 func TestServiceWritesOpenASpan(t *testing.T) {
 	var missing []string
-	for _, root := range []string{"../modules", "../authn"} {
+	for _, root := range []string{"../modules", "../authn", "../platform/maintenance", "../platform/queue"} {
+		// The platform packages hide their implementations behind
+		// interfaces (the queue admin is riverAdmin), so every type counts.
+		allTypes := strings.HasPrefix(root, "../platform/")
 		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -123,7 +137,7 @@ func TestServiceWritesOpenASpan(t *testing.T) {
 			if !checkedFile(entry.Name()) {
 				return nil
 			}
-			missing = append(missing, unspanned(t, path)...)
+			missing = append(missing, unspanned(t, path, allTypes)...)
 			return nil
 		})
 		if err != nil {
@@ -151,7 +165,7 @@ func checkedFile(name string) bool {
 }
 
 // unspanned lists the methods in one file that should open a span and do not.
-func unspanned(t *testing.T, path string) []string {
+func unspanned(t *testing.T, path string, allTypes bool) []string {
 	t.Helper()
 	file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
 	if err != nil {
@@ -164,7 +178,7 @@ func unspanned(t *testing.T, path string) []string {
 			continue
 		}
 		receiver := receiverName(fn)
-		if !ast.IsExported(receiver) || strings.HasSuffix(receiver, "Handler") || strings.HasSuffix(receiver, "Repository") || isRead(fn.Name.Name) {
+		if (!allTypes && !ast.IsExported(receiver)) || isPersistence(receiver) || isRead(fn.Name.Name) {
 			continue
 		}
 		key := file.Name.Name + "." + receiver + "." + fn.Name.Name
@@ -176,6 +190,17 @@ func unspanned(t *testing.T, path string) []string {
 		}
 	}
 	return out
+}
+
+// isPersistence reports handlers, repositories and stores: their work shows
+// as the request's span and its SQL spans.
+func isPersistence(receiver string) bool {
+	for _, suffix := range []string{"Handler", "Repository", "Store"} {
+		if strings.HasSuffix(receiver, suffix) {
+			return true
+		}
+	}
+	return false
 }
 
 func takesContext(fn *ast.FuncDecl) bool {

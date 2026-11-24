@@ -123,7 +123,10 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 
 `TestServiceWritesOpenASpan` (`internal/app/service_spans_test.go`) keeps it that way: a new
 service write without `tracing.Begin` fails the build's tests, unless it is listed in
-`unspannedOperations` with the reason. `ims gen module` writes services that already comply.
+`unspannedOperations` with the reason. It reads every module, `authn`, maintenance mode
+(`maintenance.down`, `maintenance.up`) and the queue admin (`queue.retry_job`, `queue.cancel_job`,
+`queue.delete_job`, `queue.pause`, `queue.resume`). The developer dashboard's own actions are
+tooling and are not checked. `ims gen module` writes services that already comply.
 
 Pass the returned `ctx` on, so queries and jobs inside the step join it. `tracing.Start` and
 `tracing.Fail` remain for spans that are not one service call.

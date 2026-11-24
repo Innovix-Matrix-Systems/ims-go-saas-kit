@@ -18,10 +18,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 const (
@@ -191,7 +193,9 @@ func (s *Service) Status(ctx context.Context) (State, error) {
 
 // Down takes the app down. It returns the new state and, when one was
 // generated or given, the bypass secret (shown once).
-func (s *Service) Down(ctx context.Context, in DownInput) (State, string, error) {
+func (s *Service) Down(ctx context.Context, in DownInput) (_ State, _ string, err error) {
+	ctx, end := tracing.Begin(ctx, "maintenance.down", attribute.Int("maintenance.retry_after", in.RetryAfter))
+	defer end(&err)
 	message := strings.TrimSpace(in.Message)
 	if message == "" {
 		message = DefaultMessage
@@ -243,7 +247,9 @@ func (s *Service) Down(ctx context.Context, in DownInput) (State, string, error)
 
 // Up brings the app back. It returns false when the app was not down
 // (nothing is recorded then).
-func (s *Service) Up(ctx context.Context, byUserID int64) (bool, error) {
+func (s *Service) Up(ctx context.Context, byUserID int64) (_ bool, err error) {
+	ctx, end := tracing.Begin(ctx, "maintenance.up")
+	defer end(&err)
 	before, _ := s.store.Get(ctx)
 	changed, err := s.store.Up(ctx, byUserID)
 	if err != nil {
