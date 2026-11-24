@@ -644,3 +644,43 @@ func mapFeatures(rows []dbgen.PackageFeature) []PackageFeature {
 	}
 	return items
 }
+
+// ReportRepository reads a tenant's invoices and what it uses of its plan.
+type ReportRepository interface {
+	// Invoice is one of the tenant's payments as an invoice (Issuer left empty).
+	Invoice(ctx context.Context, tenantID, paymentID int64) (*Invoice, error)
+	Usage(ctx context.Context, tenantID int64) (TenantUsage, error)
+}
+
+type reportRepository struct {
+	queries *dbgen.Queries
+}
+
+// NewReportRepository creates the sqlc-backed report repository.
+func NewReportRepository(queries *dbgen.Queries) ReportRepository {
+	return &reportRepository{queries: queries}
+}
+
+func (r *reportRepository) Invoice(ctx context.Context, tenantID, paymentID int64) (*Invoice, error) {
+	row, err := r.queries.InvoiceForPayment(ctx, dbgen.InvoiceForPaymentParams{PaymentID: paymentID, TenantID: tenantID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apperr.Newf(apperr.ResourceNotFound, "Payment with ID '%d' was not found.", paymentID)
+	}
+	if err != nil {
+		return nil, database.MapError("billing.invoice", err)
+	}
+	return &Invoice{
+		Number: row.InvoiceNumber, Status: row.Status, PaymentMethod: row.PaymentMethod, Amount: row.Amount,
+		Currency: row.Currency, Reference: row.GatewayRef, IssuedAt: row.CreatedAt.Time, TenantName: row.TenantName,
+		TenantEmail: row.TenantEmail, TenantPhone: row.TenantPhone, PackageName: row.PackageName, BillingCycle: row.BillingCycle,
+		PaidAt: timePtr(row.PaidAt), PeriodStart: timePtr(row.StartsAt), PeriodEnd: timePtr(row.ExpiresAt),
+	}, nil
+}
+
+func (r *reportRepository) Usage(ctx context.Context, tenantID int64) (TenantUsage, error) {
+	row, err := r.queries.TenantUsage(ctx, tenantID)
+	if err != nil {
+		return TenantUsage{}, database.MapError("billing.usage", err)
+	}
+	return TenantUsage{Users: row.Users, Branches: row.Branches, StorageBytes: row.StorageBytes}, nil
+}

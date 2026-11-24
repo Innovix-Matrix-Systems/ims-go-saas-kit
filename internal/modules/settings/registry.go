@@ -153,7 +153,7 @@ var Catalog = []Key{
 		Group:       "privacy",
 		SortOrder:   30,
 	},
-	// Security (phase 26.3).
+	// Security.
 	{
 		Name:        "security.new_sign_in_alert",
 		Type:        TypeBool,
@@ -172,7 +172,7 @@ var Catalog = []Key{
 		SortOrder:   20,
 		Scope:       ScopeTenant,
 	},
-	// Branding (phase 26.2): the e-mail layout. A tenant override applies only
+	// Branding: the e-mail layout. A tenant override applies only
 	// when the tenant's plan has custom.branding.
 	{
 		Name:        "branding.name",

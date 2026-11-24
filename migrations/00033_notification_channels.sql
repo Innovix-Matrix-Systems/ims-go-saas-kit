@@ -1,5 +1,5 @@
 -- +goose Up
--- Notification channels (phase 26.6): a notification is always in the
+-- Notification channels: a notification is always in the
 -- in-app feed ("database") and can also be delivered by mail, SMS or push
 -- through the delivery system. Users opt out per event type and channel;
 -- a missing row means "deliver".

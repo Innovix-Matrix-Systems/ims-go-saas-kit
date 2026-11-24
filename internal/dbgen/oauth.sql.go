@@ -91,7 +91,7 @@ type CreateOAuthClientParams struct {
 	CreatedBy    *int64   `json:"created_by"`
 }
 
-// Phase 22: the OAuth authorization server behind the MCP connector.
+// The OAuth authorization server behind the MCP connector.
 // ── Registered clients ─────────────────────────────────────────────
 func (q *Queries) CreateOAuthClient(ctx context.Context, arg CreateOAuthClientParams) (OauthClient, error) {
 	row := q.db.QueryRow(ctx, createOAuthClient,

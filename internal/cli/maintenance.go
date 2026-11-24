@@ -7,7 +7,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
 )
 
-// Maintenance mode (phase 24): Laravel's `artisan down` / `up`.
+// Maintenance mode: Laravel's `artisan down` / `up`.
 func registerMaintenanceCommands(registry *Registry, state *State) error {
 	for _, cmd := range []*cobra.Command{
 		newDownCommand(state),

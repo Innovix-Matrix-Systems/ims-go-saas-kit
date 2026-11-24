@@ -64,7 +64,7 @@ function LoginPage() {
       await navigate({ to: '/onboarding' })
       return
     }
-    await navigate({ to: next ?? '/' })
+    await navigate({ href: next ?? '/' })
   }
 
   const run = async (action: () => Promise<SignInOutcome>) => {

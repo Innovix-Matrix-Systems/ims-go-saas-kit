@@ -7,7 +7,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// Phase 23: social login and the login activity. The providers' own checks
+// Social login and the login activity. The providers' own checks
 // are unit-tested in internal/authn/social against fake providers; these
 // tests cover the routes and what a login leaves in the activity log.
 

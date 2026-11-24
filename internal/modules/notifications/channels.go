@@ -9,12 +9,15 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/crypto"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
-// Notification channels (phase 26.6). Every notification is in the in-app
+// Notification channels. Every notification is in the in-app
 // feed (ChannelDatabase); it can also be delivered by mail, SMS or push
 // through the delivery system. Fan-out delivers to the users it newly
 // addresses, so a retried job never mails twice. Users turn a channel off
@@ -209,7 +212,9 @@ func (s *Service) unsubscribeToken(userID int64, eventType string) (string, erro
 
 // Unsubscribe turns off every extra channel of an event type for the user a
 // token names (the one-click link in notification mails).
-func (s *Service) Unsubscribe(ctx context.Context, token string) error {
+func (s *Service) Unsubscribe(ctx context.Context, token string) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.unsubscribe")
+	defer end(&err)
 	invalid := apperr.Validation(map[string][]string{"token": {"This unsubscribe link is invalid."}})
 	if s.channels.encrypter == nil {
 		return invalid
@@ -277,7 +282,12 @@ func (s *Service) Preferences(ctx context.Context, userID int64) ([]Preference, 
 
 // SetPreferences stores a user's choices; mandatory events and channels an
 // event does not use are refused.
-func (s *Service) SetPreferences(ctx context.Context, userID int64, inputs []PreferenceInput) error {
+func (s *Service) SetPreferences(ctx context.Context, userID int64, inputs []PreferenceInput) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.set_preferences",
+		attribute.Int64("user.id", userID),
+		attribute.Int("preferences", len(inputs)),
+	)
+	defer end(&err)
 	for i, input := range inputs {
 		event, ok := Events[input.EventType]
 		field := fmt.Sprintf("preferences.%d", i)

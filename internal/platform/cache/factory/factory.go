@@ -29,12 +29,15 @@ func New(cfg config.Config, queries *dbgen.Queries) (cache.Store, func(), error)
 		return store, func() {}, nil
 
 	case "redis":
-		store := cacheredis.New(cacheredis.Options{
+		store, err := cacheredis.New(cacheredis.Options{
 			Addr:     cfg.Redis.Addr,
 			Password: cfg.Redis.Password,
 			DB:       cfg.Redis.CacheDB,
 			Prefix:   cfg.Cache.Prefix,
 		})
+		if err != nil {
+			return nil, nil, err
+		}
 		return store, func() { _ = store.Close() }, nil
 
 	case "database":

@@ -255,3 +255,11 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     Admin role, does the same for every member's, since an admin may run those exports themselves.
     A personal-data export stays its owner's whoever asks: it is the one job holding someone's
     private data rather than the organization's.
+53. **Every service write is a span, and a test makes sure of it.** Requests, queries, jobs and
+    outbound calls were traced from the start, but a trace could not say which business step its
+    queries belonged to. Each exported write of a module service now opens one span with
+    `tracing.Begin` (`<module>.<operation>`, ids and counts only), and
+    `TestServiceWritesOpenASpan` fails on a write without one unless it is listed with a reason
+    (reads, and checks that run on every request or row). Refusals carry their `apperr` code
+    without failing the span: only real failures turn a trace red. Redis uses the official
+    `redisotel` instrumentation; metrics stay Prometheus.

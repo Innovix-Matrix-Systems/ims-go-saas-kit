@@ -5,9 +5,11 @@ import (
 	"net/mail"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Mail templates for changing one's own e-mail address.
@@ -48,7 +50,9 @@ func (r *Recovery) WithEmailChange(writer EmailWriter) *Recovery {
 // RequestEmailChange checks the password and mails a confirmation link to the
 // new address. Nothing changes until the link is opened, so a typo cannot
 // lock anyone out of their account.
-func (r *Recovery) RequestEmailChange(ctx context.Context, userID int64, password, newEmail string) error {
+func (r *Recovery) RequestEmailChange(ctx context.Context, userID int64, password, newEmail string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.request_email_change", attribute.Int64("user.id", userID))
+	defer end(&err)
 	if r.emails == nil {
 		return apperr.New(apperr.OperationNotAllowed, "Changing the e-mail address is not available.")
 	}
@@ -87,7 +91,9 @@ func (r *Recovery) RequestEmailChange(ctx context.Context, userID int64, passwor
 // ConfirmEmailChange switches the account to the address the link was sent
 // to, tells the old address, and signs the user out everywhere (they sign in
 // again with the new address).
-func (r *Recovery) ConfirmEmailChange(ctx context.Context, token string) error {
+func (r *Recovery) ConfirmEmailChange(ctx context.Context, token string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.confirm_email_change")
+	defer end(&err)
 	invalid := apperr.Validation(map[string][]string{"token": {"This confirmation link is invalid or has expired."}})
 	if r.emails == nil {
 		return invalid

@@ -19,10 +19,12 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	activityexport "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity/export"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/auth"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing"
+	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
 	billingservice "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dashboard"
@@ -56,45 +58,46 @@ import (
 // Dependencies is the composition root's dependency graph. It is constructed
 // per selected mode (serve, CLI commands) and passed explicitly to consumers.
 type Dependencies struct {
-	Config        *config.Config
-	Logger        *slog.Logger
-	Responder     *httpx.Responder
-	Binder        *httpx.Binder
-	Validator     *httpx.Validator
-	I18n          *i18n.Translator
-	Health        *health.Registry
-	HealthHandler *health.Handler
-	Metrics       *metrics.Registry
-	Limiter       ratelimit.Limiter
-	DB            *database.Registry
-	Tx            *database.TxManager
-	Cache         cache.Store
-	Checker       *authz.Checker
-	Authenticator authn.Authenticator
-	TenancyOpts   tenancy.ResolveOptions
-	Platform      *Platform
-	System        *system.Module
-	Auth          *auth.Handler
-	Users         *identity.Handler
-	Privacy       *privacy.Handler
-	Tenants       *tenants.Handler
-	Branches      *branches.Handler
-	Activity      *activity.Handler
-	Roles         *access.RoleHandler
-	Permissions   *access.PermissionHandler
-	Billing       *billing.Handler
-	Onboarding    *onboarding.Handler
-	Files         *files.Handler
-	Notifications *notifications.Handler
-	Dashboard     *dashboard.Handler
-	Announcements *announcements.Handler
-	Webhooks      *webhooks.Handler
-	Processing    *dataprocessing.Handler
-	Settings      *settings.Handler
-	Flags         *featureflags.Handler
-	Dev           *dev.Handler
+	Config         *config.Config
+	Logger         *slog.Logger
+	Responder      *httpx.Responder
+	Binder         *httpx.Binder
+	Validator      *httpx.Validator
+	I18n           *i18n.Translator
+	Health         *health.Registry
+	HealthHandler  *health.Handler
+	Metrics        *metrics.Registry
+	Limiter        ratelimit.Limiter
+	DB             *database.Registry
+	Tx             *database.TxManager
+	Cache          cache.Store
+	Checker        *authz.Checker
+	Authenticator  authn.Authenticator
+	TenancyOpts    tenancy.ResolveOptions
+	Platform       *Platform
+	System         *system.Module
+	Auth           *auth.Handler
+	Users          *identity.Handler
+	Privacy        *privacy.Handler
+	Tenants        *tenants.Handler
+	Branches       *branches.Handler
+	Activity       *activity.Handler
+	ActivityExport *activityexport.Handler
+	Roles          *access.RoleHandler
+	Permissions    *access.PermissionHandler
+	Billing        *billing.Handler
+	Onboarding     *onboarding.Handler
+	Files          *files.Handler
+	Notifications  *notifications.Handler
+	Dashboard      *dashboard.Handler
+	Announcements  *announcements.Handler
+	Webhooks       *webhooks.Handler
+	Processing     *dataprocessing.Handler
+	Settings       *settings.Handler
+	Flags          *featureflags.Handler
+	Dev            *dev.Handler
 	// OAuth is the authorization server behind the MCP connector, and
-	// MCPTools the tools built from the OpenAPI document (phase 22).
+	// MCPTools the tools built from the OpenAPI document.
 	OAuth        *oauth.Handler
 	OAuthService *oauth.Service
 	MCPTools     []mcp.Tool
@@ -239,7 +242,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		Privacy:     privacy.NewHandler(platform.Privacy, authService, checker, kit),
 		Tenants:     tenants.NewHandler(tenantService, checker, kit).WithSettings(platform.Settings),
 		Branches:    branches.NewHandler(branchService, checker, kit),
-		Activity:    activity.NewHandler(activity.NewService(queries), checker, kit),
+		Activity:    activity.NewHandler(activity.NewService(activity.NewRepository(queries)), checker, kit),
 		Roles:       access.NewRoleHandler(roleService, checker, tenantLookup, kit),
 		Permissions: access.NewPermissionHandler(permissionService, checker, kit),
 		Files: files.NewHandler(platform.Files, checker, kit).WithLogoSetter(func(ctx context.Context, tenantID int64, url string) error {
@@ -247,7 +250,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			return err
 		}),
 		Notifications: notifications.NewHandler(platform.Notifications, checker, kit),
-		Dashboard:     dashboard.NewHandler(dashboard.NewService(queries), checker, kit),
+		Dashboard:     dashboard.NewHandler(dashboard.NewService(dashboard.NewRepository(queries)), checker, kit),
 		Announcements: announcements.NewHandler(platform.Announcements, checker, kit),
 		Webhooks:      webhooks.NewHandler(platform.Webhooks, checker, kit),
 		Processing:    dataprocessing.NewHandler(platform.Processing, platform.Settings, checker, kit),
@@ -305,16 +308,15 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			platform.BillingApprovals,
 			checker,
 			kit,
-		).WithUsage(billingservice.NewUsageService(platform.BillingGuard, queries)).
-			WithInvoices(billingservice.NewInvoiceService(queries, func(ctx context.Context) string {
+		).WithUsage(billingservice.NewUsageService(platform.BillingGuard, billingdomain.NewReportRepository(queries))).
+			WithInvoices(billingservice.NewInvoiceService(billingdomain.NewReportRepository(queries), func(ctx context.Context) string {
 				// The platform issues invoices under its own name (system.name).
 				value, _ := platform.Settings.Get(ctx, tenancy.Scope{}, "system.name")
 				name, _ := value.(string)
 				return name
 			})),
 	}
-	// The activity export answers HTTP with the shared kit.
-	platform.ActivityExport.WithKit(kit)
+	deps.ActivityExport = activityexport.NewHandler(platform.ActivityExport, checker, kit)
 	deps.Onboarding = onboarding.NewHandler(
 		onboarding.NewService(onboarding.Deps{
 			Repo:      onboarding.NewRepository(queries),

@@ -10,7 +10,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database/dbtest"
 )
 
-// TestSettingsMigrationRollbackAndReapply exercises the phase-11 down migration
+// TestSettingsMigrationRollbackAndReapply exercises the settings migration's down step
 // (polymorphic target -> tenant_id) and the up migration again, asserting the
 // schema returns to the target-aware shape.
 func TestSettingsMigrationRollbackAndReapply(t *testing.T) {
@@ -27,7 +27,7 @@ func TestSettingsMigrationRollbackAndReapply(t *testing.T) {
 		t.Fatal("MigrateDown reverted nothing")
 	}
 	if tableExists(t, ctx, pool, "settings_groups") || tableExists(t, ctx, pool, "feature_flags") {
-		t.Fatal("phase-11 tables should be dropped after rollback")
+		t.Fatal("settings tables should be dropped after rollback")
 	}
 
 	applied, err := database.MigrateUp(ctx, pool)

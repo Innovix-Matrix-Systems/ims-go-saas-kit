@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"mime"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/aws/smithy-go"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // s3PresignTTL is how long URL() links last on a bucket without a public URL.
@@ -42,6 +44,8 @@ func newS3Disk(cfg config.S3, public bool) (*s3Disk, error) {
 		// services (older MinIO, Backblaze B2, some R2 setups).
 		RequestChecksumCalculation: aws.RequestChecksumCalculationWhenRequired,
 		ResponseChecksumValidation: aws.ResponseChecksumValidationWhenRequired,
+		// Every bucket call is a client span under the operation that made it.
+		HTTPClient: &http.Client{Transport: tracing.Transport(nil)},
 	}
 	client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
 		if cfg.Endpoint != "" {

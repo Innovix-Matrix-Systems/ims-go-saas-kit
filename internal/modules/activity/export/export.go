@@ -9,24 +9,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -59,22 +55,14 @@ type Exporter struct {
 	disks      *storage.Registry
 	cfg        config.Processing
 	queue      queue.Engine
-	queries    *dbgen.Queries
-	checker    *authz.Checker
+	repo       Repository
 	logger     *slog.Logger
-	httpx.Kit
 }
 
 // New creates the exporter.
 func New(feed *activity.Service, processing *dataprocessing.Service, disks *storage.Registry, cfg config.Processing,
-	engine queue.Engine, queries *dbgen.Queries, checker *authz.Checker, logger *slog.Logger) *Exporter {
-	return &Exporter{feed: feed, processing: processing, disks: disks, cfg: cfg, queue: engine, queries: queries, checker: checker, logger: logger}
-}
-
-// WithKit gives the exporter its HTTP responder (for the route).
-func (e *Exporter) WithKit(kit httpx.Kit) *Exporter {
-	e.Kit = kit
-	return e
+	engine queue.Engine, repo Repository, logger *slog.Logger) *Exporter {
+	return &Exporter{feed: feed, processing: processing, disks: disks, cfg: cfg, queue: engine, repo: repo, logger: logger}
 }
 
 // RegisterJobs adds the export job and lets a failed export be retried.
@@ -113,69 +101,11 @@ type jobPayload struct {
 	JobID int64 `json:"job_id"`
 }
 
-// RegisterRoutes mounts POST /activity/export (tenant-resolved): an
-// organization's own log, or the organization a staff member acts in.
-func (e *Exporter) RegisterRoutes(r chi.Router) {
-	r.With(authz.RequireAny(e.checker, e.Responder, authz.PermActivityView, authz.PermActivityViewAll)).
-		Post("/activity/export", e.start)
-}
-
-// RegisterInternalRoutes mounts POST /internal/activity/export for staff:
-// the platform log (every organization and the system log). It sits with
-// the internal routes because staff without acting headers may not write
-// through the tenant routes.
-func (e *Exporter) RegisterInternalRoutes(r chi.Router) {
-	r.With(authz.Require(e.checker, authz.PermActivityViewAll, e.Responder)).
-		Post("/internal/activity/export", e.start)
-}
-
-// Request is the POST /activity/export payload: the feed's filters.
-type Request struct {
-	TenantID    string     `json:"tenant_id"`
-	SubjectType string     `json:"subject_type" validate:"omitempty,max=100"`
-	ActorID     int64      `json:"actor_id" validate:"omitempty,gt=0"`
-	Action      string     `json:"action" validate:"omitempty,max=150"`
-	From        *time.Time `json:"from"`
-	To          *time.Time `json:"to"`
-	Search      string     `json:"search" validate:"omitempty,max=255"`
-}
-
-func (e *Exporter) start(w http.ResponseWriter, r *http.Request) {
-	var req Request
-	if !e.Bind(w, r, &req) {
-		return
-	}
-	identity, _ := authn.IdentityFromContext(r.Context())
-	system := false
-	if identity != nil && !identity.Impersonated() {
-		can, err := e.checker.Can(r.Context(), identity.UserID, authz.PermActivityViewAll)
-		if err != nil {
-			e.Error(w, r, err)
-			return
-		}
-		system = can
-	}
-	filters := Filters{System: system, SubjectType: req.SubjectType, ActorID: req.ActorID, Action: req.Action, Search: strings.TrimSpace(req.Search)}
-	if system {
-		filters.Tenant = req.TenantID
-	}
-	if req.From != nil {
-		filters.From = *req.From
-	}
-	if req.To != nil {
-		filters.To = *req.To
-	}
-	job, err := e.Start(r.Context(), tenancy.From(r), authn.UserID(r), filters)
-	if err != nil {
-		e.Error(w, r, err)
-		return
-	}
-	e.Data(w, r, http.StatusAccepted, dataprocessing.NewResponse(*job))
-}
-
 // Start records the export job and queues it. A staff export (System,
 // outside any organization) belongs to no organization.
-func (e *Exporter) Start(ctx context.Context, scope tenancy.Scope, actorID int64, filters Filters) (*dataprocessing.Job, error) {
+func (e *Exporter) Start(ctx context.Context, scope tenancy.Scope, actorID int64, filters Filters) (_ *dataprocessing.Job, err error) {
+	ctx, end := tracing.Begin(ctx, "activity.start_export", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	// Fail early on a bad organization filter rather than in the worker.
 	if _, err := e.feed.Feed(ctx, scope, activity.Reader{System: filters.System}, toFeedFilter(filters, "", 1)); err != nil {
 		return nil, err
@@ -204,7 +134,9 @@ func toFeedFilter(filters Filters, cursor string, perPage int) activity.Filter {
 }
 
 // Process writes every matching entry into an xlsx file and attaches it.
-func (e *Exporter) Process(ctx context.Context, jobRowID int64) error {
+func (e *Exporter) Process(ctx context.Context, jobRowID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "activity.process_export", attribute.Int64("job.id", jobRowID))
+	defer end(&err)
 	job, err := e.processing.Get(ctx, tenancy.Scope{Internal: true}, jobRowID)
 	if err != nil {
 		return err
@@ -321,12 +253,12 @@ func (e *Exporter) loadNames(ctx context.Context, items []activity.Item, names m
 	if len(missing) == 0 {
 		return
 	}
-	rows, err := e.queries.ListTenantsByIDs(ctx, missing)
+	found, err := e.repo.TenantNames(ctx, missing)
 	if err != nil {
 		return
 	}
-	for _, row := range rows {
-		names[row.ID] = row.Name
+	for id, name := range found {
+		names[id] = name
 	}
 }
 

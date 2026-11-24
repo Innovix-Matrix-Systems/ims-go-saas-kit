@@ -17,7 +17,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
 )
 
-// ActingUserHeader makes one request run as another user (phase 21).
+// ActingUserHeader makes one request run as another user.
 const ActingUserHeader = "X-Acting-User"
 
 // The acting headers a platform account sends to work inside one tenant.

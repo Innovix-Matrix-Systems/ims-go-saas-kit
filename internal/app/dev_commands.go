@@ -298,7 +298,7 @@ func devCommands(p *Platform, permissions *access.PermissionService, healthRegis
 				if days < 1 {
 					return fmt.Errorf("days must be at least 1")
 				}
-				deleted, err := activity.NewService(p.Tx.Queries()).Purge(ctx, days)
+				deleted, err := activity.NewService(activity.NewRepository(p.Tx.Queries())).Purge(ctx, days)
 				if err != nil {
 					return err
 				}

@@ -1,6 +1,6 @@
 Hello{{if .To.Name}} {{.To.Name}}{{end}},
 
-The personal-data export you asked for is ready. Download it while signed in:
+The personal-data export you asked for is ready. Open this link and download it while signed in:
 
 {{.Data.url}}
 

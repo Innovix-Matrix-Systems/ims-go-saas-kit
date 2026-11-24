@@ -83,7 +83,10 @@ you look into something.
 | SQL | `db CreateBranch` (the sqlc query name) | the statement, never its arguments; only inside a trace |
 | queue jobs | `job webhook.deliver` | a child of the request that queued it, even on another process; the last failed attempt marks it |
 | scheduled tasks | `task webhook.prune` | a failed run marks the span |
-| outbound HTTP | `POST hooks.example.com` | webhooks, Twilio SMS, bKash, social sign-in, MCP client metadata; passes `traceparent` on |
+| outbound HTTP | `POST hooks.example.com` | webhooks, Twilio SMS, bKash, social sign-in, MCP client metadata, S3/R2/MinIO; passes `traceparent` on |
+| Redis | `get`, `set`, `eval` … (the command) | the cache and locks with `CACHE_DRIVER=redis`, through the official `redisotel` |
+| mail and delivery | `delivery.queue`, `delivery.deliver`, `mail.smtp_send` | the template and channel, the SMTP host; never an address |
+| every service write | `identity.create`, `billing.approve_payment`, `privacy.erase` … | see below |
 | panics | an `exception` event with the stack | on the request's span |
 
 One request in Jaeger: the route-named server span, then every query it ran, timed. The sign-in
@@ -92,27 +95,47 @@ check (`GetToken`, `GetAuthUser`, `UserPermissionNames`) comes before the handle
 
 ![A GET /api/v1/branch trace in Jaeger: the request span and its nine SQL queries](../images/tracing-request.png)
 
-**Spans of your own.** Wrap a step that is worth seeing on its own (a charge, an import, a call
-to another system). The branches service (`branches.create`, `branches.update`) and billing
-(`billing.subscribe` with a child `billing.charge`) are the examples:
+**Every service write is a span.** Each exported write of a module service (create, update,
+delete, import, erase, sign in, approve a payment, deliver an announcement…) opens one, named
+`<module>.<operation>`, so a trace reads *request → `identity.create` → its queries* instead of a
+flat list of queries:
 
 ```go
-ctx, span := tracing.Start(ctx, "invoices.issue", attribute.Int64("tenant.id", tenantID))
-defer span.End()
-…
-if err != nil {
-	return nil, tracing.Fail(ctx, err) // marks the span failed, returns err
-}
+func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateParams) (_ *Branch, err error) {
+	ctx, end := tracing.Begin(ctx, "branches.create", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
+	…
+	tracing.Annotate(ctx, attribute.Int64("branch.id", branch.ID)) // known only part way
 ```
 
-Pass the returned `ctx` on, so queries and jobs inside the step join it. Keep attributes to ids
-and enums. Never put personal data or secrets on a span.
+- **Name** `<module>.<operation>` in snake case: `identity.assign_roles`, `notifications.fan_out`.
+  A job's service span sits under its `job <kind>` span.
+- **Attributes** are ids and counts: `tenant.id`, the target `user.id` (the actor is already
+  `enduser.id` on the server span), the entity id, `roles`, `recipients`. Never names, e-mail
+  addresses, phone numbers, tokens or payloads.
+- **Errors** reach the span through the named `err` and `defer end(&err)`. Every error sets
+  `error.type` to its `apperr` code. A failure (a 5xx code, or an error that is not an `apperr`)
+  also marks the span failed with the stack; a refusal (validation, not found, conflict) does not,
+  the same way a `409` does not fail the request.
+- **Reads** (`Get`, `List`, `Count` …) open no span: they are one or two queries, already spans.
+  Operations on every request or row (the permission and plan checks, the activity recorder,
+  token checks, progress updates) open none either.
+
+`TestServiceWritesOpenASpan` (`internal/app/service_spans_test.go`) keeps it that way: a new
+service write without `tracing.Begin` fails the build's tests, unless it is listed in
+`unspannedOperations` with the reason. It reads every module, `authn`, maintenance mode
+(`maintenance.down`, `maintenance.up`) and the queue admin (`queue.retry_job`, `queue.cancel_job`,
+`queue.delete_job`, `queue.pause`, `queue.resume`). The developer dashboard's own actions are
+tooling and are not checked. `ims gen module` writes services that already comply.
+
+Pass the returned `ctx` on, so queries and jobs inside the step join it. `tracing.Start` and
+`tracing.Fail` remain for spans that are not one service call.
 
 Here `branches.create` groups the work of creating a branch under the request: the plan-limit
 check, the transaction with its advisory lock and count, and the insert. That insert failed (the
-branch name was taken), so the query span and `branches.create`, through `tracing.Fail`, are
-marked red, followed by the `ROLLBACK`. The request answered `409`: the caller's mistake, so the
-server span itself is not marked failed.
+branch name was taken): the query span is red and followed by the `ROLLBACK`, and
+`branches.create` carries `error.type=CONFLICT`. The request answered `409`: the caller's mistake,
+so neither the operation nor the server span is marked failed.
 
 ![A POST /api/v1/branch trace in Jaeger: branches.create with its queries, a failed insert and the rollback](../images/tracing-module-spans.png)
 

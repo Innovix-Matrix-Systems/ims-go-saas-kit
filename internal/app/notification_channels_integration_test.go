@@ -11,7 +11,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// Notification channels and preferences (phase 26.6): a notification in the
+// Notification channels and preferences: a notification in the
 // feed can also be mailed, texted or pushed to the users it addresses, who
 // opt out per event type (docs/guides/notifications.md).
 

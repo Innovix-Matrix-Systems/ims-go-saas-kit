@@ -25,7 +25,7 @@ export default defineConfig({
       '/docs': apiOrigin,
       '/storage': apiOrigin,
       '/up': apiOrigin,
-      // MCP connector (phase 22): the endpoint, its OAuth pages and the
+      // MCP connector: the endpoint, its OAuth pages and the
       // discovery documents clients read first.
       '/mcp': apiOrigin,
       '/oauth': apiOrigin,

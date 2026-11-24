@@ -15,7 +15,7 @@ import (
 )
 
 // Account security that needs both authn and the settings module: the
-// two-factor policy and the new sign-in alert (phase 26).
+// two-factor policy and the new sign-in alert.
 
 // twoFactorPolicy requires two-factor for a tenant's users when the tenant's
 // security.require_two_factor setting is on, and for platform accounts

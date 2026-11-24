@@ -1,5 +1,5 @@
 -- +goose Up
--- Self-service sessions (phase 26.3): where and with what each token was
+-- Self-service sessions: where and with what each token was
 -- issued, so users can recognise and revoke their own sessions.
 ALTER TABLE personal_access_tokens
     ADD COLUMN ip         text,

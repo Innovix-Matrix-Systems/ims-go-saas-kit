@@ -1,5 +1,5 @@
 -- +goose Up
--- Invite a user (phase 26.5): an admin creates the user inactive and
+-- Invite a user: an admin creates the user inactive and
 -- invites them; the invitee sets a password, which activates the account.
 -- invited_at / invited_by: the latest invitation; invitation_accepted_at:
 -- when the invitee set their password (an old link cannot reactivate a user

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
@@ -16,6 +17,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -57,7 +59,7 @@ func (s *Service) WithActivity(recorder *activity.Recorder) *Service {
 // (implemented by authn.Recovery).
 type Verifier interface {
 	SendVerificationTo(ctx context.Context, userID int64) error
-	// SendInvitation mails an invitation link (phase 26.5); inviter is the
+	// SendInvitation mails an invitation link; inviter is the
 	// name shown in the mail.
 	SendInvitation(ctx context.Context, userID int64, inviter string) error
 }
@@ -135,7 +137,9 @@ type CreateParams struct {
 }
 
 // Create adds a user with role assignments.
-func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateParams) (*User, error) {
+func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateParams) (_ *User, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.create", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	tenantID := scope.EffectiveTenantID()
 	if scope.Internal {
 		tenantID = 0
@@ -252,7 +256,12 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 // ResendInvitation mails a new invitation link (the old one stops working).
 // It also invites an existing user who has never signed in, such as one
 // created with a password nobody used. A user who joined is refused.
-func (s *Service) ResendInvitation(ctx context.Context, scope tenancy.Scope, actorID, targetID int64) error {
+func (s *Service) ResendInvitation(ctx context.Context, scope tenancy.Scope, actorID, targetID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "identity.resend_invitation",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", targetID),
+	)
+	defer end(&err)
 	target, err := s.Get(ctx, scope, targetID)
 	if err != nil {
 		return err
@@ -354,7 +363,12 @@ func keepOrClear(input, current *string) *string {
 }
 
 // Update modifies a user; super admins are protected from non-super actors.
-func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateParams) (*User, error) {
+func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateParams) (_ *User, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.update",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", id),
+	)
+	defer end(&err)
 	target, err := s.Get(ctx, scope, id)
 	if err != nil {
 		return nil, err
@@ -458,7 +472,12 @@ func (input UpdateParams) changes() map[string]any {
 }
 
 // Delete soft-deletes a user, protecting super admins and self-deletion.
-func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) error {
+func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "identity.delete",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", id),
+	)
+	defer end(&err)
 	target, err := s.Get(ctx, scope, id)
 	if err != nil {
 		return err
@@ -492,7 +511,13 @@ func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id i
 }
 
 // AssignRoles replaces a user's roles.
-func (s *Service) AssignRoles(ctx context.Context, scope tenancy.Scope, actorID, targetID int64, roleIDs []int64) (*User, error) {
+func (s *Service) AssignRoles(ctx context.Context, scope tenancy.Scope, actorID, targetID int64, roleIDs []int64) (_ *User, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.assign_roles",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", targetID),
+		attribute.Int("roles", len(roleIDs)),
+	)
+	defer end(&err)
 	if len(roleIDs) == 0 {
 		return nil, apperr.Validation(map[string][]string{
 			"roles": {"The roles field must have at least one item."},
@@ -533,7 +558,13 @@ func (s *Service) AssignRoles(ctx context.Context, scope tenancy.Scope, actorID,
 }
 
 // GrantRole adds one role without replacing the user's existing roles.
-func (s *Service) GrantRole(ctx context.Context, scope tenancy.Scope, targetID, roleID int64) (*User, error) {
+func (s *Service) GrantRole(ctx context.Context, scope tenancy.Scope, targetID, roleID int64) (_ *User, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.grant_role",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", targetID),
+		attribute.Int64("role.id", roleID),
+	)
+	defer end(&err)
 	target, err := s.Get(ctx, scope, targetID)
 	if err != nil {
 		return nil, err
@@ -549,7 +580,13 @@ func (s *Service) GrantRole(ctx context.Context, scope tenancy.Scope, targetID, 
 }
 
 // RevokeRole removes one role without touching the user's other roles.
-func (s *Service) RevokeRole(ctx context.Context, scope tenancy.Scope, targetID, roleID int64) (*User, error) {
+func (s *Service) RevokeRole(ctx context.Context, scope tenancy.Scope, targetID, roleID int64) (_ *User, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.revoke_role",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", targetID),
+		attribute.Int64("role.id", roleID),
+	)
+	defer end(&err)
 	target, err := s.Get(ctx, scope, targetID)
 	if err != nil {
 		return nil, err
@@ -576,7 +613,12 @@ func (s *Service) validateRoleForTarget(ctx context.Context, scope tenancy.Scope
 }
 
 // ChangePassword sets a new password (admin flow) and revokes active tokens.
-func (s *Service) ChangePassword(ctx context.Context, scope tenancy.Scope, actorID, targetID int64, password string) error {
+func (s *Service) ChangePassword(ctx context.Context, scope tenancy.Scope, actorID, targetID int64, password string) (err error) {
+	ctx, end := tracing.Begin(ctx, "identity.change_password",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", targetID),
+	)
+	defer end(&err)
 	target, err := s.Get(ctx, scope, targetID)
 	if err != nil {
 		return err
@@ -609,7 +651,12 @@ func (s *Service) ChangePassword(ctx context.Context, scope tenancy.Scope, actor
 // mailed, and the reset is a user.two_factor_reset activity row. Their next
 // sign-in needs only the password (or sets two-factor up again when the
 // tenant requires it).
-func (s *Service) ResetTwoFactor(ctx context.Context, scope tenancy.Scope, actorID, targetID int64) error {
+func (s *Service) ResetTwoFactor(ctx context.Context, scope tenancy.Scope, actorID, targetID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "identity.reset_two_factor",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", targetID),
+	)
+	defer end(&err)
 	if s.twoFactor == nil {
 		return apperr.New(apperr.OperationNotAllowed, "Two-factor authentication is not configured.")
 	}
@@ -627,7 +674,9 @@ func (s *Service) ResetTwoFactor(ctx context.Context, scope tenancy.Scope, actor
 }
 
 // ProfileUpdate updates the authenticated user's own profile.
-func (s *Service) ProfileUpdate(ctx context.Context, userID int64, input UpdateParams) (*User, error) {
+func (s *Service) ProfileUpdate(ctx context.Context, userID int64, input UpdateParams) (_ *User, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.update_profile", attribute.Int64("user.id", userID))
+	defer end(&err)
 	target, err := s.repo.Get(ctx, tenancy.Unscoped(), userID)
 	if err != nil {
 		return nil, err
@@ -679,7 +728,9 @@ func (s *Service) GetInvitationPreview(ctx context.Context, userID int64) (*Invi
 
 // ProfileChangePassword verifies the current password before updating, then
 // signs out every other device; the current token keeps working.
-func (s *Service) ProfileChangePassword(ctx context.Context, userID, currentTokenID int64, currentPassword, newPassword string) error {
+func (s *Service) ProfileChangePassword(ctx context.Context, userID, currentTokenID int64, currentPassword, newPassword string) (err error) {
+	ctx, end := tracing.Begin(ctx, "identity.change_own_password", attribute.Int64("user.id", userID))
+	defer end(&err)
 	target, err := s.repo.Get(ctx, tenancy.Unscoped(), userID)
 	if err != nil {
 		return err
@@ -700,7 +751,12 @@ func (s *Service) ProfileChangePassword(ctx context.Context, userID, currentToke
 }
 
 // SwitchBranch changes the user's active branch.
-func (s *Service) SwitchBranch(ctx context.Context, scope tenancy.Scope, userID, branchID int64) (*User, error) {
+func (s *Service) SwitchBranch(ctx context.Context, scope tenancy.Scope, userID, branchID int64) (_ *User, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.switch_branch",
+		attribute.Int64("user.id", userID),
+		attribute.Int64("branch.id", branchID),
+	)
+	defer end(&err)
 	tenantID := scope.EffectiveTenantID()
 	if tenantID == 0 {
 		return nil, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
@@ -723,7 +779,9 @@ func (s *Service) SwitchBranch(ctx context.Context, scope tenancy.Scope, userID,
 // ClearBranch takes the user back to every branch: no branch switched to,
 // so lists span the organization and new work is stamped with their own
 // branch.
-func (s *Service) ClearBranch(ctx context.Context, userID int64) (*User, error) {
+func (s *Service) ClearBranch(ctx context.Context, userID int64) (_ *User, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.clear_branch", attribute.Int64("user.id", userID))
+	defer end(&err)
 	if err := s.repo.ClearActiveBranch(ctx, userID); err != nil {
 		return nil, err
 	}

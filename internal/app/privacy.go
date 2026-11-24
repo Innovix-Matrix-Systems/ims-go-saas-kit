@@ -67,7 +67,7 @@ func newPrivacy(cfg *config.Config, tx *database.TxManager, disks *storage.Regis
 		WithActivity(recorder).
 		WithSettings(settingsService).
 		WithDelivery(deliveryService).
-		WithExports(processing, cfg.Processing, engine, cfg.App.URL)
+		WithExports(processing, cfg.Processing, engine, cfg.Auth.DataExportURL)
 	if err := service.RegisterJobs(jobs); err != nil {
 		return nil, err
 	}

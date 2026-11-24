@@ -3,9 +3,12 @@ package service
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // AssignInput moves a tenant onto a plan from the admin side (support staff,
@@ -32,7 +35,12 @@ func (s *SubscriptionService) WithCurrency(currency string) *SubscriptionService
 // It runs in one transaction under the same per-tenant lock as Subscribe.
 // Hidden (inactive) packages can be assigned; overrides start empty because
 // they belong to the subscription, not the tenant.
-func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (*domain.Subscription, *domain.Payment, error) {
+func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (_ *domain.Subscription, _ *domain.Payment, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.assign_plan",
+		attribute.Int64("tenant.id", input.TenantID),
+		attribute.Int64("package.id", input.PackageID),
+	)
+	defer end(&err)
 	if input.PaymentMethod != "" && !domain.IsManualMethod(input.PaymentMethod) {
 		return nil, nil, apperr.Validation(map[string][]string{
 			"payment_method": {"Only cash and bank transfer payments can be recorded manually."},

@@ -32,7 +32,7 @@ type settingsGroupJSON struct {
 	Settings []settingItemJSON `json:"settings"`
 }
 
-// TestSettingsAndFeatureFlagsEndToEnd exercises the phase-11 REST surface
+// TestSettingsAndFeatureFlagsEndToEnd exercises the settings and feature-flags REST surface
 // through the real router: grouped reads, tenant-admin writes, internal
 // target-aware writes, permission boundaries and validation.
 func TestSettingsAndFeatureFlagsEndToEnd(t *testing.T) {

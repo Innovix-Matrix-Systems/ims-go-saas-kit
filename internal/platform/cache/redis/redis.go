@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
@@ -29,16 +30,19 @@ type Store struct {
 
 var _ cache.Store = (*Store)(nil)
 
-// New creates the Redis cache store.
-func New(opts Options) *Store {
-	return &Store{
-		client: goredis.NewClient(&goredis.Options{
-			Addr:     opts.Addr,
-			Password: opts.Password,
-			DB:       opts.DB,
-		}),
-		prefix: opts.Prefix,
+// New creates the Redis cache store. Every command is a span (redisotel),
+// a no-op while tracing is off.
+func New(opts Options) (*Store, error) {
+	client := goredis.NewClient(&goredis.Options{
+		Addr:     opts.Addr,
+		Password: opts.Password,
+		DB:       opts.DB,
+	})
+	if err := redisotel.InstrumentTracing(client); err != nil {
+		_ = client.Close()
+		return nil, fmt.Errorf("cache: redis tracing: %w", err)
 	}
+	return &Store{client: client, prefix: opts.Prefix}, nil
 }
 
 // Close closes the underlying client.

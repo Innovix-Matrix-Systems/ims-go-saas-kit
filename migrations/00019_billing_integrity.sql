@@ -1,5 +1,5 @@
 -- +goose Up
--- Phase 14 (H27/M17): the public payment callback resolves payments by
+-- The public payment callback resolves payments by
 -- gateway_ref, so it must be indexed and unique. Older manual references
 -- (CASH-<unix seconds>) could collide; de-duplicate them first by suffixing
 -- the later rows with their id.

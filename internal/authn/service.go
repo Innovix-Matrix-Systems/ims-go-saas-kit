@@ -5,11 +5,13 @@ import (
 	"math"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn/social"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Login status values returned by the login flow.
@@ -104,6 +106,8 @@ func (s *Service) WithSignInWatcher(watcher SignInWatcher) *Service {
 // only after the password matches, so login cannot be used to enumerate
 // accounts or their state.
 func (s *Service) Login(ctx context.Context, email, password, device, ip string) (result *LoginResult, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.login")
+	defer end(&err)
 	defer func() { s.recordLogin(ctx, MethodPassword, email, device, result, err) }()
 
 	record, err := s.checkPassword(ctx, email, password, ip)
@@ -121,6 +125,8 @@ func (s *Service) Login(ctx context.Context, email, password, device, ip string)
 // it and then issues its own. otpRequired is true when an OTP was sent and
 // SignInOTP must follow.
 func (s *Service) SignIn(ctx context.Context, email, password, ip string) (record *UserRecord, otpRequired bool, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.sign_in")
+	defer end(&err)
 	record, err = s.checkPassword(ctx, email, password, ip)
 	if err != nil {
 		return nil, false, err
@@ -135,7 +141,9 @@ func (s *Service) SignIn(ctx context.Context, email, password, ip string) (recor
 }
 
 // SignInOTP completes SignIn when an OTP was required. It issues no token.
-func (s *Service) SignInOTP(ctx context.Context, email, code, ip string) (*UserRecord, error) {
+func (s *Service) SignInOTP(ctx context.Context, email, code, ip string) (_ *UserRecord, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.sign_in_otp")
+	defer end(&err)
 	record, err := s.checkOTP(ctx, email, code, ip)
 	if err != nil {
 		return nil, err
@@ -171,6 +179,8 @@ func (s *Service) checkPassword(ctx context.Context, email, password, ip string)
 
 // VerifyOTP completes a login started with an OTP challenge.
 func (s *Service) VerifyOTP(ctx context.Context, email, code, device, ip string) (result *LoginResult, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.verify_otp")
+	defer end(&err)
 	defer func() { s.recordLogin(ctx, MethodPassword, email, device, result, err) }()
 
 	record, err := s.checkOTP(ctx, email, code, ip)
@@ -224,6 +234,8 @@ func (s *Service) SocialProviders() []social.Provider {
 // provider's (5xx) does not count, so an outage cannot lock out an office
 // behind one IP.
 func (s *Service) SocialLogin(ctx context.Context, provider string, proof social.Proof, device, ip string) (result *LoginResult, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.social_login", attribute.String("auth.provider", provider))
+	defer end(&err)
 	p, ok := s.social.Get(provider)
 	if !ok {
 		return nil, apperr.New(apperr.ResourceNotFound, "This sign-in method is not available.")
@@ -286,7 +298,9 @@ func (s *Service) recordLogin(ctx context.Context, method, email, device string,
 }
 
 // Logout revokes the caller's token for one device.
-func (s *Service) Logout(ctx context.Context, userID int64, device string) error {
+func (s *Service) Logout(ctx context.Context, userID int64, device string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.logout", attribute.Int64("user.id", userID))
+	defer end(&err)
 	return s.auth.Revoke(ctx, userID, device)
 }
 

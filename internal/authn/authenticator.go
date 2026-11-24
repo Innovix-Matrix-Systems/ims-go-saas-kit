@@ -15,12 +15,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // ModelTypeUser is the tokenable/RBAC model type used for user rows.
@@ -175,7 +177,9 @@ func (a *OpaqueAuthenticator) Verify(ctx context.Context, raw string) (*Identity
 }
 
 // Revoke deletes the token row for one device.
-func (a *OpaqueAuthenticator) Revoke(ctx context.Context, userID int64, device string) error {
+func (a *OpaqueAuthenticator) Revoke(ctx context.Context, userID int64, device string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.revoke_token", attribute.Int64("user.id", userID))
+	defer end(&err)
 	if _, err := a.queries.DeleteTokenByDevice(ctx, dbgen.DeleteTokenByDeviceParams{
 		TokenableType: ModelTypeUser,
 		TokenableID:   userID,
@@ -188,7 +192,9 @@ func (a *OpaqueAuthenticator) Revoke(ctx context.Context, userID int64, device s
 
 // RevokeAll deletes every token for the user (password change, ban), and
 // revokes their MCP connections so a refresh token cannot bring one back.
-func (a *OpaqueAuthenticator) RevokeAll(ctx context.Context, userID int64) error {
+func (a *OpaqueAuthenticator) RevokeAll(ctx context.Context, userID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.revoke_all_tokens", attribute.Int64("user.id", userID))
+	defer end(&err)
 	if err := a.revokeConnections(ctx, userID); err != nil {
 		return err
 	}
@@ -203,7 +209,9 @@ func (a *OpaqueAuthenticator) RevokeAll(ctx context.Context, userID int64) error
 
 // RevokeOthers deletes every token of the user except keepTokenID, MCP
 // connections included.
-func (a *OpaqueAuthenticator) RevokeOthers(ctx context.Context, userID, keepTokenID int64) error {
+func (a *OpaqueAuthenticator) RevokeOthers(ctx context.Context, userID, keepTokenID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.revoke_other_tokens", attribute.Int64("user.id", userID))
+	defer end(&err)
 	if err := a.revokeConnections(ctx, userID); err != nil {
 		return err
 	}

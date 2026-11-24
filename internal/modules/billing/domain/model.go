@@ -215,3 +215,30 @@ func optionalString(value string) *string {
 	}
 	return &value
 }
+
+// Invoice is everything an invoice document shows for one payment.
+type Invoice struct {
+	Number        string
+	Status        string
+	PaymentMethod string
+	Amount        int64
+	Currency      string
+	Reference     string
+	IssuedAt      time.Time
+	PaidAt        *time.Time
+	Issuer        string
+	TenantName    string
+	TenantEmail   string
+	TenantPhone   string
+	PackageName   string
+	BillingCycle  string
+	PeriodStart   *time.Time
+	PeriodEnd     *time.Time
+}
+
+// TenantUsage is what a tenant holds of its plan's limits.
+type TenantUsage struct {
+	Users        int64
+	Branches     int64
+	StorageBytes int64
+}

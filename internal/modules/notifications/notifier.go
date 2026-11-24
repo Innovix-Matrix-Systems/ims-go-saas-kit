@@ -6,13 +6,22 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // NotifyRenewalReminder creates the in-app renewal reminder for a tenant
 // (billing depends on this through its small Notifier interface).
-func (s *Service) NotifyRenewalReminder(ctx context.Context, tenantID, subscriptionID int64, expiresAt time.Time, daysLeft int) error {
+func (s *Service) NotifyRenewalReminder(ctx context.Context, tenantID, subscriptionID int64, expiresAt time.Time, daysLeft int) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.renewal_reminder",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("subscription.id", subscriptionID),
+		attribute.Int("days_left", daysLeft),
+	)
+	defer end(&err)
 	tenant := tenantID
 	data, err := json.Marshal(map[string]any{
 		"subscription_id": subscriptionID,

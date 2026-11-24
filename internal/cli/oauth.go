@@ -12,7 +12,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
 )
 
-// The MCP connector's manually registered OAuth clients (phase 22), for ops
+// The MCP connector's manually registered OAuth clients, for ops
 // and scripts. The same as /api/v1/oauth-client.
 func registerOAuthCommands(registry *Registry, state *State) error {
 	for _, cmd := range []*cobra.Command{

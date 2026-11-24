@@ -11,7 +11,7 @@ import { queryClient } from '../query'
 export const Route = createFileRoute('/_app')({
   beforeLoad: ({ location }) => {
     if (!isSignedIn()) {
-      throw redirect({ to: '/login', search: { next: location.pathname === '/' ? undefined : location.pathname } })
+      throw redirect({ to: '/login', search: { next: location.href === '/' ? undefined : location.href } })
     }
   },
   // The profile and permissions load before any page renders, so pages can

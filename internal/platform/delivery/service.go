@@ -9,10 +9,13 @@ import (
 	"log/slog"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/crypto"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/i18n"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // KindSend is the delivery job kind: one message on one channel.
@@ -191,7 +194,12 @@ func (s *Service) SendNow(ctx context.Context, message Message) error {
 	return s.dispatch(ctx, message, true)
 }
 
-func (s *Service) dispatch(ctx context.Context, message Message, now bool) error {
+func (s *Service) dispatch(ctx context.Context, message Message, now bool) (err error) {
+	ctx, end := tracing.Begin(ctx, "delivery.queue",
+		attribute.String("delivery.template", message.Template),
+		attribute.Int("delivery.channels", len(message.channels())),
+	)
+	defer end(&err)
 	if message.To.Locale == "" {
 		message.To.Locale = string(i18n.FromContext(ctx))
 	}
@@ -258,7 +266,13 @@ func (s *Service) queueOne(ctx context.Context, channel Channel, message Message
 
 // deliver renders and sends one channel and records the outcome. A returned
 // error makes the queue retry the job.
-func (s *Service) deliver(ctx context.Context, id int64, channel Channel, message Message) error {
+func (s *Service) deliver(ctx context.Context, id int64, channel Channel, message Message) (err error) {
+	ctx, end := tracing.Begin(ctx, "delivery.deliver",
+		attribute.Int64("delivery.id", id),
+		attribute.String("delivery.channel", string(channel)),
+		attribute.String("delivery.template", message.Template),
+	)
+	defer end(&err)
 	sender, ok := s.senders[channel]
 	if !ok {
 		err := fmt.Errorf("delivery: channel %q has no sender", channel)

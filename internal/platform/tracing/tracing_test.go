@@ -10,9 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -255,6 +257,44 @@ func TestFailAndRecordPanic(t *testing.T) {
 	panicked := spanNamed(t, exporter, "panicking")
 	if panicked.Status.Code != codes.Error || panicked.Events[0].Name != "exception" {
 		t.Errorf("panic span = %+v", panicked.Status)
+	}
+}
+
+func TestBeginRecordsTheOutcome(t *testing.T) {
+	exporter := record(t)
+	operation := func(name string, result error) {
+		_, end := Begin(context.Background(), name, attribute.Int64("tenant.id", 7))
+		err := result
+		end(&err)
+	}
+	operation("ok", nil)
+	operation("refused", apperr.New(apperr.ResourceNotFound, "Branch not found."))
+	operation("broken", errors.New("connection reset"))
+
+	ok := spanNamed(t, exporter, "ok")
+	if ok.Status.Code == codes.Error || len(ok.Events) != 0 {
+		t.Errorf("ok span = %v with %d events, want unset and none", ok.Status.Code, len(ok.Events))
+	}
+	if id, _ := attr(ok, "tenant.id"); id != "7" {
+		t.Errorf("tenant.id = %q, want 7", id)
+	}
+	refused := spanNamed(t, exporter, "refused")
+	if kind, _ := attr(refused, "error.type"); kind != "RESOURCE_NOT_FOUND" || refused.Status.Code == codes.Error || len(refused.Events) != 1 {
+		t.Errorf("refused span: error.type %q status %v events %d, want the code recorded without failing", kind, refused.Status.Code, len(refused.Events))
+	}
+	broken := spanNamed(t, exporter, "broken")
+	if kind, _ := attr(broken, "error.type"); kind != "INTERNAL_SERVER_ERROR" || broken.Status.Code != codes.Error {
+		t.Errorf("broken span: error.type %q status %v, want a failed span", kind, broken.Status.Code)
+	}
+}
+
+func TestAnnotateAddsToTheCurrentSpan(t *testing.T) {
+	exporter := record(t)
+	ctx, end := Begin(context.Background(), "create")
+	Annotate(ctx, attribute.Int64("branch.id", 42))
+	end(nil)
+	if id, _ := attr(spanNamed(t, exporter, "create"), "branch.id"); id != "42" {
+		t.Errorf("branch.id = %q, want 42", id)
 	}
 }
 

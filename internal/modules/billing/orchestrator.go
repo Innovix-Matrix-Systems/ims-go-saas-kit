@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Orchestrator selects drivers, creates payment rows and invokes gateways.
@@ -61,7 +64,12 @@ func (o *Orchestrator) AvailableMethods() []string {
 }
 
 // Charge creates a pending payment row and initiates it with the driver.
-func (o *Orchestrator) Charge(ctx context.Context, tenantID int64, subscriptionID *int64, method string, amount int64, data map[string]any, actorID *int64) (*domain.Payment, error) {
+func (o *Orchestrator) Charge(ctx context.Context, tenantID int64, subscriptionID *int64, method string, amount int64, data map[string]any, actorID *int64) (_ *domain.Payment, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.charge",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.String("payment.method", method),
+	)
+	defer end(&err)
 	driver, err := o.Driver(method)
 	if err != nil {
 		return nil, err
@@ -107,7 +115,9 @@ func (o *Orchestrator) Charge(ctx context.Context, tenantID int64, subscriptionI
 }
 
 // HandleCallback dispatches a gateway callback payload to its driver.
-func (o *Orchestrator) HandleCallback(ctx context.Context, method string, payload map[string]any) (domain.CallbackResult, error) {
+func (o *Orchestrator) HandleCallback(ctx context.Context, method string, payload map[string]any) (_ domain.CallbackResult, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.gateway_callback", attribute.String("payment.method", method))
+	defer end(&err)
 	driver, err := o.Driver(method)
 	if err != nil {
 		return domain.CallbackResult{}, err

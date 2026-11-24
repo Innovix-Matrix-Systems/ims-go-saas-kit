@@ -7,7 +7,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// Duplicate-request protection (phase 26.7) through the real router: a
+// Duplicate-request protection through the real router: a
 // double submit is refused, an Idempotency-Key replays the first answer
 // (docs/guides/handlers-and-routes.md#duplicate-requests).
 

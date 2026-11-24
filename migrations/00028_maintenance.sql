@@ -1,5 +1,5 @@
 -- +goose Up
--- Maintenance mode (phase 24): one row (id = 1) every process reads. The app
+-- Maintenance mode: one row (id = 1) every process reads. The app
 -- is down while down_since is set. The bypass secret is stored as its
 -- SHA-256 hash, never in clear.
 CREATE TABLE maintenance (

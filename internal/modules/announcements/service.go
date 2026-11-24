@@ -2,19 +2,18 @@ package announcements
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net/url"
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Channels an announcement can also be delivered through.
@@ -26,7 +25,7 @@ type Notifier func(ctx context.Context, tenantID int64, announcement Announcemen
 
 // Service runs announcements.
 type Service struct {
-	queries  *dbgen.Queries
+	repo     Repository
 	tx       *database.TxManager
 	activity *activity.Recorder
 	notify   Notifier
@@ -35,8 +34,8 @@ type Service struct {
 }
 
 // NewService creates the announcement service.
-func NewService(queries *dbgen.Queries, tx *database.TxManager, logger *slog.Logger) *Service {
-	return &Service{queries: queries, tx: tx, logger: logger, now: time.Now}
+func NewService(repo Repository, tx *database.TxManager, logger *slog.Logger) *Service {
+	return &Service{repo: repo, tx: tx, logger: logger, now: time.Now}
 }
 
 // WithActivity records staff changes in the system audit log.
@@ -120,98 +119,62 @@ func (s *Service) normalize(input Input) (Input, error) {
 	return input, nil
 }
 
-func audience(tenantIDs []int64) string {
-	if len(tenantIDs) == 0 {
-		return AudienceAll
-	}
-	return AudienceTenants
-}
-
-func timestamp(t *time.Time) pgtype.Timestamptz {
-	if t == nil {
-		return pgtype.Timestamptz{}
-	}
-	return pgtype.Timestamptz{Time: *t, Valid: true}
-}
-
 // Create adds an announcement and its audience.
-func (s *Service) Create(ctx context.Context, actorID int64, input Input) (*Announcement, error) {
-	input, err := s.normalize(input)
+func (s *Service) Create(ctx context.Context, actorID int64, input Input) (_ *Announcement, err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.create")
+	defer end(&err)
+	input, err = s.normalize(input)
 	if err != nil {
 		return nil, err
 	}
-	var created dbgen.Announcement
+	var created *Announcement
 	err = s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
-		row, err := q.CreateAnnouncement(ctx, dbgen.CreateAnnouncementParams{
-			Title: input.Title, Body: input.Body, Kind: input.Kind, CtaLabel: input.CTALabel, CtaUrl: input.CTAURL,
-			Audience: audience(input.TenantIDs), StartsAt: timestamp(input.StartsAt), EndsAt: timestamp(input.EndsAt),
-			Dismissible: input.Dismissible, Status: input.Status, Channels: input.Channels, ActorID: actor(actorID),
-		})
-		if err != nil {
-			return database.MapError("announcements.create", err)
+		repo := NewRepository(q)
+		if created, err = repo.Create(ctx, input, actor(actorID)); err != nil {
+			return err
 		}
-		created = row
-		return setAudience(ctx, q, row.ID, input.TenantIDs)
+		return repo.SetAudience(ctx, created.ID, input.TenantIDs)
 	})
 	if err != nil {
 		return nil, err
 	}
-	out := mapAnnouncement(created)
-	s.record(ctx, "announcement.created", out)
-	return &out, nil
+	s.record(ctx, "announcement.created", *created)
+	return created, nil
 }
 
 // Update replaces an announcement's content, window and audience.
-func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (*Announcement, error) {
-	input, err := s.normalize(input)
+func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (_ *Announcement, err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.update", attribute.Int64("announcement.id", id))
+	defer end(&err)
+	input, err = s.normalize(input)
 	if err != nil {
 		return nil, err
 	}
-	var updated dbgen.Announcement
+	var updated *Announcement
 	err = s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
-		row, err := q.UpdateAnnouncement(ctx, dbgen.UpdateAnnouncementParams{
-			ID: id, Title: input.Title, Body: input.Body, Kind: input.Kind, CtaLabel: input.CTALabel, CtaUrl: input.CTAURL,
-			Audience: audience(input.TenantIDs), StartsAt: timestamp(input.StartsAt), EndsAt: timestamp(input.EndsAt),
-			Dismissible: input.Dismissible, Status: input.Status, Channels: input.Channels, ActorID: actor(actorID),
-		})
-		if errors.Is(err, pgx.ErrNoRows) {
-			return notFound()
+		repo := NewRepository(q)
+		if updated, err = repo.Update(ctx, id, input, actor(actorID)); err != nil {
+			return err
 		}
-		if err != nil {
-			return database.MapError("announcements.update", err)
-		}
-		updated = row
-		if err := q.DeleteAnnouncementTenants(ctx, id); err != nil {
-			return database.MapError("announcements.update", err)
-		}
-		return setAudience(ctx, q, id, input.TenantIDs)
+		return repo.SetAudience(ctx, id, input.TenantIDs)
 	})
 	if err != nil {
 		return nil, err
 	}
-	out := mapAnnouncement(updated)
-	s.record(ctx, "announcement.updated", out)
-	return &out, nil
-}
-
-func setAudience(ctx context.Context, q *dbgen.Queries, id int64, tenantIDs []int64) error {
-	if len(tenantIDs) == 0 {
-		return nil
-	}
-	if err := q.AddAnnouncementTenants(ctx, dbgen.AddAnnouncementTenantsParams{AnnouncementID: id, TenantIds: tenantIDs}); err != nil {
-		return database.MapError("announcements.audience", err)
-	}
-	return nil
+	s.record(ctx, "announcement.updated", *updated)
+	return updated, nil
 }
 
 // Delete removes an announcement with its audience and counts.
-func (s *Service) Delete(ctx context.Context, id int64) error {
-	current, err := s.Get(ctx, id)
+func (s *Service) Delete(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.delete", attribute.Int64("announcement.id", id))
+	defer end(&err)
+	current, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return err
 	}
-	if _, err := s.queries.DeleteAnnouncement(ctx, id); err != nil {
-		return database.MapError("announcements.delete", err)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
 	}
 	s.record(ctx, "announcement.deleted", *current)
 	return nil
@@ -219,189 +182,112 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 
 // Get loads one announcement.
 func (s *Service) Get(ctx context.Context, id int64) (*Announcement, error) {
-	row, err := s.queries.GetAnnouncement(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, notFound()
-	}
-	if err != nil {
-		return nil, database.MapError("announcements.get", err)
-	}
-	out := mapAnnouncement(row)
-	return &out, nil
-}
-
-// Listed is an announcement in the staff list, with its reach.
-type Listed struct {
-	Announcement
-	TenantCount int64
-	Totals      Totals
+	return s.repo.Get(ctx, id)
 }
 
 // List returns announcements newest first, optionally of one status.
 func (s *Service) List(ctx context.Context, status string, limit, offset int32) ([]Listed, int64, error) {
-	var filter *string
-	if status != "" {
-		filter = &status
-	}
-	rows, err := s.queries.ListAnnouncements(ctx, dbgen.ListAnnouncementsParams{Status: filter, PageLimit: limit, PageOffset: offset})
+	filter := optional(status)
+	items, err := s.repo.List(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, 0, database.MapError("announcements.list", err)
+		return nil, 0, err
 	}
-	total, err := s.queries.CountAnnouncements(ctx, filter)
+	total, err := s.repo.Count(ctx, filter)
 	if err != nil {
-		return nil, 0, database.MapError("announcements.list", err)
+		return nil, 0, err
 	}
-	out := make([]Listed, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, Listed{
-			Announcement: mapAnnouncement(dbgen.Announcement{
-				ID: row.ID, Title: row.Title, Body: row.Body, Kind: row.Kind, CtaLabel: row.CtaLabel, CtaUrl: row.CtaUrl,
-				Audience: row.Audience, StartsAt: row.StartsAt, EndsAt: row.EndsAt, Dismissible: row.Dismissible,
-				Status: row.Status, Channels: row.Channels, DeliveredAt: row.DeliveredAt, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
-			}),
-			TenantCount: row.TenantCount,
-			Totals:      Totals{Views: row.Views, Clicks: row.Clicks, Dismissals: row.Dismissals},
-		})
-	}
-	return out, total, nil
-}
-
-// TenantRef names an organization in an announcement's audience or counts.
-type TenantRef struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-}
-
-// TenantTotals is one organization's counts.
-type TenantTotals struct {
-	TenantRef
-	Totals
-}
-
-// Detail is an announcement with its audience and counts.
-type Detail struct {
-	Announcement
-	Tenants []TenantRef
-	Totals  Totals
+	return items, total, nil
 }
 
 // Detail loads an announcement for staff.
 func (s *Service) Detail(ctx context.Context, id int64) (*Detail, error) {
-	current, err := s.Get(ctx, id)
+	current, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	tenants, err := s.queries.ListAnnouncementTenants(ctx, id)
+	tenants, err := s.repo.Audience(ctx, id)
 	if err != nil {
-		return nil, database.MapError("announcements.detail", err)
+		return nil, err
 	}
-	totals, err := s.queries.AnnouncementTotals(ctx, id)
+	totals, err := s.repo.Totals(ctx, id)
 	if err != nil {
-		return nil, database.MapError("announcements.detail", err)
+		return nil, err
 	}
-	out := &Detail{Announcement: *current, Tenants: []TenantRef{}, Totals: Totals(totals)}
-	for _, row := range tenants {
-		out.Tenants = append(out.Tenants, TenantRef{ID: row.ID, Name: row.Name})
-	}
-	return out, nil
+	return &Detail{Announcement: *current, Tenants: tenants, Totals: totals}, nil
 }
 
 // TenantTotalsPage is one page of the organizations whose members reacted to
 // an announcement, most views first, optionally matching a name.
 func (s *Service) TenantTotalsPage(ctx context.Context, id int64, search string, limit, offset int32) ([]TenantTotals, int64, error) {
-	if _, err := s.Get(ctx, id); err != nil {
+	if _, err := s.repo.Get(ctx, id); err != nil {
 		return nil, 0, err
 	}
-	var filter *string
-	if trimmed := strings.TrimSpace(search); trimmed != "" {
-		filter = &trimmed
-	}
-	rows, err := s.queries.ListAnnouncementTenantTotals(ctx, dbgen.ListAnnouncementTenantTotalsParams{
-		AnnouncementID: id, Search: filter, PageLimit: limit, PageOffset: offset,
-	})
+	filter := optional(search)
+	items, err := s.repo.TenantTotals(ctx, id, filter, limit, offset)
 	if err != nil {
-		return nil, 0, database.MapError("announcements.tenant_totals", err)
+		return nil, 0, err
 	}
-	total, err := s.queries.CountAnnouncementTenantTotals(ctx, dbgen.CountAnnouncementTenantTotalsParams{AnnouncementID: id, Search: filter})
+	total, err := s.repo.CountTenantTotals(ctx, id, filter)
 	if err != nil {
-		return nil, 0, database.MapError("announcements.tenant_totals", err)
+		return nil, 0, err
 	}
-	out := make([]TenantTotals, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, TenantTotals{
-			TenantRef: TenantRef{ID: row.TenantID, Name: row.Name},
-			Totals:    Totals{Views: row.Views, Clicks: row.Clicks, Dismissals: row.Dismissals},
-		})
-	}
-	return out, total, nil
+	return items, total, nil
 }
 
 // Live lists what a member of the tenant should see now, without what they
 // dismissed.
 func (s *Service) Live(ctx context.Context, tenantID, userID int64) ([]Announcement, error) {
-	rows, err := s.queries.ListLiveAnnouncements(ctx, dbgen.ListLiveAnnouncementsParams{TenantID: tenantID, UserID: userID})
-	if err != nil {
-		return nil, database.MapError("announcements.live", err)
-	}
-	out := make([]Announcement, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, mapAnnouncement(row))
-	}
-	return out, nil
+	return s.repo.Live(ctx, tenantID, userID)
 }
 
 // Track records that a member viewed, clicked or dismissed a live
 // announcement their organization is in the audience of (once per person).
-func (s *Service) Track(ctx context.Context, tenantID, userID, id int64, eventType string) error {
-	row, err := s.queries.GetLiveAnnouncementForTenant(ctx, dbgen.GetLiveAnnouncementForTenantParams{ID: id, TenantID: tenantID})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return notFound()
-	}
+func (s *Service) Track(ctx context.Context, tenantID, userID, id int64, eventType string) (err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.track",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("announcement.id", id),
+		attribute.String("announcement.event", eventType),
+	)
+	defer end(&err)
+	live, err := s.repo.GetLive(ctx, tenantID, id)
 	if err != nil {
-		return database.MapError("announcements.track", err)
+		return err
 	}
-	if eventType == EventDismiss && !row.Dismissible {
+	if eventType == EventDismiss && !live.Dismissible {
 		return apperr.New(apperr.InvalidState, "This announcement cannot be dismissed.")
 	}
-	tenant := tenantID
-	if err := s.queries.RecordAnnouncementEvent(ctx, dbgen.RecordAnnouncementEventParams{
-		AnnouncementID: id, UserID: userID, TenantID: &tenant, Type: eventType,
-	}); err != nil {
-		return database.MapError("announcements.track", err)
-	}
-	return nil
+	return s.repo.RecordEvent(ctx, tenantID, userID, id, eventType)
 }
 
 // DeliverDue sends live announcements with channels that have not gone out
 // yet, once each: the claim is taken before sending, so a crash part-way
 // leaves it sent to fewer organizations rather than twice to some.
-func (s *Service) DeliverDue(ctx context.Context) (int, error) {
+func (s *Service) DeliverDue(ctx context.Context) (_ int, err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.deliver_due")
+	defer end(&err)
 	if s.notify == nil {
 		return 0, nil
 	}
-	due, err := s.queries.ListAnnouncementsToDeliver(ctx)
+	due, err := s.repo.ToDeliver(ctx)
 	if err != nil {
-		return 0, database.MapError("announcements.deliver", err)
+		return 0, err
 	}
 	delivered := 0
-	for _, row := range due {
-		claimed, err := s.queries.MarkAnnouncementDelivered(ctx, row.ID)
+	for _, announcement := range due {
+		claimed, err := s.repo.ClaimDelivery(ctx, announcement.ID)
 		if err != nil {
-			return delivered, database.MapError("announcements.deliver", err)
+			return delivered, err
 		}
-		if claimed == 0 {
+		if !claimed {
 			continue
 		}
-		tenantIDs, err := s.queries.ListAnnouncementAudienceTenantIDs(ctx, dbgen.ListAnnouncementAudienceTenantIDsParams{
-			Audience: row.Audience, AnnouncementID: row.ID,
-		})
+		tenantIDs, err := s.repo.AudienceTenantIDs(ctx, announcement)
 		if err != nil {
-			return delivered, database.MapError("announcements.deliver", err)
+			return delivered, err
 		}
-		announcement := mapAnnouncement(row)
 		for _, tenantID := range tenantIDs {
 			if err := s.notify(ctx, tenantID, announcement); err != nil && s.logger != nil {
-				s.logger.WarnContext(ctx, "announcement delivery failed", "announcement_id", row.ID, "tenant_id", tenantID, "error", err)
+				s.logger.WarnContext(ctx, "announcement delivery failed", "announcement_id", announcement.ID, "tenant_id", tenantID, "error", err)
 			}
 		}
 		delivered++
@@ -424,6 +310,14 @@ func actor(id int64) *int64 {
 		return nil
 	}
 	return &id
+}
+
+// optional is nil for a blank filter.
+func optional(value string) *string {
+	if trimmed := strings.TrimSpace(value); trimmed != "" {
+		return &trimmed
+	}
+	return nil
 }
 
 func notFound() error { return apperr.New(apperr.ResourceNotFound, "Announcement not found.") }

@@ -10,9 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // AccountMessage is a message authn sends to a user: a one-time code or a
@@ -66,12 +69,16 @@ func OTPKey(userID int64) string {
 
 // Send generates a fresh OTP for user, stores it with the configured expiry
 // and mails it. The code is returned for tests and debug logging.
-func (s *OTPService) Send(ctx context.Context, user *UserRecord) (string, error) {
+func (s *OTPService) Send(ctx context.Context, user *UserRecord) (_ string, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.send_otp")
+	defer end(&err)
 	return s.sendTo(ctx, user, OTPKey(user.ID))
 }
 
 // Verify compares the provided code in constant time and clears it on success.
-func (s *OTPService) Verify(ctx context.Context, userID int64, code string) error {
+func (s *OTPService) Verify(ctx context.Context, userID int64, code string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.check_otp", attribute.Int64("user.id", userID))
+	defer end(&err)
 	return s.verifyAt(ctx, OTPKey(userID), code)
 }
 

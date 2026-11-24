@@ -1,5 +1,5 @@
 -- +goose Up
--- Outbound webhooks (phase 26.8): a tenant subscribes URLs to events from the
+-- Outbound webhooks: a tenant subscribes URLs to events from the
 -- activity log; each event is POSTed, signed (Standard Webhooks), retried and
 -- logged. Secrets are encrypted with APP_KEY; previous_secret keeps signing
 -- for a day after a rotation.

@@ -293,14 +293,18 @@ const serviceTmpl = `package {{.Pkg}}
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"{{.ModulePath}}/internal/apperr"
+	"{{.ModulePath}}/internal/platform/tracing"
 	"{{.ModulePath}}/internal/tenancy"
 )
 
 // Service holds the {{.NameLower}} business rules. Permission checks live in
 // the routes (authz.Require), like Laravel's can: middleware; the service
 // enforces tenant scoping and business rules for every caller (HTTP, CLI,
-// jobs).
+// jobs). Every write opens a span (tracing.Begin); reads are traced by their
+// SQL spans.
 type Service struct {
 	repo Repository
 }
@@ -337,8 +341,10 @@ func (s *Service) Get(ctx context.Context, scope tenancy.Scope, id int64) (*{{.N
 }
 
 // Create creates a {{.NameLower}} in the effective tenant scope.
-func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateInput) (*{{.Name}}, error) {
+func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateInput) (_ *{{.Name}}, err error) {
 	input.TenantID = scope.EffectiveTenantID()
+	ctx, end := tracing.Begin(ctx, "{{.Pkg}}.create", attribute.Int64("tenant.id", input.TenantID))
+	defer end(&err)
 	if input.TenantID == 0 {
 		return nil, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
 	}
@@ -347,9 +353,11 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 }
 
 // Update updates a {{.NameLower}} in the effective tenant scope.
-func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateInput) (*{{.Name}}, error) {
+func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateInput) (_ *{{.Name}}, err error) {
 	input.ID = id
 	input.TenantID = scope.EffectiveTenantID()
+	ctx, end := tracing.Begin(ctx, "{{.Pkg}}.update", attribute.Int64("tenant.id", input.TenantID), attribute.Int64("{{.Pkg}}.id", id))
+	defer end(&err)
 	if input.TenantID == 0 {
 		return nil, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
 	}
@@ -358,8 +366,10 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 }
 
 // Delete soft-deletes a {{.NameLower}} in the effective tenant scope.
-func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) error {
+func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) (err error) {
 	tenantID := scope.EffectiveTenantID()
+	ctx, end := tracing.Begin(ctx, "{{.Pkg}}.delete", attribute.Int64("tenant.id", tenantID), attribute.Int64("{{.Pkg}}.id", id))
+	defer end(&err)
 	if tenantID == 0 {
 		return apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
 	}

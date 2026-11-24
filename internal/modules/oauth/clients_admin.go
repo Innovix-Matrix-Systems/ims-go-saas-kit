@@ -5,9 +5,12 @@ import (
 	"slices"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Client types a registered client can have.
@@ -72,7 +75,9 @@ func (in *ClientInput) normalise(create bool) error {
 
 // CreateClient registers a client. A confidential client's secret is in the
 // result, once.
-func (s *Service) CreateClient(ctx context.Context, actorID int64, in ClientInput) (*RegisteredClient, error) {
+func (s *Service) CreateClient(ctx context.Context, actorID int64, in ClientInput) (_ *RegisteredClient, err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.create_client")
+	defer end(&err)
 	if err := in.normalise(true); err != nil {
 		return nil, err
 	}
@@ -119,7 +124,9 @@ func (s *Service) GetClient(ctx context.Context, id int64) (*ClientRecord, error
 
 // UpdateClient changes a registered client. Deactivating it revokes every
 // connection made with it.
-func (s *Service) UpdateClient(ctx context.Context, actorID, id int64, in ClientInput) (*ClientRecord, error) {
+func (s *Service) UpdateClient(ctx context.Context, actorID, id int64, in ClientInput) (_ *ClientRecord, err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.update_client", attribute.Int64("client.id", id))
+	defer end(&err)
 	current, err := s.repo.GetClient(ctx, id)
 	if err != nil {
 		return nil, err
@@ -143,7 +150,9 @@ func (s *Service) UpdateClient(ctx context.Context, actorID, id int64, in Client
 
 // RotateSecret gives a confidential client a new secret; the old one keeps
 // working for the grace period.
-func (s *Service) RotateSecret(ctx context.Context, actorID, id int64) (*RegisteredClient, error) {
+func (s *Service) RotateSecret(ctx context.Context, actorID, id int64) (_ *RegisteredClient, err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.rotate_client_secret", attribute.Int64("client.id", id))
+	defer end(&err)
 	current, err := s.repo.GetClient(ctx, id)
 	if err != nil {
 		return nil, err
@@ -164,7 +173,9 @@ func (s *Service) RotateSecret(ctx context.Context, actorID, id int64) (*Registe
 }
 
 // DeleteClient removes a registered client and revokes its connections.
-func (s *Service) DeleteClient(ctx context.Context, actorID, id int64) error {
+func (s *Service) DeleteClient(ctx context.Context, actorID, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.delete_client", attribute.Int64("client.id", id))
+	defer end(&err)
 	current, err := s.repo.GetClient(ctx, id)
 	if err != nil {
 		return err

@@ -1,5 +1,5 @@
 -- +goose Up
--- Phase 16: indexes for the hot list/search paths and DB-level status rules.
+-- Indexes for the hot list/search paths and DB-level status rules.
 --
 -- Migration convention (M41): keep migrations short-locking. Plain CREATE INDEX
 -- is fine at starter scale; on a large live table write a separate goose

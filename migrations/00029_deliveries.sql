@@ -1,5 +1,5 @@
 -- +goose Up
--- Delivery log (phase 26.2): one row per message per channel (mail, sms,
+-- Delivery log: one row per message per channel (mail, sms,
 -- push). It never stores a body or template data, so one-time codes never
 -- reach the database; the address is masked.
 CREATE TABLE deliveries (

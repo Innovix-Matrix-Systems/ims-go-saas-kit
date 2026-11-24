@@ -1,4 +1,4 @@
--- Phase 22: the OAuth authorization server behind the MCP connector.
+-- The OAuth authorization server behind the MCP connector.
 
 -- ── Registered clients ─────────────────────────────────────────────
 

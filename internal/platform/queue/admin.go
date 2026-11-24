@@ -11,6 +11,9 @@ import (
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // ErrInvalidCursor reports an opaque River job-list cursor that could not be
@@ -162,7 +165,9 @@ func (a *riverAdmin) GetJob(ctx context.Context, id int64) (*AdminJob, error) {
 	return &mapped, nil
 }
 
-func (a *riverAdmin) RetryJob(ctx context.Context, id int64) (*AdminJob, error) {
+func (a *riverAdmin) RetryJob(ctx context.Context, id int64) (_ *AdminJob, err error) {
+	ctx, end := tracing.Begin(ctx, "queue.retry_job", attribute.Int64("job.id", id))
+	defer end(&err)
 	job, err := a.engine.client.JobRetry(ctx, id)
 	if err != nil {
 		return nil, err
@@ -171,7 +176,9 @@ func (a *riverAdmin) RetryJob(ctx context.Context, id int64) (*AdminJob, error) 
 	return &mapped, nil
 }
 
-func (a *riverAdmin) CancelJob(ctx context.Context, id int64) (*AdminJob, error) {
+func (a *riverAdmin) CancelJob(ctx context.Context, id int64) (_ *AdminJob, err error) {
+	ctx, end := tracing.Begin(ctx, "queue.cancel_job", attribute.Int64("job.id", id))
+	defer end(&err)
 	job, err := a.engine.client.JobCancel(ctx, id)
 	if err != nil {
 		return nil, err
@@ -180,7 +187,9 @@ func (a *riverAdmin) CancelJob(ctx context.Context, id int64) (*AdminJob, error)
 	return &mapped, nil
 }
 
-func (a *riverAdmin) DeleteJob(ctx context.Context, id int64) (*AdminJob, error) {
+func (a *riverAdmin) DeleteJob(ctx context.Context, id int64) (_ *AdminJob, err error) {
+	ctx, end := tracing.Begin(ctx, "queue.delete_job", attribute.Int64("job.id", id))
+	defer end(&err)
 	job, err := a.engine.client.JobDelete(ctx, id)
 	if err != nil {
 		return nil, err
@@ -224,11 +233,15 @@ func (a *riverAdmin) ListQueues(ctx context.Context) ([]AdminQueue, error) {
 	return queues, nil
 }
 
-func (a *riverAdmin) PauseQueue(ctx context.Context, name string) error {
+func (a *riverAdmin) PauseQueue(ctx context.Context, name string) (err error) {
+	ctx, end := tracing.Begin(ctx, "queue.pause", attribute.String("queue.name", name))
+	defer end(&err)
 	return a.engine.client.QueuePause(ctx, name, nil)
 }
 
-func (a *riverAdmin) ResumeQueue(ctx context.Context, name string) error {
+func (a *riverAdmin) ResumeQueue(ctx context.Context, name string) (err error) {
+	ctx, end := tracing.Begin(ctx, "queue.resume", attribute.String("queue.name", name))
+	defer end(&err)
 	return a.engine.client.QueueResume(ctx, name, nil)
 }
 

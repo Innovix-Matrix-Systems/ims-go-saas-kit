@@ -7,9 +7,12 @@ import (
 	"sort"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -144,13 +147,17 @@ func (s *Service) GetBool(ctx context.Context, scope tenancy.Scope, name string)
 
 // Set persists a setting at the caller's scope (tenant row when scoped, global
 // otherwise).
-func (s *Service) Set(ctx context.Context, scope tenancy.Scope, name string, value any) error {
+func (s *Service) Set(ctx context.Context, scope tenancy.Scope, name string, value any) (err error) {
+	ctx, end := tracing.Begin(ctx, "settings.set", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	return s.writeTarget(ctx, name, s.targetForScope(scope), value)
 }
 
 // SetTenant upserts the caller's tenant override and returns the effective
 // setting.
-func (s *Service) SetTenant(ctx context.Context, scope tenancy.Scope, name string, value any) (*EffectiveSetting, error) {
+func (s *Service) SetTenant(ctx context.Context, scope tenancy.Scope, name string, value any) (_ *EffectiveSetting, err error) {
+	ctx, end := tracing.Begin(ctx, "settings.set_tenant", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	tenantID := scope.EffectiveTenantID()
 	if tenantID == 0 {
 		return nil, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
@@ -168,7 +175,9 @@ func (s *Service) SetTenant(ctx context.Context, scope tenancy.Scope, name strin
 
 // SetTarget upserts a setting for an explicit target and returns the effective
 // setting.
-func (s *Service) SetTarget(ctx context.Context, name string, target Target, value any) (*EffectiveSetting, error) {
+func (s *Service) SetTarget(ctx context.Context, name string, target Target, value any) (_ *EffectiveSetting, err error) {
+	ctx, end := tracing.Begin(ctx, "settings.set_target")
+	defer end(&err)
 	if err := s.writeTarget(ctx, name, target, value); err != nil {
 		return nil, err
 	}
@@ -177,7 +186,9 @@ func (s *Service) SetTarget(ctx context.Context, name string, target Target, val
 
 // DeleteTarget removes an override so the value falls back (tenant -> global ->
 // default); omitting a target deletes the global row.
-func (s *Service) DeleteTarget(ctx context.Context, name string, target Target) error {
+func (s *Service) DeleteTarget(ctx context.Context, name string, target Target) (err error) {
+	ctx, end := tracing.Begin(ctx, "settings.delete_target")
+	defer end(&err)
 	key, ok := Lookup(name)
 	if !ok {
 		return apperr.Newf(apperr.ResourceNotFound, "Setting %q is not registered.", name)
@@ -264,7 +275,9 @@ func (s *Service) EffectiveForTargetKey(ctx context.Context, target Target, name
 
 // Sync upserts catalog groups and inserts missing global defaults, returning
 // how many global settings were created.
-func (s *Service) Sync(ctx context.Context) (int, error) {
+func (s *Service) Sync(ctx context.Context) (_ int, err error) {
+	ctx, end := tracing.Begin(ctx, "settings.sync")
+	defer end(&err)
 	for _, group := range Groups {
 		if _, err := s.repo.UpsertSystemGroup(ctx, group); err != nil {
 			return 0, err
@@ -327,7 +340,9 @@ func (s *Service) GetGroup(ctx context.Context, id int64) (*StoredGroup, error) 
 }
 
 // CreateGroup creates a settings group, deriving its slug from the name.
-func (s *Service) CreateGroup(ctx context.Context, actorID int64, input GroupInput) (*StoredGroup, error) {
+func (s *Service) CreateGroup(ctx context.Context, actorID int64, input GroupInput) (_ *StoredGroup, err error) {
+	ctx, end := tracing.Begin(ctx, "settings.create_group")
+	defer end(&err)
 	slug := slugify(input.Name)
 	if slug == "" {
 		return nil, apperr.Validation(map[string][]string{"name": {"The name must contain at least one alphanumeric character."}})
@@ -353,7 +368,9 @@ func (s *Service) CreateGroup(ctx context.Context, actorID int64, input GroupInp
 }
 
 // UpdateGroup updates a settings group, re-deriving its slug from the name.
-func (s *Service) UpdateGroup(ctx context.Context, actorID, id int64, input GroupInput) (*StoredGroup, error) {
+func (s *Service) UpdateGroup(ctx context.Context, actorID, id int64, input GroupInput) (_ *StoredGroup, err error) {
+	ctx, end := tracing.Begin(ctx, "settings.update_group", attribute.Int64("group.id", id))
+	defer end(&err)
 	existing, err := s.repo.GetGroup(ctx, id)
 	if err != nil {
 		return nil, err
@@ -396,7 +413,9 @@ func (s *Service) UpdateGroup(ctx context.Context, actorID, id int64, input Grou
 
 // DeleteGroup removes a settings group; assigned settings fall back to their
 // catalog group (the FK sets settings.group_id to NULL).
-func (s *Service) DeleteGroup(ctx context.Context, id int64) error {
+func (s *Service) DeleteGroup(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "settings.delete_group", attribute.Int64("group.id", id))
+	defer end(&err)
 	if _, err := s.repo.GetGroup(ctx, id); err != nil {
 		return err
 	}
@@ -413,7 +432,9 @@ func (s *Service) DeleteGroup(ctx context.Context, id int64) error {
 
 // AssignKeyGroup assigns a catalog key's global row to a group (nil clears the
 // assignment, falling back to the catalog group).
-func (s *Service) AssignKeyGroup(ctx context.Context, name string, groupID *int64) (*EffectiveSetting, error) {
+func (s *Service) AssignKeyGroup(ctx context.Context, name string, groupID *int64) (_ *EffectiveSetting, err error) {
+	ctx, end := tracing.Begin(ctx, "settings.assign_key_group")
+	defer end(&err)
 	if _, ok := Lookup(name); !ok {
 		return nil, apperr.Newf(apperr.ResourceNotFound, "Setting %q is not registered.", name)
 	}
@@ -431,7 +452,12 @@ func (s *Service) AssignKeyGroup(ctx context.Context, name string, groupID *int6
 
 // PlaceKeys puts keys into a group in the given order (dev dashboard drag
 // and drop). Every key needs its global row (run settings:sync first).
-func (s *Service) PlaceKeys(ctx context.Context, groupID int64, keys []string) error {
+func (s *Service) PlaceKeys(ctx context.Context, groupID int64, keys []string) (err error) {
+	ctx, end := tracing.Begin(ctx, "settings.place_keys",
+		attribute.Int64("group.id", groupID),
+		attribute.Int("keys", len(keys)),
+	)
+	defer end(&err)
 	if _, err := s.repo.GetGroup(ctx, groupID); err != nil {
 		return err
 	}
@@ -454,7 +480,9 @@ func (s *Service) PlaceKeys(ctx context.Context, groupID int64, keys []string) e
 }
 
 // ReorderGroups sets the group order to the given ids.
-func (s *Service) ReorderGroups(ctx context.Context, ids []int64) error {
+func (s *Service) ReorderGroups(ctx context.Context, ids []int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "settings.reorder_groups", attribute.Int("groups", len(ids)))
+	defer end(&err)
 	for index, id := range ids {
 		updated, err := s.repo.SetGroupSortOrder(ctx, id, int32(index+1))
 		if err != nil {

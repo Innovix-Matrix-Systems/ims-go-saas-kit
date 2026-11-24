@@ -148,7 +148,7 @@ func isNotFound(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "RESOURCE_NOT_FOUND")
 }
 
-// TestFilesTenantIsolation proves the phase-12 contract: a tenant-bound
+// TestFilesTenantIsolation proves the tenant-isolation contract: a tenant-bound
 // caller cannot read, list or delete another tenant's files even with the
 // granular file permissions, while a tenantless system caller (all_tenants)
 // can. See docs/history/codebase-review.md C3.

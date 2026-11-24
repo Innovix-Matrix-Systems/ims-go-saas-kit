@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // maxUserAgent caps the user agent stored with a token.
@@ -89,7 +91,9 @@ func (s *Sessions) List(ctx context.Context, caller *Identity) ([]Session, error
 
 // Revoke signs one of the caller's sessions out. Another user's session, or
 // an MCP token, is "not found".
-func (s *Sessions) Revoke(ctx context.Context, caller *Identity, sessionID int64) error {
+func (s *Sessions) Revoke(ctx context.Context, caller *Identity, sessionID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.revoke_session", attribute.Int64("session.id", sessionID))
+	defer end(&err)
 	device, err := s.queries.DeleteUserSession(ctx, dbgen.DeleteUserSessionParams{ID: sessionID, UserID: caller.UserID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return apperr.Newf(apperr.ResourceNotFound, "Session with ID '%d' was not found.", sessionID)
@@ -107,7 +111,9 @@ func (s *Sessions) Revoke(ctx context.Context, caller *Identity, sessionID int64
 // making the request. Like a password change, it also disconnects the
 // caller's MCP connections: "sign out everywhere else" after a lost device
 // must leave nothing behind.
-func (s *Sessions) RevokeOthers(ctx context.Context, caller *Identity) error {
+func (s *Sessions) RevokeOthers(ctx context.Context, caller *Identity) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.revoke_other_sessions")
+	defer end(&err)
 	others, err := s.List(ctx, caller)
 	if err != nil {
 		return err
@@ -129,7 +135,9 @@ func (s *Sessions) RevokeOthers(ctx context.Context, caller *Identity) error {
 
 // Upgrade swaps the caller's setup-only token for a full token on the same
 // device, once two-factor is on. The setup token stops working.
-func (s *Sessions) Upgrade(ctx context.Context, caller *Identity) (Token, error) {
+func (s *Sessions) Upgrade(ctx context.Context, caller *Identity) (_ Token, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.upgrade_session")
+	defer end(&err)
 	row, err := s.queries.GetToken(ctx, caller.TokenID)
 	if err != nil {
 		return Token{}, database.MapError("authn.get_token", err)
@@ -146,7 +154,9 @@ func (s *Sessions) Upgrade(ctx context.Context, caller *Identity) (Token, error)
 
 // PruneTokens deletes expired tokens and, with idleDays > 0, session tokens
 // unused for that long (the auth.prune-tokens task).
-func (s *Sessions) PruneTokens(ctx context.Context, idleDays int) (int64, error) {
+func (s *Sessions) PruneTokens(ctx context.Context, idleDays int) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.prune_tokens", attribute.Int("idle.days", idleDays))
+	defer end(&err)
 	expired, err := s.queries.DeleteExpiredTokens(ctx)
 	if err != nil {
 		return 0, database.MapError("authn.prune_expired_tokens", err)

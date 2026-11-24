@@ -76,6 +76,32 @@ type Totals struct {
 	Dismissals int64 `json:"dismissals"`
 }
 
+// Listed is an announcement in the staff list, with its reach.
+type Listed struct {
+	Announcement
+	TenantCount int64
+	Totals      Totals
+}
+
+// TenantRef names an organization in an announcement's audience or counts.
+type TenantRef struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+// TenantTotals is one organization's counts.
+type TenantTotals struct {
+	TenantRef
+	Totals
+}
+
+// Detail is an announcement with its audience and counts.
+type Detail struct {
+	Announcement
+	Tenants []TenantRef
+	Totals  Totals
+}
+
 func optionalTime(t pgtype.Timestamptz) *time.Time {
 	if !t.Valid {
 		return nil

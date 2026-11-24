@@ -1,5 +1,5 @@
 -- +goose Up
--- Phase 22: the OAuth 2.1 authorization server behind the MCP connector.
+-- The OAuth 2.1 authorization server behind the MCP connector.
 
 -- Clients an admin registered by hand. Clients that identify themselves with a
 -- Client ID Metadata Document (an https client_id) are fetched and cached,

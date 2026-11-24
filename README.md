@@ -1,7 +1,7 @@
 # IMS Go Admin Starter
 
 [![CI](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.1.0-ff5c1a)
+![Version](https://img.shields.io/badge/version-0.1.5-ff5c1a)
 [![API docs](https://img.shields.io/badge/API%20docs-website-ff5c1a)](https://ims-go-api-starter.innovixmatrixsystem.com)
 [![Use this template](https://img.shields.io/badge/use%20this-template-2ea44f?logo=github)](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/generate)
 <br>
@@ -22,9 +22,14 @@ and Bangla, light or dark. It ships as **one CGO-free binary** that serves the a
 the developer dashboard at `/dev` and the API reference at `/docs`, and runs migrations, queue
 workers and the scheduler. No containers required, Docker-ready when you want it.
 
-**📖 Backend documentation:** the API, its modules and how to add your own are documented on the
-API starter's site, **[ims-go-api-starter.innovixmatrixsystem.com](https://ims-go-api-starter.innovixmatrixsystem.com)**,
-and in this repository's [`docs/`](docs/README.md).
+**📖 Documentation:** the backend is the API starter's, so its website is the place to learn it:
+**[ims-go-api-starter.innovixmatrixsystem.com](https://ims-go-api-starter.innovixmatrixsystem.com)**. Start with the
+[quick start](https://ims-go-api-starter.innovixmatrixsystem.com/getting-started/quick-start/), the
+[first module tutorial](https://ims-go-api-starter.innovixmatrixsystem.com/tutorial/first-module/) and
+[coming from Laravel](https://ims-go-api-starter.innovixmatrixsystem.com/getting-started/coming-from-laravel/), then the
+[guides](https://ims-go-api-starter.innovixmatrixsystem.com/guides/modules/) and the [reference](https://ims-go-api-starter.innovixmatrixsystem.com/reference/http-api/).
+This repository's [`docs/`](docs/README.md) holds the same guides, updated for what this starter adds
+(the app, branch-scoped lists, job ownership, announcements); the links in the table below point there.
 
 | Organization dashboard | Staff console |
 | --- | --- |
@@ -132,7 +137,7 @@ A feature is a backend module and, if people use it, a screen in the app:
 1. **Module:** `go run ./cmd/app gen module --name=product --fields="name:string,price:decimal"`
    scaffolds the migration, queries, service, handler, routes with permissions, tests and the
    OpenAPI entry. Follow the API starter's
-   [first module tutorial](docs/tutorial/first-module.mdx) and [module guide](docs/guides/modules.md).
+   [first module tutorial](https://ims-go-api-starter.innovixmatrixsystem.com/tutorial/first-module/) and [module guide](https://ims-go-api-starter.innovixmatrixsystem.com/guides/modules/).
 2. **Screen:** add a route in `web/app/src/routes/`, run `npm --prefix web/app run openapi:gen` for
    typed API calls, and add it to the sidebar and Ctrl+K in `web/app/src/components/navigation.ts`.
    Reuse the components in `web/app/src/components` and add messages in English and Bangla

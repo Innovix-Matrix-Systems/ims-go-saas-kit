@@ -7,7 +7,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
 )
 
-// Self-service sessions (phase 26.3): the caller sees where they are signed
+// Self-service sessions: the caller sees where they are signed
 // in and signs devices out. Session routes run without tenant resolution, so
 // platform accounts use them too; X-Acting-User does not apply here, so a
 // session is always the caller's own.

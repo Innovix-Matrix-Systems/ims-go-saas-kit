@@ -1,7 +1,7 @@
 // Package social verifies a sign-in made at an outside provider (Google,
 // GitHub, …) and reports the e-mail address it proved. It knows nothing about
 // our users or tokens: authn.Service looks the address up and signs the user
-// in exactly as after a password check (phase 23).
+// in exactly as after a password check.
 //
 // Providers are drivers, like the cache and storage drivers: one file each,
 // behind Provider, enabled by SOCIAL_PROVIDERS. docs/guides/social-login.md

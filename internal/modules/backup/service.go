@@ -14,11 +14,13 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 const backupLockID int64 = 4804692
@@ -119,7 +121,9 @@ func (s *Service) Stats(ctx context.Context) (Stats, error) {
 	return s.repo.Stats(ctx)
 }
 
-func (s *Service) Enqueue(ctx context.Context, trigger string, actorUserID int64) (*Run, error) {
+func (s *Service) Enqueue(ctx context.Context, trigger string, actorUserID int64) (_ *Run, err error) {
+	ctx, end := tracing.Begin(ctx, "backup.enqueue", attribute.String("backup.trigger", trigger))
+	defer end(&err)
 	if !s.cfg.Enabled {
 		return nil, ErrDisabled
 	}
@@ -139,7 +143,9 @@ func (s *Service) Enqueue(ctx context.Context, trigger string, actorUserID int64
 	return s.repo.Get(ctx, run.ID)
 }
 
-func (s *Service) RunNow(ctx context.Context, trigger string, actorUserID int64, opts RunOptions) (*Run, error) {
+func (s *Service) RunNow(ctx context.Context, trigger string, actorUserID int64, opts RunOptions) (_ *Run, err error) {
+	ctx, end := tracing.Begin(ctx, "backup.run_now", attribute.String("backup.trigger", trigger))
+	defer end(&err)
 	run, err := s.createRun(ctx, trigger, actorUserID, opts)
 	if err != nil {
 		return nil, err
@@ -154,11 +160,15 @@ func (s *Service) RunNow(ctx context.Context, trigger string, actorUserID int64,
 	return s.repo.Get(ctx, run.ID)
 }
 
-func (s *Service) Execute(ctx context.Context, id int64) error {
+func (s *Service) Execute(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "backup.execute", attribute.Int64("backup.id", id))
+	defer end(&err)
 	return s.execute(ctx, id, RunOptions{})
 }
 
-func (s *Service) Open(ctx context.Context, id int64) (*Download, error) {
+func (s *Service) Open(ctx context.Context, id int64) (_ *Download, err error) {
+	ctx, end := tracing.Begin(ctx, "backup.open", attribute.Int64("backup.id", id))
+	defer end(&err)
 	run, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -184,7 +194,9 @@ func (s *Service) Open(ctx context.Context, id int64) (*Download, error) {
 	return nil, apperr.New(apperr.ResourceNotFound, "The backup archive is not available.")
 }
 
-func (s *Service) Delete(ctx context.Context, id int64) error {
+func (s *Service) Delete(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "backup.delete", attribute.Int64("backup.id", id))
+	defer end(&err)
 	run, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return err
@@ -205,7 +217,9 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *Service) Clean(ctx context.Context, dryRun bool) (CleanResult, error) {
+func (s *Service) Clean(ctx context.Context, dryRun bool) (_ CleanResult, err error) {
+	ctx, end := tracing.Begin(ctx, "backup.clean", attribute.Bool("backup.dry_run", dryRun))
+	defer end(&err)
 	runs, err := s.repo.ForCleanup(ctx)
 	if err != nil {
 		return CleanResult{}, err
@@ -254,7 +268,9 @@ func (s *Service) Clean(ctx context.Context, dryRun bool) (CleanResult, error) {
 	return result, nil
 }
 
-func (s *Service) Monitor(ctx context.Context) (MonitorResult, error) {
+func (s *Service) Monitor(ctx context.Context) (_ MonitorResult, err error) {
+	ctx, end := tracing.Begin(ctx, "backup.monitor")
+	defer end(&err)
 	stats, err := s.repo.Stats(ctx)
 	if err != nil {
 		return MonitorResult{}, err

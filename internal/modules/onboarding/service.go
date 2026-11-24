@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
@@ -19,6 +21,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/tenants"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -141,7 +144,9 @@ type SignUpInput struct {
 // mailed a verification link. An address that already has an account gets a
 // mail instead and the answer is the same, so sign-up never reveals whether
 // an account exists.
-func (s *Service) SignUp(ctx context.Context, input SignUpInput) error {
+func (s *Service) SignUp(ctx context.Context, input SignUpInput) (err error) {
+	ctx, end := tracing.Begin(ctx, "onboarding.sign_up")
+	defer end(&err)
 	input.Email = strings.TrimSpace(strings.ToLower(input.Email))
 	input.Name = strings.TrimSpace(input.Name)
 	input.OrganizationName = strings.TrimSpace(input.OrganizationName)
@@ -324,7 +329,12 @@ func (s *Service) Progress(ctx context.Context, scope tenancy.Scope) (*Progress,
 }
 
 // Complete marks the first-run setup done (only the owner finishes it).
-func (s *Service) Complete(ctx context.Context, scope tenancy.Scope, actorID int64, skipped []string) (*Progress, error) {
+func (s *Service) Complete(ctx context.Context, scope tenancy.Scope, actorID int64, skipped []string) (_ *Progress, err error) {
+	ctx, end := tracing.Begin(ctx, "onboarding.complete",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int("skipped", len(skipped)),
+	)
+	defer end(&err)
 	progress, err := s.Progress(ctx, scope)
 	if err != nil {
 		return nil, err

@@ -27,7 +27,7 @@ type User struct {
 	IsActive         bool
 	LastLoginAt      *time.Time
 	LastActiveDevice *string
-	// InvitedAt / InvitedBy: the latest invitation (phase 26.5);
+	// InvitedAt / InvitedBy: the latest invitation;
 	// InvitationAcceptedAt: when the invitee set their password.
 	InvitedAt            *time.Time
 	InvitedBy            *int64

@@ -16,7 +16,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
 )
 
-// MCP (phase 22). An Agent is an AI client connected to /mcp as a user,
+// MCP. An Agent is an AI client connected to /mcp as a user,
 // through the real OAuth flow: sign-in page, consent, code, token. A module
 // that marks an operation x-mcp tests its tool next to its REST tests:
 //

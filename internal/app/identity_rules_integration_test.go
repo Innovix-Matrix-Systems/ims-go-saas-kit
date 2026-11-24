@@ -15,7 +15,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// TestIdentityWriteRules covers the phase-13 identity invariants end to end:
+// TestIdentityWriteRules covers the identity invariants end to end:
 // role changes need the role-assign permission, nobody changes their own
 // roles, a self password change signs out other devices, and the users.max
 // quota holds under concurrent creates.

@@ -1,4 +1,4 @@
-// Package webhooks delivers events to customers' systems (phase 26.8): a
+// Package webhooks delivers events to customers' systems: a
 // tenant subscribes URLs to events, and every matching entry of the
 // activity log is POSTed to them, signed (Standard Webhooks), retried with
 // backoff and logged. An endpoint that keeps failing is disabled.

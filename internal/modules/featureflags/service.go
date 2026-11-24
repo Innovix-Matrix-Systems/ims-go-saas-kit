@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -110,7 +113,9 @@ func (s *Service) EffectiveForTarget(ctx context.Context, target Target) ([]Effe
 // override (inherit from the next level). rollout optionally limits an enabled
 // flag to a percentage of users (or tenants, see Flag.RolloutBy); a key that
 // only appears in rollout is enabled for that percentage.
-func (s *Service) SetBatch(ctx context.Context, actorID int64, target Target, flags map[string]*bool, rollout map[string]int) ([]EffectiveFlag, error) {
+func (s *Service) SetBatch(ctx context.Context, actorID int64, target Target, flags map[string]*bool, rollout map[string]int) (_ []EffectiveFlag, err error) {
+	ctx, end := tracing.Begin(ctx, "featureflags.set", attribute.Int("flags", len(flags)))
+	defer end(&err)
 	if err := s.validateTarget(ctx, target); err != nil {
 		return nil, err
 	}
@@ -170,7 +175,9 @@ func (s *Service) SetBatch(ctx context.Context, actorID int64, target Target, fl
 }
 
 // Delete clears a single override at the target.
-func (s *Service) Delete(ctx context.Context, target Target, key string) error {
+func (s *Service) Delete(ctx context.Context, target Target, key string) (err error) {
+	ctx, end := tracing.Begin(ctx, "featureflags.delete")
+	defer end(&err)
 	if _, ok := Lookup(key); !ok {
 		return apperr.Newf(apperr.ResourceNotFound, "Feature flag %q is not registered.", key)
 	}
@@ -189,7 +196,9 @@ func (s *Service) Delete(ctx context.Context, target Target, key string) error {
 }
 
 // Sync inserts missing global defaults and returns how many were created.
-func (s *Service) Sync(ctx context.Context) (int, error) {
+func (s *Service) Sync(ctx context.Context) (_ int, err error) {
+	ctx, end := tracing.Begin(ctx, "featureflags.sync")
+	defer end(&err)
 	created := 0
 	for _, flag := range Catalog {
 		_, inserted, err := s.repo.InsertGlobalIfAbsent(ctx, flag.Key, flag.Default)

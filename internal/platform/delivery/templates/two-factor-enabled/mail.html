@@ -1,0 +1,4 @@
+<p>Hello{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Two-factor sign-in was turned on for your account on <strong>{{.Data.when}}</strong>, using {{if eq .Data.method "totp"}}an authenticator app{{else}}codes sent to this e-mail address{{end}}.</p>
+<p>Keep your recovery codes somewhere safe: each one signs you in once if you lose your {{if eq .Data.method "totp"}}phone{{else}}mailbox{{end}}.</p>
+<p>If you did not do this, change your password now and contact your administrator.</p>

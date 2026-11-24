@@ -1,5 +1,5 @@
 -- +goose Up
--- Phase 21: act-as-user. Entries written while someone acts as a user carry
+-- Act-as-user. Entries written while someone acts as a user carry
 -- the person really calling. impersonator_name is a snapshot, so the record
 -- still names them after their account is deleted (the id is then NULL).
 -- Rows with tenant_id IS NULL are the system audit log; the partial index

@@ -98,7 +98,7 @@ func (d *Dependencies) Router() http.Handler {
 		})
 	})
 
-	// MCP connector (phase 22): the OAuth authorization server and /mcp.
+	// MCP connector: the OAuth authorization server and /mcp.
 	// Registered unconditionally so the route table stays stable; with
 	// MCP_ENABLED off they answer 404.
 	d.OAuth.RegisterEndpoints(r, d.Config.MCP.Enabled)
@@ -123,7 +123,7 @@ func (d *Dependencies) Router() http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Use(authn.Authenticate(d.Authenticator, d.Responder))
-			// Duplicate-request protection (phase 26.7): a write repeated
+			// Duplicate-request protection: a write repeated
 			// while it runs, or just after it succeeded, is refused; an
 			// Idempotency-Key replays the first answer.
 			if d.Config.Dedupe.Enabled && d.Platform != nil {
@@ -143,7 +143,7 @@ func (d *Dependencies) Router() http.Handler {
 				d.Privacy.RegisterRoutesResolve(r)
 				d.Branches.RegisterRoutes(r)
 				d.Activity.RegisterRoutes(r)
-				d.Platform.ActivityExport.RegisterRoutes(r)
+				d.ActivityExport.RegisterRoutes(r)
 				d.Roles.RegisterRoutesResolve(r)
 				d.Billing.RegisterRoutesResolve(r)
 				d.Notifications.RegisterRoutesResolve(r)
@@ -178,7 +178,7 @@ func (d *Dependencies) Router() http.Handler {
 					d.Roles.RegisterRoutesExempt(r)
 					d.Billing.RegisterRoutesExempt(r)
 					d.Notifications.RegisterRoutesExempt(r)
-					d.Platform.ActivityExport.RegisterInternalRoutes(r)
+					d.ActivityExport.RegisterInternalRoutes(r)
 					d.Processing.RegisterInternalRoutes(r)
 					d.Dashboard.RegisterInternalRoutes(r)
 					d.Announcements.RegisterInternalRoutes(r)

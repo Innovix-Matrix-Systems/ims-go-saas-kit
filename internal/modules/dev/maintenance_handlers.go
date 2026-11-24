@@ -8,7 +8,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
 )
 
-// Maintenance mode (phase 24): the System page card and the top-bar pill.
+// Maintenance mode: the System page card and the top-bar pill.
 
 // maintenanceDownRequest is the body of POST /dev/api/maintenance/down.
 type maintenanceDownRequest struct {
