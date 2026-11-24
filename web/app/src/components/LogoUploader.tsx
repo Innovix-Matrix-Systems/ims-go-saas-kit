@@ -6,18 +6,17 @@ import { useToast } from './Toasts'
 import { Button, CopyField, Icon, Spinner } from './ui'
 
 /**
- * Uploading the organization's logo, beside the setting that uses it: the
- * logo is stored as a public image (listed in Files); its link can be copied
- * or set as the logo in one click.
+ * Uploading the organization's logo. The upload becomes the logo at once
+ * (the API sets the branding.logo_url setting), so everything that shows it
+ * is refreshed: the organization, settings and files. `input` is the hidden
+ * file input to render; `choose` opens the picker.
  */
-export function LogoUploader({ current, onUse }: { current: string; onUse: (url: string) => Promise<void> }) {
+export function useLogoUpload() {
   const t = useT()
   const client = useQueryClient()
   const { push } = useToast()
-  const input = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const [uploaded, setUploaded] = useState<string | null>(null)
-  const preview = uploaded ?? (current || null)
 
   const upload = async (file: File | undefined) => {
     if (!file) return
@@ -25,56 +24,51 @@ export function LogoUploader({ current, onUse }: { current: string; onUse: (url:
     try {
       const form = new FormData()
       form.append('logo', file)
-      const stored = await api<Schemas['File']>('/organization/logo', { method: 'POST', body: form })
-      setUploaded(stored.url)
-      await client.invalidateQueries({ queryKey: ['files'] })
+      await api<Schemas['File']>('/organization/logo', { method: 'POST', body: form })
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ['organization'] }),
+        client.invalidateQueries({ queryKey: ['settings'] }),
+        client.invalidateQueries({ queryKey: ['files'] }),
+      ])
       push(t('logo.uploaded'), 'success')
     } catch (cause) {
       push(cause instanceof ApiError ? (cause.field('logo') ?? cause.message) : String(cause), 'error')
     } finally {
       setBusy(false)
-      if (input.current) input.current.value = ''
+      if (ref.current) ref.current.value = ''
     }
   }
 
+  return {
+    busy,
+    choose: () => ref.current?.click(),
+    input: <input ref={ref} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void upload(e.target.files?.[0])} />,
+  }
+}
+
+/** The logo's preview, its link to copy, and the button to upload a new one; under the Logo setting. */
+export function LogoUploader({ current }: { current: string }) {
+  const t = useT()
+  const logo = useLogoUpload()
   return (
     <div className="logo-uploader">
-      <div className="logo-preview" aria-hidden={!preview}>
-        {preview ? <img src={preview} alt={t('logo.preview')} /> : <Icon name="files" />}
-      </div>
+      <div className="logo-preview">{current ? <img src={current} alt={t('logo.preview')} /> : <Icon name="files" />}</div>
       <div className="logo-body">
-        {uploaded ? (
+        {current ? (
           <>
             <span className="small muted">{t('logo.link')}</span>
-            <CopyField value={uploaded} />
-            <div className="flex g-2 wrap">
-              {uploaded !== current ? (
-                <Button size="sm" variant="primary" icon="check" disabled={busy} onClick={() => void onUse(uploaded)}>
-                  {t('logo.use')}
-                </Button>
-              ) : (
-                <span className="small logo-in-use">
-                  <Icon name="check" />
-                  {t('logo.inUse')}
-                </span>
-              )}
-              <Button size="sm" icon="edit" disabled={busy} onClick={() => input.current?.click()}>
-                {t('logo.replace')}
-              </Button>
-            </div>
+            <CopyField value={current} />
           </>
         ) : (
-          <>
-            <span className="small muted">{t('logo.hint')}</span>
-            <div>
-              <Button size="sm" icon="plus" disabled={busy} onClick={() => input.current?.click()}>
-                {busy ? <Spinner /> : null} {t('logo.upload')}
-              </Button>
-            </div>
-          </>
+          <span className="small muted">{t('logo.hint')}</span>
         )}
+        <div>
+          <Button size="sm" icon={current ? 'edit' : 'plus'} disabled={logo.busy} onClick={logo.choose}>
+            {logo.busy ? <Spinner /> : null} {current ? t('logo.replace') : t('logo.upload')}
+          </Button>
+        </div>
       </div>
-      <input ref={input} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void upload(e.target.files?.[0])} />
+      {logo.input}
     </div>
   )
 }

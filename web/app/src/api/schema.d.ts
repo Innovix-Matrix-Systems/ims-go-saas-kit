@@ -496,7 +496,7 @@ export interface paths {
         put?: never;
         /**
          * Upload the organization's logo
-         * @description Replaces the organization's logo (`organization.update`): an image (max 5 MB) on the public disk, attached to the organization and listed with its files. The response's `url` is public; set it as the `branding.logo_url` setting to use it in e-mails and as the organization's mark.
+         * @description Replaces the organization's logo (`organization.update`): an image (max 5 MB) on the public disk, attached to the organization and listed with its files. Its public `url` becomes the organization's `branding.logo_url` setting, so e-mails and the organization's mark use it at once.
          */
         post: operations["uploadOrganizationLogo"];
         delete?: never;
@@ -7088,6 +7088,11 @@ export interface components {
             phone?: string | null;
             email?: string | null;
             is_active: boolean;
+            /** @description The organization's logo and colour (its `branding.logo_url` and `branding.color` settings); null values are unset. */
+            branding?: {
+                logo_url: string | null;
+                color: string | null;
+            };
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */

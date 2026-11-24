@@ -93,7 +93,7 @@ function OrganizationsPage() {
                   <tr key={tenant.id} className="clickable" onClick={() => setSelected(tenant)}>
                     <td>
                       <span className="org-cell">
-                        <OrgMark name={tenant.name} />
+                        <OrgMark name={tenant.name} logo={tenant.branding?.logo_url} />
                         <span className="member-meta">
                           <span className="member-name">{tenant.name}</span>
                           <span className="small muted mono">#{tenant.id}</span>
@@ -228,7 +228,12 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
   return (
     <Drawer
       open
-      title={tenant.name}
+      title={
+        <span className="org-cell">
+          <OrgMark name={tenant.name} logo={tenant.branding?.logo_url} size="lg" />
+          {tenant.name}
+        </span>
+      }
       subtitle={`#${tenant.id} · ${tenant.code}`}
       onClose={onClose}
       actions={tenant.is_active ? <Badge tone="ok">{t('console.active')}</Badge> : <Badge tone="danger">{t('console.suspended')}</Badge>}

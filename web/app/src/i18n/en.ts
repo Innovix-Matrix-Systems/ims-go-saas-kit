@@ -911,8 +911,6 @@ export const en = {
   'logo.uploaded': 'Logo uploaded.',
   'logo.preview': 'Logo preview',
   'logo.link': 'Link to your uploaded logo',
-  'logo.use': 'Use as logo',
-  'logo.inUse': 'This is your logo',
   'logo.replace': 'Upload another',
   'logo.hint': 'Upload an image (PNG, JPG, WebP or GIF, up to 5 MB) and use its link as your logo.',
   'logo.upload': 'Upload logo',

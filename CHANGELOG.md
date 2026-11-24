@@ -74,12 +74,13 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   plan usage, counts). IDs and codes are shown as text with a copy button instead of read-only
   inputs.
 - `POST /api/v1/organization/logo` uploads the organization's logo (an image on the public disk,
-  attached to the organization and listed with its files, replaced by the next upload); its
-  public `url` goes into the `branding.logo_url` setting. File responses carry `collection`
-  (`logo`, `profile`, `output`).
-- Client app: the Logo setting has an uploader that shows the uploaded logo's link with a copy
-  button and sets it as the logo in one click; Files marks the organization logo and profile
-  photos and shows a public file's link to copy.
+  attached to the organization and listed with its files, replaced by the next upload) and sets
+  its public `url` as the `branding.logo_url` setting. Tenant responses (staff) carry `branding`
+  too. File responses carry `collection` (`logo`, `profile`, `output`).
+- Client app: the logo is uploaded from the Logo setting or the organization profile (an edit
+  button on its mark), shows its link to copy, and appears in the sidebar, the profile and the
+  staff organization list and drawer; Files marks the organization logo and profile photos and
+  shows a public file's link to copy.
 - The organization dashboard's files section has `by_type` (count and bytes per file type).
 - Client app: dashboard charts use Recharts (trend areas, donuts for plans, organization status,
   members by status and storage by type, ranked bars), loaded only with the home page; pricing

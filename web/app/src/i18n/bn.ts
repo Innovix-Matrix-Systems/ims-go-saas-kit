@@ -913,8 +913,6 @@ export const bn: Messages = {
   'logo.uploaded': 'লোগো আপলোড হয়েছে।',
   'logo.preview': 'লোগোর প্রিভিউ',
   'logo.link': 'আপলোড করা লোগোর লিংক',
-  'logo.use': 'লোগো হিসেবে ব্যবহার করুন',
-  'logo.inUse': 'এটিই আপনার লোগো',
   'logo.replace': 'আরেকটি আপলোড করুন',
   'logo.hint': 'একটি ছবি আপলোড করুন (PNG, JPG, WebP বা GIF, ৫ MB পর্যন্ত) এবং এর লিংক লোগো হিসেবে ব্যবহার করুন।',
   'logo.upload': 'লোগো আপলোড',

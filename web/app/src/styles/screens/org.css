@@ -186,5 +186,3 @@
 .logo-preview svg { width: 22px; height: 22px; }
 .logo-body { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
 .logo-body .copy-field { max-width: 100%; }
-.logo-in-use { display: inline-flex; align-items: center; gap: 6px; color: var(--ok-fg); }
-.logo-in-use svg { width: 14px; height: 14px; }

@@ -7,11 +7,12 @@ import { formatBytes, relativeTimeIn } from '../format'
 import { intlLocale, useLocale, useT } from '../i18n'
 import { subscriptionStatusQuery } from '../components/billing'
 import { OrganizationForm } from '../components/OrganizationForm'
+import { useLogoUpload } from '../components/LogoUploader'
 import { organizationQuery } from '../components/organization'
 import { PlanCard } from '../components/PlanCard'
 import { FormSkeleton } from '../components/Skeleton'
 import { OrgMark } from '../components/WorkspaceMenu'
-import { Avatar, Badge, Button, Card, CopyField, Icon, Modal, type IconName } from '../components/ui'
+import { Avatar, Badge, Button, Card, CopyField, Icon, Modal, Spinner, type IconName } from '../components/ui'
 
 export const Route = createFileRoute('/_app/org/')({
   component: OrganizationProfilePage,
@@ -26,6 +27,7 @@ function OrganizationProfilePage() {
   const locale = intlLocale(useLocale())
   const session = useSession()
   const [editing, setEditing] = useState(false)
+  const logo = useLogoUpload()
   const organization = useQuery(organizationQuery)
   const figures = useQuery({ queryKey: ['dashboard', 'org', 'profile'], queryFn: () => api<TenantDashboard>('/dashboard', { query: { days: 30 } }) })
   const billing = can(session, 'billing.view')
@@ -61,6 +63,21 @@ function OrganizationProfilePage() {
         <div className="profile-hero-body">
           <div className="profile-photo">
             <OrgMark name={org.name} logo={org.branding.logo_url} size="xl" />
+            {editable ? (
+              <>
+                {logo.input}
+                <button
+                  type="button"
+                  className="profile-photo-edit"
+                  title={org.branding.logo_url ? t('logo.replace') : t('logo.upload')}
+                  aria-label={org.branding.logo_url ? t('logo.replace') : t('logo.upload')}
+                  disabled={logo.busy}
+                  onClick={logo.choose}
+                >
+                  {logo.busy ? <Spinner /> : <Icon name="edit" />}
+                </button>
+              </>
+            ) : null}
           </div>
           <div className="profile-identity">
             <h1>{org.name}</h1>

@@ -214,7 +214,7 @@ function PoliciesCard() {
                     save={save(item)}
                     extra={
                       item.key === 'branding.logo_url' && can(session, 'organization.update') ? (
-                        <LogoUploader current={typeof item.value === 'string' ? item.value : ''} onUse={save(item)} />
+                        <LogoUploader current={typeof item.value === 'string' ? item.value : ''} />
                       ) : undefined
                     }
                   />
