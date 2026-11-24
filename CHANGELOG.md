@@ -7,7 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 **Upgrading:** run `ims migrate` (`00042_active_branch_unset`: accounts whose active branch was
-only their own branch now have none).
+only their own branch now have none) and `ims permission:sync` (tenant Admin roles get the
+`data_processing_job` permissions).
 
 ### Changed
 
@@ -15,8 +16,16 @@ only their own branch now have none).
   in: the branch they switched to, every branch for those who may switch (`branch.view.all` and
   `user.branch.switch`) and have not picked one, else their own branch. New accounts start with no
   branch switched to.
+- The tenant Admin role holds `data_processing_job.view.all` and `data_processing_job.view`: an
+  organization's admins list every member's background jobs and open, download, retry or remove
+  them. Members without it keep their own; a personal-data export stays its owner's.
 
 ### Added
+
+- `GET /api/v1/data-processing/jobs` filters by `user_id` (and, like the caller's list, `type`,
+  `status` and `search`); listed jobs carry `user_name`. The client app's Background jobs page
+  switches between **My jobs** and **All jobs** with member, type and status filters, and its top-bar
+  cards show until when each file stays.
 
 - `DELETE /api/v1/user/switch-branch` goes back to every branch; the client app's branch switcher
   offers **All branches**.
