@@ -497,7 +497,7 @@ ims privacy:coverage
 
 ### privacy:erase
 
-Erase a user's personal data in every module and keep the users row as a tombstone (docs/design/account-deletion-and-export.md). It cannot be undone, so it needs --force. The super admin and a tenant's last active Admin are refused.
+Erase a user's personal data in every module and keep the users row as a tombstone (docs/design/account-deletion-and-export.md). It cannot be undone, so it needs --force. The super admin and a live tenant's last active Admin are refused.
 
 ```bash
 ims privacy:erase [flags]

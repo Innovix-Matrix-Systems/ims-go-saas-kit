@@ -128,6 +128,15 @@ func TestEraseGuards(t *testing.T) {
 	if _, err := service.Erase(ctx, privacy.EraseInput{UserID: only.ID, Source: privacy.SourceCLI}); err != nil {
 		t.Errorf("with a second admin: %v", err)
 	}
+
+	// A deleted organization has nothing left to administer: its only Admin
+	// can be erased.
+	closed := app.Tenant(t, "Closed Tenant")
+	last := app.User(t, testkit.InTenant(closed))
+	app.As(app.SuperAdmin(t)).Delete(fmt.Sprintf("/api/v1/tenant/%d", closed)).Status(t, http.StatusNoContent)
+	if _, err := service.Erase(ctx, privacy.EraseInput{UserID: last.ID, Source: privacy.SourceCLI}); err != nil {
+		t.Errorf("last admin of a deleted tenant: %v", err)
+	}
 }
 
 func TestExport(t *testing.T) {
