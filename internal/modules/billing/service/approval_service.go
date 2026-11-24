@@ -7,10 +7,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // ApprovalService implements the manual payment review workflow.
@@ -19,11 +20,103 @@ type ApprovalService struct {
 	payments      domain.PaymentRepository
 	subscriptions domain.SubscriptionRepository
 	tx            *database.TxManager
+	activity      *activity.Recorder
 }
 
 // NewApprovalService creates the approval service.
 func NewApprovalService(approvals domain.ApprovalRepository, payments domain.PaymentRepository, subscriptions domain.SubscriptionRepository, tx *database.TxManager) *ApprovalService {
 	return &ApprovalService{approvals: approvals, payments: payments, subscriptions: subscriptions, tx: tx}
+}
+
+// WithActivity records withdrawn checkouts in the organization's activity log.
+func (s *ApprovalService) WithActivity(recorder *activity.Recorder) *ApprovalService {
+	s.activity = recorder
+	return s
+}
+
+// Withdraw lets an organization take back a checkout nobody has confirmed yet
+// (a wrong transfer reference, a change of mind): the pending payment and its
+// pending subscription are cancelled and the approval request is closed as
+// rejected with a note, so staff no longer see it waiting.
+func (s *ApprovalService) Withdraw(ctx context.Context, tenantID, paymentID, actorID int64) error {
+	payment, err := s.payments.Get(ctx, paymentID)
+	if err != nil {
+		return err
+	}
+	if payment.TenantID != tenantID {
+		return apperr.Newf(apperr.ResourceNotFound, "Payment with ID '%d' was not found.", paymentID)
+	}
+	if payment.Status != domain.PaymentPending {
+		return apperr.New(apperr.InvalidState, "Only a payment that is still waiting can be withdrawn.")
+	}
+	note := "Withdrawn by the organization."
+	gatewayStatus := "withdrawn by the organization"
+	err = s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
+		if approval, err := q.PendingApprovalForPayment(ctx, payment.ID); err == nil {
+			if _, err := q.UpdatePaymentApproval(ctx, dbgen.UpdatePaymentApprovalParams{
+				ID: approval.ID, Status: domain.ApprovalRejected, ReviewerNote: &note, UpdatedBy: &actorID,
+			}); err != nil {
+				return err
+			}
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+		if _, err := q.UpdatePaymentStatus(ctx, dbgen.UpdatePaymentStatusParams{
+			ID: payment.ID, Status: domain.PaymentCancelled, GatewayStatus: &gatewayStatus,
+		}); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return apperr.New(apperr.InvalidState, "Only a payment that is still waiting can be withdrawn.")
+			}
+			return err
+		}
+		if payment.SubscriptionID == nil {
+			return nil
+		}
+		subscription, err := q.GetSubscription(ctx, *payment.SubscriptionID)
+		if err != nil || subscription.Status != domain.StatusPending {
+			return err
+		}
+		_, err = q.UpdateSubscriptionStatus(ctx, dbgen.UpdateSubscriptionStatusParams{
+			ID: subscription.ID, Status: domain.StatusCancelled, CancelledAt: timestamptz(time.Now()), CancellationReason: &note,
+		})
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	s.activity.Record(ctx, activity.Entry{
+		TenantID: tenantID, ActorID: actorID, Action: "billing.payment_withdrawn",
+		Subject: "payment", SubjectID: payment.ID,
+		Changes: map[string]any{"invoice_number": payment.InvoiceNumber, "amount": payment.Amount, "currency": payment.Currency},
+	})
+	return nil
+}
+
+// ApprovalDetail is what a reviewer sees beside an approval.
+type ApprovalDetail struct {
+	TenantName    string
+	PackageName   string
+	Amount        int64
+	Currency      string
+	InvoiceNumber string
+}
+
+// Details returns the payer, plan, amount and invoice for approvals by id.
+// It reads nothing when the tx manager is absent (unit tests).
+func (s *ApprovalService) Details(ctx context.Context, ids []int64) (map[int64]ApprovalDetail, error) {
+	out := make(map[int64]ApprovalDetail, len(ids))
+	if s.tx == nil || len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.tx.Queries().ApprovalDetailsByIDs(ctx, ids)
+	if err != nil {
+		return nil, database.MapError("billing.approval_details", err)
+	}
+	for _, row := range rows {
+		out[row.ID] = ApprovalDetail{TenantName: row.TenantName, PackageName: row.PackageName,
+			Amount: row.Amount, Currency: row.Currency, InvoiceNumber: row.InvoiceNumber}
+	}
+	return out, nil
 }
 
 // List returns approval requests with pagination.

@@ -9,21 +9,22 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/mcp"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dev"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/oauth"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/dedupe"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/docs"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/maintenance"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/ratelimit"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/storage"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/tracing"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/dedupe"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/docs"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/ratelimit"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/webui"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // Router assembles the HTTP handler with the standard middleware chain:
@@ -109,6 +110,7 @@ func (d *Dependencies) Router() http.Handler {
 		d.Auth.RegisterPublicRoutes(r)
 		d.Billing.RegisterPublicRoutes(r)
 		d.Notifications.RegisterPublicRoutes(r)
+		d.Onboarding.RegisterPublicRoutes(r)
 
 		// Public tenant-scoped routes: no sign-in, the tenant comes from
 		// X-Tenant-Code (and optionally X-Branch-Id).
@@ -141,6 +143,7 @@ func (d *Dependencies) Router() http.Handler {
 				d.Privacy.RegisterRoutesResolve(r)
 				d.Branches.RegisterRoutes(r)
 				d.Activity.RegisterRoutes(r)
+				d.Platform.ActivityExport.RegisterRoutes(r)
 				d.Roles.RegisterRoutesResolve(r)
 				d.Billing.RegisterRoutesResolve(r)
 				d.Notifications.RegisterRoutesResolve(r)
@@ -149,6 +152,10 @@ func (d *Dependencies) Router() http.Handler {
 				d.Processing.RegisterRoutes(r)
 				d.Settings.RegisterRoutes(r)
 				d.Flags.RegisterRoutes(r)
+				d.Onboarding.RegisterRoutes(r)
+				d.Tenants.RegisterOrganizationRoutes(r)
+				d.Dashboard.RegisterRoutes(r)
+				d.Announcements.RegisterRoutes(r)
 			})
 
 			r.Group(func(r chi.Router) {
@@ -171,6 +178,10 @@ func (d *Dependencies) Router() http.Handler {
 					d.Roles.RegisterRoutesExempt(r)
 					d.Billing.RegisterRoutesExempt(r)
 					d.Notifications.RegisterRoutesExempt(r)
+					d.Platform.ActivityExport.RegisterInternalRoutes(r)
+					d.Processing.RegisterInternalRoutes(r)
+					d.Dashboard.RegisterInternalRoutes(r)
+					d.Announcements.RegisterInternalRoutes(r)
 					d.Files.RegisterRoutesExempt(r)
 					d.Settings.RegisterInternalRoutes(r)
 					d.Flags.RegisterInternalRoutes(r)
@@ -182,7 +193,17 @@ func (d *Dependencies) Router() http.Handler {
 
 	mcpEndpoint.set(d.mcpHandler(apiRouter))
 
+	// The client app owns the site root and every other path outside the API
+	// and tool prefixes, so its client-side routes (and deep links in mails)
+	// load the app; unknown API paths still answer a JSON 404.
+	if d.AppUI != nil {
+		r.Get("/", d.AppUI.ServeHTTP)
+	}
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		if d.AppUI != nil && (r.Method == http.MethodGet || r.Method == http.MethodHead) && webui.OwnsPath(r.URL.Path) {
+			d.AppUI.ServeHTTP(w, r)
+			return
+		}
 		d.Responder.Error(w, r, apperr.New(apperr.ResourceNotFound, "The requested resource was not found."))
 	})
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {

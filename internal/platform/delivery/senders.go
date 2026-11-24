@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/mail"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/sms"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/mail"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/sms"
 )
 
 // MailSender sends the mail channel through a mail driver (log or smtp).

@@ -15,12 +15,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/crypto"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/crypto"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // KindDeliver is the delivery job: one attempt of one delivery.
@@ -64,7 +64,7 @@ type Service struct {
 }
 
 // NewService creates the webhook service. userAgent names the sender
-// ("ims-go-api-Webhooks/0.2.1").
+// ("ims-go-admin-starter-Webhooks/0.1.0").
 func NewService(repo Repository, encrypter *crypto.Encrypter, engine queue.Engine, cfg config.Webhooks, userAgent string, logger *slog.Logger) *Service {
 	return &Service{
 		repo: repo, encrypter: encrypter, queue: engine, cfg: cfg, userAgent: userAgent, logger: logger,

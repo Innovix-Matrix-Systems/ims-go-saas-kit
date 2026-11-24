@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // InsertUpdateRequest is the tenant create/update payload.
@@ -24,16 +24,18 @@ type InsertUpdateRequest struct {
 
 // Response is the public tenant representation.
 type Response struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	Code      string    `json:"code"`
-	Slug      *string   `json:"slug"`
-	Domain    *string   `json:"domain"`
-	Phone     *string   `json:"phone"`
-	Email     *string   `json:"email"`
-	IsActive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID       int64   `json:"id"`
+	Name     string  `json:"name"`
+	Code     string  `json:"code"`
+	Slug     *string `json:"slug"`
+	Domain   *string `json:"domain"`
+	Phone    *string `json:"phone"`
+	Email    *string `json:"email"`
+	IsActive bool    `json:"is_active"`
+	// Branding is filled by the handler (the organization's logo and colour).
+	Branding  *BrandingResponse `json:"branding,omitempty"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
 }
 
 // NewResponse maps a tenant to its public representation.
@@ -54,9 +56,18 @@ func NewResponse(tenant Tenant) Response {
 
 // Handler serves tenant endpoints (tenant-exempt group).
 type Handler struct {
-	service *Service
-	checker *authz.Checker
+	service  *Service
+	checker  *authz.Checker
+	settings SettingReader
 	httpx.Kit
+}
+
+// respond is a tenant with its branding, for staff screens that show its logo.
+func (h *Handler) respond(r *http.Request, tenant Tenant) Response {
+	out := NewResponse(tenant)
+	branding := h.branding(r.Context(), tenant.ID)
+	out.Branding = &branding
+	return out
 }
 
 // NewHandler creates the tenant handler.
@@ -77,7 +88,7 @@ func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 	}
 	data := make([]Response, 0, len(items))
 	for _, item := range items {
-		data = append(data, NewResponse(item))
+		data = append(data, h.respond(r, item))
 	}
 	meta, links := httpx.NewPagination(r, page, perPage, total)
 	h.Paginated(w, r, http.StatusOK, data, meta, links)
@@ -93,7 +104,7 @@ func (h *Handler) show(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
-	h.Data(w, r, http.StatusOK, NewResponse(*tenant))
+	h.Data(w, r, http.StatusOK, h.respond(r, *tenant))
 }
 
 func (h *Handler) store(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +128,7 @@ func (h *Handler) store(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
-	h.Data(w, r, http.StatusCreated, NewResponse(*tenant))
+	h.Data(w, r, http.StatusCreated, h.respond(r, *tenant))
 }
 
 func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +161,7 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
-	h.Data(w, r, http.StatusOK, NewResponse(*tenant))
+	h.Data(w, r, http.StatusOK, h.respond(r, *tenant))
 }
 
 func (h *Handler) destroy(w http.ResponseWriter, r *http.Request) {

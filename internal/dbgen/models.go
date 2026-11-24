@@ -23,6 +23,39 @@ type ActivityLog struct {
 	ImpersonatorName *string            `json:"impersonator_name"`
 }
 
+type Announcement struct {
+	ID          int64              `json:"id"`
+	Title       string             `json:"title"`
+	Body        *string            `json:"body"`
+	Kind        string             `json:"kind"`
+	CtaLabel    *string            `json:"cta_label"`
+	CtaUrl      *string            `json:"cta_url"`
+	Audience    string             `json:"audience"`
+	StartsAt    pgtype.Timestamptz `json:"starts_at"`
+	EndsAt      pgtype.Timestamptz `json:"ends_at"`
+	Dismissible bool               `json:"dismissible"`
+	Status      string             `json:"status"`
+	Channels    []string           `json:"channels"`
+	DeliveredAt pgtype.Timestamptz `json:"delivered_at"`
+	CreatedBy   *int64             `json:"created_by"`
+	UpdatedBy   *int64             `json:"updated_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+type AnnouncementEvent struct {
+	AnnouncementID int64              `json:"announcement_id"`
+	UserID         int64              `json:"user_id"`
+	TenantID       *int64             `json:"tenant_id"`
+	Type           string             `json:"type"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type AnnouncementTenant struct {
+	AnnouncementID int64 `json:"announcement_id"`
+	TenantID       int64 `json:"tenant_id"`
+}
+
 type BackupRun struct {
 	ID             int64              `json:"id"`
 	Uuid           pgtype.UUID        `json:"uuid"`
@@ -531,19 +564,30 @@ type Subscription struct {
 }
 
 type Tenant struct {
-	ID        int64              `json:"id"`
-	Name      string             `json:"name"`
-	Code      string             `json:"code"`
-	Slug      *string            `json:"slug"`
-	Domain    *string            `json:"domain"`
-	Phone     *string            `json:"phone"`
-	Email     *string            `json:"email"`
-	IsActive  bool               `json:"is_active"`
-	CreatedBy *int64             `json:"created_by"`
-	UpdatedBy *int64             `json:"updated_by"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+	ID          int64              `json:"id"`
+	Name        string             `json:"name"`
+	Code        string             `json:"code"`
+	Slug        *string            `json:"slug"`
+	Domain      *string            `json:"domain"`
+	Phone       *string            `json:"phone"`
+	Email       *string            `json:"email"`
+	IsActive    bool               `json:"is_active"`
+	CreatedBy   *int64             `json:"created_by"`
+	UpdatedBy   *int64             `json:"updated_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+	OwnerUserID *int64             `json:"owner_user_id"`
+}
+
+type TenantOnboarding struct {
+	TenantID     int64              `json:"tenant_id"`
+	OwnerUserID  *int64             `json:"owner_user_id"`
+	Source       string             `json:"source"`
+	CompletedAt  pgtype.Timestamptz `json:"completed_at"`
+	SkippedSteps []string           `json:"skipped_steps"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
 type User struct {
@@ -573,6 +617,18 @@ type User struct {
 	InvitedBy            *int64             `json:"invited_by"`
 	InvitationAcceptedAt pgtype.Timestamptz `json:"invitation_accepted_at"`
 	ErasedAt             pgtype.Timestamptz `json:"erased_at"`
+	Locale               *string            `json:"locale"`
+}
+
+type UserAgreement struct {
+	ID         int64              `json:"id"`
+	UserID     int64              `json:"user_id"`
+	TenantID   *int64             `json:"tenant_id"`
+	Document   string             `json:"document"`
+	Version    string             `json:"version"`
+	AcceptedAt pgtype.Timestamptz `json:"accepted_at"`
+	IpAddress  *string            `json:"ip_address"`
+	UserAgent  *string            `json:"user_agent"`
 }
 
 type UserTwoFactor struct {

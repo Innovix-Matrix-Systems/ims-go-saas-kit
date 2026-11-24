@@ -3,7 +3,8 @@ package access
 import (
 	"time"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 )
 
 // Role is the domain representation of a role.
@@ -19,6 +20,13 @@ type Role struct {
 	UpdatedBy   *int64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+// Managed reports whether the role is an organization's Admin role, which the
+// app keeps in step with the permission catalog (see SyncTenantAdminRoles):
+// it cannot be renamed, deleted or given a different set of permissions.
+func (r Role) Managed() bool {
+	return r.TenantID != nil && r.Name == authz.AdminRole
 }
 
 // TenantRef is a slim tenant reference (id, name, code) attached to role

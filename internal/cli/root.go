@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/logging"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/logging"
 )
 
 // State holds the lazily loaded configuration and logger shared by commands.
@@ -48,8 +48,8 @@ func BuildRoot(state *State) (*cobra.Command, error) {
 
 	root := &cobra.Command{
 		Use:           "ims",
-		Short:         "IMS Go API Starter",
-		Long:          "IMS Go API starter. Run `ims help` to list commands.",
+		Short:         "IMS Go Admin Starter",
+		Long:          "IMS Go Admin Starter starter. Run `ims help` to list commands.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

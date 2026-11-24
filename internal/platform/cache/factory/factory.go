@@ -4,13 +4,13 @@ package factory
 import (
 	"fmt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	cachedb "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/database"
-	cachefile "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/file"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/memory"
-	cacheredis "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/redis"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	cachedb "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/database"
+	cachefile "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/file"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/memory"
+	cacheredis "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/redis"
 )
 
 // New builds the configured cache store. The returned cleanup function

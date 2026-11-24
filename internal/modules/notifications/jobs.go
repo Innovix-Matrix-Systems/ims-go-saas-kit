@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 )
 
 // Job kinds registered by the notifications module.
@@ -20,8 +20,12 @@ type fanOutPayload struct {
 	NotificationID int64 `json:"notification_id"`
 }
 
+// markAllReadPayload names the branch notices the feed showed: one
+// branch, every branch, or (both empty) the member's own branch.
 type markAllReadPayload struct {
-	UserID int64 `json:"user_id"`
+	UserID      int64 `json:"user_id"`
+	BranchID    int64 `json:"branch_id,omitempty"`
+	AllBranches bool  `json:"all_branches,omitempty"`
 }
 
 type decrementUnreadPayload struct {
@@ -59,7 +63,7 @@ func (s *Service) RegisterJobs(registry *queue.Registry) error {
 				if err := json.Unmarshal(payload, &input); err != nil {
 					return err
 				}
-				return s.ProcessMarkAllRead(ctx, input.UserID)
+				return s.ProcessMarkAllRead(ctx, input.UserID, input.BranchID, input.AllBranches)
 			},
 		},
 		{

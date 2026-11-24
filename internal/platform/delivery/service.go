@@ -9,10 +9,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/crypto"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/i18n"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/crypto"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/i18n"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 )
 
 // KindSend is the delivery job kind: one message on one channel.

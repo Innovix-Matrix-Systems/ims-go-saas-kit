@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/docsgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/docsgen"
 )
 
 func newGenDocsCommand() *cobra.Command {

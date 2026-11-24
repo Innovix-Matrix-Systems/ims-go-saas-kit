@@ -88,6 +88,14 @@ const (
 	PermBranchUpdate  = "branch.update"
 	PermBranchDelete  = "branch.delete"
 
+	// The organization's own plan, usage and payments (tenant routes). Staff
+	// routes keep the system permissions subscription.* / payment.*.
+	PermBillingView   = "billing.view"
+	PermBillingManage = "billing.manage"
+
+	// The caller's own organization (tenant-resolved routes).
+	PermOrganizationUpdate = "organization.update"
+
 	PermTenantViewAll = "tenant.view.all"
 	PermTenantView    = "tenant.view"
 	PermTenantCreate  = "tenant.create"
@@ -100,6 +108,9 @@ const (
 	PermSettingInternalView       = "setting.internal.view"
 	PermSettingInternalUpdate     = "setting.internal.update"
 	PermFeatureFlagInternalUpdate = "feature_flag.internal.update"
+
+	PermAnnouncementView   = "announcement.view"
+	PermAnnouncementManage = "announcement.manage"
 
 	PermSettingsGroupViewAll = "settings_group.view.all"
 	PermSettingsGroupView    = "settings_group.view"
@@ -177,6 +188,13 @@ var Catalog = []Permission{
 	{Name: PermDataProcessingViewAll, Group: "data_processing_job", Description: "Can view all data processing jobs"},
 	{Name: PermDataProcessingView, Group: "data_processing_job", Description: "Can view data processing job details"},
 
+	// ── organization (the tenant's own profile) ───────────
+	{Name: PermOrganizationUpdate, Group: "organization", Description: "Can edit the organization's name and contact details"},
+
+	// ── billing (the tenant's own plan and payments) ──────
+	{Name: PermBillingView, Group: "billing", Description: "Can view the organization's plan, usage and payments"},
+	{Name: PermBillingManage, Group: "billing", Description: "Can choose the organization's plan and pay for it"},
+
 	// ── package ───────────────────────────────────────────
 	{Name: "package.view.all", Group: "package", IsSystem: true, Description: "Can view all packages"},
 	{Name: "package.view", Group: "package", IsSystem: true, Description: "Can view package details"},
@@ -219,6 +237,10 @@ var Catalog = []Permission{
 
 	// ── feature_flag ──────────────────────────────────────
 	{Name: PermFeatureFlagInternalUpdate, Group: "feature_flag", IsSystem: true, Description: "Can change feature flags for any target"},
+
+	// ── announcement ──────────────────────────────────────
+	{Name: PermAnnouncementView, Group: "announcement", IsSystem: true, Description: "Can view announcements and how they did"},
+	{Name: PermAnnouncementManage, Group: "announcement", IsSystem: true, Description: "Can create, change and delete announcements"},
 
 	// ── settings_group ────────────────────────────────────
 	{Name: PermSettingsGroupViewAll, Group: "settings_group", IsSystem: true, Description: "Can view all settings groups"},
@@ -263,7 +285,7 @@ func AdminTenantPermissions() []Permission {
 			continue
 		}
 		switch permission.Group {
-		case "role", "branch", "user", "file", "setting", "activity", "webhook":
+		case "role", "branch", "user", "file", "setting", "activity", "webhook", "billing", "organization", "data_processing_job":
 			if _, skip := exclude[permission.Name]; skip {
 				continue
 			}

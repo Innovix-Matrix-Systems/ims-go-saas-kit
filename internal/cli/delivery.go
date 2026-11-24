@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/app"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/app"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
 )
 
 func registerDeliveryCommands(registry *Registry, state *State) error {

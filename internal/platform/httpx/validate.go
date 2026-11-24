@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/i18n"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/i18n"
 )
 
 // Validator validates request structs and maps failures to readable,

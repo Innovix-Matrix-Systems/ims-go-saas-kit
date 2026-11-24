@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // RoleHandler serves role endpoints.
@@ -95,7 +95,31 @@ func (h *RoleHandler) show(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, apperr.Newf(apperr.ResourceNotFound, "Role with ID '%d' was not found.", id))
 		return
 	}
-	h.Data(w, r, http.StatusOK, h.responseFor(r.Context(), *role))
+	permissions, err := h.service.Permissions(r.Context(), role.ID)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	response := h.responseFor(r.Context(), *role)
+	response.Permissions = make([]PermissionResponse, 0, len(permissions))
+	for _, permission := range permissions {
+		response.Permissions = append(response.Permissions, NewPermissionResponse(permission))
+	}
+	h.Data(w, r, http.StatusOK, response)
+}
+
+// grantable lists the permissions the caller may put on a role.
+func (h *RoleHandler) grantable(w http.ResponseWriter, r *http.Request) {
+	permissions, err := h.service.Grantable(r.Context(), authn.UserID(r))
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	data := make([]PermissionResponse, 0, len(permissions))
+	for _, permission := range permissions {
+		data = append(data, NewPermissionResponse(permission))
+	}
+	h.Data(w, r, http.StatusOK, data)
 }
 
 func (h *RoleHandler) store(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +173,7 @@ func (h *RoleHandler) assignPermissions(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	scope := tenancy.From(r)
-	if err := h.service.AssignPermissions(r.Context(), scope.EffectiveTenantID(), req.ID, req.Permissions); err != nil {
+	if err := h.service.AssignPermissions(r.Context(), scope.EffectiveTenantID(), authn.UserID(r), req.ID, req.Permissions); err != nil {
 		h.Error(w, r, err)
 		return
 	}

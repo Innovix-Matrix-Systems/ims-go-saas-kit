@@ -8,11 +8,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/storage"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // CleanupSettingKey drives the retention window of the cleanup task.
@@ -28,6 +28,14 @@ type Service struct {
 	cfg     config.Processing
 	logger  *slog.Logger
 	hasDisk bool
+	queries lifecycleQueries
+}
+
+// WithQueries enables Retry (it resets the job row directly) and lists
+// export files among the organization's files.
+func (s *Service) WithQueries(queries lifecycleQueries) *Service {
+	s.queries = queries
+	return s
 }
 
 // NewService creates the processing-job service.
@@ -132,6 +140,23 @@ func (s *Service) List(ctx context.Context, scope tenancy.Scope, filter ListFilt
 		return nil, 0, err
 	}
 	return items, total, nil
+}
+
+// ActorNames returns the names of the people who started the jobs.
+func (s *Service) ActorNames(ctx context.Context, jobs []Job) map[int64]string {
+	ids := make([]int64, 0, len(jobs))
+	seen := map[int64]bool{}
+	for _, job := range jobs {
+		if job.UserID != nil && !seen[*job.UserID] {
+			seen[*job.UserID] = true
+			ids = append(ids, *job.UserID)
+		}
+	}
+	names, err := s.repo.ActorNames(ctx, ids)
+	if err != nil {
+		return map[int64]string{}
+	}
+	return names
 }
 
 // Download is a resolved job artifact stream.
@@ -248,7 +273,10 @@ func (s *Service) UpdateProgress(ctx context.Context, id int64, total, processed
 
 // AttachFile records the generated export/import file.
 func (s *Service) AttachFile(ctx context.Context, id int64, file FileInput) error {
-	return s.repo.UpdateFile(ctx, id, file)
+	if err := s.repo.UpdateFile(ctx, id, file); err != nil {
+		return err
+	}
+	return s.registerOutput(ctx, id, file)
 }
 
 // CleanupCompleted deletes finished jobs older than the retention window
@@ -309,6 +337,9 @@ func (s *Service) CleanupType(ctx context.Context, jobType string, maxAgeHours i
 
 // removeJobFile deletes the stored artifact from the first disk that has it.
 func (s *Service) removeJobFile(ctx context.Context, job ExpiredJob) {
+	if err := s.removeOutput(ctx, job.ID); err != nil && s.logger != nil {
+		s.logger.WarnContext(ctx, "processing job files entry cleanup failed", "error", err)
+	}
 	if !s.hasDisk || job.FilePath == nil || *job.FilePath == "" {
 		return
 	}

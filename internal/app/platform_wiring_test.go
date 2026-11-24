@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 )
 
 // TestPlatformWiresExchange guards against the identity import/export service

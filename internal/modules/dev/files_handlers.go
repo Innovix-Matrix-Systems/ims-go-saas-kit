@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	filesmod "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/files"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	filesmod "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/files"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
 )
 
 var fileTypes = map[string]bool{

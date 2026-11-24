@@ -78,8 +78,10 @@ WHERE owner_type = 'user' AND collection = 'profile'
   AND owner_id = ANY(@user_ids::bigint[]);
 
 -- name: SumFileBytesForTenant :one
--- Storage used by a tenant (storage.mb plan limit).
-SELECT COALESCE(sum(size), 0)::bigint FROM files WHERE tenant_id = @tenant_id::bigint;
+-- Storage used by a tenant (storage.mb plan limit). Export files are left
+-- out: they are deleted with their jobs.
+SELECT COALESCE(sum(size), 0)::bigint FROM files
+WHERE tenant_id = @tenant_id::bigint AND owner_type IS DISTINCT FROM 'data_processing_job';
 
 -- name: ListFilesOwnedBy :many
 SELECT * FROM files

@@ -3,7 +3,7 @@ package files
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 )
 
 // RegisterRoutesResolve mounts the tenant file routes (behind
@@ -15,6 +15,7 @@ func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.Get("/files/{id}", h.show)
 	r.Get("/files/{id}/download", h.download)
 	r.Delete("/files/{id}", h.destroy)
+	r.With(h.can(authz.PermOrganizationUpdate)).Post("/organization/logo", h.uploadLogo)
 }
 
 // RegisterRoutesExempt mounts the internal file routes (tenant-exempt,

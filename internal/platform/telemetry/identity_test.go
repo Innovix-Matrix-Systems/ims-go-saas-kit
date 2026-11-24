@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
 )
 
 // fakeAuth verifies every token as one identity.

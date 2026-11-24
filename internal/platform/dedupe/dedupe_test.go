@@ -15,9 +15,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/memory"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/memory"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
 )
 
 // harness is a router with the middleware in front of a counting handler.

@@ -24,7 +24,11 @@ func (q *Queries) CountDevExceptionsSince(ctx context.Context, since pgtype.Time
 
 const deleteDevTelemetryForUser = `-- name: DeleteDevTelemetryForUser :one
 WITH requests AS (
-    DELETE FROM dev_requests WHERE user_id = $1::bigint OR impersonator_id = $1::bigint RETURNING request_id
+    DELETE FROM dev_requests
+    WHERE user_id = $1::bigint OR impersonator_id = $1::bigint
+       OR ($2::text <> '' AND (strpos(lower(request_body::text), lower($2::text)) > 0
+                                OR strpos(lower(response_body::text), lower($2::text)) > 0))
+    RETURNING request_id
 ), queries AS (
     DELETE FROM dev_queries WHERE request_id IN (SELECT request_id FROM requests)
 ), cache_events AS (
@@ -39,11 +43,17 @@ WITH requests AS (
 SELECT count(*)::bigint FROM requests
 `
 
+type DeleteDevTelemetryForUserParams struct {
+	UserID int64  `json:"user_id"`
+	Email  string `json:"email"`
+}
+
 // Captured requests (headers, bodies, IP) the user made, or made while
-// acting as someone, and every row linked to them by request id. Dashboard
-// telemetry is local tooling, so it goes.
-func (q *Queries) DeleteDevTelemetryForUser(ctx context.Context, userID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, deleteDevTelemetryForUser, userID)
+// acting as someone, or whose bodies carry the user's e-mail address (signing
+// in, before anyone is authenticated), and every row linked to them by
+// request id. Dashboard telemetry is local tooling, so it goes.
+func (q *Queries) DeleteDevTelemetryForUser(ctx context.Context, arg DeleteDevTelemetryForUserParams) (int64, error) {
+	row := q.db.QueryRow(ctx, deleteDevTelemetryForUser, arg.UserID, arg.Email)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err

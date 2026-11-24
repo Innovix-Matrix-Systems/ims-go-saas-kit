@@ -6,9 +6,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // Repository is the persistence contract for branches.
@@ -20,6 +20,8 @@ type Repository interface {
 	CreateWithID(ctx context.Context, input CreateInput) (*Branch, error)
 	Update(ctx context.Context, input UpdateInput) (*Branch, error)
 	Delete(ctx context.Context, tenantID, id int64, actorID *int64) error
+	CountInTenant(ctx context.Context, tenantID int64) (int64, error)
+	CountMembers(ctx context.Context, tenantID, id int64) (int64, error)
 	BelongsToTenant(ctx context.Context, tenantID, id int64) (bool, error)
 	SoftDeleteForTenant(ctx context.Context, tenantID int64) error
 	SyncIDSequence(ctx context.Context) error
@@ -191,7 +193,27 @@ func (r *repository) Delete(ctx context.Context, tenantID, id int64, actorID *in
 	if affected == 0 {
 		return apperr.Newf(apperr.ResourceNotFound, "Branch with ID '%d' was not found.", id)
 	}
+	// Members who had switched into the branch go back to their own.
+	if _, err := r.queries.ClearActiveBranch(ctx, dbgen.ClearActiveBranchParams{TenantID: &tenantID, BranchID: &id}); err != nil {
+		return database.MapError("branches.clear_active", err)
+	}
 	return nil
+}
+
+func (r *repository) CountInTenant(ctx context.Context, tenantID int64) (int64, error) {
+	count, err := r.queries.CountTenantBranches(ctx, tenantID)
+	if err != nil {
+		return 0, database.MapError("branches.count_in_tenant", err)
+	}
+	return count, nil
+}
+
+func (r *repository) CountMembers(ctx context.Context, tenantID, id int64) (int64, error) {
+	count, err := r.queries.CountBranchMembers(ctx, dbgen.CountBranchMembersParams{TenantID: &tenantID, BranchID: &id})
+	if err != nil {
+		return 0, database.MapError("branches.count_members", err)
+	}
+	return count, nil
 }
 
 func (r *repository) BelongsToTenant(ctx context.Context, tenantID, id int64) (bool, error) {

@@ -2,20 +2,21 @@ package identity
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/access"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/branches"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // LimitChecker enforces billing plan limits for tenant resources.
@@ -91,6 +92,7 @@ func (s *Service) List(ctx context.Context, scope tenancy.Scope, filter ListFilt
 			return nil, 0, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
 		}
 		filter.TenantID = tenantID
+		filter.BranchID = scope.ListBranchID()
 	}
 
 	items, err := s.repo.List(ctx, filter)
@@ -126,6 +128,10 @@ type CreateParams struct {
 	// and mails an invitation: setting a password from it activates the
 	// account.
 	SendInvitation bool
+	// RequireVerification creates the user unverified and mails the
+	// verification link, whatever AUTH_NEW_USERS_VERIFIED says (self-service
+	// sign-up: the address must be proven before the first sign-in).
+	RequireVerification bool
 }
 
 // Create adds a user with role assignments.
@@ -183,10 +189,12 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 	if tenantID != 0 {
 		tenant = &tenantID
 	}
-	activeBranch := branchID
+	// No branch switched to: the member works in their own branch, and one
+	// who may switch sees every branch until they pick one.
+	var activeBranch *int64
 
 	var verifiedAt time.Time
-	if s.cfg.NewUsersVerified && !input.SendInvitation {
+	if s.cfg.NewUsersVerified && !input.SendInvitation && !input.RequireVerification {
 		verifiedAt = time.Now()
 	}
 	var invitedBy *int64
@@ -329,6 +337,20 @@ type UpdateParams struct {
 	Roles     []int64
 	// ExpectedUpdatedAt enables optimistic locking (see UpdateInput).
 	ExpectedUpdatedAt *time.Time
+	// Locale (own profile only): nil keeps the language, "" clears it.
+	Locale *string
+}
+
+// keepOrClear resolves an optional text field of an update: nil keeps the
+// current value, an empty (or blank) string clears it.
+func keepOrClear(input, current *string) *string {
+	if input == nil {
+		return current
+	}
+	if strings.TrimSpace(*input) == "" {
+		return nil
+	}
+	return input
 }
 
 // Update modifies a user; super admins are protected from non-super actors.
@@ -343,8 +365,23 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 	if err := s.guardSuperAdmin(ctx, actorID, target.ID); err != nil {
 		return nil, err
 	}
+	if input.IsActive != nil && !*input.IsActive {
+		if err := s.refuseOwner(ctx, actorID, target.ID); err != nil {
+			return nil, err
+		}
+	}
+	if input.Roles != nil {
+		if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
+			return nil, err
+		}
+	}
 
-	if err := s.validatePhoneUnique(ctx, input.Phone, target.ID); err != nil {
+	// Like branch_id and is_active, an omitted (nil) first name, last name or
+	// phone keeps its value; an empty string clears it.
+	firstName := keepOrClear(input.FirstName, target.FirstName)
+	lastName := keepOrClear(input.LastName, target.LastName)
+	phone := keepOrClear(input.Phone, target.Phone)
+	if err := s.validatePhoneUnique(ctx, phone, target.ID); err != nil {
 		return nil, err
 	}
 	tenantID := target.TenantIDValue()
@@ -367,10 +404,10 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 	updated, err := s.repo.Update(ctx, UpdateInput{
 		Tenant:    scope.Filter(),
 		ID:        target.ID,
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
+		FirstName: firstName,
+		LastName:  lastName,
 		Name:      input.Name,
-		Phone:     input.Phone,
+		Phone:     phone,
 		IsActive:  isActive,
 		BranchID:  branchID,
 		ActorID:   &actorID,
@@ -436,6 +473,9 @@ func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id i
 	if targetIsSuper {
 		return apperr.New(apperr.Forbidden, "The super admin user cannot be deleted.")
 	}
+	if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
+		return err
+	}
 	if err := s.repo.Delete(ctx, scope.Filter(), target.ID, &actorID); err != nil {
 		return err
 	}
@@ -466,6 +506,9 @@ func (s *Service) AssignRoles(ctx context.Context, scope tenancy.Scope, actorID,
 		return nil, apperr.New(apperr.Forbidden, "You cannot change your own roles.")
 	}
 	if err := s.guardSuperAdmin(ctx, actorID, target.ID); err != nil {
+		return nil, err
+	}
+	if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
 		return nil, err
 	}
 	if scope.Internal && target.TenantIDValue() == 0 {
@@ -541,6 +584,9 @@ func (s *Service) ChangePassword(ctx context.Context, scope tenancy.Scope, actor
 	if err := s.guardSuperAdmin(ctx, actorID, target.ID); err != nil {
 		return err
 	}
+	if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
+		return err
+	}
 	hash, err := s.hashPassword(password)
 	if err != nil {
 		return err
@@ -574,6 +620,9 @@ func (s *Service) ResetTwoFactor(ctx context.Context, scope tenancy.Scope, actor
 	if err := s.guardSuperAdmin(ctx, actorID, target.ID); err != nil {
 		return err
 	}
+	if err := s.guardOwner(ctx, actorID, target.ID); err != nil {
+		return err
+	}
 	return s.twoFactor.Disable(ctx, target.toRecord(true), true)
 }
 
@@ -583,20 +632,49 @@ func (s *Service) ProfileUpdate(ctx context.Context, userID int64, input UpdateP
 	if err != nil {
 		return nil, err
 	}
-	if err := s.validatePhoneUnique(ctx, input.Phone, target.ID); err != nil {
+	firstName := keepOrClear(input.FirstName, target.FirstName)
+	lastName := keepOrClear(input.LastName, target.LastName)
+	phone := keepOrClear(input.Phone, target.Phone)
+	if err := s.validatePhoneUnique(ctx, phone, target.ID); err != nil {
 		return nil, err
 	}
-	return s.repo.Update(ctx, UpdateInput{
+	updated, err := s.repo.Update(ctx, UpdateInput{
 		Tenant:    tenancy.Unscoped(),
 		ID:        target.ID,
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
+		FirstName: firstName,
+		LastName:  lastName,
 		Name:      input.Name,
-		Phone:     input.Phone,
+		Phone:     phone,
 		IsActive:  target.IsActive,
 		BranchID:  target.BranchID,
 		ActorID:   &userID,
 	})
+	if err != nil || input.Locale == nil {
+		return updated, err
+	}
+	var locale *string
+	if value := strings.TrimSpace(*input.Locale); value != "" {
+		locale = &value
+	}
+	if err := s.repo.UpdateLocale(ctx, target.ID, locale); err != nil {
+		return nil, err
+	}
+	updated.Locale = locale
+	return updated, nil
+}
+
+// InvitationPreview is what an invitee sees before choosing a password.
+type InvitationPreview struct {
+	Name             string
+	Email            string
+	OrganizationName string
+	InviterName      string
+}
+
+// GetInvitationPreview describes a pending invitation for the invitee (the
+// caller proved they hold the link; see authn.Recovery.PeekInvitation).
+func (s *Service) GetInvitationPreview(ctx context.Context, userID int64) (*InvitationPreview, error) {
+	return s.repo.InvitationPreview(ctx, userID)
 }
 
 // ProfileChangePassword verifies the current password before updating, then
@@ -642,9 +720,44 @@ func (s *Service) SwitchBranch(ctx context.Context, scope tenancy.Scope, userID,
 	return s.repo.Get(ctx, tenancy.Unscoped(), userID)
 }
 
+// ClearBranch takes the user back to every branch: no branch switched to,
+// so lists span the organization and new work is stamped with their own
+// branch.
+func (s *Service) ClearBranch(ctx context.Context, userID int64) (*User, error) {
+	if err := s.repo.ClearActiveBranch(ctx, userID); err != nil {
+		return nil, err
+	}
+	return s.repo.Get(ctx, tenancy.Unscoped(), userID)
+}
+
 // GetRecord loads a user without scope checks (internal consumers only).
 func (s *Service) GetRecord(ctx context.Context, id int64) (*User, error) {
 	return s.repo.Get(ctx, tenancy.Unscoped(), id)
+}
+
+// guardOwner protects an organization's owner: other members cannot delete
+// them, deactivate them, change their roles, set their password or reset
+// their two-factor; ownership has to be transferred first. Platform super
+// admins may still act (support).
+func (s *Service) guardOwner(ctx context.Context, actorID, targetID int64) error {
+	if actorID == targetID {
+		return nil
+	}
+	return s.refuseOwner(ctx, actorID, targetID)
+}
+
+// refuseOwner refuses the change whoever asks (super admins excepted).
+func (s *Service) refuseOwner(ctx context.Context, actorID, targetID int64) error {
+	owner, err := s.repo.IsTenantOwner(ctx, targetID)
+	if err != nil || !owner {
+		return err
+	}
+	if super, err := s.checker.IsSuperAdmin(ctx, actorID); err != nil {
+		return err
+	} else if super {
+		return nil
+	}
+	return apperr.New(apperr.Forbidden, "This user owns the organization. Transfer ownership to another administrator first.")
 }
 
 // guardSuperAdmin is a business invariant, not a permission: only a
@@ -740,7 +853,12 @@ func (s *Service) validateBranch(ctx context.Context, tenantID int64, branchID *
 	return nil
 }
 
+// hashPassword applies the password policy, then hashes. Every path that sets
+// a user's password (create, admin change, own change) goes through it.
 func (s *Service) hashPassword(password string) (string, error) {
+	if err := authn.ValidateNewPassword(password); err != nil {
+		return "", err
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), s.cfg.BcryptRounds)
 	if err != nil {
 		return "", apperr.Wrap(apperr.InternalServerError, "hash password", err)

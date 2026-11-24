@@ -38,6 +38,16 @@ list (as the [tutorial](../tutorial/first-module.mdx#5-register-the-permissions)
 role or deleted, users cannot escalate their own roles, and system roles are immutable from tenant
 surfaces.
 
+A tenant's Admin role is **managed** (`managed: true` in role responses): `permission:sync` and
+`db:seed` keep it holding every permission in `AdminTenantPermissions()`, so it cannot be renamed,
+deleted or given another set of permissions (403), and no other role can be renamed to Admin.
+Tenants make other roles for narrower access.
+
+**Granting is capped by what the editor holds.** `POST /role/assign-permission` refuses (403) a
+permission the role does not have yet and the caller does not hold; removing permissions is always
+allowed, and Super-Admins are not capped. `GET /role/grantable-permissions` lists what the caller
+may grant: the non-system permissions they hold.
+
 ## Where permissions are checked
 
 **On the route**, like Laravel's `can:` middleware:
@@ -76,7 +86,9 @@ notifications) are listed in that test's allowlist with a reason.
 
 | Endpoint | Permission |
 | --- | --- |
-| `GET /api/v1/role`, `GET /api/v1/role/{id}` | `role.view.all`, `role.view` |
+| `GET /api/v1/role`, `GET /api/v1/role/{id}` (with its `permissions`) | `role.view.all`, `role.view` |
+| `GET /api/v1/role/grantable-permissions` | `role.update` |
+| `POST /api/v1/role/assign-permission` | `role.update` |
 | `POST /api/v1/role`, `PATCH /api/v1/role/{id}`, `DELETE /api/v1/role/{id}` | `role.create`, `role.update`, `role.delete` |
 | `POST /api/v1/user/assign-role` | `user.role.assign` |
 | `GET /api/v1/permission` | permission metadata (tenant-exempt) |

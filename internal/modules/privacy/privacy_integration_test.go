@@ -10,13 +10,14 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/privacy"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/testkit"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
 // TestCoverage fails when a migration adds a user-reference column that no
@@ -51,6 +52,7 @@ func TestEraseRemovesPersonalData(t *testing.T) {
 	// a failed login carrying the e-mail, activity about the user (created).
 	app.Guest().Post("/api/v1/login", map[string]any{"email": email, "password": "wrong-password"})
 	app.As(karim).Get("/api/v1/user/profile").Status(t, http.StatusOK)
+	waitForTelemetry(t, app.Pool, karim.ID)
 
 	request, err := app.Deps.Platform.Privacy.Erase(ctx, privacy.EraseInput{UserID: karim.ID, Source: privacy.SourceCLI})
 	if err != nil {
@@ -203,6 +205,35 @@ func assertNoSecrets(t *testing.T, file string, node any) {
 			assertNoSecrets(t, file, child)
 		}
 	}
+}
+
+// waitForTelemetry waits until the requests above are stored: the collector
+// writes them in batches after the response, and a row that lands after the
+// erasure would hold data the erasure never saw.
+func waitForTelemetry(t *testing.T, pool *pgxpool.Pool, userID int64) {
+	t.Helper()
+	ctx := context.Background()
+	count := func() (mine, total int64) {
+		if err := pool.QueryRow(ctx, `SELECT
+			(SELECT count(*) FROM dev_requests WHERE user_id = $1),
+			(SELECT count(*) FROM dev_requests) + (SELECT count(*) FROM dev_queries) + (SELECT count(*) FROM dev_cache_events)`,
+			userID).Scan(&mine, &total); err != nil {
+			t.Fatalf("telemetry count: %v", err)
+		}
+		return mine, total
+	}
+	deadline := time.Now().Add(15 * time.Second)
+	last, stableSince := int64(-1), time.Now()
+	for time.Now().Before(deadline) {
+		mine, total := count()
+		if total != last {
+			last, stableSince = total, time.Now()
+		} else if mine > 0 && time.Since(stableSince) > 2*time.Second {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatal("request telemetry was not stored in time")
 }
 
 // assertNoPersonalData scans every text and jsonb column of the application

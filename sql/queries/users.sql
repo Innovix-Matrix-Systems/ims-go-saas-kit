@@ -27,6 +27,8 @@ WHERE lower(u.email) = lower(@email) AND u.deleted_at IS NULL;
 SELECT * FROM users
 WHERE deleted_at IS NULL
   AND (@all_tenants::boolean OR users.tenant_id = @tenant_id)
+  AND (NOT @platform_only::boolean OR users.tenant_id IS NULL)
+  AND (@branch_id::bigint = 0 OR users.branch_id = @branch_id::bigint)
   AND (
     sqlc.narg('search')::text IS NULL
     OR name ILIKE '%' || sqlc.narg('search')::text || '%'
@@ -64,6 +66,8 @@ LIMIT @page_limit OFFSET @page_offset;
 SELECT count(*) FROM users
 WHERE deleted_at IS NULL
   AND (@all_tenants::boolean OR users.tenant_id = @tenant_id)
+  AND (NOT @platform_only::boolean OR users.tenant_id IS NULL)
+  AND (@branch_id::bigint = 0 OR users.branch_id = @branch_id::bigint)
   AND (
     sqlc.narg('search')::text IS NULL
     OR name ILIKE '%' || sqlc.narg('search')::text || '%'
@@ -137,6 +141,12 @@ WHERE id = @id AND deleted_at IS NULL;
 -- name: SwitchUserBranch :execrows
 UPDATE users
 SET active_branch_id = @branch_id, updated_at = now()
+WHERE id = @id AND deleted_at IS NULL;
+
+-- name: ClearUserActiveBranch :execrows
+-- Back to every branch: the member works in their own branch again.
+UPDATE users
+SET active_branch_id = NULL, updated_at = now()
 WHERE id = @id AND deleted_at IS NULL;
 
 -- name: EmailExists :one
@@ -261,3 +271,31 @@ WHERE r.name = @role_name
   AND u.id <> @user_id
   AND u.is_active = 1
   AND u.deleted_at IS NULL;
+
+-- name: ChangeUserEmail :exec
+-- The user confirmed the new address from its mailbox, so it is verified.
+UPDATE users
+SET email = @email, email_verified_at = now(), updated_at = now()
+WHERE id = @id AND deleted_at IS NULL;
+
+-- name: UpdateUserLocale :exec
+UPDATE users SET locale = sqlc.narg('locale'), updated_at = now()
+WHERE id = @id AND deleted_at IS NULL;
+
+-- name: GetInvitationPreview :one
+-- What an invitee sees before choosing a password: their name, the
+-- organization and who invited them.
+SELECT u.id, u.name, u.email,
+       u.invitation_accepted_at,
+       COALESCE(t.name, '')::text AS organization_name,
+       COALESCE(inviter.name, '')::text AS inviter_name
+FROM users u
+LEFT JOIN tenants t ON t.id = u.tenant_id
+LEFT JOIN users inviter ON inviter.id = u.invited_by
+WHERE u.id = @id AND u.deleted_at IS NULL;
+
+-- name: IsTenantOwner :one
+-- Whether the user owns a (live) organization.
+SELECT EXISTS (
+    SELECT 1 FROM tenants WHERE owner_user_id = @user_id AND deleted_at IS NULL
+)::boolean;

@@ -1,0 +1,80 @@
+/* ── Base: reset, body, text helpers ─────────────────── */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--text-1);
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { line-height: var(--lh-heading); }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--accent-border); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 2px solid var(--surface-0); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+kbd {
+  display: inline-block; padding: 0 5px; border-radius: 4px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  font-family: var(--mono); font-size: var(--fs-sm); color: var(--text-2); line-height: 1.5;
+}
+/* Keys pressed together or in turn: G then O, Ctrl + K. */
+.keys { display: inline-flex; align-items: center; gap: 2px; }
+
+.mono { font-family: var(--mono); }
+.muted { color: var(--text-2); }
+.dim { color: var(--text-3); }
+.small { font-size: var(--fs-sm); }
+.nowrap { white-space: nowrap; }
+.right { text-align: right; }
+.num { font-variant-numeric: tabular-nums; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.break { overflow-wrap: anywhere; }
+.danger-text { color: var(--danger-fg); }
+.link { color: var(--accent); }
+.link:hover { text-decoration: underline; }
+.icon-inline { width: 13px; height: 13px; opacity: 0.6; }
+.flip svg { transform: rotate(180deg); }
+
+/* Old layout helpers, kept until the routes use the kit's Stack/Cluster. */
+.flex { display: flex; align-items: center; gap: var(--space-2); }
+.flex.wrap { flex-wrap: wrap; }
+.spacer { flex: 1; }
+.stack { display: flex; flex-direction: column; gap: var(--space-3); }
+.stack-tight { display: flex; flex-direction: column; gap: 6px; }
+.row { display: flex; gap: 14px; }
+.row > * { min-width: 0; }
+.divider { height: 1px; background: var(--border); margin: var(--space-4) 0; }
+.flex.align-start { align-items: flex-start; }
+.flex.justify-end { justify-content: flex-end; }
+.min-0 { min-width: 0; }
+.fill { flex: 1; min-width: 0; }
+.block { display: block; }
+.strong { font-weight: var(--fw-semibold); }
+.text-center { text-align: center; }
+.pointer { cursor: pointer; }
+.warn-text { color: var(--warn-fg); }
+/* Lines a checkbox or note up with the inputs beside it in a filter row. */
+.field-pad { padding-bottom: 9px; }
+.minw-field { min-width: 160px; }
+.w-xs { width: 80px; } .w-sm { width: 140px; } .w-md { width: 240px; }
+.maxw-sm { max-width: 320px; }
+.p-14 { padding: 14px; }
+.m-0 { margin: 0; }
+.mt-0 { margin-top: 0; } .mt-4 { margin-top: 4px; } .mt-8 { margin-top: 8px; } .mt-16 { margin-top: 16px; } .mt-24 { margin-top: 24px; }
+.mb-0 { margin-bottom: 0; } .mb-4 { margin-bottom: 4px; } .mb-8 { margin-bottom: 8px; } .mb-12 { margin-bottom: 12px; } .mb-16 { margin-bottom: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

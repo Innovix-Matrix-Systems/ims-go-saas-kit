@@ -74,6 +74,18 @@ INSERT INTO role_has_permissions (role_id, permission_id)
 SELECT @role_id, unnest(@permission_ids::bigint[])
 ON CONFLICT DO NOTHING;
 
+-- name: GrantPermissionsToTenantRoles :execrows
+-- Adds the named permissions to every tenant role called @role_name (the
+-- tenant Admin role in each tenant). Add-only: existing grants are kept.
+INSERT INTO role_has_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.tenant_id IS NOT NULL
+  AND r.name = @role_name
+  AND p.name = ANY(@permission_names::text[])
+ON CONFLICT DO NOTHING;
+
 -- name: RolePermissionIDs :many
 SELECT permission_id FROM role_has_permissions WHERE role_id = @role_id ORDER BY permission_id;
 

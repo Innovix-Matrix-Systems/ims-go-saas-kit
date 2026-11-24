@@ -9,15 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
-	contracts "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/privacy"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	contracts "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // Setting keys (modules/settings/registry.go, group "privacy").

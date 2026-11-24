@@ -13,7 +13,12 @@ const countCompletedDataProcessingJobsBefore = `-- name: CountCompletedDataProce
 SELECT count(*) FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => $1::int)
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), $1::int))
 `
 
 func (q *Queries) CountCompletedDataProcessingJobsBefore(ctx context.Context, retentionDays int32) (int64, error) {
@@ -29,13 +34,13 @@ WHERE ($1::boolean OR tenant_id = $2)
   AND ($3::text IS NULL OR status = $3::text)
   AND ($4::text IS NULL OR type = $4::text)
   AND ($5::bigint IS NULL OR user_id = $5::bigint)
-  -- Personal-data exports are listed only to their owner.
-  AND (type <> 'privacy_export' OR user_id = $5::bigint)
+  -- Personal-data exports are listed only to their owner, whoever reads.
+  AND (type <> 'privacy_export' OR user_id = $6::bigint)
   AND (
-      $6::text IS NULL
-      OR job_id ILIKE '%' || $6 || '%'
-      OR file_name ILIKE '%' || $6 || '%'
-      OR entity_type ILIKE '%' || $6 || '%'
+      $7::text IS NULL
+      OR job_id ILIKE '%' || $7 || '%'
+      OR file_name ILIKE '%' || $7 || '%'
+      OR entity_type ILIKE '%' || $7 || '%'
   )
 `
 
@@ -45,6 +50,7 @@ type CountDataProcessingJobsParams struct {
 	Status     *string `json:"status"`
 	Type       *string `json:"type"`
 	UserID     *int64  `json:"user_id"`
+	ViewerID   int64   `json:"viewer_id"`
 	Search     string  `json:"search"`
 }
 
@@ -55,6 +61,7 @@ func (q *Queries) CountDataProcessingJobs(ctx context.Context, arg CountDataProc
 		arg.Status,
 		arg.Type,
 		arg.UserID,
+		arg.ViewerID,
 		arg.Search,
 	)
 	var count int64
@@ -132,7 +139,12 @@ const deleteCompletedDataProcessingJobs = `-- name: DeleteCompletedDataProcessin
 DELETE FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => $1::int)
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), $1::int))
 `
 
 func (q *Queries) DeleteCompletedDataProcessingJobs(ctx context.Context, retentionDays int32) (int64, error) {
@@ -279,22 +291,52 @@ func (q *Queries) GetDataProcessingJobByJobID(ctx context.Context, jobID *string
 	return i, err
 }
 
+const listDataProcessingJobActors = `-- name: ListDataProcessingJobActors :many
+SELECT id, name FROM users WHERE id = ANY($1::bigint[])
+`
+
+type ListDataProcessingJobActorsRow struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+// The names of the people who started the listed jobs.
+func (q *Queries) ListDataProcessingJobActors(ctx context.Context, ids []int64) ([]ListDataProcessingJobActorsRow, error) {
+	rows, err := q.db.Query(ctx, listDataProcessingJobActors, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDataProcessingJobActorsRow{}
+	for rows.Next() {
+		var i ListDataProcessingJobActorsRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDataProcessingJobs = `-- name: ListDataProcessingJobs :many
 SELECT id, tenant_id, branch_id, job_id, type, status, entity_type, filters, total_items, processed_items, success_count, error_count, errors, error_message, file_name, file_disk, file_path, file_size, file_mime, user_id, started_at, completed_at, created_at, updated_at FROM data_processing_jobs
 WHERE ($1::boolean OR tenant_id = $2)
   AND ($3::text IS NULL OR status = $3::text)
   AND ($4::text IS NULL OR type = $4::text)
   AND ($5::bigint IS NULL OR user_id = $5::bigint)
-  -- Personal-data exports are listed only to their owner.
-  AND (type <> 'privacy_export' OR user_id = $5::bigint)
+  -- Personal-data exports are listed only to their owner, whoever reads.
+  AND (type <> 'privacy_export' OR user_id = $6::bigint)
   AND (
-      $6::text IS NULL
-      OR job_id ILIKE '%' || $6 || '%'
-      OR file_name ILIKE '%' || $6 || '%'
-      OR entity_type ILIKE '%' || $6 || '%'
+      $7::text IS NULL
+      OR job_id ILIKE '%' || $7 || '%'
+      OR file_name ILIKE '%' || $7 || '%'
+      OR entity_type ILIKE '%' || $7 || '%'
   )
 ORDER BY id DESC
-LIMIT $8 OFFSET $7
+LIMIT $9 OFFSET $8
 `
 
 type ListDataProcessingJobsParams struct {
@@ -303,6 +345,7 @@ type ListDataProcessingJobsParams struct {
 	Status     *string `json:"status"`
 	Type       *string `json:"type"`
 	UserID     *int64  `json:"user_id"`
+	ViewerID   int64   `json:"viewer_id"`
 	Search     string  `json:"search"`
 	PageOffset int32   `json:"page_offset"`
 	PageLimit  int32   `json:"page_limit"`
@@ -315,6 +358,7 @@ func (q *Queries) ListDataProcessingJobs(ctx context.Context, arg ListDataProces
 		arg.Status,
 		arg.Type,
 		arg.UserID,
+		arg.ViewerID,
 		arg.Search,
 		arg.PageOffset,
 		arg.PageLimit,
@@ -367,7 +411,12 @@ SELECT id, job_id, status, file_disk, file_path, file_name
 FROM data_processing_jobs
 WHERE status IN ('completed', 'failed')
   AND completed_at IS NOT NULL
-  AND completed_at < now() - make_interval(days => $1::int)
+  AND completed_at < now() - make_interval(days => COALESCE((
+      -- The organization's own retention, when it set one.
+      SELECT (st.value #>> '{}')::int FROM settings st
+      WHERE st.target_type = 'tenant' AND st.target_id = data_processing_jobs.tenant_id
+        AND st.key = 'data_processing_job.cleanup_days' AND jsonb_typeof(st.value) = 'number'
+    ), $1::int))
 ORDER BY id
 LIMIT $2
 `
@@ -466,6 +515,59 @@ func (q *Queries) ListExpiredDataProcessingJobsOfType(ctx context.Context, arg L
 		return nil, err
 	}
 	return items, nil
+}
+
+const resetDataProcessingJob = `-- name: ResetDataProcessingJob :one
+UPDATE data_processing_jobs
+SET status          = 'pending',
+    processed_items = 0,
+    success_count   = 0,
+    error_count     = 0,
+    errors          = NULL,
+    error_message   = NULL,
+    started_at      = NULL,
+    completed_at    = NULL,
+    file_name       = NULL,
+    file_disk       = NULL,
+    file_path       = NULL,
+    file_size       = NULL,
+    file_mime       = NULL,
+    updated_at      = now()
+WHERE id = $1 AND status = 'failed'
+RETURNING id, tenant_id, branch_id, job_id, type, status, entity_type, filters, total_items, processed_items, success_count, error_count, errors, error_message, file_name, file_disk, file_path, file_size, file_mime, user_id, started_at, completed_at, created_at, updated_at
+`
+
+// Puts a failed job back to the start so it can run again (retry).
+func (q *Queries) ResetDataProcessingJob(ctx context.Context, id int64) (DataProcessingJob, error) {
+	row := q.db.QueryRow(ctx, resetDataProcessingJob, id)
+	var i DataProcessingJob
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.JobID,
+		&i.Type,
+		&i.Status,
+		&i.EntityType,
+		&i.Filters,
+		&i.TotalItems,
+		&i.ProcessedItems,
+		&i.SuccessCount,
+		&i.ErrorCount,
+		&i.Errors,
+		&i.ErrorMessage,
+		&i.FileName,
+		&i.FileDisk,
+		&i.FilePath,
+		&i.FileSize,
+		&i.FileMime,
+		&i.UserID,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateDataProcessingJobFile = `-- name: UpdateDataProcessingJobFile :execrows

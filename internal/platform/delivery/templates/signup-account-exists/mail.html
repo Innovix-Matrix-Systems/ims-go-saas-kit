@@ -1,0 +1,5 @@
+<p>Hello{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Someone tried to create a new organization with this e-mail address, but you already have an account.</p>
+<p style="margin:24px 0;"><a href="{{.Data.login_url}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Sign in</a></p>
+<p>Forgot your password? <a href="{{.Data.reset_url}}">Reset it</a>.</p>
+<p style="font-size:13px;color:#6b7785;">If it was not you, you can ignore this e-mail: nothing was changed.</p>

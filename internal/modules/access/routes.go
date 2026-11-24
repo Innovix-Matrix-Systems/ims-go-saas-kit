@@ -3,13 +3,14 @@ package access
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 )
 
 // RegisterRoutesResolve mounts tenant-scoped role routes.
 func (h *RoleHandler) RegisterRoutesResolve(r chi.Router) {
 	r.With(h.can(authz.PermRoleViewAll)).Get("/role", h.index)
 	r.With(h.can(authz.PermRoleCreate)).Post("/role", h.store)
+	r.With(h.can(authz.PermRoleUpdate)).Get("/role/grantable-permissions", h.grantable)
 	r.With(h.can(authz.PermRoleView)).Get("/role/{id}", h.show)
 	r.With(h.can(authz.PermRoleUpdate)).Patch("/role/{id}", h.update)
 	r.With(h.can(authz.PermRoleDelete)).Delete("/role/{id}", h.destroy)

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 )
 
 // PlaygroundJobKind is the synthetic queue job created from the local-only

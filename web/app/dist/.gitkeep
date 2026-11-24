@@ -1,0 +1,1 @@
+# Keeps web/app/dist in git so go:embed compiles before the first `make app-build`.

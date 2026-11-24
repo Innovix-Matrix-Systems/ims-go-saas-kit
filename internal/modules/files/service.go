@@ -16,10 +16,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
 )
 
 // Size limits (uploads 100 MB, avatars 5 MB).
@@ -130,60 +130,91 @@ func (s *Service) UpdateAvatar(ctx context.Context, actorID, userID int64, tenan
 	if userID < 1 {
 		return apperr.New(apperr.InvalidInput, "The provided identifier is invalid.")
 	}
-	avatarDisk := s.avatarDisk()
-	uploaded, err := s.storeOnDisk(ctx, avatarDisk, header, allowedImageExtensions, MaxAvatarSize, true)
+	_, err := s.replaceSingle(ctx, actorID, OwnerUser, userID, CollectionProfile, tenantID, header, "The profile file was replaced concurrently; please retry.")
+	return err
+}
+
+// UpdateLogo replaces the organization's logo: an image on the public disk
+// (e-mails link to it), attached to the tenant, so it is listed with the
+// organization's files and counts against its storage.
+func (s *Service) UpdateLogo(ctx context.Context, actorID, tenantID int64, header *multipart.FileHeader) (*File, error) {
+	if tenantID < 1 {
+		return nil, apperr.New(apperr.Forbidden, "Only an organization has a logo.")
+	}
+	if s.storage != nil {
+		used, err := s.repo.UsedBytes(ctx, tenantID)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.storage.RequireStorage(ctx, tenantID, used, header.Size); err != nil {
+			return nil, err
+		}
+	}
+	row, err := s.replaceSingle(ctx, actorID, OwnerTenant, tenantID, CollectionLogo, tenantID, header, "The logo was replaced concurrently; please retry.")
 	if err != nil {
-		return err
+		return nil, err
+	}
+	file := mapFile(*row)
+	return &file, nil
+}
+
+// replaceSingle stores an image on the public disk and swaps it in as the
+// only file of an owner's single-file collection.
+func (s *Service) replaceSingle(ctx context.Context, actorID int64, ownerType string, ownerID int64, collection string, tenantID int64, header *multipart.FileHeader, conflict string) (*dbgen.File, error) {
+	disk := s.avatarDisk()
+	uploaded, err := s.storeOnDisk(ctx, disk, header, allowedImageExtensions, MaxAvatarSize, true)
+	if err != nil {
+		return nil, err
 	}
 
 	actor := actorIDPtr(actorID)
-	ownerType := OwnerUser
-	collection := CollectionProfile
-
+	var created dbgen.File
 	var superseded []dbgen.File
 	err = s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
 		removed, err := q.DeleteFilesByOwner(ctx, dbgen.DeleteFilesByOwnerParams{
 			OwnerType:  ownerType,
-			OwnerID:    userID,
+			OwnerID:    ownerID,
 			Collection: collection,
 		})
 		if err != nil {
-			return database.MapError("files.avatar_replace", err)
+			return database.MapError("files.replace", err)
 		}
 		superseded = removed
-		if _, err := q.CreateFile(ctx, dbgen.CreateFileParams{
+		row, err := q.CreateFile(ctx, dbgen.CreateFileParams{
 			Uuid:       uuidParam(uploaded.uuid),
 			Name:       uploaded.name,
 			FileName:   uploaded.fileName,
-			Disk:       avatarDisk,
+			Disk:       disk,
 			Path:       uploaded.path,
 			MimeType:   uploaded.mime,
 			Size:       uploaded.size,
 			Type:       uploaded.fileType,
 			OwnerType:  &ownerType,
-			OwnerID:    &userID,
+			OwnerID:    &ownerID,
 			Collection: &collection,
 			TenantID:   tenantIDPtr(tenantID),
 			CreatedBy:  actor,
 			UpdatedBy:  actor,
-		}); err != nil {
+		})
+		if err != nil {
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-				return apperr.New(apperr.Conflict, "The profile file was replaced concurrently; please retry.")
+				return apperr.New(apperr.Conflict, conflict)
 			}
-			return database.MapError("files.avatar_create", err)
+			return database.MapError("files.replace_create", err)
 		}
+		created = row
 		return nil
 	})
 	if err != nil {
-		s.removeFromDisk(ctx, avatarDisk, uploaded.path)
-		return err
+		s.removeFromDisk(ctx, disk, uploaded.path)
+		return nil, err
 	}
 
 	for _, old := range superseded {
 		s.removeFromDisk(ctx, old.Disk, old.Path)
 	}
-	return nil
+	return &created, nil
 }
 
 // Get loads a file by ID within the caller's tenant scope (allTenants is only
@@ -213,6 +244,9 @@ func (s *Service) Delete(ctx context.Context, id int64, allTenants bool, tenantI
 	file, err := s.repo.GetInTenant(ctx, id, allTenants, tenantID)
 	if err != nil {
 		return err
+	}
+	if file.Generated() {
+		return apperr.New(apperr.InvalidState, "This file belongs to a background job; remove the job instead.")
 	}
 	if err := s.repo.Delete(ctx, id, allTenants, tenantID); err != nil {
 		return err

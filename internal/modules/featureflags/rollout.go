@@ -4,7 +4,7 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 )
 
 // Who a percentage rollout counts (Flag.RolloutBy).

@@ -5,8 +5,8 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
 )
 
 // avatarMaxBytes is the maximum avatar upload size (5 MB).

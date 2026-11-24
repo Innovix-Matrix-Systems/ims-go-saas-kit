@@ -61,6 +61,8 @@ var Groups = []Group{
 	{Slug: "branding", Name: "Branding", Description: "Name, logo, colour and footer shown in e-mails.", SortOrder: 4},
 	{Slug: "security", Name: "Security", Description: "Account security: sign-in alerts and two-factor policy.", SortOrder: 5},
 	{Slug: "privacy", Name: "Privacy", Description: "Account deletion and personal-data export.", SortOrder: 6},
+	{Slug: "signup", Name: "Sign-up", Description: "Self-service organization sign-up.", SortOrder: 7},
+	{Slug: "billing", Name: "Billing", Description: "What organizations see when they pay for a plan.", SortOrder: 8},
 }
 
 // Catalog is the application setting catalog; `settings:sync` upserts globals.
@@ -68,7 +70,7 @@ var Catalog = []Key{
 	{
 		Name:        "system.name",
 		Type:        TypeString,
-		Default:     "IMS Go API",
+		Default:     "IMS Go Admin Starter",
 		Description: "Display name used in notifications and the dashboard.",
 		Group:       "general",
 		SortOrder:   10,
@@ -110,6 +112,38 @@ var Catalog = []Key{
 		Description: "Hours a personal-data export stays downloadable before it is deleted.",
 		Group:       "privacy",
 		SortOrder:   20,
+	},
+	{
+		Name:        "signup.enabled",
+		Type:        TypeBool,
+		Default:     true,
+		Description: "Let anyone create an organization with POST /api/v1/signup. Off: only staff create organizations.",
+		Group:       "signup",
+		SortOrder:   10,
+	},
+	{
+		Name:        "signup.package_id",
+		Type:        TypeInt,
+		Default:     0,
+		Description: "The package a new organization starts on. 0 picks the first active free package (by sort order); sign-up is unavailable while there is none.",
+		Group:       "signup",
+		SortOrder:   20,
+	},
+	{
+		Name:        "billing.payment_instructions",
+		Type:        TypeString,
+		Default:     "",
+		Description: "How to pay by bank transfer (bank, account name and number, branch), shown to organizations at checkout. Empty hides bank transfer details.",
+		Group:       "billing",
+		SortOrder:   10,
+	},
+	{
+		Name:        "signup.terms_version",
+		Type:        TypeString,
+		Default:     "1",
+		Description: "The version of the terms of service and privacy policy a new owner accepts; recorded with the acceptance.",
+		Group:       "signup",
+		SortOrder:   30,
 	},
 	{
 		Name:        "privacy.erase_soft_deleted_after_days",

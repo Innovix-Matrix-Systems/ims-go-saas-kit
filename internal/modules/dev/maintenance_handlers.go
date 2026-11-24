@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
 )
 
 // Maintenance mode (phase 24): the System page card and the top-bar pill.

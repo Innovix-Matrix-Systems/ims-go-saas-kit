@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 )
 
 // multipartMemory caps the in-memory part of a parsed multipart body (H22).

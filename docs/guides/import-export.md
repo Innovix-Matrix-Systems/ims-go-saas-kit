@@ -13,9 +13,14 @@ a queue worker does the work, and the client polls the job for progress and a do
 | `POST /api/v1/user/import-template` | download a template spreadsheet (`user.import`) |
 | `POST /api/v1/user/import-background` | upload `.xlsx` or `.csv`; starts a `user.import` job |
 | `POST /api/v1/user/export-background` | starts a `user.export` job with the list filters |
-| `GET /api/v1/data-processing/jobs/user` | the caller's jobs |
+| `GET /api/v1/data-processing/jobs/user` | the caller's jobs (`type`, `status`, `search` filters) |
+| `GET /api/v1/data-processing/jobs` | every member's jobs (`data_processing_job.view.all`, held by the tenant Admin role), with `user_name`; `user_id` keeps one member's |
 | `GET /api/v1/data-processing/job/{jobId}` | status, progress and per-row errors |
 | `GET /api/v1/data-processing/job/{jobId}/download` | the export file — only when `COMPLETED` |
+| `POST /api/v1/data-processing/job/{jobId}/retry` | run a `FAILED` job again with the same filters or file |
+| `DELETE /api/v1/data-processing/job/{jobId}` | remove a finished job and its file |
+| `GET /api/v1/files` | finished exports are listed here too (`generated: true`), attached to their job; they leave with the job, deleting one here answers 409, and they do not count against the storage limit |
+| `POST /api/v1/internal/data-processing/job/{jobId}/retry`, `DELETE /api/v1/internal/data-processing/job/{jobId}` | the same for staff not acting in an organization (their writes on organization routes are refused) |
 
 ```json
 {
@@ -34,8 +39,21 @@ a queue worker does the work, and the client polls the job for progress and a do
   spreadsheet can't run a formula a user typed in.
 - **Bounded**: imports stream rows instead of loading gigabytes into memory.
 - **Files** live on `DATA_PROCESSING_DISK` (private by default).
-- **Retention**: completed jobs are deleted after the tenant's `data_processing_job.cleanup_days`
-  setting (default 30) by the `dataprocessing.cleanup-completed` task.
+- **Retention**: finished jobs are deleted after their organization's
+  `data_processing_job.cleanup_days` setting (default 30; the organization's own value wins over
+  the platform's) by the `dataprocessing.cleanup-completed` task. Every job reports `expires_at`.
+- **Retry**: a module makes its failed jobs retryable with
+  `dataprocessing.RegisterRerun(dataprocessing.RerunKey(type, entity), rerun)`; the rerun queues
+  the same job row again (users and activity exports do).
+- **Activity**: `POST /api/v1/activity/export` (an organization's log) and
+  `POST /api/v1/internal/activity/export` (staff: every organization and the system log) export
+  every entry matching the activity filters (`internal/modules/activity/export`).
+
+## Who sees a job
+
+A job belongs to whoever started it: they open, download, retry and remove it. In an organization,
+anyone holding `data_processing_job.view.all` (the tenant Admin role does) can do the same with every
+member's job and list them all. A personal-data export stays its owner's alone, whoever asks.
 
 ## Building your own
 

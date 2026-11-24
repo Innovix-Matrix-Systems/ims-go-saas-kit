@@ -10,9 +10,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // Job lifecycle statuses.
@@ -93,9 +93,13 @@ type ListFilter struct {
 	Status     string
 	Type       string
 	Search     string
-	UserID     int64
-	Limit      int32
-	Offset     int32
+	// UserID keeps one person's jobs; zero keeps everyone's.
+	UserID int64
+	// ViewerID is who reads: personal-data exports are listed to their
+	// owner only.
+	ViewerID int64
+	Limit    int32
+	Offset   int32
 }
 
 // ExpiredJob carries the file metadata needed to clean up one expired job.
@@ -132,6 +136,7 @@ type Repository interface {
 	ListExpired(ctx context.Context, retentionDays int, limit int32) ([]ExpiredJob, error)
 	ListExpiredOfType(ctx context.Context, jobType string, maxAgeHours int, limit int32) ([]ExpiredJob, error)
 	DeleteByIDs(ctx context.Context, ids []int64) (int64, error)
+	ActorNames(ctx context.Context, userIDs []int64) (map[int64]string, error)
 }
 
 type repository struct {
@@ -193,6 +198,7 @@ func (r *repository) List(ctx context.Context, filter ListFilter) ([]Job, error)
 		Status:     optionalString(filter.Status),
 		Type:       optionalString(filter.Type),
 		UserID:     optionalInt64(filter.UserID),
+		ViewerID:   filter.ViewerID,
 		Search:     filter.Search,
 		PageLimit:  filter.Limit,
 		PageOffset: filter.Offset,
@@ -214,6 +220,7 @@ func (r *repository) Count(ctx context.Context, filter ListFilter) (int64, error
 		Status:     optionalString(filter.Status),
 		Type:       optionalString(filter.Type),
 		UserID:     optionalInt64(filter.UserID),
+		ViewerID:   filter.ViewerID,
 		Search:     filter.Search,
 	})
 	if err != nil {
@@ -380,4 +387,20 @@ func optionalInt64(value int64) *int64 {
 		return nil
 	}
 	return &value
+}
+
+// ActorNames returns the names of the people who started jobs.
+func (r *repository) ActorNames(ctx context.Context, userIDs []int64) (map[int64]string, error) {
+	names := map[int64]string{}
+	if len(userIDs) == 0 {
+		return names, nil
+	}
+	rows, err := r.queries.ListDataProcessingJobActors(ctx, userIDs)
+	if err != nil {
+		return nil, database.MapError("dataprocessing.actor_names", err)
+	}
+	for _, row := range rows {
+		names[row.ID] = row.Name
+	}
+	return names, nil
 }

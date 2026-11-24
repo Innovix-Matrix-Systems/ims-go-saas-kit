@@ -16,7 +16,7 @@ description: Structural validation on requests, business validation in services,
 type InsertUpdateRequest struct {
 	Name     string  `json:"name" validate:"required,min=2,max=255"`
 	Email    string  `json:"email" validate:"required,email,max=255"`
-	Password *string `json:"password" validate:"omitempty,min=6,max=72"`
+	Password *string `json:"password" validate:"omitempty,min=8,max=72"`
 	BranchID *int64  `json:"branch_id" validate:"omitempty,gt=0"`
 	Roles    []int64 `json:"roles" validate:"omitempty,dive,gt=0"`
 }

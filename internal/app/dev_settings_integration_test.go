@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/app"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/seeder"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/testkit"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/app"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/seeder"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
 // TestDeveloperSettingsEndToEnd proves the settings panel delegates to the

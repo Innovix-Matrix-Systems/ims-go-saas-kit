@@ -1,8 +1,8 @@
 # AGENTS.md — Working Guide for This Repository
 
-Instructions for AI coding agents (and humans) working on the IMS Go API Starter. Read this before
-writing code. The human documentation lives in [`docs/`](docs/README.md) (rendered as a site by
-`website/`): start with the [tutorial](docs/tutorial/first-module.mdx), the
+Instructions for AI coding agents (and humans) working on the IMS Go Admin Starter. Read this before
+writing code. The human documentation lives in [`docs/`](docs/README.md) (Markdown, read on GitHub;
+the published site is the API starter's): start with the [tutorial](docs/tutorial/first-module.mdx), the
 [guides](docs/guides/modules.md) and the [design decisions](docs/architecture/decisions.md). Task
 recipes live in
 **skills**: `.agents/skills/` (canonical) and the identical copy in `.claude/skills/`
@@ -35,7 +35,7 @@ recipes live in
 
 ```bash
 make help                  # list every task (dev, build, test, lint, generate, db, ...)
-make dev                   # SPA dev server on :8080 (HMR, /dev) + API on :8081 (air hot reload)
+make dev                   # dashboard on :8080 (/dev) + client app on :8082 (both HMR) + API on :8081 (air)
 make dev-api               # API only, hot reload via air
 make build                 # bin/ims (CGO-free)
 make check                 # format-check + vet + lint + unit tests
@@ -47,8 +47,9 @@ make migrate               # goose + River migrations
 make web-typecheck         # dashboard: tsc --noEmit
 make web-style-check       # dashboard: token contrast and style rules
 make web-build             # dashboard: build web/dev/dist (embedded by the binary)
+make app-typecheck         # client app: tsc --noEmit (also app-style-check, app-openapi-check)
+make app-build             # client app: build web/app/dist (embedded, served at /)
 make docs-gen              # docs/reference/* from the CLI, .env.example, permission catalog, Makefile
-make docs                  # docs site preview at :4321 (website/, Node 22.23+); make docs-build checks links
 
 # Integration tests (real Postgres; each package gets its own schema):
 $env:DATABASE_TEST_DSN = "postgres://postgres:postgres@127.0.0.1:5432/ims_go_api_test?sslmode=disable"
@@ -78,11 +79,16 @@ cmd/app/                      single binary entry point
 module.go                     root package: embeds go.mod and VERSION
 VERSION                       release version (semver); release builds stamp it, local builds report <v>-dev
 CHANGELOG.md                  Keep a Changelog; update it with every user-visible change
-docs/                         human documentation (Markdown, renders on GitHub and as the site)
-website/                      Astro Starlight shell that renders docs/ (deployed to Cloudflare on release)
+docs/                         human documentation (Markdown, read on GitHub)
 web/dev/                      dashboard SPA (TanStack Router/Query, cmdk); embed.go also embeds package.json
   src/components/ui.tsx       Card, Button, Chip, Drawer, Modal, Tabs, StatCard, Icon, ...
   src/components/inputs.tsx   Select, DatePicker, TimePicker (use these, never native <select>/date)
+web/app/                      client app SPA served at / (Vite + TanStack Router plugin, React Query, cmdk)
+  src/api/client.ts           api() wrapper: /api/v1 paths, ApiError (problem+json), token storage, app-wide events
+  src/auth/session.ts         sign-in/2FA/sign-out, session query (profile + permissions), can()
+  src/components/navigation.ts every page: label key, icon, group, `g` letter, required permission
+  src/i18n/                   en.ts (reference catalog) + bn.ts; useT(), Accept-Language sent with every call
+  public/appearance.js        theme/accent/density before first paint (a file, so the CSP needs no inline script)
 internal/
   app/        composition root: platform.go (shared deps), schedule.go (recurring tasks),
               wiring.go (HTTP deps), routes.go (middleware chain + route groups), dev_commands.go (dashboard commands)
@@ -112,8 +118,9 @@ internal/
                 channels, delivery.send job, deliveries log (no bodies, masked addresses)
     health/ i18n/ mail/ (smtp/log transport) sms/ (log/twilio transport) ratelimit/ metrics/
   modules/    business features (see "Module anatomy"):
-    access activity auth backup billing branches dataprocessing dev featureflags files
-    identity notifications privacy settings system tenants webhooks
+    access activity announcements auth backup billing branches dashboard dataprocessing dev
+    featureflags files identity notifications oauth onboarding privacy settings system tenants
+    webhooks
   privacy/    leaf registry for erasure/export: Contributor, Guard, Writer (modules declare, modules/privacy runs)
   scaffold/   `ims gen module` + `ims gen openapi` generators
   dbgen/      sqlc generated code (never edit)
@@ -221,7 +228,7 @@ Business validation lives in services: `apperr.Validation(map[string][]string{..
 
 **Tenancy** — `tenancy.From(r)` gives the `Scope`; `scope.Filter()` is what repositories use for
 single-row reads: one tenant, or every tenant only for internal/global reads. A zero `Filter`
-matches **no** tenant rows (fails closed). `X-Acting-User` (`user.impersonate`) runs the request as
+matches **no** tenant rows (fails closed). Branch-scoped lists filter on `scope.ListBranchID()` (zero = every branch: a member who may switch and has not picked one); new rows are stamped with `scope.EffectiveBranchID()`. `X-Acting-User` (`user.impersonate`) runs the request as
 another user (`Identity.ImpersonatorID` is the caller; mount `authn.DenyImpersonated` on account
 changes). Public pre-sign-in routes use `tenancy.Public` (`X-Tenant-Code`). Impersonators send `X-Acting-Tenant` /
 `X-Acting-Branch`.

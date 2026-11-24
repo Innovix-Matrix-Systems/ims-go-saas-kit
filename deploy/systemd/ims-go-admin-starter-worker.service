@@ -1,0 +1,26 @@
+[Unit]
+Description=IMS Go Admin Starter (queue worker)
+Documentation=https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ims
+Group=ims
+WorkingDirectory=/opt/ims/ims-go-admin-starter/current
+EnvironmentFile=/etc/ims/ims-go-admin-starter/.env
+ExecStart=/opt/ims/ims-go-admin-starter/current/ims queue:work --queues=critical,default,heavy
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=1800
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ims/ims-go-admin-starter /var/log/ims/ims-go-admin-starter
+
+[Install]
+WantedBy=multi-user.target

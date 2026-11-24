@@ -10,9 +10,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/seeder"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/testkit"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/seeder"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
 // TestDeveloperOverview proves GET /dev/api/overview: health from the cached

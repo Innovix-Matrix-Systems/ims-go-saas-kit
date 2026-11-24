@@ -56,7 +56,29 @@ notifications.RegisterEvent("billing.payment_failed", notifications.Event{
 })
 ```
 
-The starter ships `renewal.reminder` (mail and SMS); billing sends it by mail.
+The starter ships `renewal.reminder` (mail and SMS; billing sends it by mail) and
+`platform.announcement` (mail) for staff announcements.
+
+## Announcements to organizations
+
+Staff tell organizations something (planned maintenance, a policy change, a new product) with
+an **announcement** (`internal/modules/announcements`): one row, whatever it reaches. Its
+audience is every organization, or the ones listed in `tenant_ids` (stored in
+`announcement_tenants`). It has a `kind` (`info`, `promotion`, `warning`, `critical`), an
+optional button (`cta_label` and `cta_url`), a window (`starts_at`, optional `ends_at`), a
+`status` (`draft`, `published`, `archived`) and whether members may dismiss it.
+
+| Route | Who | What |
+|---|---|---|
+| `GET/POST /api/v1/internal/announcements`, `GET/PATCH/DELETE /api/v1/internal/announcements/{id}`, `GET /api/v1/internal/announcements/{id}/organizations` | staff (`announcement.view`, `announcement.manage`) | manage them; unique views, clicks and dismissals in all, and per organization a page at a time |
+| `GET /api/v1/announcements/live` | every member | what to show now, most urgent first, without what the caller dismissed |
+| `POST /api/v1/announcements/{id}/events` | every member | `view`, `click` or `dismiss`, counted once per person |
+
+With `channels`, the `announcements.deliver` task (every minute) also delivers an announcement
+once when it starts: one `platform.announcement` notification per audience organization,
+addressed to all its members, grouped by announcement and expiring when it ends. An
+organization-wide notification reaches that organization's members, and staff acting in it; a
+staff account's own feed (`/internal/notification/feed`) never shows them.
 
 ## Mail, SMS and push
 

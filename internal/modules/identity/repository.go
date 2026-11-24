@@ -7,12 +7,12 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // Repository is the persistence contract for users. Single-row reads and
@@ -27,6 +27,7 @@ type Repository interface {
 	Delete(ctx context.Context, tenant tenancy.Filter, id int64, actorID *int64) error
 	UpdatePassword(ctx context.Context, tenant tenancy.Filter, id int64, hash string, actorID *int64) error
 	SwitchBranch(ctx context.Context, userID, branchID int64) error
+	ClearActiveBranch(ctx context.Context, userID int64) error
 	EmailExists(ctx context.Context, email string, excludeID int64) (bool, error)
 	PhoneExists(ctx context.Context, phone string, excludeID int64) (bool, error)
 	ClearRoles(ctx context.Context, userID int64) error
@@ -48,21 +49,38 @@ type Repository interface {
 	AcceptInvitation(ctx context.Context, userID int64, hash string) (bool, error)
 	MarkInvited(ctx context.Context, id int64, by *int64) (bool, error)
 	MarkEmailVerified(ctx context.Context, userID int64) error
+
+	// authn.EmailWriter
+	ChangeEmail(ctx context.Context, userID int64, email string) error
+
+	UpdateLocale(ctx context.Context, userID int64, locale *string) error
+	// ActiveMember tells whether the user is an active member of the tenant.
+	ActiveMember(ctx context.Context, tenantID, userID int64) (bool, error)
+	// IsTenantOwner tells whether the user owns an organization.
+	IsTenantOwner(ctx context.Context, userID int64) (bool, error)
+	// InvitationPreview fails with ResourceNotFound once the invitation
+	// was accepted (or the user is gone).
+	InvitationPreview(ctx context.Context, userID int64) (*InvitationPreview, error)
 }
 
 // ListFilter carries user list filters.
 type ListFilter struct {
 	AllTenants bool
 	TenantID   int64
-	Search     string
-	IsActive   *bool
-	RoleName   string
+	// BranchID keeps the members of one branch (their own branch); zero
+	// keeps every branch.
+	BranchID int64
+	Search   string
+	IsActive *bool
+	RoleName string
 	// Invitation is "", pending or accepted.
 	Invitation string
-	OrderBy    string
-	OrderDir   string
-	Limit      int32
-	Offset     int32
+	// PlatformOnly keeps accounts without a tenant (staff).
+	PlatformOnly bool
+	OrderBy      string
+	OrderDir     string
+	Limit        int32
+	Offset       int32
 }
 
 // ExportFilter carries user export filters (a snapshot of the request).
@@ -152,16 +170,18 @@ func (r *repository) GetByEmail(ctx context.Context, email string) (*User, error
 
 func (r *repository) List(ctx context.Context, filter ListFilter) ([]User, error) {
 	rows, err := r.queries.ListUsers(ctx, dbgen.ListUsersParams{
-		AllTenants: filter.AllTenants,
-		TenantID:   optionalInt64(filter.TenantID),
-		Search:     optionalString(filter.Search),
-		IsActive:   boolToSmallint(filter.IsActive),
-		RoleName:   optionalString(filter.RoleName),
-		Invitation: filter.Invitation,
-		OrderBy:    filter.OrderBy,
-		OrderDir:   filter.OrderDir,
-		PageLimit:  filter.Limit,
-		PageOffset: filter.Offset,
+		AllTenants:   filter.AllTenants,
+		PlatformOnly: filter.PlatformOnly,
+		TenantID:     optionalInt64(filter.TenantID),
+		BranchID:     filter.BranchID,
+		Search:       optionalString(filter.Search),
+		IsActive:     boolToSmallint(filter.IsActive),
+		RoleName:     optionalString(filter.RoleName),
+		Invitation:   filter.Invitation,
+		OrderBy:      filter.OrderBy,
+		OrderDir:     filter.OrderDir,
+		PageLimit:    filter.Limit,
+		PageOffset:   filter.Offset,
 	})
 	if err != nil {
 		return nil, database.MapError("users.list", err)
@@ -175,12 +195,14 @@ func (r *repository) List(ctx context.Context, filter ListFilter) ([]User, error
 
 func (r *repository) Count(ctx context.Context, filter ListFilter) (int64, error) {
 	total, err := r.queries.CountUsers(ctx, dbgen.CountUsersParams{
-		AllTenants: filter.AllTenants,
-		TenantID:   optionalInt64(filter.TenantID),
-		Search:     optionalString(filter.Search),
-		IsActive:   boolToSmallint(filter.IsActive),
-		RoleName:   optionalString(filter.RoleName),
-		Invitation: filter.Invitation,
+		AllTenants:   filter.AllTenants,
+		PlatformOnly: filter.PlatformOnly,
+		TenantID:     optionalInt64(filter.TenantID),
+		BranchID:     filter.BranchID,
+		Search:       optionalString(filter.Search),
+		IsActive:     boolToSmallint(filter.IsActive),
+		RoleName:     optionalString(filter.RoleName),
+		Invitation:   filter.Invitation,
 	})
 	if err != nil {
 		return 0, database.MapError("users.count", err)
@@ -323,6 +345,17 @@ func (r *repository) SwitchBranch(ctx context.Context, userID, branchID int64) e
 	return nil
 }
 
+func (r *repository) ClearActiveBranch(ctx context.Context, userID int64) error {
+	affected, err := r.queries.ClearUserActiveBranch(ctx, userID)
+	if err != nil {
+		return database.MapError("users.clear_active_branch", err)
+	}
+	if affected == 0 {
+		return apperr.Newf(apperr.ResourceNotFound, "User with ID '%d' was not found.", userID)
+	}
+	return nil
+}
+
 func (r *repository) EmailExists(ctx context.Context, email string, excludeID int64) (bool, error) {
 	exists, err := r.queries.EmailExists(ctx, dbgen.EmailExistsParams{Email: email, ExcludeID: excludeID})
 	if err != nil {
@@ -442,6 +475,50 @@ func (r *repository) MarkEmailVerified(ctx context.Context, userID int64) error 
 		return database.MapError("users.mark_email_verified", err)
 	}
 	return nil
+}
+
+func (r *repository) ChangeEmail(ctx context.Context, userID int64, email string) error {
+	if err := r.queries.ChangeUserEmail(ctx, dbgen.ChangeUserEmailParams{ID: userID, Email: email}); err != nil {
+		return database.MapError("users.change_email", err)
+	}
+	return nil
+}
+
+func (r *repository) ActiveMember(ctx context.Context, tenantID, userID int64) (bool, error) {
+	user, err := r.Get(ctx, tenancy.InTenant(tenantID), userID)
+	if apperr.Is(err, apperr.ResourceNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return user.IsActive, nil
+}
+
+func (r *repository) IsTenantOwner(ctx context.Context, userID int64) (bool, error) {
+	owner, err := r.queries.IsTenantOwner(ctx, &userID)
+	if err != nil {
+		return false, database.MapError("users.is_tenant_owner", err)
+	}
+	return owner, nil
+}
+
+func (r *repository) UpdateLocale(ctx context.Context, userID int64, locale *string) error {
+	if err := r.queries.UpdateUserLocale(ctx, dbgen.UpdateUserLocaleParams{ID: userID, Locale: locale}); err != nil {
+		return database.MapError("users.update_locale", err)
+	}
+	return nil
+}
+
+func (r *repository) InvitationPreview(ctx context.Context, userID int64) (*InvitationPreview, error) {
+	row, err := r.queries.GetInvitationPreview(ctx, userID)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && row.InvitationAcceptedAt.Valid) {
+		return nil, apperr.New(apperr.ResourceNotFound, "This invitation is no longer pending.")
+	}
+	if err != nil {
+		return nil, database.MapError("users.invitation_preview", err)
+	}
+	return &InvitationPreview{Name: row.Name, Email: row.Email, OrganizationName: row.OrganizationName, InviterName: row.InviterName}, nil
 }
 
 func (r *repository) TouchLogin(ctx context.Context, userID int64, device string) error {

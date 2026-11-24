@@ -10,9 +10,9 @@ import (
 	"sync"
 	"testing"
 
-	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/seeder"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/testkit"
+	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/seeder"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
 // TestIdentityWriteRules covers the phase-13 identity invariants end to end:

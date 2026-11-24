@@ -6,11 +6,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	cachememory "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/memory"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database/dbtest"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	cachememory "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/memory"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database/dbtest"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 func setupNotificationDB(t *testing.T) (context.Context, Repository, *pgxpool.Pool, cache.Store) {
@@ -172,7 +172,7 @@ func TestMarkAllReadAndCounters(t *testing.T) {
 	}
 
 	for i := 0; i < 2; i++ {
-		if err := service.ProcessMarkAllRead(ctx, 2); err != nil {
+		if err := service.ProcessMarkAllRead(ctx, 2, 0, false); err != nil {
 			t.Fatalf("ProcessMarkAllRead() error = %v", err)
 		}
 	}

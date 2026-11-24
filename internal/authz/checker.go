@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // DefaultPermissionCacheTTL bounds permission-set staleness. Role/permission
@@ -60,6 +60,16 @@ func (c *Checker) Can(ctx context.Context, userID int64, permission string) (boo
 		}
 	}
 	return false, nil
+}
+
+// Grants reports whether the user is a Super-Admin and the permission names
+// they hold through their roles (one cache read).
+func (c *Checker) Grants(ctx context.Context, userID int64) (bool, []string, error) {
+	access, err := c.accessFor(ctx, userID)
+	if err != nil {
+		return false, nil, err
+	}
+	return access.Super, access.Permissions, nil
 }
 
 // MustCan returns FORBIDDEN unless the user holds the permission.

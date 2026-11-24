@@ -5,13 +5,20 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 )
 
 // Account returns the signed-in user's record (for account changes such as
 // two-factor enrolment).
 func (s *Service) Account(ctx context.Context, userID int64) (*UserRecord, error) {
 	return s.users.FindByID(ctx, userID)
+}
+
+// ConfirmPasswordOnly is ConfirmPassword for callers that only need to know
+// the password was right.
+func (s *Service) ConfirmPasswordOnly(ctx context.Context, userID int64, password string) error {
+	_, err := s.ConfirmPassword(ctx, userID, password)
+	return err
 }
 
 // ConfirmPassword checks the signed-in user's password before a sensitive

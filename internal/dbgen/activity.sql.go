@@ -11,6 +11,218 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const activityActionFacets = `-- name: ActivityActionFacets :many
+SELECT a.action, count(*) AS total FROM activity_log a
+WHERE CASE
+        WHEN $1::boolean THEN a.tenant_id IS NULL
+        ELSE ($2::boolean OR a.tenant_id = $3::bigint)
+      END
+GROUP BY a.action
+ORDER BY total DESC, a.action
+LIMIT 200
+`
+
+type ActivityActionFacetsParams struct {
+	SystemOnly bool   `json:"system_only"`
+	AllTenants bool   `json:"all_tenants"`
+	TenantID   *int64 `json:"tenant_id"`
+}
+
+type ActivityActionFacetsRow struct {
+	Action string `json:"action"`
+	Total  int64  `json:"total"`
+}
+
+// The actions in the reader's scope, most frequent first.
+func (q *Queries) ActivityActionFacets(ctx context.Context, arg ActivityActionFacetsParams) ([]ActivityActionFacetsRow, error) {
+	rows, err := q.db.Query(ctx, activityActionFacets, arg.SystemOnly, arg.AllTenants, arg.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ActivityActionFacetsRow{}
+	for rows.Next() {
+		var i ActivityActionFacetsRow
+		if err := rows.Scan(&i.Action, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const activityActorFacets = `-- name: ActivityActorFacets :many
+SELECT a.actor_id::bigint AS actor_id, COALESCE(max(u.name), '')::text AS actor_name, count(*) AS total
+FROM activity_log a
+LEFT JOIN users u ON u.id = a.actor_id
+WHERE CASE
+        WHEN $1::boolean THEN a.tenant_id IS NULL
+        ELSE ($2::boolean OR a.tenant_id = $3::bigint)
+      END
+  AND a.actor_id IS NOT NULL
+GROUP BY a.actor_id
+ORDER BY total DESC
+LIMIT 200
+`
+
+type ActivityActorFacetsParams struct {
+	SystemOnly bool   `json:"system_only"`
+	AllTenants bool   `json:"all_tenants"`
+	TenantID   *int64 `json:"tenant_id"`
+}
+
+type ActivityActorFacetsRow struct {
+	ActorID   int64  `json:"actor_id"`
+	ActorName string `json:"actor_name"`
+	Total     int64  `json:"total"`
+}
+
+// Who acted in the reader's scope, most active first.
+func (q *Queries) ActivityActorFacets(ctx context.Context, arg ActivityActorFacetsParams) ([]ActivityActorFacetsRow, error) {
+	rows, err := q.db.Query(ctx, activityActorFacets, arg.SystemOnly, arg.AllTenants, arg.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ActivityActorFacetsRow{}
+	for rows.Next() {
+		var i ActivityActorFacetsRow
+		if err := rows.Scan(&i.ActorID, &i.ActorName, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const activityLastDay = `-- name: ActivityLastDay :one
+SELECT count(*) FROM activity_log a
+WHERE CASE
+        WHEN $1::boolean THEN a.tenant_id IS NULL
+        ELSE ($2::boolean OR a.tenant_id = $3::bigint)
+      END
+  AND a.created_at > now() - interval '24 hours'
+`
+
+type ActivityLastDayParams struct {
+	SystemOnly bool   `json:"system_only"`
+	AllTenants bool   `json:"all_tenants"`
+	TenantID   *int64 `json:"tenant_id"`
+}
+
+func (q *Queries) ActivityLastDay(ctx context.Context, arg ActivityLastDayParams) (int64, error) {
+	row := q.db.QueryRow(ctx, activityLastDay, arg.SystemOnly, arg.AllTenants, arg.TenantID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const activitySubjectFacets = `-- name: ActivitySubjectFacets :many
+SELECT a.subject_type, count(*) AS total FROM activity_log a
+WHERE CASE
+        WHEN $1::boolean THEN a.tenant_id IS NULL
+        ELSE ($2::boolean OR a.tenant_id = $3::bigint)
+      END
+GROUP BY a.subject_type
+ORDER BY total DESC, a.subject_type
+`
+
+type ActivitySubjectFacetsParams struct {
+	SystemOnly bool   `json:"system_only"`
+	AllTenants bool   `json:"all_tenants"`
+	TenantID   *int64 `json:"tenant_id"`
+}
+
+type ActivitySubjectFacetsRow struct {
+	SubjectType string `json:"subject_type"`
+	Total       int64  `json:"total"`
+}
+
+func (q *Queries) ActivitySubjectFacets(ctx context.Context, arg ActivitySubjectFacetsParams) ([]ActivitySubjectFacetsRow, error) {
+	rows, err := q.db.Query(ctx, activitySubjectFacets, arg.SystemOnly, arg.AllTenants, arg.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ActivitySubjectFacetsRow{}
+	for rows.Next() {
+		var i ActivitySubjectFacetsRow
+		if err := rows.Scan(&i.SubjectType, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const countActivity = `-- name: CountActivity :one
+SELECT count(*) FROM activity_log a
+LEFT JOIN users u ON u.id = a.actor_id
+WHERE CASE
+        WHEN $1::boolean THEN a.tenant_id IS NULL
+        ELSE ($2::boolean OR a.tenant_id = $3::bigint)
+      END
+  AND ($4::text IS NULL OR a.subject_type = $4)
+  AND ($5::bigint IS NULL OR a.subject_id = $5)
+  AND ($6::bigint IS NULL OR a.actor_id = $6)
+  AND ($7::bigint IS NULL OR a.impersonator_id = $7)
+  AND (NOT $8::boolean OR a.impersonator_id IS NOT NULL OR a.action LIKE 'impersonation.%')
+  AND ($9::text IS NULL OR a.action = $9)
+  AND ($10::timestamptz IS NULL OR a.created_at >= $10)
+  AND ($11::timestamptz IS NULL OR a.created_at <= $11)
+  AND ($12::text IS NULL
+       OR a.action ILIKE '%' || $12 || '%'
+       OR a.subject_type ILIKE '%' || $12 || '%'
+       OR a.ip ILIKE '%' || $12 || '%'
+       OR u.name ILIKE '%' || $12 || '%'
+       OR a.changes::text ILIKE '%' || $12 || '%')
+`
+
+type CountActivityParams struct {
+	SystemOnly       bool               `json:"system_only"`
+	AllTenants       bool               `json:"all_tenants"`
+	TenantID         *int64             `json:"tenant_id"`
+	SubjectType      *string            `json:"subject_type"`
+	SubjectID        *int64             `json:"subject_id"`
+	ActorID          *int64             `json:"actor_id"`
+	ImpersonatorID   *int64             `json:"impersonator_id"`
+	ImpersonatedOnly bool               `json:"impersonated_only"`
+	Action           *string            `json:"action"`
+	FromAt           pgtype.Timestamptz `json:"from_at"`
+	ToAt             pgtype.Timestamptz `json:"to_at"`
+	Search           *string            `json:"search"`
+}
+
+// The rows ListActivity would page through (same predicates, no cursor).
+func (q *Queries) CountActivity(ctx context.Context, arg CountActivityParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countActivity,
+		arg.SystemOnly,
+		arg.AllTenants,
+		arg.TenantID,
+		arg.SubjectType,
+		arg.SubjectID,
+		arg.ActorID,
+		arg.ImpersonatorID,
+		arg.ImpersonatedOnly,
+		arg.Action,
+		arg.FromAt,
+		arg.ToAt,
+		arg.Search,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const insertActivity = `-- name: InsertActivity :exec
 INSERT INTO activity_log (tenant_id, actor_id, impersonator_id, impersonator_name, action, subject_type,
                           subject_id, changes, ip, request_id)
@@ -61,10 +273,19 @@ WHERE CASE
   AND ($6::bigint IS NULL OR a.actor_id = $6)
   AND ($7::bigint IS NULL OR a.impersonator_id = $7)
   AND (NOT $8::boolean OR a.impersonator_id IS NOT NULL OR a.action LIKE 'impersonation.%')
-  AND ($9::timestamptz IS NULL
-       OR (a.created_at, a.id) < ($9::timestamptz, $10::bigint))
+  AND ($9::text IS NULL OR a.action = $9)
+  AND ($10::timestamptz IS NULL OR a.created_at >= $10)
+  AND ($11::timestamptz IS NULL OR a.created_at <= $11)
+  AND ($12::text IS NULL
+       OR a.action ILIKE '%' || $12 || '%'
+       OR a.subject_type ILIKE '%' || $12 || '%'
+       OR a.ip ILIKE '%' || $12 || '%'
+       OR u.name ILIKE '%' || $12 || '%'
+       OR a.changes::text ILIKE '%' || $12 || '%')
+  AND ($13::timestamptz IS NULL
+       OR (a.created_at, a.id) < ($13::timestamptz, $14::bigint))
 ORDER BY a.created_at DESC, a.id DESC
-LIMIT $11
+LIMIT $15
 `
 
 type ListActivityParams struct {
@@ -76,6 +297,10 @@ type ListActivityParams struct {
 	ActorID          *int64             `json:"actor_id"`
 	ImpersonatorID   *int64             `json:"impersonator_id"`
 	ImpersonatedOnly bool               `json:"impersonated_only"`
+	Action           *string            `json:"action"`
+	FromAt           pgtype.Timestamptz `json:"from_at"`
+	ToAt             pgtype.Timestamptz `json:"to_at"`
+	Search           *string            `json:"search"`
 	BeforeAt         pgtype.Timestamptz `json:"before_at"`
 	BeforeID         *int64             `json:"before_id"`
 	RowLimit         int32              `json:"row_limit"`
@@ -111,6 +336,10 @@ func (q *Queries) ListActivity(ctx context.Context, arg ListActivityParams) ([]L
 		arg.ActorID,
 		arg.ImpersonatorID,
 		arg.ImpersonatedOnly,
+		arg.Action,
+		arg.FromAt,
+		arg.ToAt,
+		arg.Search,
 		arg.BeforeAt,
 		arg.BeforeID,
 		arg.RowLimit,

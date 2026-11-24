@@ -10,10 +10,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // Item is one activity row.
@@ -45,8 +45,15 @@ type Filter struct {
 	Tenant         string // "" = every tenant and the system log; "system"; or a tenant id
 	ImpersonatorID int64
 	Impersonated   bool
-	Cursor         string
-	PerPage        int
+	// Action is an exact action key (user.created).
+	Action string
+	// From and To bound created_at (inclusive); zero means open.
+	From time.Time
+	To   time.Time
+	// Search matches the action, subject type, IP, actor name and changes.
+	Search  string
+	Cursor  string
+	PerPage int
 }
 
 // Reader is who reads the feed. A system reader holds activity.view.all and
@@ -61,6 +68,37 @@ type Page struct {
 	Items      []Item
 	PerPage    int
 	NextCursor *string
+	// Total is how many rows match the filter (every page).
+	Total int64
+}
+
+// Facets summarise the reader's whole feed: which actions, subjects and
+// people appear and how often, and how much happened in the last 24 hours.
+type Facets struct {
+	Actions  []Count
+	Subjects []Count
+	Actors   []ActorCount
+	LastDay  int64
+}
+
+// Count is a value and how many rows have it.
+type Count struct {
+	Value string
+	Total int64
+}
+
+// ActorCount is a person and how many rows they acted in.
+type ActorCount struct {
+	ID    int64
+	Name  string
+	Total int64
+}
+
+// scopePredicate is the tenant part every feed query shares.
+type scopePredicate struct {
+	SystemOnly bool
+	AllTenants bool
+	TenantID   *int64
 }
 
 // Service reads the activity feed.
@@ -85,31 +123,35 @@ func (s *Service) Feed(ctx context.Context, scope tenancy.Scope, reader Reader, 
 	if perPage < 1 || perPage > 100 {
 		perPage = 25
 	}
+	where, err := resolveScope(scope, reader, filter.Tenant)
+	if err != nil {
+		return nil, err
+	}
 	params := dbgen.ListActivityParams{
+		SystemOnly:  where.SystemOnly,
+		AllTenants:  where.AllTenants,
+		TenantID:    where.TenantID,
 		SubjectType: optionalString(filter.SubjectType),
 		SubjectID:   optional(filter.SubjectID),
 		ActorID:     optional(filter.ActorID),
+		Action:      optionalString(filter.Action),
+		FromAt:      optionalTime(filter.From),
+		ToAt:        optionalTime(filter.To),
+		Search:      optionalString(strings.TrimSpace(filter.Search)),
 		RowLimit:    int32(perPage + 1),
-	}
-	tenantID := scope.EffectiveTenantID()
-	switch {
-	case !reader.System:
-		if tenantID == 0 {
-			return nil, apperr.New(apperr.InsufficientPermissions,
-				"Reading every tenant's activity and the system audit log needs activity.view.all.")
-		}
-		params.TenantID = &tenantID
-	case tenantID != 0:
-		// A system reader viewing as one tenant (X-Acting-Tenant).
-		params.TenantID = &tenantID
-	default:
-		if err := applyTenantFilter(&params, filter.Tenant); err != nil {
-			return nil, err
-		}
 	}
 	if reader.System {
 		params.ImpersonatorID = optional(filter.ImpersonatorID)
 		params.ImpersonatedOnly = filter.Impersonated
+	}
+	total, err := s.queries.CountActivity(ctx, dbgen.CountActivityParams{
+		SystemOnly: params.SystemOnly, AllTenants: params.AllTenants, TenantID: params.TenantID,
+		SubjectType: params.SubjectType, SubjectID: params.SubjectID, ActorID: params.ActorID,
+		ImpersonatorID: params.ImpersonatorID, ImpersonatedOnly: params.ImpersonatedOnly,
+		Action: params.Action, FromAt: params.FromAt, ToAt: params.ToAt, Search: params.Search,
+	})
+	if err != nil {
+		return nil, database.MapError("activity.count", err)
 	}
 	if filter.Cursor != "" {
 		at, id, err := decodeCursor(filter.Cursor)
@@ -123,7 +165,7 @@ func (s *Service) Feed(ctx context.Context, scope tenancy.Scope, reader Reader, 
 	if err != nil {
 		return nil, database.MapError("activity.list", err)
 	}
-	page := &Page{PerPage: perPage, Items: make([]Item, 0, min(len(rows), perPage))}
+	page := &Page{PerPage: perPage, Total: total, Items: make([]Item, 0, min(len(rows), perPage))}
 	for i, row := range rows {
 		if i == perPage {
 			last := page.Items[len(page.Items)-1]
@@ -142,22 +184,74 @@ func (s *Service) Feed(ctx context.Context, scope tenancy.Scope, reader Reader, 
 	return page, nil
 }
 
-// applyTenantFilter sets the system reader's tenant predicate: every row,
-// the system log only, or one tenant.
-func applyTenantFilter(params *dbgen.ListActivityParams, tenant string) error {
+// resolveScope picks the rows the reader may see:
+//
+//   - A system reader sees every tenant and the system log (rows with no
+//     tenant), narrowed by tenant ("", "system" or an id). With
+//     X-Acting-Tenant they see that tenant only.
+//   - Anyone else sees the scope's effective tenant only. An internal account
+//     without activity.view.all has no tenant to read and is refused.
+func resolveScope(scope tenancy.Scope, reader Reader, tenant string) (scopePredicate, error) {
+	tenantID := scope.EffectiveTenantID()
+	switch {
+	case !reader.System:
+		if tenantID == 0 {
+			return scopePredicate{}, apperr.New(apperr.InsufficientPermissions,
+				"Reading every tenant's activity and the system audit log needs activity.view.all.")
+		}
+		return scopePredicate{TenantID: &tenantID}, nil
+	case tenantID != 0:
+		return scopePredicate{TenantID: &tenantID}, nil
+	}
 	switch tenant {
 	case "":
-		params.AllTenants = true
+		return scopePredicate{AllTenants: true}, nil
 	case TenantSystem:
-		params.SystemOnly = true
-	default:
-		id, err := strconv.ParseInt(tenant, 10, 64)
-		if err != nil || id < 1 {
-			return apperr.Validation(map[string][]string{"tenant_id": {`The tenant_id must be a tenant id or "system".`}})
-		}
-		params.TenantID = &id
+		return scopePredicate{SystemOnly: true}, nil
 	}
-	return nil
+	id, err := strconv.ParseInt(tenant, 10, 64)
+	if err != nil || id < 1 {
+		return scopePredicate{}, apperr.Validation(map[string][]string{"tenant_id": {`The tenant_id must be a tenant id or "system".`}})
+	}
+	return scopePredicate{TenantID: &id}, nil
+}
+
+// Facets summarises the feed the reader may see (tenant as in Feed).
+func (s *Service) Facets(ctx context.Context, scope tenancy.Scope, reader Reader, tenant string) (*Facets, error) {
+	where, err := resolveScope(scope, reader, tenant)
+	if err != nil {
+		return nil, err
+	}
+	out := &Facets{Actions: []Count{}, Subjects: []Count{}, Actors: []ActorCount{}}
+	actions, err := s.queries.ActivityActionFacets(ctx, dbgen.ActivityActionFacetsParams(where))
+	if err != nil {
+		return nil, database.MapError("activity.facets", err)
+	}
+	for _, row := range actions {
+		out.Actions = append(out.Actions, Count{Value: row.Action, Total: row.Total})
+	}
+	subjects, err := s.queries.ActivitySubjectFacets(ctx, dbgen.ActivitySubjectFacetsParams(where))
+	if err != nil {
+		return nil, database.MapError("activity.facets", err)
+	}
+	for _, row := range subjects {
+		out.Subjects = append(out.Subjects, Count{Value: row.SubjectType, Total: row.Total})
+	}
+	actors, err := s.queries.ActivityActorFacets(ctx, dbgen.ActivityActorFacetsParams(where))
+	if err != nil {
+		return nil, database.MapError("activity.facets", err)
+	}
+	for _, row := range actors {
+		out.Actors = append(out.Actors, ActorCount{ID: row.ActorID, Name: row.ActorName, Total: row.Total})
+	}
+	if out.LastDay, err = s.queries.ActivityLastDay(ctx, dbgen.ActivityLastDayParams(where)); err != nil {
+		return nil, database.MapError("activity.facets", err)
+	}
+	return out, nil
+}
+
+func optionalTime(value time.Time) pgtype.Timestamptz {
+	return pgtype.Timestamptz{Time: value, Valid: !value.IsZero()}
 }
 
 // Purge deletes activity older than the retention window.

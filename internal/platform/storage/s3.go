@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 )
 
 // s3PresignTTL is how long URL() links last on a bucket without a public URL.

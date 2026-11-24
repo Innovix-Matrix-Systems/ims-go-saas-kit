@@ -5,8 +5,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 )
 
 // User is the domain representation of a user.
@@ -32,11 +32,13 @@ type User struct {
 	InvitedAt            *time.Time
 	InvitedBy            *int64
 	InvitationAcceptedAt *time.Time
-	CreatedBy            *int64
-	UpdatedBy            *int64
-	CreatedAt            time.Time
-	UpdatedAt            time.Time
-	DeletedAt            *time.Time
+	// Locale is the language the user chose ("en", "bn"); nil = default.
+	Locale    *string
+	CreatedBy *int64
+	UpdatedBy *int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time
 }
 
 func mapUser(row dbgen.User) User {
@@ -65,6 +67,7 @@ func mapUser(row dbgen.User) User {
 		CreatedAt:            row.CreatedAt.Time,
 		UpdatedAt:            row.UpdatedAt.Time,
 		DeletedAt:            timePtr(row.DeletedAt),
+		Locale:               row.Locale,
 	}
 }
 

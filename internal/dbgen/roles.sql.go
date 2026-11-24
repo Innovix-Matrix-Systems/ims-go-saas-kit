@@ -251,6 +251,32 @@ func (q *Queries) GetRoleByName(ctx context.Context, arg GetRoleByNameParams) (R
 	return i, err
 }
 
+const grantPermissionsToTenantRoles = `-- name: GrantPermissionsToTenantRoles :execrows
+INSERT INTO role_has_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.tenant_id IS NOT NULL
+  AND r.name = $1
+  AND p.name = ANY($2::text[])
+ON CONFLICT DO NOTHING
+`
+
+type GrantPermissionsToTenantRolesParams struct {
+	RoleName        string   `json:"role_name"`
+	PermissionNames []string `json:"permission_names"`
+}
+
+// Adds the named permissions to every tenant role called @role_name (the
+// tenant Admin role in each tenant). Add-only: existing grants are kept.
+func (q *Queries) GrantPermissionsToTenantRoles(ctx context.Context, arg GrantPermissionsToTenantRolesParams) (int64, error) {
+	result, err := q.db.Exec(ctx, grantPermissionsToTenantRoles, arg.RoleName, arg.PermissionNames)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const listRoleIDsByNames = `-- name: ListRoleIDsByNames :many
 SELECT id, name FROM roles
 WHERE name = ANY($1::text[])

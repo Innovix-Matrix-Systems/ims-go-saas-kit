@@ -511,10 +511,12 @@ func (q *Queries) ListProfileFilesByUserIDs(ctx context.Context, userIds []int64
 }
 
 const sumFileBytesForTenant = `-- name: SumFileBytesForTenant :one
-SELECT COALESCE(sum(size), 0)::bigint FROM files WHERE tenant_id = $1::bigint
+SELECT COALESCE(sum(size), 0)::bigint FROM files
+WHERE tenant_id = $1::bigint AND owner_type IS DISTINCT FROM 'data_processing_job'
 `
 
-// Storage used by a tenant (storage.mb plan limit).
+// Storage used by a tenant (storage.mb plan limit). Export files are left
+// out: they are deleted with their jobs.
 func (q *Queries) SumFileBytesForTenant(ctx context.Context, tenantID int64) (int64, error) {
 	row := q.db.QueryRow(ctx, sumFileBytesForTenant, tenantID)
 	var column_1 int64

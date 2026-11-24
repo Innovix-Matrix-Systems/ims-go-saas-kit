@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // The caller's own profile and avatar uploads.
@@ -23,6 +23,28 @@ func (h *Handler) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Data(w, r, http.StatusOK, h.responseFor(r.Context(), *user))
+}
+
+// ProfilePermissionsResponse is what the effective user may do.
+type ProfilePermissionsResponse struct {
+	// SuperAdmin bypasses every permission check.
+	SuperAdmin  bool     `json:"super_admin"`
+	Permissions []string `json:"permissions"`
+	// ActingAs is true when staff are acting as this user (X-Acting-User).
+	ActingAs bool `json:"acting_as"`
+}
+
+func (h *Handler) profilePermissions(w http.ResponseWriter, r *http.Request) {
+	identity, _ := authn.IdentityFromContext(r.Context())
+	super, names, err := h.checker.Grants(r.Context(), identity.UserID)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	if names == nil {
+		names = []string{}
+	}
+	h.Data(w, r, http.StatusOK, ProfilePermissionsResponse{SuperAdmin: super, Permissions: names, ActingAs: identity.Impersonated()})
 }
 
 func (h *Handler) profileUpdate(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +67,7 @@ func (h *Handler) profileUpdate(w http.ResponseWriter, r *http.Request) {
 		LastName:  req.LastName,
 		Name:      name,
 		Phone:     req.Phone,
+		Locale:    req.Locale,
 	})
 	if err != nil {
 		h.Error(w, r, err)

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/maintenance"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/testkit"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
 // TestMaintenanceModeEndToEnd covers phase 24: the dashboard takes the app

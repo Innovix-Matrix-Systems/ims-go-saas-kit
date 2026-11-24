@@ -18,7 +18,7 @@ effective values with secrets masked.
 | Variable | Example | Notes |
 | --- | --- | --- |
 | `APP_ENV` | `local` |  |
-| `APP_NAME` | `ims-go-api` |  |
+| `APP_NAME` | `ims-go-admin-starter` |  |
 | `APP_DEBUG` | `true` |  |
 | `APP_URL` | `http://localhost:8080` |  |
 | `APP_KEY` | — | `ims key:generate`; empty locally = a public dev key |
@@ -126,6 +126,7 @@ effective values with secrets masked.
 | `AUTH_PASSWORD_RESET_URL` | `https://app.example.com/reset-password?token={token}&email={email}` | *Optional.* |
 | `AUTH_EMAIL_VERIFY_URL` | `https://app.example.com/verify-email?token={token}` | *Optional.* |
 | `AUTH_INVITATION_URL` | `https://app.example.com/accept-invitation?token={token}&email={email}` | *Optional.* |
+| `AUTH_EMAIL_CHANGE_URL` | `https://app.example.com/confirm-email-change?token={token}` | *Optional.* |
 | `AUTH_INVITATION_TTL` | `168h` | *Optional.* how long an invitation link works |
 | `BCRYPT_ROUNDS` | `12` |  |
 
@@ -175,7 +176,7 @@ effective values with secrets masked.
 | `MAIL_PASSWORD` | — |  |
 | `MAIL_ENCRYPTION` | — | tls \| starttls \| "" (plain) |
 | `MAIL_FROM_ADDRESS` | `hello@example.com` |  |
-| `MAIL_FROM_NAME` | `IMS Go API` |  |
+| `MAIL_FROM_NAME` | `IMS Go Admin Starter` |  |
 | `MAIL_MAX_ATTACHMENT_MB` | `10` | *Optional.* total attachments per mail |
 | `SMS_DRIVER` | `log` | log \| twilio |
 | `TWILIO_ACCOUNT_SID` | `/ TWILIO_AUTH_TOKEN= / TWILIO_FROM=` | *Optional.* |

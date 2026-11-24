@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 )
 
 func TestKeyGenerateCommand(t *testing.T) {

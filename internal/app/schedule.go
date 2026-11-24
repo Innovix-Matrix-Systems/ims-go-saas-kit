@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/backup"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dev"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/scheduler"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/scheduler"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // schedule lists the recurring tasks run by `ims schedule` (Laravel's
@@ -94,6 +94,22 @@ func (p *Platform) schedule() []scheduler.Task {
 					tenancy.InvalidateTenantCode(ctx, p.Cache, tenant.Code)
 				}
 				logger.Info("lapsed tenants suspended", "count", len(lapsed))
+				return nil
+			},
+		},
+		{
+			ID:          "announcements.deliver",
+			Spec:        "* * * * *",
+			Description: "Sends started announcements through their channels (in-app, mail, sms, push), once each.",
+			Timeout:     10 * time.Minute,
+			Run: func(ctx context.Context) error {
+				sent, err := p.Announcements.DeliverDue(ctx)
+				if err != nil {
+					return err
+				}
+				if sent > 0 {
+					logger.Info("announcements delivered", "count", sent)
+				}
 				return nil
 			},
 		},

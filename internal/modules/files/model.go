@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 )
 
 // File types derived from the MIME type.
@@ -25,6 +25,8 @@ const (
 const (
 	OwnerUser         = "user"
 	CollectionProfile = "profile"
+	OwnerTenant       = "tenant"
+	CollectionLogo    = "logo"
 )
 
 // collections is the collection registry: owner type → collection → single
@@ -33,6 +35,9 @@ const (
 var collections = map[string]map[string]bool{
 	OwnerUser: {
 		CollectionProfile: true,
+	},
+	OwnerTenant: {
+		CollectionLogo: true,
 	},
 }
 
@@ -86,6 +91,15 @@ type File struct {
 // Attached reports whether the file belongs to an owner.
 func (f File) Attached() bool {
 	return f.OwnerType != nil && f.OwnerID != nil
+}
+
+// generatedOwnerType marks a background job's output (an export): it is
+// listed with the uploads but lives and dies with its job.
+const generatedOwnerType = "data_processing_job"
+
+// Generated reports whether a background job wrote the file.
+func (f File) Generated() bool {
+	return f.OwnerType != nil && *f.OwnerType == generatedOwnerType
 }
 
 func mapFile(row dbgen.File) File {

@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/app"
-	cachefactory "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/factory"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/app"
+	cachefactory "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/factory"
 )
 
 func registerCacheCommands(registry *Registry, state *State) error {

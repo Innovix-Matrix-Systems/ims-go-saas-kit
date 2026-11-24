@@ -31,7 +31,10 @@ type Auth struct {
 	// InvitationURL is the client page invitation mails link to ({token},
 	// {email}); InvitationTTL is how long a link works (phase 26.5).
 	InvitationURL string
-	InvitationTTL time.Duration
+	// EmailChangeURL is the client page the "confirm your new address" mail
+	// links to ({token}); the link lasts AUTH_EMAIL_VERIFY_EXPIRY.
+	EmailChangeURL string
+	InvitationTTL  time.Duration
 	// NewUsersVerified marks users created by an admin/import as verified
 	// (AUTH_NEW_USERS_VERIFIED, default true). Set false to make them confirm
 	// their e-mail address first (a verification mail is sent).
@@ -96,6 +99,7 @@ func (c *Config) loadAuth() error {
 	cfg.PasswordResetURL = strings.TrimSpace(getString("AUTH_PASSWORD_RESET_URL", ""))
 	cfg.EmailVerifyURL = strings.TrimSpace(getString("AUTH_EMAIL_VERIFY_URL", ""))
 	cfg.InvitationURL = strings.TrimSpace(getString("AUTH_INVITATION_URL", ""))
+	cfg.EmailChangeURL = strings.TrimSpace(getString("AUTH_EMAIL_CHANGE_URL", ""))
 	if cfg.OTPEnabled, err = getBool("AUTH_OTP_ENABLED", false); err != nil {
 		return err
 	}
@@ -140,6 +144,9 @@ func (c *Config) loadAuth() error {
 	}
 	if cfg.InvitationURL == "" {
 		cfg.InvitationURL = strings.TrimRight(c.App.URL, "/") + "/accept-invitation?token={token}&email={email}"
+	}
+	if cfg.EmailChangeURL == "" {
+		cfg.EmailChangeURL = strings.TrimRight(c.App.URL, "/") + "/confirm-email-change?token={token}"
 	}
 	c.Auth = cfg
 	return nil

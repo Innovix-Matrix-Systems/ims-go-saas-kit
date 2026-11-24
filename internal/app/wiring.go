@@ -1,50 +1,56 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 
-	webdev "github.com/Innovix-Matrix-Systems/ims-go-api-starter/web/dev"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/onboarding"
+	webapp "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/web/app"
+	webdev "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/web/dev"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn/social"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/mcp"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/access"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/auth"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/backup"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/branches"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dev"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/featureflags"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/files"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/notifications"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/oauth"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/privacy"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/system"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/tenants"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/webhooks"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/health"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/i18n"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/maintenance"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/metrics"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/ratelimit"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/scheduler"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/webui"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/version"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn/social"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/auth"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing"
+	billingservice "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dashboard"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/featureflags"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/files"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/notifications"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/system"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/tenants"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/webhooks"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/health"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/i18n"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/metrics"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/ratelimit"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/scheduler"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/webui"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version"
 )
 
 // Dependencies is the composition root's dependency graph. It is constructed
@@ -77,8 +83,11 @@ type Dependencies struct {
 	Roles         *access.RoleHandler
 	Permissions   *access.PermissionHandler
 	Billing       *billing.Handler
+	Onboarding    *onboarding.Handler
 	Files         *files.Handler
 	Notifications *notifications.Handler
+	Dashboard     *dashboard.Handler
+	Announcements *announcements.Handler
 	Webhooks      *webhooks.Handler
 	Processing    *dataprocessing.Handler
 	Settings      *settings.Handler
@@ -93,6 +102,7 @@ type Dependencies struct {
 	// routes is the built router, read by the dashboard's route inspector.
 	routes chi.Routes
 	DevUI  *webui.Handler
+	AppUI  *webui.Handler
 }
 
 // NewDependencies constructs the dependency graph for the HTTP API mode. The
@@ -143,6 +153,13 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 	}
 	devUI := webui.New(http.FS(distFS))
 
+	appFS, err := webapp.Dist()
+	if err != nil {
+		platformCleanup()
+		return nil, nil, err
+	}
+	appUI := webui.NewClient(http.FS(appFS))
+
 	// Repositories
 	identityRepo := platform.IdentityRepo
 	roleRepo := access.NewRoleRepository(queries)
@@ -168,6 +185,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		WithSignInWatcher(signInAlerts{settings: platform.Settings, queries: queries, delivery: platform.Delivery, logger: logger}).
 		WithTwoFactor(platform.TwoFactor, twoFactorPolicy{settings: platform.Settings, cfg: cfg.Auth, logger: logger})
 	userService := platform.Identity
+	tenantService.WithOwnership(tenants.OwnershipCollaborators{Passwords: authService, Members: identityRepo, Checker: checker})
 
 	// MCP connector: the authorization server and the tool catalog.
 	oauthService := platform.OAuthService()
@@ -217,15 +235,20 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		Auth: auth.NewHandler(authService, userService, checker, kit).
 			WithRecovery(platform.Recovery).
 			WithSessions(platform.Sessions),
-		Users:         identity.NewHandler(userService, platform.Files, platform.Exchange, checker, kit),
-		Privacy:       privacy.NewHandler(platform.Privacy, authService, checker, kit),
-		Tenants:       tenants.NewHandler(tenantService, checker, kit),
-		Branches:      branches.NewHandler(branchService, checker, kit),
-		Activity:      activity.NewHandler(activity.NewService(queries), checker, kit),
-		Roles:         access.NewRoleHandler(roleService, checker, tenantLookup, kit),
-		Permissions:   access.NewPermissionHandler(permissionService, checker, kit),
-		Files:         files.NewHandler(platform.Files, checker, kit),
+		Users:       identity.NewHandler(userService, platform.Files, platform.Exchange, checker, kit),
+		Privacy:     privacy.NewHandler(platform.Privacy, authService, checker, kit),
+		Tenants:     tenants.NewHandler(tenantService, checker, kit).WithSettings(platform.Settings),
+		Branches:    branches.NewHandler(branchService, checker, kit),
+		Activity:    activity.NewHandler(activity.NewService(queries), checker, kit),
+		Roles:       access.NewRoleHandler(roleService, checker, tenantLookup, kit),
+		Permissions: access.NewPermissionHandler(permissionService, checker, kit),
+		Files: files.NewHandler(platform.Files, checker, kit).WithLogoSetter(func(ctx context.Context, tenantID int64, url string) error {
+			_, err := platform.Settings.SetTenant(ctx, tenancy.Scope{TenantID: tenantID}, "branding.logo_url", url)
+			return err
+		}),
 		Notifications: notifications.NewHandler(platform.Notifications, checker, kit),
+		Dashboard:     dashboard.NewHandler(dashboard.NewService(queries), checker, kit),
+		Announcements: announcements.NewHandler(platform.Announcements, checker, kit),
 		Webhooks:      webhooks.NewHandler(platform.Webhooks, checker, kit),
 		Processing:    dataprocessing.NewHandler(platform.Processing, platform.Settings, checker, kit),
 		Settings:      settings.NewHandler(platform.Settings, checker, kit),
@@ -270,6 +293,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			Kit:         kit,
 		}),
 		DevUI:        devUI,
+		AppUI:        appUI,
 		OAuth:        oauth.NewHandler(oauthService, oauthPages, checker, kit),
 		OAuthService: oauthService,
 		MCPTools:     mcpTools,
@@ -281,8 +305,35 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			platform.BillingApprovals,
 			checker,
 			kit,
-		),
+		).WithUsage(billingservice.NewUsageService(platform.BillingGuard, queries)).
+			WithInvoices(billingservice.NewInvoiceService(queries, func(ctx context.Context) string {
+				// The platform issues invoices under its own name (system.name).
+				value, _ := platform.Settings.Get(ctx, tenancy.Scope{}, "system.name")
+				name, _ := value.(string)
+				return name
+			})),
 	}
+	// The activity export answers HTTP with the shared kit.
+	platform.ActivityExport.WithKit(kit)
+	deps.Onboarding = onboarding.NewHandler(
+		onboarding.NewService(onboarding.Deps{
+			Repo:      onboarding.NewRepository(queries),
+			Tenants:   tenantService,
+			Plans:     platform.BillingSubs,
+			Packages:  platform.BillingPackages,
+			Users:     userService,
+			Accounts:  identityRepo,
+			Roles:     roleRepo,
+			Branches:  branchRepo,
+			Settings:  platform.Settings,
+			Mailer:    platform.Delivery,
+			ClientURL: onboarding.ClientOrigin(cfg.Auth.PasswordResetURL),
+			Logger:    logger,
+		}).WithActivity(platform.Activity),
+		// Sign-up is anonymous and creates rows: ten attempts per IP an hour.
+		ratelimit.NewCacheLimiter(store, 10, time.Hour),
+		kit,
+	)
 	deps.Auth.WithSignInRecorder(deps.Dev.Auditor())
 	cleanup := func() {
 		limiter.Close()

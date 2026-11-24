@@ -15,16 +15,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/access"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/branches"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dataprocessing"
-	cachememory "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/memory"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database/dbtest"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/storage"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
+	cachememory "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/memory"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database/dbtest"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 func setupExchange(t *testing.T) (context.Context, *ExchangeService, *dataprocessing.Service, *pgxpool.Pool, *config.Config) {
@@ -123,7 +123,7 @@ func TestUserImportReportsPerRowErrors(t *testing.T) {
 
 	content := buildWorkbook(t, [][]any{
 		{"name", "email", "phone", "password", "status", "roles"},
-		{"Valid User", "valid@example.com", "+8801700000000", "password123", "Active", "Tenant Role"},
+		{"Valid User", "valid@example.com", "+8801700000000", "Imported-Pass-42", "Active", "Tenant Role"},
 		{"", "not-an-email", "", "", "", "Unknown Role"},
 		{"Default Password", "default@example.com", "", "", "Active", "Tenant Role"},
 	})

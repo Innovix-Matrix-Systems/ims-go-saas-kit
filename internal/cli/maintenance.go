@@ -3,8 +3,8 @@ package cli
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/app"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/app"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
 )
 
 // Maintenance mode (phase 24): Laravel's `artisan down` / `up`.

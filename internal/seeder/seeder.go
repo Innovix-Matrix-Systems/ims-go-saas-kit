@@ -11,15 +11,15 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/access"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/branches"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/tenants"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/tenants"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // SuperAdminEmail is the seeded super-admin account e-mail.
@@ -83,6 +83,13 @@ func Run(ctx context.Context, cfg *config.Config, queries *dbgen.Queries, tx *da
 	}
 	if err := roleSvc.CreateDefaultRolesForTenant(ctx, tenant.ID); err != nil {
 		return fmt.Errorf("seed tenant roles: %w", err)
+	}
+	if _, err := roleSvc.SyncTenantAdminRoles(ctx); err != nil {
+		return fmt.Errorf("sync tenant admin roles: %w", err)
+	}
+	// Without a plan the default tenant could not add a single user (402).
+	if err := ensureDefaultSubscription(ctx, queries, tenant.ID, logger); err != nil {
+		return err
 	}
 
 	if err := ensureSuperAdminUser(ctx, cfg, userRepo, checker, superRole.ID, logger); err != nil {

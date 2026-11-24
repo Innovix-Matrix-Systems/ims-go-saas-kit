@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/app"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/testkit"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/app"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
 // The delivery system (phase 26.2): account mails go through it, the log

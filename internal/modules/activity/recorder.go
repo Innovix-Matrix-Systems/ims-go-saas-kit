@@ -12,13 +12,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/maintenance"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/telemetry"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/telemetry"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 var (
@@ -304,6 +304,19 @@ func (r *Recorder) InvitationAccepted(ctx context.Context, user *authn.UserRecor
 	r.Record(ctx, Entry{
 		TenantID: user.TenantID, ActorID: user.ID, Action: "user.invitation_accepted",
 		Subject: "user", SubjectID: user.ID, Changes: map[string]any{"email": user.Email},
+	})
+}
+
+// EmailChanged implements authn.EmailChangeAudit. Both addresses are
+// masked: the entry says the address changed without keeping either.
+func (r *Recorder) EmailChanged(ctx context.Context, user *authn.UserRecord, oldEmail, newEmail string) {
+	if r == nil || user == nil {
+		return
+	}
+	r.Record(ctx, Entry{
+		TenantID: user.TenantID, ActorID: user.ID, Action: "user.email_changed",
+		Subject: "user", SubjectID: user.ID,
+		Changes: map[string]any{"from": authn.MaskEmail(oldEmail), "to": authn.MaskEmail(newEmail)},
 	})
 }
 

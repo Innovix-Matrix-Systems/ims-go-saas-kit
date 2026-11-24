@@ -18,7 +18,7 @@ const AppKeyLength = 32
 // environment, so `make dev` works out of the box and data encrypted in a
 // previous run stays readable. It is public, so it protects nothing: every
 // other environment must set APP_KEY.
-const developmentKeySeed = "ims-go-api-starter local development key (not secret)"
+const developmentKeySeed = "ims-go-admin-starter local development key (not secret)"
 
 // AppKey holds the encryption key and the previous keys still accepted for
 // decryption (rotation).

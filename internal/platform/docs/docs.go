@@ -5,7 +5,7 @@ package docs
 import (
 	"net/http"
 
-	api "github.com/Innovix-Matrix-Systems/ims-go-api-starter/api"
+	api "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/api"
 )
 
 // scalarHTML loads the Scalar API reference from a CDN and points it at the
@@ -20,7 +20,7 @@ const scalarHTML = `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>IMS Go API — Reference</title>
+    <title>IMS Go Admin Starter — Reference</title>
   </head>
   <body>
     <script

@@ -6,10 +6,10 @@ import (
 	"path"
 	"time"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/storage"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/privacy"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
 )
 
 // PrivacyContributor covers files attached to the user (the profile picture

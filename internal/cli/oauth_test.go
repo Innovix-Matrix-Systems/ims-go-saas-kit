@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database/dbtest"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database/dbtest"
 )
 
 // run executes one command through BuildRoot, as `ims` would.

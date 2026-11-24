@@ -1,0 +1,22 @@
+/* Activity log: the same layout as the developer dashboard's audit log. */
+/* Search takes two columns; the other filters fill what is left and wrap. */
+.audit-filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px 14px; align-items: end; }
+.audit-filters > .field:first-child { grid-column: span 2; }
+.audit-count { grid-column: -2 / -1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-bottom: 6px; }
+.audit-action { display: inline-flex; align-items: center; gap: 8px; }
+.audit-action .tag { font-weight: var(--fw-medium); }
+.audit-table tbody tr.selected { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.audit-kv { border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 0; grid-template-columns: 130px 1fr; gap: 0; }
+.audit-kv dt, .audit-kv dd { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+.audit-kv dt:nth-last-of-type(1), .audit-kv dd:last-of-type { border-bottom: 0; }
+.audit-kv dd { font-family: var(--sans); font-size: var(--fs-base); }
+.audit-quick { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.search-box { position: relative; display: block; }
+.search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-3); pointer-events: none; }
+.search-box .input { width: 100%; padding-left: 30px; }
+@media (max-width: 560px) {
+  .audit-filters > .field:first-child, .audit-count { grid-column: 1 / -1; }
+}
+.audit-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+@media (max-width: 640px) { .audit-stats { grid-template-columns: 1fr; } }
+.audit-table td { white-space: nowrap; }

@@ -62,8 +62,12 @@ Statuses: `trial`, `pending`, `active`, `past_due`, `cancelled`, `expired`. Only
 
 | Action | How |
 | --- | --- |
-| tenant subscribes | `POST /api/v1/billing/subscribe` `{package_id, payment_method, payment_data}` |
+| tenant subscribes | `POST /api/v1/billing/subscribe` `{package_id, payment_method, payment_data}` (`billing.manage`) |
+| tenant payment history | `GET /api/v1/billing/payments` (`billing.view`) |
 | see the current plan | `GET /api/v1/billing/subscription/status` |
+| withdraw a checkout nobody confirmed yet | `POST /api/v1/billing/payments/{id}/cancel` (`billing.manage`): the payment and its pending subscription are cancelled, the approval request closed as withdrawn |
+| download an invoice | `GET /api/v1/billing/payments/{id}/invoice` (`billing.view`): a printable HTML document under the platform's name |
+| see the use of each plan limit | `GET /api/v1/billing/usage` (`billing.view`): `users.max`, `branches.max` and `storage.mb` with the limit (-1 unlimited, 0 not in the plan) and what is used, counted as the limit checks count |
 | staff assigns a plan | `POST /api/v1/billing/internal/tenants/{tenant_id}/subscription` |
 | staff cancels | `POST /api/v1/billing/internal/subscriptions/{id}/cancel` — immediate |
 | expiry | the `billing.expire-subscriptions` task, every 6 hours |
@@ -113,7 +117,16 @@ An **orchestrator** picks a driver per method:
   is always asked for the real status. Only a status bKash reports as failed or cancelled fails a
   payment; a gateway error is a retryable 503 that changes nothing. Completion and activation are
   one transaction.
-- **Approvals**: `POST …/payment-approvals/{id}/approve|reject` update the payment and the
+- **Free packages** start at once when an organization subscribes to one (no payment method,
+  no approval), the way staff assign a plan.
+- **Feature catalog**: `GET /api/v1/packages/features` (`package.view.all`) lists every feature
+  with `is_limit`, for package editors.
+- **Bank details** for transfers are the global setting `billing.payment_instructions` (group
+  **Billing**): bank, account name and number. Clients show it at checkout; members read it from
+  `GET /api/v1/settings?group=billing`.
+- **Approvals**: `GET …/payment-approvals?status=pending` lists them with `details` (organization,
+  plan, amount, currency, invoice) so a reviewer needs no second lookup;
+  `POST …/payment-approvals/{id}/approve|reject` update the payment and the
   subscription atomically.
 - **Invoices** are `INV-XXXX-timestamp` from `crypto/rand`; cash and bank payments get
   unguessable `CASH-…` / `BANK-…` references.
@@ -121,6 +134,10 @@ An **orchestrator** picks a driver per method:
   completed → refunded).
 
 ## Packages
+
+`ims db:seed` creates a hidden **Unlimited** package (every feature on, every limit `-1`) and
+subscribes the default tenant to it when that tenant has no active plan, so a fresh install can
+add users right away; it is never listed publicly and seeding again changes nothing.
 
 `GET /api/v1/public/packages` lists active packages for your pricing page (no auth). Staff manage
 packages with `/api/v1/packages` (`package.*`); updating a package **replaces** its feature set

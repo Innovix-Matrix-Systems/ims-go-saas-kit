@@ -1,10 +1,10 @@
 openapi: 3.0.3
 
 info:
-  title: IMS Go API Starter
+  title: IMS Go Admin Starter
   version: 1.0.0
   description: |
-    Canonical HTTP contract for the IMS Go API Starter. It is the source of
+    Canonical HTTP contract for the IMS Go Admin Starter. It is the source of
     truth for the API surface: success envelopes, pagination, the
     RFC 9457 `application/problem+json` error model, and the bearer security scheme.
 
@@ -45,8 +45,14 @@ tags:
     description: Tenant activity log (who did what).
   - name: Roles & Permissions
   - name: Tenants
+  - name: Onboarding
+    description: Self-service organization sign-up and the new organization's first-run setup.
+  - name: Dashboard
+    description: Home-page figures for an organization and for platform staff.
   - name: Billing
     description: Packages, subscriptions, payments and manual approvals.
+  - name: Announcements
+    description: Staff announcements to organizations, shown as banners, with views, clicks and dismissals.
   - name: Notifications
   - name: Webhooks
   - name: Files
@@ -390,6 +396,457 @@ paths:
         "422": *validationFailed
         "429": *tooManyRequests
 
+  /api/v1/signup:
+    post:
+      tags: [Onboarding]
+      summary: Create an organization and its owner (self-service sign-up)
+      description: >-
+        Creates the organization (with its default branch and roles), starts it on the sign-up
+        package (setting `signup.package_id`, or the first active free package) and creates the
+        caller as its owner: an Admin who must confirm the e-mail address before signing in.
+        Always answers 202 with the same message when the request is valid, whether or not the
+        address already has an account (that owner is mailed instead): sign-up never reveals
+        which addresses exist. Records the accepted terms and privacy policy version. Ten
+        attempts per IP address an hour.
+      operationId: signUp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, organization_name, accept_terms]
+              properties:
+                name: {type: string, minLength: 2, maxLength: 255}
+                email: {type: string, format: email, maxLength: 255}
+                password: {type: string, minLength: 8, maxLength: 72}
+                organization_name: {type: string, minLength: 2, maxLength: 100}
+                phone: {type: string, maxLength: 50, nullable: true}
+                locale: {type: string, enum: [en, bn]}
+                accept_terms:
+                  type: boolean
+                  description: Must be true (terms of service and privacy policy).
+      responses:
+        "202":
+          description: Accepted; the next step is in the caller's mailbox.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [message]
+                    properties:
+                      message: {type: string}
+        "403": *forbidden
+        "422": *validationFailed
+        "429": *tooManyRequests
+        "503": *serviceUnavailable
+
+  /api/v1/onboarding:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Onboarding]
+      summary: Get the organization's first-run setup progress
+      description: Any member may read it; `is_owner` says whether the caller finishes it.
+      operationId: getOnboarding
+      responses:
+        "200":
+          description: The setup progress.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OnboardingEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /api/v1/onboarding/complete:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+    post:
+      tags: [Onboarding]
+      summary: Finish the organization's first-run setup
+      description: Only the owner, and not while someone acts as them. Repeating it keeps the first completion time.
+      operationId: completeOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skipped_steps:
+                  type: array
+                  maxItems: 10
+                  items: {type: string, enum: [organization, package, invite, two_factor]}
+      responses:
+        "200":
+          description: The completed setup.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OnboardingEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "422": *validationFailed
+
+  /api/v1/announcements/live:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Announcements]
+      summary: Announcements to show the caller now
+      description: "Every member: the published announcements inside their window whose audience includes the caller's organization, most urgent first (critical, warning, promotion, info), without the ones the caller dismissed. Staff outside an organization get an empty list."
+      operationId: liveAnnouncements
+      responses:
+        "200":
+          description: The live announcements.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: "#/components/schemas/LiveAnnouncement"}
+        "401": *unauthorized
+
+  /api/v1/announcements/{id}/events:
+    parameters:
+      - $ref: "#/components/parameters/PathID"
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    post:
+      tags: [Announcements]
+      summary: Record a view, click or dismissal
+      description: "Every member, for a live announcement their organization is in the audience of. Each kind counts once per person; repeats are ignored. A dismissed announcement leaves the caller's live list. Dismissing one that is not dismissible is a 409."
+      operationId: trackAnnouncement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: {type: string, enum: [view, click, dismiss]}
+      responses:
+        "204": {description: Recorded.}
+        "401": *unauthorized
+        "404": *notFound
+        "409": *conflict
+        "422": *validationFailed
+
+  /api/v1/internal/announcements:
+    get:
+      tags: [Announcements]
+      summary: List announcements (staff)
+      description: "Newest first, one row per announcement with its audience size and unique views, clicks and dismissals (`announcement.view`)."
+      operationId: listAnnouncements
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: status
+          in: query
+          schema: {type: string, enum: [draft, published, archived]}
+      responses:
+        "200":
+          description: A page of announcements.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, links, meta]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: "#/components/schemas/AnnouncementListItem"}
+                  links: {$ref: "#/components/schemas/PaginationLinks"}
+                  meta: {$ref: "#/components/schemas/PaginationMeta"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+    post:
+      tags: [Announcements]
+      summary: Create an announcement (staff)
+      description: "One announcement, whatever it reaches (`announcement.manage`): no `tenant_ids` reaches every organization, otherwise the listed ones. With `channels` it is also delivered once through the notification system when it starts."
+      operationId: createAnnouncement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AnnouncementRequest"}
+      responses:
+        "201":
+          description: The announcement.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/AnnouncementDetail"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
+  /api/v1/internal/announcements/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathID"
+    get:
+      tags: [Announcements]
+      summary: Get an announcement (staff)
+      description: "With its audience and unique views, clicks and dismissals (`announcement.view`). Per organization: `/internal/announcements/{id}/organizations`."
+      operationId: getAnnouncement
+      responses:
+        "200":
+          description: The announcement.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/AnnouncementDetail"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+    patch:
+      tags: [Announcements]
+      summary: Update an announcement (staff)
+      description: "Replaces its content, window, audience and channels (`announcement.manage`). An announcement already delivered is not delivered again."
+      operationId: updateAnnouncement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AnnouncementRequest"}
+      responses:
+        "200":
+          description: The announcement.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/AnnouncementDetail"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "422": *validationFailed
+    delete:
+      tags: [Announcements]
+      summary: Delete an announcement (staff)
+      description: "With its audience and counts (`announcement.manage`)."
+      operationId: deleteAnnouncement
+      responses:
+        "204": {description: Deleted.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /api/v1/internal/announcements/{id}/organizations:
+    parameters:
+      - $ref: "#/components/parameters/PathID"
+    get:
+      tags: [Announcements]
+      summary: An announcement's reach per organization (staff)
+      description: "The organizations whose members viewed, clicked or dismissed it, with unique counts, most views first, a page at a time (`announcement.view`)."
+      operationId: listAnnouncementOrganizations
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: search
+          in: query
+          description: Part of the organization's name.
+          schema: {type: string}
+      responses:
+        "200":
+          description: A page of organizations.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, links, meta]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: "#/components/schemas/AnnouncementTenantTotals"}
+                  links: {$ref: "#/components/schemas/PaginationLinks"}
+                  meta: {$ref: "#/components/schemas/PaginationMeta"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /api/v1/dashboard:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Dashboard]
+      summary: The organization's dashboard
+      description: "Any member. Each section is null unless the caller holds its permission: members (`user.view.all`), activity (`activity.view`), files (`file.view.all`), branches (`branch.view.all`), roles (`role.view.all`). Daily series are counted in `tz`. Staff not acting in an organization get 403 and use `/internal/dashboard`."
+      operationId: getDashboard
+      parameters:
+        - $ref: "#/components/parameters/DashboardDays"
+        - $ref: "#/components/parameters/DashboardTimeZone"
+      responses:
+        "200":
+          description: The dashboard.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/TenantDashboard"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
+  /api/v1/internal/dashboard:
+    get:
+      tags: [Dashboard]
+      summary: The platform dashboard (staff)
+      description: "Each section is null unless the caller holds its permission: organizations (`tenant.view.all`), users (`user.view.all`), activity (`activity.view.all`), revenue (`payment.view.all`), plans (`package.view.all`). Daily series are counted in `tz`."
+      operationId: getPlatformDashboard
+      parameters:
+        - $ref: "#/components/parameters/DashboardDays"
+        - $ref: "#/components/parameters/DashboardTimeZone"
+      responses:
+        "200":
+          description: The dashboard.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/PlatformDashboard"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
+  /api/v1/organization:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Tenants]
+      summary: Get the caller's organization
+      description: Any member. `is_owner` tells whether the caller owns it.
+      operationId: getOrganization
+      responses:
+        "200":
+          description: The organization.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OrganizationEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+    patch:
+      tags: [Tenants]
+      summary: Update the caller's organization
+      description: Name and contact details (`organization.update`). Code, slug, domain and status stay with platform staff.
+      operationId: updateOrganization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: {type: string, minLength: 2, maxLength: 255}
+                phone: {type: string, maxLength: 50, nullable: true}
+                email: {type: string, format: email, maxLength: 255, nullable: true}
+      responses:
+        "200":
+          description: The updated organization.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OrganizationEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
+  /api/v1/organization/logo:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    post:
+      tags: [Tenants]
+      summary: Upload the organization's logo
+      description: "Replaces the organization's logo (`organization.update`): an image (max 5 MB) on the public disk, attached to the organization and listed with its files. Its public `url` becomes the organization's `branding.logo_url` setting, so e-mails and the organization's mark use it at once."
+      operationId: uploadOrganizationLogo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [logo]
+              properties:
+                logo: {type: string, format: binary, description: The logo image.}
+      responses:
+        "201":
+          description: The stored logo.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/FileEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "413": *requestTooLarge
+        "422": *validationFailed
+
+  /api/v1/organization/transfer-ownership:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+    post:
+      tags: [Tenants]
+      summary: Transfer the organization's ownership
+      description: >-
+        Only the current owner, with their password, and never while acting as another user. The
+        new owner must be an active member who can manage the organization (`organization.update`).
+        The owner cannot be removed, deactivated, demoted, have their password or two-factor reset
+        by others, or be erased, until ownership is transferred.
+      operationId: transferOrganizationOwnership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, password]
+              properties:
+                user_id: {type: integer, format: int64}
+                password: {type: string, maxLength: 72}
+      responses:
+        "200":
+          description: The organization with its new owner.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OrganizationEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
   /api/v1/reset-password:
     post:
       tags: [Auth]
@@ -440,6 +897,104 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/MessageEnvelope"}
+        "422": *validationFailed
+        "429": *tooManyRequests
+
+  /api/v1/invitation/preview:
+    post:
+      tags: [Auth]
+      summary: Describe a pending invitation
+      description: >-
+        For the invitation page: the invitee's name and e-mail, the organization and who invited
+        them. Does not use the link up. Answers 422 for a wrong e-mail or an unknown or expired
+        link, and 404 once the invitation was accepted.
+      operationId: authPreviewInvitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, token]
+              properties:
+                email: {type: string, format: email, maxLength: 255}
+                token: {type: string, maxLength: 200}
+      responses:
+        "200":
+          description: The invitation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [name, email, organization_name, inviter_name]
+                    properties:
+                      name: {type: string}
+                      email: {type: string}
+                      organization_name: {type: string}
+                      inviter_name: {type: string}
+        "404": *notFound
+        "422": *validationFailed
+        "429": *tooManyRequests
+
+  /api/v1/email/change/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm a new e-mail address
+      description: >-
+        Opens the link mailed to the new address: the account switches to it (verified), the old
+        address is told, and every session is signed out. The link works once.
+      operationId: authConfirmEmailChange
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: {type: string, maxLength: 200}
+      responses:
+        "200":
+          description: Changed.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/MessageEnvelope"}
+        "422": *validationFailed
+        "429": *tooManyRequests
+
+  /api/v1/user/profile/change-email:
+    post:
+      tags: [Users]
+      summary: Change the authenticated user's e-mail address
+      description: >-
+        Checks the password and mails a confirmation link (`AUTH_EMAIL_CHANGE_URL`) to the new
+        address; nothing changes until it is opened. One request a minute. Refused while acting as
+        another user.
+      operationId: requestEmailChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, email]
+              properties:
+                password: {type: string, maxLength: 72}
+                email: {type: string, format: email, maxLength: 255}
+      responses:
+        "202":
+          description: The confirmation link is on its way.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/MessageEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
         "422": *validationFailed
         "429": *tooManyRequests
 
@@ -1081,11 +1636,16 @@ paths:
     get:
       tags: [Users]
       summary: List users
+      description: >-
+        An organization's members, of one branch when the caller works in one: the branch they
+        switched to, the acting branch (`X-Acting-Branch`), or their own branch when they may not
+        switch. Members who may switch and have not picked a branch see every branch.
       operationId: listUsers
       x-mcp: {tool: list_users}
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: platform, in: query, required: false, schema: {type: boolean}, description: "Staff accounts only (no tenant). Only a global reader (staff without acting headers) sees any."}
         - $ref: "#/components/parameters/Search"
         - $ref: "#/components/parameters/OrderByUser"
         - $ref: "#/components/parameters/OrderDirection"
@@ -1140,6 +1700,34 @@ paths:
               schema: {$ref: "#/components/schemas/UserEnvelope"}
         "401": *unauthorized
 
+  /api/v1/user/profile/permissions:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Users]
+      summary: What the signed-in user may do
+      description: "The effective user's permissions: the target's when staff act as a user (X-Acting-User), unlike GET /permission/user, which is tenant-exempt and refuses that header."
+      operationId: getProfilePermissions
+      responses:
+        "200":
+          description: The permissions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [super_admin, permissions, acting_as]
+                    properties:
+                      super_admin: {type: boolean, description: Bypasses every permission check.}
+                      permissions: {type: array, items: {type: string}}
+                      acting_as: {type: boolean, description: True while staff act as this user.}
+        "401": *unauthorized
+
   /api/v1/user/profile/update:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -1160,6 +1748,10 @@ paths:
                 last_name: {type: string, maxLength: 100, nullable: true}
                 name: {type: string, minLength: 2, maxLength: 255, nullable: true}
                 phone: {type: string, maxLength: 50, nullable: true}
+                locale:
+                  type: string
+                  maxLength: 10
+                  description: The user's language ("en", "bn"). An empty string clears it; leave it out to keep it.
       responses:
         "200":
           description: Updated profile.
@@ -1230,7 +1822,7 @@ paths:
               required: [current_password, password]
               properties:
                 current_password: {type: string}
-                password: {type: string, minLength: 6, maxLength: 72}
+                password: {type: string, minLength: 8, maxLength: 72}
       responses:
         "200":
           description: Password changed.
@@ -1642,9 +2234,35 @@ paths:
     patch:
       tags: [Users]
       summary: Switch a user's active branch
+      description: >-
+        Works in that branch: the member list and the notification feed show that branch only, and
+        new work is recorded under it. `DELETE /api/v1/user/switch-branch` goes back to every branch.
       operationId: switchUserBranch
       parameters:
         - $ref: "#/components/parameters/PathID"
+      responses:
+        "200":
+          description: The updated user.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/UserEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /api/v1/user/switch-branch:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    delete:
+      tags: [Users]
+      summary: Go back to every branch
+      description: >-
+        Clears the branch the user switched to (`active_branch_id`). Members who may see every branch
+        (`branch.view.all`) and switch (`user.branch.switch`) then see every branch's members and
+        branch notifications; new work is recorded under their own branch.
+      operationId: clearUserBranch
       responses:
         "200":
           description: The updated user.
@@ -2012,6 +2630,10 @@ paths:
                 last_name: {type: string, maxLength: 100, nullable: true}
                 name: {type: string, minLength: 2, maxLength: 255, nullable: true}
                 phone: {type: string, maxLength: 50, nullable: true}
+                locale:
+                  type: string
+                  maxLength: 10
+                  description: The user's language ("en", "bn"). An empty string clears it; leave it out to keep it.
       responses:
         "200":
           description: Updated profile.
@@ -2035,7 +2657,7 @@ paths:
               required: [current_password, password]
               properties:
                 current_password: {type: string}
-                password: {type: string, minLength: 6, maxLength: 72}
+                password: {type: string, minLength: 8, maxLength: 72}
       responses:
         "200":
           description: Password changed.
@@ -2131,6 +2753,10 @@ paths:
         - {name: subject_type, in: query, required: false, schema: {type: string}, example: user}
         - {name: subject_id, in: query, required: false, schema: {type: integer, format: int64}}
         - {name: actor_id, in: query, required: false, schema: {type: integer, format: int64}}
+        - {name: action, in: query, required: false, schema: {type: string}, example: user.created, description: One action key.}
+        - {name: from, in: query, required: false, schema: {type: string, format: date-time}, description: Entries at or after this time.}
+        - {name: to, in: query, required: false, schema: {type: string, format: date-time}, description: Entries at or before this time.}
+        - {name: search, in: query, required: false, schema: {type: string}, description: "Matches the action, subject type, IP, actor name and the changes."}
       responses:
         "200":
           description: One page of activity.
@@ -2142,6 +2768,74 @@ paths:
         "422": *validationFailed
         "429": *tooManyRequests
 
+
+  /api/v1/activity/export:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    post:
+      tags: [Activity]
+      summary: Export the activity log as a background job
+      description: "Queues a data-processing job (export, entity activity) that writes every entry matching the filters into an xlsx file; follow it with GET /data-processing/job/{jobId}. A tenant user exports their organization's log; staff acting in an organization export that one."
+      operationId: exportActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id: {type: string, description: "Staff only: a tenant id, or system. Empty: every organization and the system log."}
+                subject_type: {type: string}
+                actor_id: {type: integer, format: int64}
+                action: {type: string}
+                from: {type: string, format: date-time}
+                to: {type: string, format: date-time}
+                search: {type: string}
+      responses:
+        "202":
+          description: The queued export job.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ProcessingJob"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+        "503": *serviceUnavailable
+
+  /api/v1/activity/facets:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Activity]
+      summary: What the activity log holds, for filters and counters
+      description: The actions, subject types and people in the feed the caller may read (same tenant rules as GET /activity), with how many entries each has, and how many entries the last 24 hours brought.
+      operationId: listActivityFacets
+      parameters:
+        - name: tenant_id
+          in: query
+          required: false
+          schema: {type: string}
+          description: As on GET /activity (`activity.view.all` only).
+      responses:
+        "200":
+          description: The facets.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ActivityFacets"}
+        "401": *unauthorized
+        "403": *forbidden
   /api/v1/branch:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -2227,12 +2921,14 @@ paths:
     delete:
       tags: [Branches]
       summary: Delete (soft) a branch
+      description: Refused (409) for the organization's last branch and for a branch its members belong to; move them first. Members who had switched into the branch go back to their own.
       operationId: deleteBranch
       responses:
         "204": {description: Deleted.}
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
+        "409": *conflict
 
   /api/v1/role:
     parameters:
@@ -2278,6 +2974,7 @@ paths:
     post:
       tags: [Roles & Permissions]
       summary: Assign permissions to a tenant role
+      description: Replaces the role's permissions. Only permissions the caller holds can be added (403 otherwise; removing is always allowed), and the organization's Admin role (managed) is refused.
       operationId: assignRolePermissions
       requestBody:
         required: true
@@ -2293,6 +2990,25 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "422": *validationFailed
+
+  /api/v1/role/grantable-permissions:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Roles & Permissions]
+      summary: List the permissions the caller may put on a role
+      description: The non-system permissions the caller holds (all of them for a Super-Admin), for a role editor.
+      operationId: listGrantablePermissions
+      responses:
+        "200":
+          description: Permissions (not paginated).
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/PermissionArrayEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
 
   /api/v1/role/{id}:
     parameters:
@@ -2654,6 +3370,34 @@ paths:
         "403": *forbidden
         "422": *validationFailed
 
+  /api/v1/packages/features:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+    get:
+      tags: [Billing]
+      summary: The feature catalog packages can grant
+      operationId: listPackageFeatures
+      responses:
+        "200":
+          description: Every feature, with whether it is a numeric limit.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [key, description, is_limit]
+                      properties:
+                        key: {type: string, example: users.max}
+                        description: {type: string}
+                        is_limit: {type: boolean, description: "A numeric limit (limit_value counts; -1 is unlimited)."}
+        "401": *unauthorized
+        "403": *forbidden
+
   /api/v1/packages/{id}:
     parameters:
       - $ref: "#/components/parameters/PathID"
@@ -2735,6 +3479,29 @@ paths:
         "422": *validationFailed
         "503": *serviceUnavailable
 
+  /api/v1/billing/usage:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Billing]
+      summary: What the resolved tenant uses of its plan's limits
+      description: "Each limit feature (users.max, branches.max, storage.mb) with the plan's limit (-1 unlimited, 0 not in the plan) and what the tenant uses: the same counts the limit checks make. Storage is in whole megabytes, rounded up; storage_bytes is exact."
+      operationId: billingUsage
+      responses:
+        "200":
+          description: The usage.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/BillingUsage"}
+        "401": *unauthorized
+        "403": *forbidden
+
   /api/v1/billing/subscription/status:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -2771,6 +3538,45 @@ paths:
             application/json:
               schema: {$ref: "#/components/schemas/PaymentPageEnvelope"}
         "401": *unauthorized
+
+  /api/v1/billing/payments/{id}/cancel:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+      - $ref: "#/components/parameters/PathID"
+    post:
+      tags: [Billing]
+      summary: Withdraw a checkout nobody has confirmed yet
+      description: "Cancels the organization's own pending payment (a wrong transfer reference, a change of mind) and its pending subscription, and closes the approval request (rejected, noted as withdrawn). 409 once the payment is no longer pending."
+      operationId: cancelBillingPayment
+      responses:
+        "204": {description: Withdrawn.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
+  /api/v1/billing/payments/{id}/invoice:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+      - $ref: "#/components/parameters/PathID"
+    get:
+      tags: [Billing]
+      summary: The invoice of one of the organization's payments
+      description: "A printable HTML document (download), issued under the platform's name (system.name). An unpaid payment's invoice says it is not paid yet."
+      operationId: getBillingInvoice
+      responses:
+        "200":
+          description: The invoice.
+          content:
+            text/html:
+              schema: {type: string}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
 
   /api/v1/billing/subscribe:
     parameters:
@@ -2977,6 +3783,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: status, in: query, required: false, schema: {type: string, enum: [pending, approved, rejected]}}
       responses:
         "200":
           description: Paginated approvals.
@@ -3511,6 +4318,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: event_type, in: query, required: false, schema: {type: string}, example: platform.announcement, description: Only notifications of this event type.}
       responses:
         "200":
           description: Paginated notifications.
@@ -3537,6 +4345,41 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "422": *validationFailed
+
+  /api/v1/internal/activity/export:
+    post:
+      tags: [Activity]
+      summary: Export the platform activity log as a background job
+      description: "Staff (activity.view.all): every organization and the system log, narrowed by tenant_id. On the internal routes because staff without acting headers may not write through the tenant routes."
+      operationId: exportPlatformActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id: {type: string, description: "Staff only: a tenant id, or system. Empty: every organization and the system log."}
+                subject_type: {type: string}
+                actor_id: {type: integer, format: int64}
+                action: {type: string}
+                from: {type: string, format: date-time}
+                to: {type: string, format: date-time}
+                search: {type: string}
+      responses:
+        "202":
+          description: The queued export job.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ProcessingJob"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+        "503": *serviceUnavailable
 
   /api/v1/internal/notification/{id}:
     parameters:
@@ -3672,6 +4515,7 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
+        "409": *conflict
 
   /api/v1/files/{id}/download:
     parameters:
@@ -3771,6 +4615,7 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
+        "409": *conflict
 
   /api/v1/internal/files/{id}/download:
     parameters:
@@ -3800,10 +4645,17 @@ paths:
     get:
       tags: [Data Processing]
       summary: List data-processing jobs (admin)
+      description: >-
+        Every member's jobs in the organization (tenant Admins hold `data_processing_job.view.all`),
+        each with who started it (`user_name`). Personal-data exports are listed to their owner only.
       operationId: listProcessingJobs
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: type, in: query, schema: {type: string}, description: "Only jobs of this type (e.g. user_export, user_import, activity_export)."}
+        - {name: status, in: query, schema: {type: string, enum: [pending, processing, completed, failed]}}
+        - {name: search, in: query, schema: {type: string}, description: "Matches the job id, file name or entity type."}
+        - {name: user_id, in: query, schema: {type: integer, format: int64}, description: Only the jobs this member started.}
       responses:
         "200":
           description: Paginated jobs.
@@ -3825,6 +4677,9 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: type, in: query, schema: {type: string}, description: "Only jobs of this type (e.g. user_export, user_import, activity_export)."}
+        - {name: status, in: query, schema: {type: string, enum: [pending, processing, completed, failed]}}
+        - {name: search, in: query, schema: {type: string}, description: "Matches the job id, file name or entity type."}
       responses:
         "200":
           description: Paginated jobs.
@@ -3852,6 +4707,81 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
+    delete:
+      tags: [Data Processing]
+      summary: Remove a finished job and its file
+      description: 409 while it is still pending or running.
+      operationId: removeProcessingJob
+      responses:
+        "204": {description: Removed.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
+  /api/v1/data-processing/job/{jobId}/retry:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+      - $ref: "#/components/parameters/PathJobID"
+    post:
+      tags: [Data Processing]
+      summary: Run a failed job again
+      description: "The same job, with the same filters or uploaded file, goes back to pending and is queued again. 409 unless it failed, or when its kind cannot be retried."
+      operationId: retryProcessingJob
+      responses:
+        "200":
+          description: The job, pending again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ProcessingJob"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
+  /api/v1/internal/data-processing/job/{jobId}:
+    parameters:
+      - $ref: "#/components/parameters/PathJobID"
+    delete:
+      tags: [Data Processing]
+      summary: Remove one of your finished jobs (staff)
+      description: For staff not acting in an organization. 409 while it is still pending or running.
+      operationId: removeInternalProcessingJob
+      responses:
+        "204": {description: Removed.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
+  /api/v1/internal/data-processing/job/{jobId}/retry:
+    parameters:
+      - $ref: "#/components/parameters/PathJobID"
+    post:
+      tags: [Data Processing]
+      summary: Run one of your failed jobs again (staff)
+      description: For staff not acting in an organization. 409 unless it failed, or when its kind cannot be retried.
+      operationId: retryInternalProcessingJob
+      responses:
+        "200":
+          description: The job, pending again.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/ProcessingJob"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
 
   /api/v1/data-processing/job/{jobId}/download:
     parameters:
@@ -6210,6 +7140,16 @@ components:
       description: Opaque personal access token in `id|secret` form.
 
   parameters:
+    DashboardDays:
+      name: days
+      in: query
+      description: The period, in days up to today.
+      schema: {type: integer, enum: [7, 30, 90], default: 30}
+    DashboardTimeZone:
+      name: tz
+      in: query
+      description: The IANA time zone days are counted in.
+      schema: {type: string, default: UTC, example: Asia/Dhaka}
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -6426,6 +7366,52 @@ components:
               type: array
               items: {type: string}
 
+    OnboardingEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [completed, skipped_steps, source, is_owner]
+          properties:
+            completed: {type: boolean}
+            completed_at: {type: string, format: date-time, nullable: true}
+            skipped_steps:
+              type: array
+              items: {type: string}
+            source: {type: string, enum: [signup, staff]}
+            is_owner: {type: boolean}
+    OrganizationEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, name, code, is_active, is_owner, branding, created_at]
+          properties:
+            id: {type: integer, format: int64}
+            name: {type: string}
+            code: {type: string}
+            phone: {type: string, nullable: true}
+            email: {type: string, nullable: true}
+            is_active: {type: boolean}
+            owner:
+              type: object
+              nullable: true
+              required: [id, name, email]
+              properties:
+                id: {type: integer, format: int64}
+                name: {type: string}
+                email: {type: string}
+            is_owner: {type: boolean}
+            branding:
+              type: object
+              description: The organization's e-mail branding (`branding.logo_url`, `branding.color` settings), for its mark in clients. Null when unset.
+              required: [logo_url, color]
+              properties:
+                logo_url: {type: string, nullable: true}
+                color: {type: string, nullable: true, example: "#2563eb"}
+            created_at: {type: string, format: date-time}
     MessageEnvelope:
       type: object
       required: [message]
@@ -6583,7 +7569,7 @@ components:
       required: [email, password, device]
       properties:
         email: {type: string, format: email}
-        password: {type: string, minLength: 6}
+        password: {type: string, maxLength: 72}
         device: {type: string, maxLength: 100}
       example:
         email: superadmin@ims.com
@@ -6708,6 +7694,7 @@ components:
         branch_id: {type: integer, format: int64, nullable: true}
         active_branch_id: {type: integer, format: int64, nullable: true}
         photo: {type: string, nullable: true}
+        locale: {type: string, nullable: true, description: 'The language the user chose; null means the default.'}
         roles:
           type: array
           items: {$ref: "#/components/schemas/RoleSlim"}
@@ -6734,12 +7721,12 @@ components:
       type: object
       required: [name, email]
       properties:
-        first_name: {type: string, maxLength: 100, nullable: true}
+        first_name: {type: string, maxLength: 100, nullable: true, description: "On update, omitted or null keeps the value and an empty string clears it (also last_name and phone)."}
         last_name: {type: string, maxLength: 100, nullable: true}
         user_name: {type: string, maxLength: 100, nullable: true}
         name: {type: string, minLength: 2, maxLength: 255}
         email: {type: string, format: email, maxLength: 255}
-        password: {type: string, minLength: 6, maxLength: 72, nullable: true}
+        password: {type: string, minLength: 8, maxLength: 72, nullable: true}
         phone: {type: string, maxLength: 50, nullable: true}
         is_active: {type: boolean, nullable: true}
         send_invitation:
@@ -6801,7 +7788,7 @@ components:
       required: [user_id, password]
       properties:
         user_id: {type: integer, format: int64}
-        password: {type: string, minLength: 6, maxLength: 72}
+        password: {type: string, minLength: 8, maxLength: 72}
       example:
         user_id: 2
         password: "newsecret123"
@@ -6913,6 +7900,34 @@ components:
         request_id: {type: string, nullable: true}
         created_at: {type: string, format: date-time}
 
+    ActivityFacets:
+      type: object
+      required: [actions, subjects, actors, last_day]
+      properties:
+        actions:
+          type: array
+          items: {$ref: "#/components/schemas/ActivityFacetCount"}
+        subjects:
+          type: array
+          items: {$ref: "#/components/schemas/ActivityFacetCount"}
+        actors:
+          type: array
+          items:
+            type: object
+            required: [id, name, total]
+            properties:
+              id: {type: integer, format: int64}
+              name: {type: string}
+              total: {type: integer, format: int64}
+        last_day: {type: integer, format: int64, description: Entries in the last 24 hours.}
+
+    ActivityFacetCount:
+      type: object
+      required: [value, total]
+      properties:
+        value: {type: string}
+        total: {type: integer, format: int64}
+
     ActivityFeedEnvelope:
       type: object
       required: [data, links, meta]
@@ -6927,11 +7942,12 @@ components:
             next: {type: string, nullable: true}
         meta:
           type: object
-          required: [path, per_page, next_cursor]
+          required: [path, per_page, next_cursor, total]
           properties:
             path: {type: string}
             per_page: {type: integer}
             next_cursor: {type: string, nullable: true}
+            total: {type: integer, format: int64, description: "Entries matching the filters, across every page."}
 
     BranchPageEnvelope:
       type: object
@@ -6945,16 +7961,23 @@ components:
 
     Role:
       type: object
-      required: [id, name, is_system, created_at, updated_at]
+      required: [id, name, is_system, managed, created_at, updated_at]
       properties:
         id: {type: integer, format: int64}
         name: {type: string}
         is_system: {type: boolean}
+        managed:
+          type: boolean
+          description: The organization's Admin role. The app keeps it holding every organization permission, so it cannot be renamed, deleted or given other permissions.
         description: {type: string, nullable: true}
         tenant_id: {type: integer, format: int64, nullable: true}
         tenant: {$ref: "#/components/schemas/TenantSlim"}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+        permissions:
+          type: array
+          description: The role's permissions; on the single-role read only.
+          items: {$ref: "#/components/schemas/Permission"}
 
     RoleUpsertRequest:
       type: object
@@ -7055,6 +8078,13 @@ components:
         phone: {type: string, nullable: true}
         email: {type: string, nullable: true}
         is_active: {type: boolean}
+        branding:
+          type: object
+          description: The organization's logo and colour (its `branding.logo_url` and `branding.color` settings); null values are unset.
+          required: [logo_url, color]
+          properties:
+            logo_url: {type: string, nullable: true}
+            color: {type: string, nullable: true}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
 
@@ -7216,12 +8246,285 @@ components:
             package: {$ref: "#/components/schemas/Package"}
             active: {type: boolean}
 
+    AnnouncementRequest:
+      type: object
+      required: [title, kind]
+      properties:
+        title: {type: string, maxLength: 255}
+        body: {type: string, maxLength: 5000, nullable: true}
+        kind: {type: string, enum: [info, promotion, warning, critical]}
+        cta_label: {type: string, maxLength: 60, nullable: true, description: The button's text; needs cta_url.}
+        cta_url: {type: string, maxLength: 2048, nullable: true, description: An http or https link; needs cta_label.}
+        tenant_ids:
+          type: array
+          description: The organizations it reaches; empty or absent reaches every organization.
+          items: {type: integer, format: int64}
+        starts_at: {type: string, format: date-time, nullable: true, description: Defaults to now.}
+        ends_at: {type: string, format: date-time, nullable: true, description: After starts_at; null runs until changed.}
+        dismissible: {type: boolean, default: true}
+        status: {type: string, enum: [draft, published, archived], default: published}
+        channels:
+          type: array
+          description: Also deliver it once through these notification channels when it starts.
+          items: {type: string, enum: [database, mail, sms, push]}
+
+    Announcement:
+      type: object
+      required: [id, title, body, kind, cta_label, cta_url, audience, starts_at, ends_at, dismissible, status, state, channels, delivered_at, created_at, updated_at]
+      properties:
+        id: {type: integer, format: int64}
+        title: {type: string}
+        body: {type: string, nullable: true}
+        kind: {type: string, enum: [info, promotion, warning, critical]}
+        cta_label: {type: string, nullable: true}
+        cta_url: {type: string, nullable: true}
+        audience: {type: string, enum: [all, tenants]}
+        starts_at: {type: string, format: date-time}
+        ends_at: {type: string, format: date-time, nullable: true}
+        dismissible: {type: boolean}
+        status: {type: string, enum: [draft, published, archived]}
+        state: {type: string, enum: [draft, scheduled, live, ended, archived], description: "Where it is now, from its status and window."}
+        channels:
+          type: array
+          items: {type: string}
+        delivered_at: {type: string, format: date-time, nullable: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    AnnouncementTotals:
+      type: object
+      description: Unique people who viewed, clicked and dismissed.
+      required: [views, clicks, dismissals]
+      properties:
+        views: {type: integer, format: int64}
+        clicks: {type: integer, format: int64}
+        dismissals: {type: integer, format: int64}
+
+    AnnouncementListItem:
+      allOf:
+        - $ref: "#/components/schemas/Announcement"
+        - type: object
+          required: [tenant_count, totals]
+          properties:
+            tenant_count: {type: integer, format: int64, description: Organizations listed; 0 with audience all.}
+            totals: {$ref: "#/components/schemas/AnnouncementTotals"}
+
+    AnnouncementDetail:
+      allOf:
+        - $ref: "#/components/schemas/Announcement"
+        - type: object
+          required: [tenants, totals]
+          properties:
+            tenants:
+              type: array
+              items:
+                type: object
+                required: [id, name]
+                properties:
+                  id: {type: integer, format: int64}
+                  name: {type: string}
+            totals: {$ref: "#/components/schemas/AnnouncementTotals"}
+
+    AnnouncementTenantTotals:
+      allOf:
+        - $ref: "#/components/schemas/AnnouncementTotals"
+        - type: object
+          required: [id, name]
+          properties:
+            id: {type: integer, format: int64}
+            name: {type: string}
+
+    LiveAnnouncement:
+      type: object
+      required: [id, title, body, kind, cta_label, cta_url, dismissible, starts_at, ends_at]
+      properties:
+        id: {type: integer, format: int64}
+        title: {type: string}
+        body: {type: string, nullable: true}
+        kind: {type: string, enum: [info, promotion, warning, critical]}
+        cta_label: {type: string, nullable: true}
+        cta_url: {type: string, nullable: true}
+        dismissible: {type: boolean}
+        starts_at: {type: string, format: date-time}
+        ends_at: {type: string, format: date-time, nullable: true}
+
+    DashboardPeriod:
+      type: object
+      required: [days, from, to, time_zone]
+      properties:
+        days: {type: integer}
+        from: {type: string, format: date}
+        to: {type: string, format: date}
+        time_zone: {type: string}
+
+    DashboardSeries:
+      type: object
+      description: A value per day over the period, its total, and the total of the same number of days before it.
+      required: [points, total, previous_total]
+      properties:
+        points:
+          type: array
+          items:
+            type: object
+            required: [date, value]
+            properties:
+              date: {type: string, format: date}
+              value: {type: integer, format: int64}
+        total: {type: integer, format: int64}
+        previous_total: {type: integer, format: int64}
+
+    TenantDashboard:
+      type: object
+      required: [period, members, activity, files, branches, roles]
+      properties:
+        period: {$ref: "#/components/schemas/DashboardPeriod"}
+        members:
+          type: object
+          nullable: true
+          required: [total, active, pending_invitations, signed_in_recently, added]
+          properties:
+            total: {type: integer, format: int64}
+            active: {type: integer, format: int64}
+            pending_invitations: {type: integer, format: int64}
+            signed_in_recently: {type: integer, format: int64, description: Signed in during the period.}
+            added: {$ref: "#/components/schemas/DashboardSeries"}
+        activity:
+          type: object
+          nullable: true
+          required: [events, top_actions, top_actors]
+          properties:
+            events: {$ref: "#/components/schemas/DashboardSeries"}
+            top_actions:
+              type: array
+              items:
+                type: object
+                required: [action, count]
+                properties:
+                  action: {type: string}
+                  count: {type: integer, format: int64}
+            top_actors:
+              type: array
+              items:
+                type: object
+                required: [id, name, count]
+                properties:
+                  id: {type: integer, format: int64}
+                  name: {type: string}
+                  count: {type: integer, format: int64}
+        files:
+          type: object
+          nullable: true
+          required: [files, bytes, by_type]
+          properties:
+            files: {type: integer, format: int64}
+            bytes: {type: integer, format: int64}
+            by_type:
+              type: array
+              description: Per file type, largest first.
+              items:
+                type: object
+                required: [type, files, bytes]
+                properties:
+                  type: {type: string, enum: [image, video, document, other]}
+                  files: {type: integer, format: int64}
+                  bytes: {type: integer, format: int64}
+        branches: {type: integer, format: int64, nullable: true}
+        roles: {type: integer, format: int64, nullable: true}
+
+    PlatformDashboard:
+      type: object
+      required: [period, organizations, users, activity, revenue, plans]
+      properties:
+        period: {$ref: "#/components/schemas/DashboardPeriod"}
+        organizations:
+          type: object
+          nullable: true
+          required: [total, active, suspended, added, recent]
+          properties:
+            total: {type: integer, format: int64}
+            active: {type: integer, format: int64}
+            suspended: {type: integer, format: int64}
+            added: {$ref: "#/components/schemas/DashboardSeries"}
+            recent:
+              type: array
+              items:
+                type: object
+                required: [id, name, code, active, members, created_at]
+                properties:
+                  id: {type: integer, format: int64}
+                  name: {type: string}
+                  code: {type: string}
+                  active: {type: boolean}
+                  members: {type: integer, format: int64}
+                  created_at: {type: string, format: date-time}
+        users:
+          type: object
+          nullable: true
+          required: [total, signed_in_recently, added]
+          properties:
+            total: {type: integer, format: int64}
+            signed_in_recently: {type: integer, format: int64}
+            added: {$ref: "#/components/schemas/DashboardSeries"}
+        activity:
+          allOf: [{$ref: "#/components/schemas/DashboardSeries"}]
+          nullable: true
+        revenue:
+          type: object
+          nullable: true
+          description: Completed payments per currency (most payments first), in minor units, and those awaiting approval.
+          required: [currencies, pending]
+          properties:
+            currencies:
+              type: array
+              items:
+                type: object
+                required: [currency, payments, amount]
+                properties:
+                  currency: {type: string}
+                  payments: {type: integer, format: int64}
+                  amount: {$ref: "#/components/schemas/DashboardSeries"}
+            pending:
+              type: array
+              items:
+                type: object
+                required: [currency, count, amount]
+                properties:
+                  currency: {type: string}
+                  count: {type: integer, format: int64}
+                  amount: {type: integer, format: int64}
+        plans:
+          type: array
+          nullable: true
+          items:
+            type: object
+            required: [package_id, name, organizations]
+            properties:
+              package_id: {type: integer, format: int64}
+              name: {type: string}
+              organizations: {type: integer, format: int64}
+
+    BillingUsage:
+      type: object
+      required: [limits, storage_bytes]
+      properties:
+        limits:
+          type: array
+          items:
+            type: object
+            required: [feature_key, description, limit, used]
+            properties:
+              feature_key: {type: string, example: users.max}
+              description: {type: string}
+              limit: {type: integer, format: int64, description: "-1 unlimited, 0 not in the plan."}
+              used: {type: integer, format: int64}
+        storage_bytes: {type: integer, format: int64}
+
     SubscribeRequest:
       type: object
-      required: [package_id, payment_method]
+      required: [package_id]
       properties:
         package_id: {type: integer, format: int64}
-        payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer]}
+        payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer], description: "Required for a paid package. A free package starts at once, with no payment."}
         payment_data:
           type: object
           additionalProperties: true
@@ -7239,7 +8542,10 @@ components:
           required: [subscription, payment]
           properties:
             subscription: {$ref: "#/components/schemas/Subscription"}
-            payment: {$ref: "#/components/schemas/Payment"}
+            payment:
+              allOf: [{$ref: "#/components/schemas/Payment"}]
+              nullable: true
+              description: Null for a free package, which starts at once.
 
     AssignPlanRequest:
       type: object
@@ -7348,6 +8654,16 @@ components:
         reviewed_at: {type: string, format: date-time, nullable: true}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+        details:
+          type: object
+          description: In lists only. Who pays, how much and for which plan.
+          required: [tenant_name, package_name, amount, currency, invoice_number]
+          properties:
+            tenant_name: {type: string}
+            package_name: {type: string}
+            amount: {type: integer, format: int64, description: Minor units (paisa).}
+            currency: {type: string}
+            invoice_number: {type: string}
 
     ApprovalEnvelope:
       type: object
@@ -7588,7 +8904,7 @@ components:
 
     File:
       type: object
-      required: [id, uuid, type, url, name, file_name, mime_type, size, attached, created_at]
+      required: [id, uuid, type, url, name, file_name, mime_type, size, attached, generated, created_at]
       properties:
         id: {type: integer, format: int64}
         uuid: {type: string, format: uuid}
@@ -7599,6 +8915,13 @@ components:
         mime_type: {type: string}
         size: {type: integer, format: int64}
         attached: {type: boolean}
+        generated:
+          type: boolean
+          description: Written by a background job (an export). It is removed with the job, and deleting it here is refused (409).
+        collection:
+          type: string
+          nullable: true
+          description: What an attached file is for, such as `logo` (the organization's logo), `profile` (a user's photo) or `output` (an export); null for library files.
         created_at: {type: string, format: date-time}
 
     FileEnvelope:
@@ -7640,10 +8963,12 @@ components:
         error_message: {type: string, nullable: true}
         progress_percentage: {type: integer}
         user_id: {type: integer, format: int64, nullable: true}
+        user_name: {type: string, nullable: true, description: Who started the job (in lists).}
         started_at: {type: string, format: date-time, nullable: true}
         completed_at: {type: string, format: date-time, nullable: true}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+        expires_at: {type: string, format: date-time, nullable: true, description: "When the finished job and its file are deleted (the organization's data_processing_job.cleanup_days; personal-data exports: privacy.export_ttl_hours). Null while it runs."}
 
     ProcessingJobEnvelope:
       type: object
@@ -8083,7 +9408,7 @@ components:
       properties:
         method: {type: string, enum: [totp, email]}
         secret: {type: string, description: "totp: the base32 secret, for typing into the app."}
-        otpauth_url: {type: string, description: "totp: render as a QR code for the authenticator app.", example: "otpauth://totp/IMS%20Go%20API:jane@acme.test?algorithm=SHA1&digits=6&issuer=IMS+Go+API&period=30&secret=JBSWY3DPEHPK3PXP"}
+        otpauth_url: {type: string, description: "totp: render as a QR code for the authenticator app.", example: "otpauth://totp/IMS%20Go%20Admin%20Starter:jane@acme.test?algorithm=SHA1&digits=6&issuer=IMS+Go+Admin+Starter&period=30&secret=JBSWY3DPEHPK3PXP"}
 
     TwoFactorRecoveryCodes:
       type: object

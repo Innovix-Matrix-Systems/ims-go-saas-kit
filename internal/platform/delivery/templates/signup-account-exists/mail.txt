@@ -1,0 +1,11 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+Someone tried to create a new organization with this e-mail address, but you already have an account.
+
+If it was you, sign in instead:
+{{.Data.login_url}}
+
+Forgot your password? Reset it here:
+{{.Data.reset_url}}
+
+If it was not you, you can ignore this e-mail: nothing was changed.

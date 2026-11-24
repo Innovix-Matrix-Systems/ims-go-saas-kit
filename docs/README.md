@@ -1,8 +1,9 @@
 # Documentation
 
-These Markdown files are the project's documentation. They read fine here on GitHub and are
-published as a site at **[ims-go-api-starter.innovixmatrixsystem.com](https://ims-go-api-starter.innovixmatrixsystem.com)** by [`website/`](../website) (Astro Starlight).
-Run `make docs` for a local preview at <http://localhost:4321>.
+These Markdown files are the project's documentation, read here on GitHub. The backend is the
+[IMS Go API Starter](https://github.com/Innovix-Matrix-Systems/ims-go-api-starter)'s, whose site at
+**[ims-go-api-starter.innovixmatrixsystem.com](https://ims-go-api-starter.innovixmatrixsystem.com)** publishes the same guides. Pages ending in
+`.mdx` use the site's components and read best there.
 
 | Section | Pages |
 | --- | --- |

@@ -49,11 +49,14 @@ type RoleResponse struct {
 	ID          int64       `json:"id"`
 	Name        string      `json:"name"`
 	IsSystem    bool        `json:"is_system"`
+	Managed     bool        `json:"managed"`
 	Description *string     `json:"description"`
 	TenantID    *int64      `json:"tenant_id,omitempty"`
 	Tenant      *TenantSlim `json:"tenant,omitempty"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`
+	// Permissions is filled on the single-role read only.
+	Permissions []PermissionResponse `json:"permissions,omitempty"`
 }
 
 // NewRoleResponse maps a role to its public representation. tenant is nil for
@@ -63,6 +66,7 @@ func NewRoleResponse(role Role, tenant *TenantSlim) RoleResponse {
 		ID:          role.ID,
 		Name:        role.Name,
 		IsSystem:    role.IsSystem,
+		Managed:     role.Managed(),
 		Description: role.Description,
 		TenantID:    role.TenantID,
 		Tenant:      tenant,

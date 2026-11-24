@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
-# install.sh — one-time provisioning for the IMS Go API on a fresh host.
+# install.sh — one-time provisioning for the IMS Go Admin Starter on a fresh host.
 #
 # Creates the service user and directory layout, installs the systemd units and
 # seeds the environment file. Run once as root, then use release.sh for deploys.
 #
 set -euo pipefail
 
-BASE_DIR="${IMS_BASE_DIR:-/opt/ims/ims-go-api}"
-STATE_DIR="${IMS_STATE_DIR:-/var/lib/ims/ims-go-api}"
-LOG_DIR="${IMS_LOG_DIR:-/var/log/ims/ims-go-api}"
-ENV_DIR="${IMS_ENV_DIR:-/etc/ims/ims-go-api}"
+BASE_DIR="${IMS_BASE_DIR:-/opt/ims/ims-go-admin-starter}"
+STATE_DIR="${IMS_STATE_DIR:-/var/lib/ims/ims-go-admin-starter}"
+LOG_DIR="${IMS_LOG_DIR:-/var/log/ims/ims-go-admin-starter}"
+ENV_DIR="${IMS_ENV_DIR:-/etc/ims/ims-go-admin-starter}"
 SERVICE_USER="${IMS_SERVICE_USER:-ims}"
-SERVICE_PREFIX="${IMS_SERVICE_PREFIX:-ims-go-api}"
+SERVICE_PREFIX="${IMS_SERVICE_PREFIX:-ims-go-admin-starter}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
@@ -46,7 +46,7 @@ if [[ ! -f "$ENV_DIR/.env" ]]; then
     log "seeding $ENV_DIR/.env from deploy/.env.production (fill in every MUST SET value)"
     install -o root -g "$SERVICE_USER" -m 0640 "$DEPLOY_DIR/.env.production" "$ENV_DIR/.env"
   else
-    echo "# IMS Go API environment — fill in real values" > "$ENV_DIR/.env"
+    echo "# IMS Go Admin Starter environment — fill in real values" > "$ENV_DIR/.env"
     chown root:"$SERVICE_USER" "$ENV_DIR/.env"
     chmod 0640 "$ENV_DIR/.env"
   fi

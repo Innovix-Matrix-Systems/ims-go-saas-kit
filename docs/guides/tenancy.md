@@ -34,7 +34,8 @@ scope := tenancy.FromContext(ctx)   // below the handler, if you must
 | --- | --- |
 | `scope.Filter()` | single-row reads/writes — rendered as `(@all_tenants OR tenant_id = @tenant_id)` |
 | `scope.EffectiveTenantID()` | lists and inserts |
-| `scope.EffectiveBranchID()` | branch-scoped lists |
+| `scope.EffectiveBranchID()` | stamping new records with the branch |
+| `scope.ListBranchID()` | branch-scoped lists (zero: every branch; see [Lists by branch](#lists-by-branch)) |
 
 :::tip[Fails closed]
 A zero `tenancy.Filter{}` matches **no** tenant rows. Forget to pass the scope and you get empty
@@ -80,6 +81,9 @@ the activity recorder all see the target):
 - Account changes are refused while acting (`authn.DenyImpersonated`): profile update, avatar,
   password, branch switch. Mount it on any new endpoint that changes the account itself.
 - Everything is audited in the system log: see the [activity log](activity-log.md#acting-as-a-user).
+- `GET /api/v1/user/profile/permissions` answers for the target, so a client acting as a user can
+  show that user's screens (`GET /permission/user` is tenant-exempt and refuses the header).
+- Staff accounts are listed with `GET /api/v1/user?platform=true` (only a global reader sees any).
 
 **Tenant-exempt routes** (`tenancy.Exempt(responder)`) skip resolution — tenants, permissions, packages,
 internal users. `tenancy.InternalOnly` additionally rejects tenant-bound identities, so a granted
@@ -112,6 +116,32 @@ func (h *Handler) RegisterPublicTenantRoutes(r chi.Router) {
 	r.Get("/public/catalogue", h.publicCatalogue) // tenancy.From(r) is the resolved tenant
 }
 ```
+
+## Lists by branch
+
+A member works in their own branch (`users.branch_id`) until they switch
+(`PATCH /api/v1/user/switch-branch/{id}` sets `active_branch_id`; `DELETE /api/v1/user/switch-branch`
+clears it). `scope.ListBranchID()` is the branch that branch-scoped lists show:
+
+| Who | Lists show |
+| --- | --- |
+| Switched to a branch | that branch |
+| Has not switched, may view every branch and switch (`branch.view.all` + `user.branch.switch`) | every branch (`scope.AllBranches`, `ListBranchID() == 0`) |
+| Has not switched and may not | their own branch |
+| Staff with `X-Acting-Branch` / only `X-Acting-Tenant` | that branch / every branch |
+
+The member list (`GET /api/v1/user`, by each member's own branch) and the notification feed (notices
+sent to a branch) follow it. New records are still stamped with `scope.EffectiveBranchID()`: the
+branch switched to, else the member's own. A module of your own makes a list branch-scoped by
+filtering on `ListBranchID()` with zero meaning every branch:
+`(@branch_id::bigint = 0 OR branch_id = @branch_id)`.
+
+## Deleting a branch
+
+`DELETE /api/v1/branch/{id}` soft-deletes a branch and answers 409 for the organization's last
+branch, for a branch its members belong to (`users.branch_id`; move them first) and for the seeded
+default branch. Members who had switched into the branch (`active_branch_id`) go back to their own
+branch.
 
 ## Writes: the service stamps the tenant
 
@@ -198,3 +228,21 @@ Off by default, because suspending customers is a business decision. With
 tenant whose subscription has been expired for `BILLING_SUSPEND_GRACE_DAYS` (default `3`) and
 that has nothing active, in trial, pending or past due. The default tenant is never suspended.
 Each suspension is a `tenant.suspended` row with `"reason": "subscription_expired"`.
+
+## The organization and its owner
+
+Inside a tenant, the tenant is **the organization**. Its members reach it without platform
+permissions:
+
+| Endpoint | Who | Does |
+| --- | --- | --- |
+| `GET /api/v1/organization` | any member | name, code, contact details, `owner` and `is_owner` |
+| `PATCH /api/v1/organization` | `organization.update` (tenant Admin) | name, phone, e-mail; code, slug, domain and status stay with staff |
+| `POST /api/v1/organization/transfer-ownership` | the owner | `{user_id, password}` hands ownership to an active member who holds `organization.update` |
+
+Every organization can have one **owner** (`tenants.owner_user_id`): the person who signed it up,
+or whoever ownership was transferred to. Until ownership moves, other members cannot delete the
+owner, deactivate them, change their roles, set their password or reset their two-factor, nobody
+can deactivate them, and the owner's account cannot be erased (self-deletion and admin erasure
+answer 409). Platform super admins can still act, for support. Transfers are
+`organization.ownership_transferred` activity entries.

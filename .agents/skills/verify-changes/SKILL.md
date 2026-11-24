@@ -73,6 +73,5 @@ inline JSON quotes — pass bodies with `--data-binary "@file.json"`.
 - Docs: behavior or workflow changes are reflected in `docs/` (the guide for the feature,
   `docs/architecture/decisions.md` for a decision), `AGENTS.md` and the skills (then
   `make skills-sync`). New CLI command, env var, permission or make target → `make docs-gen`.
-  `make docs-build` (Node 22.23+) fails on any broken link.
 - User-visible change → a line under `## [Unreleased]` in `CHANGELOG.md`.
 - Commit only when the user asks: one commit per feature, message says what and why.

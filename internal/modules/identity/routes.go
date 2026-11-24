@@ -3,14 +3,17 @@ package identity
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 )
 
 // RegisterRoutesResolve mounts tenant-scoped user routes.
 func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.With(h.can(authz.PermUserViewAll)).Get("/user", h.index)
 	r.Get("/user/profile", h.profile)
+	// What the caller may do, resolved like every other tenant route, so it
+	// answers for the user when staff act as them (X-Acting-User).
+	r.Get("/user/profile/permissions", h.profilePermissions)
 	// Account changes are refused while someone acts as the user (phase 21).
 	own := r.With(authn.DenyImpersonated(h.Responder))
 	own.Post("/user/profile/update", h.profileUpdate)
@@ -25,6 +28,7 @@ func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.With(h.can(authz.PermUserTwoFactorReset)).Delete("/user/{id}/two-factor", h.resetTwoFactor)
 	r.With(h.can(authz.PermUserUpdate)).Post("/user/{id}/invitation", h.resendInvitation)
 	own.With(h.can(authz.PermUserBranchSwitch)).Patch("/user/switch-branch/{id}", h.switchBranch)
+	own.With(h.can(authz.PermUserBranchSwitch)).Delete("/user/switch-branch", h.clearBranch)
 	r.Post("/user/import-background", h.importUsersBackground)
 	r.Post("/user/export-background", h.exportUsersBackground)
 	r.With(h.can(authz.PermUserImport)).Post("/user/import-template", h.importTemplate)

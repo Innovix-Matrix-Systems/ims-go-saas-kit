@@ -10,38 +10,40 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/access"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/backup"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing"
-	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/domain"
-	billingservice "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/service"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/branches"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dev"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/featureflags"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/files"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/notifications"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/privacy"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/webhooks"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	cachefactory "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache/factory"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/crypto"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/mail"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/maintenance"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/scheduler"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/storage"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/telemetry"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/tracing"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/version"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	activityexport "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity/export"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing"
+	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	billingservice "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/featureflags"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/files"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/notifications"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/webhooks"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	cachefactory "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/factory"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/crypto"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/mail"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/scheduler"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/telemetry"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version"
 )
 
 // Platform is the infrastructure dependency set shared by the HTTP API and the
@@ -82,10 +84,12 @@ type Platform struct {
 	Files         *files.Service
 	Backup        *backup.Service
 	Notifications *notifications.Service
+	Announcements *announcements.Service
 	// Webhooks delivers activity-log events to tenants' endpoints (phase 26.8).
 	Webhooks         *webhooks.Service
 	Activity         *activity.Recorder
 	Exchange         *identity.ExchangeService
+	ActivityExport   *activityexport.Exporter
 	BillingPackages  *billingservice.PackageService
 	BillingSubs      *billingservice.SubscriptionService
 	BillingPayments  *billingservice.PaymentService
@@ -210,6 +214,10 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		settingsService,
 		logger,
 	)
+	announcementService := announcements.NewService(txManager.Queries(), txManager, logger).
+		WithNotifier(func(ctx context.Context, tenantID int64, a announcements.Announcement) error {
+			return notifyAnnouncement(ctx, notificationsService, tenantID, a)
+		})
 	if err := notificationsService.RegisterJobs(queueRegistry); err != nil {
 		return nil, nil, err
 	}
@@ -220,7 +228,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	}
 	filesService := files.NewService(files.NewRepository(txManager.Queries()), storageRegistry, cfg.Files.Disk, txManager, logger).
 		WithPublicDisk(cfg.Files.PublicDisk)
-	processingService := dataprocessing.NewService(dataprocessing.NewRepository(txManager.Queries())).
+	processingService := dataprocessing.NewService(dataprocessing.NewRepository(txManager.Queries())).WithQueries(txManager.Queries()).
 		WithFiles(storageRegistry, cfg.Processing).
 		WithLogger(logger)
 	backupService := backup.NewService(backup.Options{
@@ -256,7 +264,8 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		WithTx(txManager).
 		WithActivity(activityRecorder)
 	billingPaymentService := billingservice.NewPaymentService(billingPayments, cfg.Billing.Currency)
-	billingApprovalService := billingservice.NewApprovalService(billingApprovals, billingPayments, billingSubscriptions, txManager)
+	billingApprovalService := billingservice.NewApprovalService(billingApprovals, billingPayments, billingSubscriptions, txManager).
+		WithActivity(activityRecorder)
 	billingGuard := billingservice.NewGuard(billingSubscriptions, billingPackages)
 	filesService.WithStorageLimit(billingGuard)
 
@@ -288,7 +297,9 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	authenticator := authn.NewOpaqueAuthenticator(txManager.Queries(), identityRepo, cfg.Auth)
 	accounts := accountDeliverer{delivery: deliveryService}
 	recovery := authn.NewRecovery(identityRepo, identityRepo, authenticator, store, accounts, cfg.Auth, logger).
-		WithInvitationAudit(activityRecorder)
+		WithInvitationAudit(activityRecorder).
+		WithEmailChange(identityRepo).
+		WithEmailChangeAudit(activityRecorder)
 	sessions := authn.NewSessions(txManager.Queries(), authenticator).WithAudit(activityRecorder)
 	otpService := authn.NewOTPService(store, cfg.Auth, logger, cfg.IsDebug()).WithDeliverer(accounts)
 	twoFactor := authn.NewTwoFactor(txManager.Queries(), encrypter, otpService, cfg.App.Name).
@@ -301,6 +312,11 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		WithTwoFactor(twoFactor)
 	exchangeService := identity.NewExchangeService(identityService, identityRepo, roleRepo, processingService, storageRegistry, queueEngine, cfg, logger)
 	if err := exchangeService.RegisterJobs(queueRegistry); err != nil {
+		return nil, nil, err
+	}
+	activityExport := activityexport.New(activity.NewService(txManager.Queries()), processingService, storageRegistry, cfg.Processing,
+		queueEngine, txManager.Queries(), checker, logger)
+	if err := activityExport.RegisterJobs(queueRegistry); err != nil {
 		return nil, nil, err
 	}
 
@@ -344,6 +360,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		IdentityRepo:     identityRepo,
 		Identity:         identityService,
 		Exchange:         exchangeService,
+		ActivityExport:   activityExport,
 		Mail:             mailDriver,
 		Delivery:         deliveryService,
 		Crypto:           encrypter,
@@ -353,6 +370,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		Files:            filesService,
 		Backup:           backupService,
 		Notifications:    notificationsService,
+		Announcements:    announcementService.WithActivity(activityRecorder),
 		Webhooks:         webhooksService,
 		BillingPackages:  billingPackageService,
 		BillingSubs:      billingSubscriptionService,

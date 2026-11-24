@@ -6,10 +6,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // RoleRepository is the persistence contract for roles.
@@ -31,7 +31,11 @@ type RoleRepository interface {
 	ClearPermissions(ctx context.Context, roleID int64) error
 	AssignPermissions(ctx context.Context, roleID int64, permissionIDs []int64) error
 	CountPermissions(ctx context.Context, roleID int64) (int64, error)
+	PermissionIDs(ctx context.Context, roleID int64) ([]int64, error)
 	IDsByNames(ctx context.Context, tenantID int64, names []string) (map[string]int64, error)
+	// GrantToTenantRoles adds the named permissions to every tenant role
+	// called roleName (add-only) and returns how many grants were new.
+	GrantToTenantRoles(ctx context.Context, roleName string, permissionNames []string) (int64, error)
 }
 
 // TenantLookup resolves slim tenant references in bulk so role responses can
@@ -255,6 +259,20 @@ func (r *roleRepository) ClearPermissions(ctx context.Context, roleID int64) err
 	return nil
 }
 
+func (r *roleRepository) GrantToTenantRoles(ctx context.Context, roleName string, permissionNames []string) (int64, error) {
+	if len(permissionNames) == 0 {
+		return 0, nil
+	}
+	granted, err := r.queries.GrantPermissionsToTenantRoles(ctx, dbgen.GrantPermissionsToTenantRolesParams{
+		RoleName:        roleName,
+		PermissionNames: permissionNames,
+	})
+	if err != nil {
+		return 0, database.MapError("access.grant_tenant_role_permissions", err)
+	}
+	return granted, nil
+}
+
 func (r *roleRepository) AssignPermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
 	if len(permissionIDs) == 0 {
 		return nil
@@ -274,6 +292,14 @@ func (r *roleRepository) CountPermissions(ctx context.Context, roleID int64) (in
 		return 0, database.MapError("access.count_role_permissions", err)
 	}
 	return count, nil
+}
+
+func (r *roleRepository) PermissionIDs(ctx context.Context, roleID int64) ([]int64, error) {
+	ids, err := r.queries.RolePermissionIDs(ctx, roleID)
+	if err != nil {
+		return nil, database.MapError("access.role_permission_ids", err)
+	}
+	return ids, nil
 }
 
 // PermissionRepository is the persistence contract for permissions.

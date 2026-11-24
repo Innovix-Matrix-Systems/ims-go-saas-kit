@@ -3,7 +3,7 @@ title: "Design: account deletion and personal-data export"
 description: Proposal for GDPR-style erasure and data export across every module.
 ---
 
-> **Status: built (0.2.1).** All three phases of section 12 are in the code; how to use it is
+> **Status: built.** All three phases of section 12 are in the code; how to use it is
 > in [Account deletion & data export](../guides/privacy.md), the decision is number 47 in
 > [Design decisions](../architecture/decisions.md). Where the build differs from the proposal
 > below, section 14 says how and why. This page stays as the design record.

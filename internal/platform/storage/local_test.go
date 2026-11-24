@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 )
 
 func TestLocalDiskContract(t *testing.T) {

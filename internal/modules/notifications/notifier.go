@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // NotifyRenewalReminder creates the in-app renewal reminder for a tenant

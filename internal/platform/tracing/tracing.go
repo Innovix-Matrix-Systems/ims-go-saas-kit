@@ -30,7 +30,7 @@ import (
 )
 
 // instrumentation names the tracer every span of the application uses.
-const instrumentation = "github.com/Innovix-Matrix-Systems/ims-go-api-starter"
+const instrumentation = "github.com/Innovix-Matrix-Systems/ims-go-admin-starter"
 
 // Settings configure tracing.
 type Settings struct {

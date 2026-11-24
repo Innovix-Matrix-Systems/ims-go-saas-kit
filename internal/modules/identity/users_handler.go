@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // User CRUD, role assignment and password changes (tenant and internal).
@@ -32,6 +32,8 @@ func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 			filter.IsActive = &value
 		}
 	}
+	// Staff accounts only (no tenant); only a global reader sees any.
+	filter.PlatformOnly, _ = strconv.ParseBool(r.URL.Query().Get("platform"))
 	switch raw := r.URL.Query().Get("invitation"); raw {
 	case "", InvitationPending, InvitationAccepted:
 		filter.Invitation = raw
@@ -240,6 +242,16 @@ func (h *Handler) switchBranch(w http.ResponseWriter, r *http.Request) {
 	}
 	scope := tenancy.From(r)
 	user, err := h.service.SwitchBranch(r.Context(), scope, authn.UserID(r), branchID)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.Data(w, r, http.StatusOK, h.responseFor(r.Context(), *user))
+}
+
+// clearBranch goes back to every branch.
+func (h *Handler) clearBranch(w http.ResponseWriter, r *http.Request) {
+	user, err := h.service.ClearBranch(r.Context(), authn.UserID(r))
 	if err != nil {
 		h.Error(w, r, err)
 		return

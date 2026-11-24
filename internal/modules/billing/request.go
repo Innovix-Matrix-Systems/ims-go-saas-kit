@@ -3,7 +3,7 @@ package billing
 import (
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
 )
 
 // FeatureRequest defines one package feature in create/update payloads.
@@ -59,7 +59,7 @@ func (r PackageInsertRequest) toFeatures() []domain.FeatureInput {
 // SubscribeRequest starts a subscription.
 type SubscribeRequest struct {
 	PackageID     int64          `json:"package_id" validate:"required,gt=0"`
-	PaymentMethod string         `json:"payment_method" validate:"required,oneof=bkash nagad cash bank_transfer"`
+	PaymentMethod string         `json:"payment_method" validate:"omitempty,oneof=bkash nagad cash bank_transfer"`
 	PaymentData   map[string]any `json:"payment_data"`
 }
 
@@ -236,6 +236,17 @@ type ApprovalResponse struct {
 	ReviewedAt     *time.Time     `json:"reviewed_at"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
+	// Details is filled in lists: who pays, how much, for which plan.
+	Details *ApprovalDetailResponse `json:"details,omitempty"`
+}
+
+// ApprovalDetailResponse is the payer, plan, amount and invoice of an approval.
+type ApprovalDetailResponse struct {
+	TenantName    string `json:"tenant_name"`
+	PackageName   string `json:"package_name"`
+	Amount        int64  `json:"amount"`
+	Currency      string `json:"currency"`
+	InvoiceNumber string `json:"invoice_number"`
 }
 
 // NewApprovalResponse maps an approval to its public representation.

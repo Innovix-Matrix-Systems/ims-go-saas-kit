@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 )
 
 // InsertUpdateRequest is the user create/update payload.
@@ -14,7 +14,7 @@ type InsertUpdateRequest struct {
 	UserName  *string `json:"user_name" validate:"omitempty,max=100"`
 	Name      string  `json:"name" validate:"required,min=2,max=255"`
 	Email     string  `json:"email" validate:"required,email,max=255"`
-	Password  *string `json:"password" validate:"omitempty,min=6,max=72"`
+	Password  *string `json:"password" validate:"omitempty,min=8,max=72"`
 	Phone     *string `json:"phone" validate:"omitempty,max=50"`
 	IsActive  *bool   `json:"is_active"`
 	// SendInvitation (create only) invites the user instead of setting a
@@ -44,7 +44,7 @@ type AssignRoleRequest struct {
 // ChangePasswordRequest is the admin password-set payload.
 type ChangePasswordRequest struct {
 	UserID   int64  `json:"user_id" validate:"required,gt=0"`
-	Password string `json:"password" validate:"required,min=6,max=72"`
+	Password string `json:"password" validate:"required,min=8,max=72"`
 }
 
 // ProfileUpdateRequest updates the authenticated user's own profile.
@@ -53,12 +53,14 @@ type ProfileUpdateRequest struct {
 	LastName  *string `json:"last_name" validate:"omitempty,max=100"`
 	Name      *string `json:"name" validate:"omitempty,min=2,max=255"`
 	Phone     *string `json:"phone" validate:"omitempty,max=50"`
+	// Locale is the user's language ("en", "bn"); "" clears it, absent keeps it.
+	Locale *string `json:"locale" validate:"omitempty,max=10"`
 }
 
 // ProfileChangePasswordRequest changes the own password.
 type ProfileChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
-	Password        string `json:"password" validate:"required,min=6,max=72"`
+	Password        string `json:"password" validate:"required,min=8,max=72"`
 }
 
 // ExportFiltersRequest is the background export filter body.
@@ -102,6 +104,7 @@ type Response struct {
 	BranchID         *int64     `json:"branch_id"`
 	ActiveBranchID   *int64     `json:"active_branch_id"`
 	Photo            *string    `json:"photo"`
+	Locale           *string    `json:"locale"`
 	Roles            []RoleSlim `json:"roles"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
@@ -130,6 +133,7 @@ func NewResponse(user User, roles []authz.RoleRef, photo *string) Response {
 		BranchID:         user.BranchID,
 		ActiveBranchID:   user.ActiveBranchID,
 		Photo:            photo,
+		Locale:           user.Locale,
 		Roles:            slim,
 		CreatedAt:        user.CreatedAt,
 		UpdatedAt:        user.UpdatedAt,

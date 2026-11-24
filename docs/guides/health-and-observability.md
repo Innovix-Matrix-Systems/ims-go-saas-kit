@@ -141,7 +141,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 OTEL_TRACES_SAMPLER_ARG=1        # keep every trace while you look
 ```
 
-Open http://localhost:16686 and pick the service `ims-go-api` (your `APP_NAME`). The list shows
+Open http://localhost:16686 and pick the service `ims-go-admin-starter` (your `APP_NAME`). The list shows
 every request and scheduled task, with failed ones flagged; click one for its timeline.
 `ims about` (or the dashboard's **Commands → About**) reports whether tracing is on.
 

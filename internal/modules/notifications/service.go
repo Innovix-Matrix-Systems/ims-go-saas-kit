@@ -6,11 +6,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 const (
@@ -184,14 +184,16 @@ func (s *Service) MarkAllRead(ctx context.Context, scope tenancy.Scope, userID i
 	if _, err := s.visibility(ctx, scope, userID); err != nil {
 		return err
 	}
+	branchID, allBranches := scope.ListBranchID(), scope.EffectiveTenantID() > 0 && scope.ListBranchID() == 0
 	if s.queue == nil {
-		return s.ProcessMarkAllRead(ctx, userID)
+		return s.ProcessMarkAllRead(ctx, userID, branchID, allBranches)
 	}
 	enqueueCtx := tenancy.WithScope(ctx, tenancy.Scope{
 		TenantID: scope.EffectiveTenantID(),
 		BranchID: scope.EffectiveBranchID(),
 	})
-	if err := s.queue.Enqueue(enqueueCtx, KindMarkAllRead, markAllReadPayload{UserID: userID}, queue.EnqueueOptions{}); err != nil {
+	payload := markAllReadPayload{UserID: userID, BranchID: branchID, AllBranches: allBranches}
+	if err := s.queue.Enqueue(enqueueCtx, KindMarkAllRead, payload, queue.EnqueueOptions{}); err != nil {
 		s.logWarn(ctx, "mark-all-read enqueue failed", "user_id", userID, "error", err)
 		return apperr.Wrap(apperr.ServiceUnavailable, "The request could not be queued.", err)
 	}
@@ -326,8 +328,10 @@ func (s *Service) ProcessFanOut(ctx context.Context, notificationID int64) error
 
 // ProcessMarkAllRead marks every non-expired notification addressable to the
 // user as read, then sets the read-all marker and resets the counter.
-func (s *Service) ProcessMarkAllRead(ctx context.Context, userID int64) error {
-	visibility, err := s.jobVisibility(ctx, userID)
+// branchID and allBranches name the branch notices the feed showed (both
+// empty: the user's own branch).
+func (s *Service) ProcessMarkAllRead(ctx context.Context, userID, branchID int64, allBranches bool) error {
+	visibility, err := s.jobVisibility(ctx, userID, branchID, allBranches)
 	if err != nil {
 		return err
 	}
@@ -388,7 +392,7 @@ func (s *Service) dispatchDecrement(ctx context.Context, tenantID int64, userIDs
 // visibility builds the caller's addressability inputs (roles and branch come
 // from the user row).
 func (s *Service) visibility(ctx context.Context, scope tenancy.Scope, userID int64) (Visibility, error) {
-	branchID, userTenant, err := s.repo.UserScope(ctx, userID)
+	homeBranch, userTenant, err := s.repo.UserScope(ctx, userID)
 	if err != nil {
 		return Visibility{}, err
 	}
@@ -402,7 +406,7 @@ func (s *Service) visibility(ctx context.Context, scope tenancy.Scope, userID in
 			TenantID:    0,
 			AllTenants:  true,
 			IsNonTenant: true,
-			BranchID:    branchID,
+			BranchID:    homeBranch,
 			RoleIDs:     roleIDs,
 		}, nil
 	}
@@ -410,19 +414,34 @@ func (s *Service) visibility(ctx context.Context, scope tenancy.Scope, userID in
 	if tenantID == 0 {
 		tenantID = userTenant
 	}
+	branchID, allBranches := branchVisibility(scope, homeBranch)
 	return Visibility{
 		UserID:      userID,
 		TenantID:    tenantID,
 		AllTenants:  false,
 		IsNonTenant: tenantID == 0,
 		BranchID:    branchID,
+		AllBranches: allBranches,
 		RoleIDs:     roleIDs,
 	}, nil
 }
 
+// branchVisibility picks the branch notices a feed shows: those of the
+// branch the member switched to (or the acting branch), of every branch
+// when they look at all of them, else of their own branch.
+func branchVisibility(scope tenancy.Scope, homeBranch int64) (int64, bool) {
+	if scope.EffectiveTenantID() == 0 {
+		return homeBranch, false
+	}
+	if branch := scope.ListBranchID(); branch > 0 {
+		return branch, false
+	}
+	return 0, true
+}
+
 // jobVisibility resolves visibility inside workers: the envelope scope wins
 // when it carries a tenant, otherwise the user's own tenant is used.
-func (s *Service) jobVisibility(ctx context.Context, userID int64) (Visibility, error) {
+func (s *Service) jobVisibility(ctx context.Context, userID, listBranch int64, allBranches bool) (Visibility, error) {
 	branchID, userTenant, err := s.repo.UserScope(ctx, userID)
 	if err != nil {
 		return Visibility{}, err
@@ -435,14 +454,23 @@ func (s *Service) jobVisibility(ctx context.Context, userID int64) (Visibility, 
 	if scope, ok := tenancy.FromContext(ctx); ok && scope.EffectiveTenantID() > 0 {
 		tenantID = scope.EffectiveTenantID()
 	}
-	return Visibility{
+	visibility := Visibility{
 		UserID:      userID,
 		TenantID:    tenantID,
 		AllTenants:  tenantID == 0,
 		IsNonTenant: tenantID == 0,
 		BranchID:    branchID,
 		RoleIDs:     roleIDs,
-	}, nil
+	}
+	if tenantID > 0 {
+		switch {
+		case allBranches:
+			visibility.BranchID, visibility.AllBranches = 0, true
+		case listBranch > 0:
+			visibility.BranchID = listBranch
+		}
+	}
+	return visibility, nil
 }
 
 func (s *Service) fanOutEnabled(ctx context.Context) bool {

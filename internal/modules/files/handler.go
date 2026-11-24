@@ -9,11 +9,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // multipartSlack leaves room for multipart framing beyond the file limit.
@@ -24,6 +24,7 @@ type Handler struct {
 	service *Service
 	checker *authz.Checker
 	httpx.Kit
+	setLogo LogoSetter
 }
 
 // NewHandler creates the file handler.
@@ -302,4 +303,44 @@ func filePathID(r *http.Request) (int64, error) {
 // can is route middleware requiring a permission (Laravel's can:...).
 func (h *Handler) can(permission string) func(http.Handler) http.Handler {
 	return authz.Require(h.checker, permission, h.Responder)
+}
+
+// LogoSetter makes an uploaded logo the organization's logo (the
+// branding.logo_url setting).
+type LogoSetter func(ctx context.Context, tenantID int64, url string) error
+
+// WithLogoSetter has a logo upload also set it as the organization's logo.
+func (h *Handler) WithLogoSetter(set LogoSetter) *Handler {
+	h.setLogo = set
+	return h
+}
+
+// uploadLogo replaces the organization's logo (multipart field "logo") and
+// sets its public url as the branding.logo_url setting. The response is the
+// stored file.
+func (h *Handler) uploadLogo(w http.ResponseWriter, r *http.Request) {
+	form, err := httpx.Multipart(w, r, MaxAvatarSize+multipartSlack)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	header, err := httpx.FormFile(form, "logo")
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	tenantID := tenancy.From(r).EffectiveTenantID()
+	file, err := h.service.UpdateLogo(r.Context(), authn.UserID(r), tenantID, header)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	url := h.fileURL(r, tenantSurface, *file)
+	if h.setLogo != nil {
+		if err := h.setLogo(r.Context(), tenantID, url); err != nil {
+			h.Error(w, r, err)
+			return
+		}
+	}
+	h.Data(w, r, http.StatusCreated, NewResponse(*file, url))
 }

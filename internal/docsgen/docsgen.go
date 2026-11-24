@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 )
 
 // Page is one generated file, relative to the repository root.

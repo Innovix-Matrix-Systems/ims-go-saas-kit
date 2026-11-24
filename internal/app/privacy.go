@@ -3,27 +3,29 @@ package app
 import (
 	"log/slog"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/access"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/auth"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/dev"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/featureflags"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/files"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/notifications"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/oauth"
-	privacymodule "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/privacy"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/webhooks"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/storage"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/auth"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/featureflags"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/files"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/notifications"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/onboarding"
+	privacymodule "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/webhooks"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
 )
 
 // newPrivacy builds the privacy registry and service. Each module that stores
@@ -41,6 +43,8 @@ func newPrivacy(cfg *config.Config, tx *database.TxManager, disks *storage.Regis
 		oauth.PrivacyContributor{},
 		access.PrivacyContributor{},
 		notifications.PrivacyContributor{},
+		announcements.PrivacyContributor{},
+		onboarding.PrivacyContributor{},
 		files.NewPrivacyContributor(disks),
 		delivery.PrivacyContributor{},
 		activity.PrivacyContributor{},
@@ -75,6 +79,7 @@ func newPrivacy(cfg *config.Config, tx *database.TxManager, disks *storage.Regis
 // identifies anyone.
 var privacyExemptions = map[string]string{
 	"privacy_requests.user_id":      "the erasure ledger: user ids and counts only, kept as proof of erasure",
+	"tenants.owner_user_id":         "an owner cannot be erased (the identity guard refuses until ownership is transferred), so it never points at an erased user",
 	"privacy_requests.requested_by": "the erasure ledger: who asked, by id",
 	"backup_runs.actor_user_id":     "audit stamp: who started a backup",
 	"maintenance.by_user_id":        "audit stamp: who put the app into maintenance",

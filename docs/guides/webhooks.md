@@ -32,7 +32,7 @@ The secret is shown **once**. `"events": ["*"]` subscribes to every event.
 ```http
 POST /hooks/ims HTTP/1.1
 Content-Type: application/json
-User-Agent: ims-go-api-Webhooks/0.2.1
+User-Agent: ims-go-admin-starter-Webhooks/0.1.0
 webhook-id: evt_9f2c1a7b4e6d4f0a8c3b2d1e0f9a8b7c
 webhook-timestamp: 1795340000
 webhook-signature: v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=

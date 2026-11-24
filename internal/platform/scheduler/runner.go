@@ -11,8 +11,8 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // ErrTaskRunning is returned when a run is skipped because the task is

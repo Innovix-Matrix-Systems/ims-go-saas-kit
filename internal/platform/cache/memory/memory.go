@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
 )
 
 type item struct {

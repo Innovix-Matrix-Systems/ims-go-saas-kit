@@ -4,10 +4,10 @@
 # optional: nothing in the app needs it. One image runs every role, chosen by
 # the command:
 #
-#   docker run ims-go-api serve          # HTTP API + dashboard (default)
-#   docker run ims-go-api queue:work     # River workers
-#   docker run ims-go-api schedule       # cron scheduler
-#   docker run ims-go-api migrate        # apply migrations (a release step)
+#   docker run ims-go-admin-starter serve          # HTTP API + dashboard (default)
+#   docker run ims-go-admin-starter queue:work     # River workers
+#   docker run ims-go-admin-starter schedule       # cron scheduler
+#   docker run ims-go-admin-starter migrate        # apply migrations (a release step)
 #
 # compose.yaml wires them together with PostgreSQL.
 
@@ -19,6 +19,14 @@ RUN npm ci --no-audit --no-fund
 COPY web/dev/ ./
 RUN npm run build
 
+# ── 1b. Client app (React SPA served at /, embedded into the binary) ─────────
+FROM node:24-alpine AS app
+WORKDIR /src/web/app
+COPY web/app/package.json web/app/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY web/app/ ./
+RUN npm run build
+
 # ── 2. Go binary (CGO-free, version stamped from VERSION) ────────────────────
 FROM golang:1.26-alpine AS build
 WORKDIR /src
@@ -27,8 +35,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=web /src/web/dev/dist ./web/dev/dist
+COPY --from=app /src/web/app/dist ./web/app/dist
 RUN go build -trimpath \
-      -ldflags "-s -w -X github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/version.Version=$(cat VERSION)" \
+      -ldflags "-s -w -X github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version.Version=$(cat VERSION)" \
       -o /out/ims ./cmd/app
 
 # ── 3. Runtime ───────────────────────────────────────────────────────────────

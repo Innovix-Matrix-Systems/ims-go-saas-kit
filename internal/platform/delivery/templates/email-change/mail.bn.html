@@ -1,0 +1,5 @@
+<p>প্রিয়{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>আপনি এই ঠিকানাটি আপনার অ্যাকাউন্টে ব্যবহার করতে চেয়েছেন।</p>
+<p style="margin:24px 0;"><a href="{{.Data.link}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">নতুন ঠিকানা নিশ্চিত করুন</a></p>
+<p style="font-size:13px;color:#6b7785;">অথবা এই লিংকটি খুলুন: <a href="{{.Data.link}}">{{.Data.link}}</a></p>
+<p>লিংকটির মেয়াদ {{duration .Data.minutes}}। ততক্ষণ আপনার অ্যাকাউন্টে বর্তমান ঠিকানাই থাকবে। আপনি না চাইলে এই ই-মেইলটি উপেক্ষা করুন।</p>

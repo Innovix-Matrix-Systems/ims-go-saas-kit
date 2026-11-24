@@ -246,3 +246,41 @@ SET status        = @status,
     updated_at    = now()
 WHERE id = @id AND status = 'pending'
 RETURNING *;
+
+-- name: TenantUsage :one
+-- What a tenant uses of its plan's limits (users.max, branches.max,
+-- storage.mb): the same rows the limit checks count.
+SELECT
+    (SELECT count(*) FROM users u WHERE u.tenant_id = @tenant_id::bigint AND u.deleted_at IS NULL)::bigint AS users,
+    (SELECT count(*) FROM branches b WHERE b.tenant_id = @tenant_id::bigint AND b.deleted_at IS NULL)::bigint AS branches,
+    (SELECT COALESCE(sum(f.size), 0) FROM files f WHERE f.tenant_id = @tenant_id::bigint)::bigint AS storage_bytes;
+
+-- name: ApprovalDetailsByIDs :many
+-- What a reviewer needs beside each approval: who pays, how much, for which
+-- plan, and the invoice.
+SELECT a.id, COALESCE(t.name, '')::text AS tenant_name, p.amount, p.currency, p.invoice_number,
+       COALESCE(k.name, '')::text AS package_name
+FROM payment_approval_requests a
+JOIN payments p ON p.id = a.payment_id
+LEFT JOIN tenants t ON t.id = a.tenant_id
+LEFT JOIN subscriptions s ON s.id = a.subscription_id
+LEFT JOIN packages k ON k.id = s.package_id
+WHERE a.id = ANY(@ids::bigint[]);
+
+-- name: PendingApprovalForPayment :one
+SELECT * FROM payment_approval_requests
+WHERE payment_id = @payment_id AND status = 'pending'
+LIMIT 1;
+
+-- name: InvoiceForPayment :one
+-- Everything an invoice shows for one of a tenant's payments.
+SELECT p.id, p.invoice_number, p.status, p.payment_method, p.amount, p.currency, p.paid_at, p.created_at,
+       COALESCE(p.gateway_ref, '')::text AS gateway_ref,
+       t.name AS tenant_name, COALESCE(t.email, '')::text AS tenant_email, COALESCE(t.phone, '')::text AS tenant_phone,
+       COALESCE(k.name, '')::text AS package_name, COALESCE(k.billing_cycle, '')::text AS billing_cycle,
+       s.starts_at, s.expires_at
+FROM payments p
+JOIN tenants t ON t.id = p.tenant_id
+LEFT JOIN subscriptions s ON s.id = p.subscription_id
+LEFT JOIN packages k ON k.id = s.package_id
+WHERE p.id = @payment_id AND p.tenant_id = @tenant_id;

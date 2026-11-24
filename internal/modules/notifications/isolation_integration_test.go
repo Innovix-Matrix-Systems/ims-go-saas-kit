@@ -3,7 +3,7 @@ package notifications
 import (
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // TestCrossTenantIsolation proves notifications addressed to one tenant are not

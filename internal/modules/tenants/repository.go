@@ -6,9 +6,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // Repository is the persistence contract required by the tenants module.
@@ -23,6 +23,16 @@ type Repository interface {
 	Update(ctx context.Context, input UpdateInput) (*Tenant, error)
 	Delete(ctx context.Context, id int64, actorID *int64) error
 	SyncIDSequence(ctx context.Context) error
+	SetOwner(ctx context.Context, tenantID, userID int64) error
+	// Owner returns the owner's id, name and e-mail (nil: none recorded).
+	Owner(ctx context.Context, tenantID int64) (*Owner, error)
+}
+
+// Owner is the organization's owner as shown to its members.
+type Owner struct {
+	ID    int64
+	Name  string
+	Email string
 }
 
 // ListFilter carries list/search/pagination input.
@@ -196,6 +206,24 @@ func (r *repository) Delete(ctx context.Context, id int64, actorID *int64) error
 		return apperr.Newf(apperr.ResourceNotFound, "Tenant with ID '%d' was not found.", id)
 	}
 	return nil
+}
+
+func (r *repository) SetOwner(ctx context.Context, tenantID, userID int64) error {
+	if err := r.queries.SetTenantOwner(ctx, dbgen.SetTenantOwnerParams{ID: tenantID, OwnerUserID: &userID}); err != nil {
+		return database.MapError("tenants.set_owner", err)
+	}
+	return nil
+}
+
+func (r *repository) Owner(ctx context.Context, tenantID int64) (*Owner, error) {
+	row, err := r.queries.GetTenantOwner(ctx, tenantID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, database.MapError("tenants.owner", err)
+	}
+	return &Owner{ID: row.ID, Name: row.Name, Email: row.Email}, nil
 }
 
 func optionalString(value string) *string {

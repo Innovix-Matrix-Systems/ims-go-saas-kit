@@ -95,7 +95,7 @@ jobs:
           git diff --exit-code -- src/api/schema.d.ts
         working-directory: web/dev
 
-  docs:
+  app:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -104,15 +104,29 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: website/package-lock.json
+          cache-dependency-path: web/app/package-lock.json
 
       - name: install
         run: npm ci
-        working-directory: website
+        working-directory: web/app
 
-      - name: build and check every link
+      - name: typecheck
+        run: npm run typecheck
+        working-directory: web/app
+
+      - name: style check (contrast, type scale, tokens)
+        run: npm run check:style
+        working-directory: web/app
+
+      - name: build
         run: npm run build
-        working-directory: website
+        working-directory: web/app
+
+      - name: generated route tree and OpenAPI types are current
+        run: |
+          npm run openapi:gen
+          git diff --exit-code -- src/api/schema.d.ts src/routeTree.gen.ts
+        working-directory: web/app
 
   # Docker is optional, but it must keep working: build the image, bring the
   # whole compose stack up and probe it.
@@ -158,7 +172,7 @@ jobs:
           CGO_ENABLED: "0"
           GOOS: linux
           GOARCH: ${{ matrix.goarch }}
-        run: go build -trimpath -ldflags "-X github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/version.Version=ci" -o /tmp/ims-linux-${{ matrix.goarch }} ./cmd/app
+        run: go build -trimpath -ldflags "-X github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version.Version=ci" -o /tmp/ims-linux-${{ matrix.goarch }} ./cmd/app
 
   integration:
     runs-on: ubuntu-latest

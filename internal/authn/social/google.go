@@ -1,6 +1,6 @@
 package social
 
-import "github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/config"
+import "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 
 // Google: the client signs in with Google Identity Services (web) or Google
 // Sign-In (iOS, Android) and sends the id_token it gets.

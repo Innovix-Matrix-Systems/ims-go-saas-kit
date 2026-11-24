@@ -5,13 +5,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/modules/billing/service"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
 // Handler serves billing HTTP endpoints.
@@ -20,8 +20,46 @@ type Handler struct {
 	subscriptions *service.SubscriptionService
 	payments      *service.PaymentService
 	approvals     *service.ApprovalService
+	usage         *service.UsageService
+	invoices      *service.InvoiceService
 	checker       *authz.Checker
 	httpx.Kit
+}
+
+// WithUsage serves GET /billing/usage.
+func (h *Handler) WithUsage(usage *service.UsageService) *Handler {
+	h.usage = usage
+	return h
+}
+
+// UsageItemResponse is one plan limit and its use.
+type UsageItemResponse struct {
+	FeatureKey  string `json:"feature_key"`
+	Description string `json:"description"`
+	// Limit is -1 for unlimited and 0 when the plan does not include it.
+	Limit int64 `json:"limit"`
+	Used  int64 `json:"used"`
+}
+
+// UsageResponse is the organization's use of its plan.
+type UsageResponse struct {
+	Limits       []UsageItemResponse `json:"limits"`
+	StorageBytes int64               `json:"storage_bytes"`
+}
+
+func (h *Handler) tenantUsage(w http.ResponseWriter, r *http.Request) {
+	usage, err := h.usage.For(r.Context(), tenancy.From(r).EffectiveTenantID())
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	out := UsageResponse{StorageBytes: usage.StorageBytes, Limits: make([]UsageItemResponse, 0, len(usage.Items))}
+	for _, item := range usage.Items {
+		out.Limits = append(out.Limits, UsageItemResponse{
+			FeatureKey: string(item.Feature), Description: item.Feature.Description(), Limit: item.Limit, Used: item.Used,
+		})
+	}
+	h.Data(w, r, http.StatusOK, out)
 }
 
 // NewHandler creates the billing handler.
@@ -102,10 +140,25 @@ func (h *Handler) subscribe(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
-	h.Data(w, r, http.StatusCreated, map[string]any{
-		"subscription": NewSubscriptionResponse(*subscription),
-		"payment":      NewPaymentResponse(*payment),
-	})
+	out := map[string]any{"subscription": NewSubscriptionResponse(*subscription), "payment": nil}
+	if payment != nil {
+		out["payment"] = NewPaymentResponse(*payment)
+	}
+	h.Data(w, r, http.StatusCreated, out)
+}
+
+// cancelPayment withdraws the organization's own checkout that is still
+// waiting (for staff approval or the gateway).
+func (h *Handler) cancelPayment(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.PathID(w, r, "id")
+	if !ok {
+		return
+	}
+	if err := h.approvals.Withdraw(r.Context(), tenancy.From(r).EffectiveTenantID(), id, authn.UserID(r)); err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.NoContent(w)
 }
 
 func (h *Handler) callback(w http.ResponseWriter, r *http.Request) {
@@ -336,9 +389,23 @@ func (h *Handler) listApprovals(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
+	ids := make([]int64, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.ID)
+	}
+	details, err := h.approvals.Details(r.Context(), ids)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
 	data := make([]ApprovalResponse, 0, len(items))
 	for _, item := range items {
-		data = append(data, NewApprovalResponse(item))
+		response := NewApprovalResponse(item)
+		if detail, ok := details[item.ID]; ok {
+			response.Details = &ApprovalDetailResponse{TenantName: detail.TenantName, PackageName: detail.PackageName,
+				Amount: detail.Amount, Currency: detail.Currency, InvoiceNumber: detail.InvoiceNumber}
+		}
+		data = append(data, response)
 	}
 	meta, links := httpx.NewPagination(r, page, perPage, total)
 	h.Paginated(w, r, http.StatusOK, data, meta, links)

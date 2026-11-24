@@ -50,6 +50,55 @@ func (q *Queries) ActivateSubscription(ctx context.Context, arg ActivateSubscrip
 	return i, err
 }
 
+const approvalDetailsByIDs = `-- name: ApprovalDetailsByIDs :many
+SELECT a.id, COALESCE(t.name, '')::text AS tenant_name, p.amount, p.currency, p.invoice_number,
+       COALESCE(k.name, '')::text AS package_name
+FROM payment_approval_requests a
+JOIN payments p ON p.id = a.payment_id
+LEFT JOIN tenants t ON t.id = a.tenant_id
+LEFT JOIN subscriptions s ON s.id = a.subscription_id
+LEFT JOIN packages k ON k.id = s.package_id
+WHERE a.id = ANY($1::bigint[])
+`
+
+type ApprovalDetailsByIDsRow struct {
+	ID            int64  `json:"id"`
+	TenantName    string `json:"tenant_name"`
+	Amount        int64  `json:"amount"`
+	Currency      string `json:"currency"`
+	InvoiceNumber string `json:"invoice_number"`
+	PackageName   string `json:"package_name"`
+}
+
+// What a reviewer needs beside each approval: who pays, how much, for which
+// plan, and the invoice.
+func (q *Queries) ApprovalDetailsByIDs(ctx context.Context, ids []int64) ([]ApprovalDetailsByIDsRow, error) {
+	rows, err := q.db.Query(ctx, approvalDetailsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ApprovalDetailsByIDsRow{}
+	for rows.Next() {
+		var i ApprovalDetailsByIDsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantName,
+			&i.Amount,
+			&i.Currency,
+			&i.InvoiceNumber,
+			&i.PackageName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countPaymentApprovals = `-- name: CountPaymentApprovals :one
 SELECT count(*) FROM payment_approval_requests
 WHERE ($1::text IS NULL OR status = $1::text)
@@ -610,6 +659,68 @@ func (q *Queries) GetSubscription(ctx context.Context, id int64) (Subscription, 
 	return i, err
 }
 
+const invoiceForPayment = `-- name: InvoiceForPayment :one
+SELECT p.id, p.invoice_number, p.status, p.payment_method, p.amount, p.currency, p.paid_at, p.created_at,
+       COALESCE(p.gateway_ref, '')::text AS gateway_ref,
+       t.name AS tenant_name, COALESCE(t.email, '')::text AS tenant_email, COALESCE(t.phone, '')::text AS tenant_phone,
+       COALESCE(k.name, '')::text AS package_name, COALESCE(k.billing_cycle, '')::text AS billing_cycle,
+       s.starts_at, s.expires_at
+FROM payments p
+JOIN tenants t ON t.id = p.tenant_id
+LEFT JOIN subscriptions s ON s.id = p.subscription_id
+LEFT JOIN packages k ON k.id = s.package_id
+WHERE p.id = $1 AND p.tenant_id = $2
+`
+
+type InvoiceForPaymentParams struct {
+	PaymentID int64 `json:"payment_id"`
+	TenantID  int64 `json:"tenant_id"`
+}
+
+type InvoiceForPaymentRow struct {
+	ID            int64              `json:"id"`
+	InvoiceNumber string             `json:"invoice_number"`
+	Status        string             `json:"status"`
+	PaymentMethod string             `json:"payment_method"`
+	Amount        int64              `json:"amount"`
+	Currency      string             `json:"currency"`
+	PaidAt        pgtype.Timestamptz `json:"paid_at"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	GatewayRef    string             `json:"gateway_ref"`
+	TenantName    string             `json:"tenant_name"`
+	TenantEmail   string             `json:"tenant_email"`
+	TenantPhone   string             `json:"tenant_phone"`
+	PackageName   string             `json:"package_name"`
+	BillingCycle  string             `json:"billing_cycle"`
+	StartsAt      pgtype.Timestamptz `json:"starts_at"`
+	ExpiresAt     pgtype.Timestamptz `json:"expires_at"`
+}
+
+// Everything an invoice shows for one of a tenant's payments.
+func (q *Queries) InvoiceForPayment(ctx context.Context, arg InvoiceForPaymentParams) (InvoiceForPaymentRow, error) {
+	row := q.db.QueryRow(ctx, invoiceForPayment, arg.PaymentID, arg.TenantID)
+	var i InvoiceForPaymentRow
+	err := row.Scan(
+		&i.ID,
+		&i.InvoiceNumber,
+		&i.Status,
+		&i.PaymentMethod,
+		&i.Amount,
+		&i.Currency,
+		&i.PaidAt,
+		&i.CreatedAt,
+		&i.GatewayRef,
+		&i.TenantName,
+		&i.TenantEmail,
+		&i.TenantPhone,
+		&i.PackageName,
+		&i.BillingCycle,
+		&i.StartsAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
 const listActivePackages = `-- name: ListActivePackages :many
 SELECT id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at FROM packages WHERE is_active ORDER BY sort_order, id
 `
@@ -940,6 +1051,34 @@ func (q *Queries) ListSubscriptions(ctx context.Context, arg ListSubscriptionsPa
 	return items, nil
 }
 
+const pendingApprovalForPayment = `-- name: PendingApprovalForPayment :one
+SELECT id, tenant_id, subscription_id, payment_id, payment_method, payment_data, status, reviewer_id, reviewer_note, reviewed_at, created_by, updated_by, created_at, updated_at FROM payment_approval_requests
+WHERE payment_id = $1 AND status = 'pending'
+LIMIT 1
+`
+
+func (q *Queries) PendingApprovalForPayment(ctx context.Context, paymentID int64) (PaymentApprovalRequest, error) {
+	row := q.db.QueryRow(ctx, pendingApprovalForPayment, paymentID)
+	var i PaymentApprovalRequest
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.SubscriptionID,
+		&i.PaymentID,
+		&i.PaymentMethod,
+		&i.PaymentData,
+		&i.Status,
+		&i.ReviewerID,
+		&i.ReviewerNote,
+		&i.ReviewedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const setSubscriptionOverrides = `-- name: SetSubscriptionOverrides :one
 UPDATE subscriptions
 SET overrides  = $1,
@@ -1022,6 +1161,28 @@ func (q *Queries) SuspendLapsedTenants(ctx context.Context, arg SuspendLapsedTen
 		return nil, err
 	}
 	return items, nil
+}
+
+const tenantUsage = `-- name: TenantUsage :one
+SELECT
+    (SELECT count(*) FROM users u WHERE u.tenant_id = $1::bigint AND u.deleted_at IS NULL)::bigint AS users,
+    (SELECT count(*) FROM branches b WHERE b.tenant_id = $1::bigint AND b.deleted_at IS NULL)::bigint AS branches,
+    (SELECT COALESCE(sum(f.size), 0) FROM files f WHERE f.tenant_id = $1::bigint)::bigint AS storage_bytes
+`
+
+type TenantUsageRow struct {
+	Users        int64 `json:"users"`
+	Branches     int64 `json:"branches"`
+	StorageBytes int64 `json:"storage_bytes"`
+}
+
+// What a tenant uses of its plan's limits (users.max, branches.max,
+// storage.mb): the same rows the limit checks count.
+func (q *Queries) TenantUsage(ctx context.Context, tenantID int64) (TenantUsageRow, error) {
+	row := q.db.QueryRow(ctx, tenantUsage, tenantID)
+	var i TenantUsageRow
+	err := row.Scan(&i.Users, &i.Branches, &i.StorageBytes)
+	return i, err
 }
 
 const updatePackage = `-- name: UpdatePackage :one

@@ -17,7 +17,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/ratelimit"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/ratelimit"
 )
 
 // Path is where the MCP endpoint is mounted.

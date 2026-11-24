@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // errBlockedAddress is a delivery to an address webhooks may not reach.

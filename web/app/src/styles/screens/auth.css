@@ -1,0 +1,49 @@
+/* ── Login and the error page: a plain centred card ──── */
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--surface-0); }
+.login-card { width: min(420px, 100%); }
+.login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.login-title { font-size: var(--fs-xl); font-weight: var(--fw-semibold); line-height: var(--lh-heading); margin: 0 0 6px; }
+.login-sub { color: var(--text-2); font-size: var(--fs-base); margin: 0 0 20px; }
+.login-links { margin-top: 16px; font-size: var(--fs-sm); color: var(--text-3); display: flex; justify-content: space-between; }
+
+.error-wrap { min-height: calc(100vh - var(--topbar-height)); display: grid; place-items: center; padding: 32px; }
+.error-card { width: min(600px, 100%); }
+.error-icon {
+  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+  background: var(--danger-subtle); border: 1px solid var(--danger-border); color: var(--danger-fg);
+}
+.error-icon svg { width: 22px; height: 22px; }
+.error-code {
+  margin-top: 4px; font-family: var(--mono); font-size: var(--fs-md); color: var(--danger-fg);
+  background: var(--danger-subtle); border: 1px solid var(--danger-border);
+  border-radius: var(--radius-sm); padding: 10px 12px; white-space: pre-wrap; word-break: break-word;
+}
+
+/* ── Client app additions ──────────────────────────────── */
+.login-top { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; align-items: center; }
+.check-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-base); color: var(--text-2); cursor: pointer; }
+.check-row input { width: 16px; height: 16px; accent-color: var(--accent); }
+.form-row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.status-icon {
+  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 14px;
+  background: var(--accent-subtle); border: 1px solid var(--accent-border); color: var(--accent);
+}
+.status-icon.warn { background: var(--warn-subtle); border-color: var(--warn-border); color: var(--warn-fg); }
+.status-icon.danger { background: var(--danger-subtle); border-color: var(--danger-border); color: var(--danger-fg); }
+.status-icon svg { width: 22px; height: 22px; }
+.status-ref { font-family: var(--mono); font-size: var(--fs-sm); color: var(--text-3); margin-top: 12px; }
+.input-with-action { position: relative; display: flex; align-items: center; }
+.input-with-action .input { flex: 1; padding-right: 40px; }
+.input-with-action .icon-btn { position: absolute; right: 4px; }
+.link-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: var(--fs-sm); }
+.link-row a, .login-links a { color: var(--accent); text-decoration: none; }
+.link-row a:hover, .login-links a:hover { text-decoration: underline; }
+.success-box {
+  padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--ok-border);
+  background: var(--ok-subtle); color: var(--text-1); font-size: var(--fs-base); line-height: var(--lh-body);
+}
+.terms-row { display: flex; gap: 8px; align-items: flex-start; font-size: var(--fs-md); color: var(--text-2); }
+.terms-row input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); }
+.qr-box { display: grid; place-items: center; padding: 12px; background: var(--qr-surface); border-radius: var(--radius-sm); border: 1px solid var(--border); width: fit-content; }
+.qr-box img { width: 180px; height: 180px; image-rendering: pixelated; }
+.codes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; font-family: var(--mono); font-size: var(--fs-md); padding: 12px; background: var(--surface-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); }

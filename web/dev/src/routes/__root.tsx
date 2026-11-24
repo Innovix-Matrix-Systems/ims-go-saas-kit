@@ -21,7 +21,7 @@ function RootDocument() {
         {/* Theme, accent and density before first paint, so a reload never flashes the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: appearanceBootstrap }} />
         <meta name="robots" content="noindex, nofollow" />
-        <title>Dev Dashboard — IMS</title>
+        <title>Dev Dashboard — IMS Go Admin Starter</title>
         {/* TanStack Start's dev HTML bypasses Vite's index.html transform; load the HMR client explicitly. */}
         {import.meta.env.DEV ? (
           <script type="module" src={`${import.meta.env.BASE_URL}@vite/client`} />

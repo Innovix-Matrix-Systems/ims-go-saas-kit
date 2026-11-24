@@ -7,7 +7,7 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-api-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 )
 
 // oidcProvider verifies an OpenID Connect id_token, the proof Google (and

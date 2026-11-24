@@ -1,0 +1,13 @@
+﻿/* The app's styles, in cascade order: tokens (themes, accents, density),
+   base, the shared components, then one file per screen that needs its
+   own rules. */
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/components.css";
+@import "./styles/screens/auth.css";
+@import "./styles/screens/home.css";
+@import "./styles/screens/org.css";
+@import "./styles/screens/audit.css";
+@import "./styles/screens/files.css";
+@import "./styles/screens/dashboard.css";
+@import "./styles/screens/shell.css";

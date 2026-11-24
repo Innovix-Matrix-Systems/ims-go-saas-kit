@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# release.sh — build-on-server release for the IMS Go API.
+# release.sh — build-on-server release for the IMS Go Admin Starter.
 #
 # Builds a static binary from source on the target host, runs the gated
 # migration step, atomically switches the `current` symlink, restarts the
@@ -15,14 +15,14 @@
 #
 set -euo pipefail
 
-BASE_DIR="${IMS_BASE_DIR:-/opt/ims/ims-go-api}"
+BASE_DIR="${IMS_BASE_DIR:-/opt/ims/ims-go-admin-starter}"
 RELEASES_DIR="$BASE_DIR/releases"
 CURRENT_LINK="$BASE_DIR/current"
-ENV_FILE="${IMS_ENV_FILE:-/etc/ims/ims-go-api/.env}"
-STATE_DIR="${IMS_STATE_DIR:-/var/lib/ims/ims-go-api}"
-SERVICE_PREFIX="${IMS_SERVICE_PREFIX:-ims-go-api}"
+ENV_FILE="${IMS_ENV_FILE:-/etc/ims/ims-go-admin-starter/.env}"
+STATE_DIR="${IMS_STATE_DIR:-/var/lib/ims/ims-go-admin-starter}"
+SERVICE_PREFIX="${IMS_SERVICE_PREFIX:-ims-go-admin-starter}"
 GO_BIN="${GO_BIN:-go}"
-BUILD_MODULE="${IMS_BUILD_MODULE:-github.com/Innovix-Matrix-Systems/ims-go-api-starter}"
+BUILD_MODULE="${IMS_BUILD_MODULE:-github.com/Innovix-Matrix-Systems/ims-go-admin-starter}"
 
 REF=""
 REPO=""
