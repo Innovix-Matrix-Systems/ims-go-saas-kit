@@ -76,6 +76,7 @@ with `make rename MODULE=github.com/acme/x DRY=1`.
 
 ```text
 cmd/app/                      single binary entry point
+cmd/rename/, cmd/skills/      dev tools: `make rename`, `make skills-sync` / `skills-check`
 module.go                     root package: embeds go.mod and VERSION
 VERSION                       release version (semver); release builds stamp it, local builds report <v>-dev
 CHANGELOG.md                  Keep a Changelog; update it with every user-visible change

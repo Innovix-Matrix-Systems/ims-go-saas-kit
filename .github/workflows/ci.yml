@@ -49,7 +49,7 @@ jobs:
         run: go run ./cmd/app gen openapi --all --check
 
       - name: agent skills are in sync (.agents/skills = .claude/skills)
-        run: diff -r .agents/skills .claude/skills
+        run: go run ./cmd/skills check
 
       - name: generated docs reference pages are current
         run: go run ./cmd/app gen docs --check

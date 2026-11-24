@@ -238,17 +238,15 @@ generate: sqlc openapi openapi-gen ## Regenerate all generated code.
 
 gen-check: skills-check ## Verify generated code, docs and skill copies are current; fails on drift.
 	$(MAKE) sqlc openapi
-	git diff --exit-code -- internal/dbgen internal/contract
+	git --no-pager diff --exit-code -- internal/dbgen internal/contract
 	go run ./cmd/app gen openapi --all --check
 	go run ./cmd/app gen docs --check
 
 skills-sync: ## Copy the agent skills (.agents/skills, canonical) to .claude/skills for Claude Code.
-	rm -rf .claude/skills
-	mkdir -p .claude
-	cp -r .agents/skills .claude/skills
+	go run ./cmd/skills sync
 
 skills-check: ## Fail when .claude/skills differs from .agents/skills (run `make skills-sync`).
-	diff -r .agents/skills .claude/skills
+	go run ./cmd/skills check
 
 # ── Documentation (docs/, read on GitHub) ───────────────────────────────────
 docs-gen: ## Regenerate docs/reference (CLI, configuration, permissions, make) from the code.
