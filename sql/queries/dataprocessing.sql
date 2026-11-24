@@ -23,8 +23,8 @@ WHERE (@all_tenants::boolean OR tenant_id = @tenant_id)
   AND (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status')::text)
   AND (sqlc.narg('type')::text IS NULL OR type = sqlc.narg('type')::text)
   AND (sqlc.narg('user_id')::bigint IS NULL OR user_id = sqlc.narg('user_id')::bigint)
-  -- Personal-data exports are listed only to their owner.
-  AND (type <> 'privacy_export' OR user_id = sqlc.narg('user_id')::bigint)
+  -- Personal-data exports are listed only to their owner, whoever reads.
+  AND (type <> 'privacy_export' OR user_id = @viewer_id::bigint)
   AND (
       @search::text IS NULL
       OR job_id ILIKE '%' || @search || '%'
@@ -40,14 +40,18 @@ WHERE (@all_tenants::boolean OR tenant_id = @tenant_id)
   AND (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status')::text)
   AND (sqlc.narg('type')::text IS NULL OR type = sqlc.narg('type')::text)
   AND (sqlc.narg('user_id')::bigint IS NULL OR user_id = sqlc.narg('user_id')::bigint)
-  -- Personal-data exports are listed only to their owner.
-  AND (type <> 'privacy_export' OR user_id = sqlc.narg('user_id')::bigint)
+  -- Personal-data exports are listed only to their owner, whoever reads.
+  AND (type <> 'privacy_export' OR user_id = @viewer_id::bigint)
   AND (
       @search::text IS NULL
       OR job_id ILIKE '%' || @search || '%'
       OR file_name ILIKE '%' || @search || '%'
       OR entity_type ILIKE '%' || @search || '%'
   );
+
+-- name: ListDataProcessingJobActors :many
+-- The names of the people who started the listed jobs.
+SELECT id, name FROM users WHERE id = ANY(@ids::bigint[]);
 
 -- name: UpdateDataProcessingJobStatus :one
 UPDATE data_processing_jobs

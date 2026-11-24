@@ -4580,7 +4580,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List data-processing jobs (admin) */
+        /**
+         * List data-processing jobs (admin)
+         * @description Every member's jobs in the organization (tenant Admins hold `data_processing_job.view.all`), each with who started it (`user_name`). Personal-data exports are listed to their owner only.
+         */
         get: operations["listProcessingJobs"];
         put?: never;
         post?: never;
@@ -8087,6 +8090,8 @@ export interface components {
             progress_percentage: number;
             /** Format: int64 */
             user_id?: number | null;
+            /** @description Who started the job (in lists). */
+            user_name?: string | null;
             /** Format: date-time */
             started_at?: string | null;
             /** Format: date-time */
@@ -21735,6 +21740,13 @@ export interface operations {
             query?: {
                 page?: components["parameters"]["Page"];
                 per_page?: components["parameters"]["PerPage"];
+                /** @description Only jobs of this type (e.g. user_export, user_import, activity_export). */
+                type?: string;
+                status?: "pending" | "processing" | "completed" | "failed";
+                /** @description Matches the job id, file name or entity type. */
+                search?: string;
+                /** @description Only the jobs this member started. */
+                user_id?: number;
             };
             header?: {
                 /**
@@ -21797,6 +21809,11 @@ export interface operations {
             query?: {
                 page?: components["parameters"]["Page"];
                 per_page?: components["parameters"]["PerPage"];
+                /** @description Only jobs of this type (e.g. user_export, user_import, activity_export). */
+                type?: string;
+                status?: "pending" | "processing" | "completed" | "failed";
+                /** @description Matches the job id, file name or entity type. */
+                search?: string;
             };
             header?: {
                 /**

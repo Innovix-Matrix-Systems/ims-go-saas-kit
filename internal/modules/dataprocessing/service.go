@@ -142,6 +142,23 @@ func (s *Service) List(ctx context.Context, scope tenancy.Scope, filter ListFilt
 	return items, total, nil
 }
 
+// ActorNames returns the names of the people who started the jobs.
+func (s *Service) ActorNames(ctx context.Context, jobs []Job) map[int64]string {
+	ids := make([]int64, 0, len(jobs))
+	seen := map[int64]bool{}
+	for _, job := range jobs {
+		if job.UserID != nil && !seen[*job.UserID] {
+			seen[*job.UserID] = true
+			ids = append(ids, *job.UserID)
+		}
+	}
+	names, err := s.repo.ActorNames(ctx, ids)
+	if err != nil {
+		return map[int64]string{}
+	}
+	return names
+}
+
 // Download is a resolved job artifact stream.
 type Download struct {
 	Reader   io.ReadCloser

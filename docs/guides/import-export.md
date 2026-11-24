@@ -13,7 +13,8 @@ a queue worker does the work, and the client polls the job for progress and a do
 | `POST /api/v1/user/import-template` | download a template spreadsheet (`user.import`) |
 | `POST /api/v1/user/import-background` | upload `.xlsx` or `.csv`; starts a `user.import` job |
 | `POST /api/v1/user/export-background` | starts a `user.export` job with the list filters |
-| `GET /api/v1/data-processing/jobs/user` | the caller's jobs |
+| `GET /api/v1/data-processing/jobs/user` | the caller's jobs (`type`, `status`, `search` filters) |
+| `GET /api/v1/data-processing/jobs` | every member's jobs (`data_processing_job.view.all`, held by the tenant Admin role), with `user_name`; `user_id` keeps one member's |
 | `GET /api/v1/data-processing/job/{jobId}` | status, progress and per-row errors |
 | `GET /api/v1/data-processing/job/{jobId}/download` | the export file — only when `COMPLETED` |
 | `POST /api/v1/data-processing/job/{jobId}/retry` | run a `FAILED` job again with the same filters or file |
@@ -47,6 +48,12 @@ a queue worker does the work, and the client polls the job for progress and a do
 - **Activity**: `POST /api/v1/activity/export` (an organization's log) and
   `POST /api/v1/internal/activity/export` (staff: every organization and the system log) export
   every entry matching the activity filters (`internal/modules/activity/export`).
+
+## Who sees a job
+
+A job belongs to whoever started it: they open, download, retry and remove it. In an organization,
+anyone holding `data_processing_job.view.all` (the tenant Admin role does) can do the same with every
+member's job and list them all. A personal-data export stays its owner's alone, whoever asks.
 
 ## Building your own
 

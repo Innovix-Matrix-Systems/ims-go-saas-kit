@@ -34,13 +34,13 @@ WHERE ($1::boolean OR tenant_id = $2)
   AND ($3::text IS NULL OR status = $3::text)
   AND ($4::text IS NULL OR type = $4::text)
   AND ($5::bigint IS NULL OR user_id = $5::bigint)
-  -- Personal-data exports are listed only to their owner.
-  AND (type <> 'privacy_export' OR user_id = $5::bigint)
+  -- Personal-data exports are listed only to their owner, whoever reads.
+  AND (type <> 'privacy_export' OR user_id = $6::bigint)
   AND (
-      $6::text IS NULL
-      OR job_id ILIKE '%' || $6 || '%'
-      OR file_name ILIKE '%' || $6 || '%'
-      OR entity_type ILIKE '%' || $6 || '%'
+      $7::text IS NULL
+      OR job_id ILIKE '%' || $7 || '%'
+      OR file_name ILIKE '%' || $7 || '%'
+      OR entity_type ILIKE '%' || $7 || '%'
   )
 `
 
@@ -50,6 +50,7 @@ type CountDataProcessingJobsParams struct {
 	Status     *string `json:"status"`
 	Type       *string `json:"type"`
 	UserID     *int64  `json:"user_id"`
+	ViewerID   int64   `json:"viewer_id"`
 	Search     string  `json:"search"`
 }
 
@@ -60,6 +61,7 @@ func (q *Queries) CountDataProcessingJobs(ctx context.Context, arg CountDataProc
 		arg.Status,
 		arg.Type,
 		arg.UserID,
+		arg.ViewerID,
 		arg.Search,
 	)
 	var count int64
@@ -289,22 +291,52 @@ func (q *Queries) GetDataProcessingJobByJobID(ctx context.Context, jobID *string
 	return i, err
 }
 
+const listDataProcessingJobActors = `-- name: ListDataProcessingJobActors :many
+SELECT id, name FROM users WHERE id = ANY($1::bigint[])
+`
+
+type ListDataProcessingJobActorsRow struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+// The names of the people who started the listed jobs.
+func (q *Queries) ListDataProcessingJobActors(ctx context.Context, ids []int64) ([]ListDataProcessingJobActorsRow, error) {
+	rows, err := q.db.Query(ctx, listDataProcessingJobActors, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDataProcessingJobActorsRow{}
+	for rows.Next() {
+		var i ListDataProcessingJobActorsRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDataProcessingJobs = `-- name: ListDataProcessingJobs :many
 SELECT id, tenant_id, branch_id, job_id, type, status, entity_type, filters, total_items, processed_items, success_count, error_count, errors, error_message, file_name, file_disk, file_path, file_size, file_mime, user_id, started_at, completed_at, created_at, updated_at FROM data_processing_jobs
 WHERE ($1::boolean OR tenant_id = $2)
   AND ($3::text IS NULL OR status = $3::text)
   AND ($4::text IS NULL OR type = $4::text)
   AND ($5::bigint IS NULL OR user_id = $5::bigint)
-  -- Personal-data exports are listed only to their owner.
-  AND (type <> 'privacy_export' OR user_id = $5::bigint)
+  -- Personal-data exports are listed only to their owner, whoever reads.
+  AND (type <> 'privacy_export' OR user_id = $6::bigint)
   AND (
-      $6::text IS NULL
-      OR job_id ILIKE '%' || $6 || '%'
-      OR file_name ILIKE '%' || $6 || '%'
-      OR entity_type ILIKE '%' || $6 || '%'
+      $7::text IS NULL
+      OR job_id ILIKE '%' || $7 || '%'
+      OR file_name ILIKE '%' || $7 || '%'
+      OR entity_type ILIKE '%' || $7 || '%'
   )
 ORDER BY id DESC
-LIMIT $8 OFFSET $7
+LIMIT $9 OFFSET $8
 `
 
 type ListDataProcessingJobsParams struct {
@@ -313,6 +345,7 @@ type ListDataProcessingJobsParams struct {
 	Status     *string `json:"status"`
 	Type       *string `json:"type"`
 	UserID     *int64  `json:"user_id"`
+	ViewerID   int64   `json:"viewer_id"`
 	Search     string  `json:"search"`
 	PageOffset int32   `json:"page_offset"`
 	PageLimit  int32   `json:"page_limit"`
@@ -325,6 +358,7 @@ func (q *Queries) ListDataProcessingJobs(ctx context.Context, arg ListDataProces
 		arg.Status,
 		arg.Type,
 		arg.UserID,
+		arg.ViewerID,
 		arg.Search,
 		arg.PageOffset,
 		arg.PageLimit,

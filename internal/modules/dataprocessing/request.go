@@ -8,29 +8,31 @@ import (
 // Response is the public processing-job representation; disk/path internals
 // are omitted).
 type Response struct {
-	ID                 int64      `json:"id"`
-	TenantID           *int64     `json:"tenant_id"`
-	BranchID           *int64     `json:"branch_id"`
-	JobID              *string    `json:"job_id"`
-	Type               string     `json:"type"`
-	Status             string     `json:"status"`
-	EntityType         *string    `json:"entity_type"`
-	Filters            any        `json:"filters"`
-	FileName           *string    `json:"file_name"`
-	FileSize           *int64     `json:"file_size"`
-	FileMime           *string    `json:"file_mime"`
-	TotalItems         int32      `json:"total_items"`
-	ProcessedItems     int32      `json:"processed_items"`
-	SuccessCount       int32      `json:"success_count"`
-	ErrorCount         int32      `json:"error_count"`
-	Errors             any        `json:"errors"`
-	ErrorMessage       *string    `json:"error_message"`
-	ProgressPercentage int        `json:"progress_percentage"`
-	UserID             *int64     `json:"user_id"`
-	StartedAt          *time.Time `json:"started_at"`
-	CompletedAt        *time.Time `json:"completed_at"`
-	CreatedAt          time.Time  `json:"created_at"`
-	UpdatedAt          time.Time  `json:"updated_at"`
+	ID                 int64   `json:"id"`
+	TenantID           *int64  `json:"tenant_id"`
+	BranchID           *int64  `json:"branch_id"`
+	JobID              *string `json:"job_id"`
+	Type               string  `json:"type"`
+	Status             string  `json:"status"`
+	EntityType         *string `json:"entity_type"`
+	Filters            any     `json:"filters"`
+	FileName           *string `json:"file_name"`
+	FileSize           *int64  `json:"file_size"`
+	FileMime           *string `json:"file_mime"`
+	TotalItems         int32   `json:"total_items"`
+	ProcessedItems     int32   `json:"processed_items"`
+	SuccessCount       int32   `json:"success_count"`
+	ErrorCount         int32   `json:"error_count"`
+	Errors             any     `json:"errors"`
+	ErrorMessage       *string `json:"error_message"`
+	ProgressPercentage int     `json:"progress_percentage"`
+	UserID             *int64  `json:"user_id"`
+	// UserName is who started the job.
+	UserName    *string    `json:"user_name"`
+	StartedAt   *time.Time `json:"started_at"`
+	CompletedAt *time.Time `json:"completed_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 	// ExpiresAt is when the finished job and its file are deleted.
 	ExpiresAt *time.Time `json:"expires_at"`
 }

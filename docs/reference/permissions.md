@@ -92,8 +92,8 @@ tenant-level permissions; the **Developer** role holds the dashboard ones. Add a
 
 | Permission | Description | Seeded roles |
 | --- | --- | --- |
-| `data_processing_job.view.all` | Can view all data processing jobs | Super-Admin only |
-| `data_processing_job.view` | Can view data processing job details | Super-Admin only |
+| `data_processing_job.view.all` | Can view all data processing jobs | Admin |
+| `data_processing_job.view` | Can view data processing job details | Admin |
 
 ## organization
 

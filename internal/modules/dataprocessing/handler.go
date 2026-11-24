@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
@@ -29,9 +30,20 @@ func NewHandler(service *Service, settingsService *settings.Service, checker *au
 	return &Handler{service: service, settings: settingsService, checker: checker, Kit: kit}
 }
 
+// index lists everyone's jobs (data_processing_job.view.all), or one
+// person's with ?user_id=.
 func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 	scope := tenancy.From(r)
-	h.list(w, r, scope, 0)
+	var userID int64
+	if raw := r.URL.Query().Get("user_id"); raw != "" {
+		parsed, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || parsed <= 0 {
+			h.Error(w, r, apperr.Validation(map[string][]string{"user_id": {"The user_id must be a positive integer."}}))
+			return
+		}
+		userID = parsed
+	}
+	h.list(w, r, scope, userID)
 }
 
 func (h *Handler) userJobs(w http.ResponseWriter, r *http.Request) {
@@ -43,21 +55,29 @@ func (h *Handler) userJobs(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) list(w http.ResponseWriter, r *http.Request, scope tenancy.Scope, userID int64) {
 	page, perPage, offset := httpx.PageParams(r)
 	filter := ListFilter{
-		Search: r.URL.Query().Get("search"),
-		Type:   r.URL.Query().Get("type"),
-		Status: r.URL.Query().Get("status"),
-		UserID: userID,
-		Limit:  int32(perPage),
-		Offset: int32(offset),
+		Search:   r.URL.Query().Get("search"),
+		Type:     r.URL.Query().Get("type"),
+		Status:   r.URL.Query().Get("status"),
+		UserID:   userID,
+		ViewerID: authn.UserID(r),
+		Limit:    int32(perPage),
+		Offset:   int32(offset),
 	}
 	items, total, err := h.service.List(r.Context(), scope, filter)
 	if err != nil {
 		h.Error(w, r, err)
 		return
 	}
+	names := h.service.ActorNames(r.Context(), items)
 	data := make([]Response, 0, len(items))
 	for _, item := range items {
-		data = append(data, h.respond(r.Context(), item))
+		response := h.respond(r.Context(), item)
+		if item.UserID != nil {
+			if name, ok := names[*item.UserID]; ok {
+				response.UserName = &name
+			}
+		}
+		data = append(data, response)
 	}
 	meta, links := httpx.NewPagination(r, page, perPage, total)
 	h.Paginated(w, r, http.StatusOK, data, meta, links)

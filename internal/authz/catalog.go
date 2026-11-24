@@ -285,7 +285,7 @@ func AdminTenantPermissions() []Permission {
 			continue
 		}
 		switch permission.Group {
-		case "role", "branch", "user", "file", "setting", "activity", "webhook", "billing", "organization":
+		case "role", "branch", "user", "file", "setting", "activity", "webhook", "billing", "organization", "data_processing_job":
 			if _, skip := exclude[permission.Name]; skip {
 				continue
 			}
