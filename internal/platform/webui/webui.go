@@ -35,7 +35,7 @@ type Handler struct {
 // New creates the developer dashboard handler over a filesystem rooted at its
 // client build.
 func New(fsys http.FileSystem) *Handler {
-	return NewWithOptions(fsys, Options{Prefix: "/dev", Shell: "_shell.html"})
+	return NewWithOptions(fsys, Options{Prefix: "/dev", Shell: "index.html"})
 }
 
 // NewWithOptions creates an SPA handler for any mount point.

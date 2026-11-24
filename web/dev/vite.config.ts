@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 
 declare const process: { env: Record<string, string | undefined> }
@@ -9,12 +9,16 @@ const apiOrigin = process.env.IMS_API_ORIGIN ?? 'http://127.0.0.1:8080'
 export default defineConfig({
   base: '/dev/',
   plugins: [
-    tanstackStart({
-      router: { basepath: '/dev' },
-      spa: { enabled: true },
-    }),
+    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     viteReact(),
   ],
+  build: {
+    // dist/client is what web/dev/embed.go embeds; its .gitkeep keeps the
+    // directory (and so the go:embed pattern) valid before the first build.
+    outDir: 'dist/client',
+    emptyOutDir: false,
+    sourcemap: false,
+  },
   server: {
     host: '127.0.0.1',
     port: 5173,
