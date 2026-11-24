@@ -38,11 +38,13 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/mail"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/pubsub"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/scheduler"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/telemetry"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version"
 )
 
@@ -95,12 +97,17 @@ type Platform struct {
 	BillingPayments  *billingservice.PaymentService
 	BillingApprovals *billingservice.ApprovalService
 	BillingGuard     *billingservice.Guard
+	// BillingInvoices builds invoices (HTML and PDF) for payments.
+	BillingInvoices *billingservice.InvoiceService
 	// Maintenance is maintenance mode: `ims down` / `ims up`,
 	// the dashboard toggle, the HTTP guard and the scheduler skip.
 	Maintenance *maintenance.Service
 	// Privacy erases and exports a user's personal data
 	// (docs/design/account-deletion-and-export.md).
 	Privacy *privacy.Service
+	// Realtime tells open live-update streams that something changed
+	// (pubsub.Discard when REALTIME_ENABLED is off).
+	Realtime pubsub.Publisher
 }
 
 // NewPlatform constructs the platform dependencies. Pools connect lazily, so
@@ -207,14 +214,22 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		return nil, nil, err
 	}
 
+	// Live updates: any process (API, worker, scheduler) publishes; `ims
+	// serve` listens and feeds its open streams.
+	realtimePublisher := pubsub.Discard
+	if cfg.Realtime.Enabled {
+		realtimePublisher = pubsub.NewPostgres(txManager.Queries())
+	}
+
 	notificationsService := notifications.NewService(
 		notifications.NewRepository(txManager.Queries(), txManager),
 		store,
 		queueEngine,
 		settingsService,
 		logger,
-	)
+	).WithPublisher(realtimePublisher)
 	announcementService := announcements.NewService(announcements.NewRepository(txManager.Queries()), txManager, logger).
+		WithPublisher(realtimePublisher).
 		WithNotifier(func(ctx context.Context, tenantID int64, a announcements.Announcement) error {
 			return notifyAnnouncement(ctx, notificationsService, tenantID, a)
 		})
@@ -279,6 +294,27 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	}
 	notificationsService.WithDelivery(deliveryService, billingFeatures{guard: billingGuard}, encrypter,
 		strings.TrimRight(cfg.App.URL, "/")+"/api/v1/notification/unsubscribe", cfg.SMS.DailyLimitPerTenant)
+
+	// Invoices are issued under the platform's name (system.name). Payment
+	// notices tell staff and the organization about payments, by in-app
+	// notification, mail (the receipt carries the invoice PDF) and live update.
+	billingInvoices := billingservice.NewInvoiceService(billingdomain.NewReportRepository(txManager.Queries()), func(ctx context.Context) string {
+		value, _ := settingsService.Get(ctx, tenancy.Scope{}, "system.name")
+		name, _ := value.(string)
+		return name
+	})
+	paymentNotices := newBillingNotices(billingNotices{
+		notifications: notificationsService,
+		invoices:      billingInvoices,
+		delivery:      deliveryService,
+		disks:         storageRegistry,
+		queries:       txManager.Queries(),
+		publisher:     realtimePublisher,
+		appURL:        strings.TrimRight(cfg.App.URL, "/"),
+		logger:        logger,
+	})
+	billingSubscriptionService.WithPaymentNotifier(paymentNotices)
+	billingApprovalService.WithPaymentNotifier(paymentNotices)
 
 	webhooksService := webhooks.NewService(webhooks.NewRepository(txManager.Queries()), encrypter, queueEngine,
 		cfg.Webhooks, cfg.App.Name+"-Webhooks/"+version.Version, logger).
@@ -377,8 +413,10 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		BillingPayments:  billingPaymentService,
 		BillingApprovals: billingApprovalService,
 		BillingGuard:     billingGuard,
+		BillingInvoices:  billingInvoices,
 		Maintenance:      maintenanceService,
 		Privacy:          privacyService,
+		Realtime:         realtimePublisher,
 	}
 	if riverEngine, ok := queueEngine.(*queue.RiverEngine); ok {
 		riverEngine.SetObserver(collector)

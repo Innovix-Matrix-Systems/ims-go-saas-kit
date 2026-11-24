@@ -269,6 +269,11 @@ func TestProcessFanOutCountsOnlyNewDeliveries(t *testing.T) {
 		return nil, nil
 	}
 
+	// Users 2 and 3 have one older unread notification each, already
+	// counted in the cache.
+	_ = store.Set(context.Background(), unreadKey(1, 2), int64(1), time.Hour)
+	_ = store.Set(context.Background(), unreadKey(1, 3), int64(1), time.Hour)
+
 	service := NewService(repo, store, nil, nil, nil)
 	if err := service.ProcessFanOut(context.Background(), 10); err != nil {
 		t.Fatalf("ProcessFanOut() error = %v", err)
@@ -278,11 +283,11 @@ func TestProcessFanOutCountsOnlyNewDeliveries(t *testing.T) {
 		t.Fatalf("ProcessFanOut() retry error = %v", err)
 	}
 
-	if got := service.UnreadCount(context.Background(), 1, 2); got != 1 {
-		t.Errorf("user 2 unread = %d, want 1", got)
+	if got := service.UnreadCount(context.Background(), 1, 2); got != 2 {
+		t.Errorf("user 2 unread = %d, want 2", got)
 	}
-	if got := service.UnreadCount(context.Background(), 1, 3); got != 1 {
-		t.Errorf("user 3 unread = %d, want 1", got)
+	if got := service.UnreadCount(context.Background(), 1, 3); got != 2 {
+		t.Errorf("user 3 unread = %d, want 2", got)
 	}
 	// User 1 never got an increment (no new delivery); the recompute fallback
 	// serves the count from the database.
@@ -463,7 +468,9 @@ func TestMarkReadIsIdempotentForCounters(t *testing.T) {
 	}
 
 	service := NewService(repo, store, nil, nil, nil)
-	service.incrementUnread(context.Background(), 1, 9)
+	_ = store.Set(context.Background(), unreadKey(1, 9), int64(0), time.Hour)
+	service.incrementUnread(context.Background(), 1, 9) // 0 → 1: recounted on read
+	_ = store.Set(context.Background(), unreadKey(1, 9), int64(1), time.Hour)
 	service.incrementUnread(context.Background(), 1, 9)
 
 	scope := tenancy.Scope{TenantID: 1}
@@ -482,3 +489,22 @@ func TestMarkReadIsIdempotentForCounters(t *testing.T) {
 }
 
 func int64Ptr(value int64) *int64 { return &value }
+
+// A counter that is not cached is never started at 1: that would hide the
+// user's older unread notifications. The next read counts from the database.
+func TestIncrementUnreadWithoutCachedCounterRecounts(t *testing.T) {
+	store := newMemoryStore(t)
+	repo := &fakeRepo{}
+	repo.Default()
+	repo.countUnread = func(context.Context, int64, int64, bool) (int64, error) { return 3, nil }
+
+	service := NewService(repo, store, nil, nil, nil)
+	service.incrementUnread(context.Background(), 1, 9)
+
+	if found, _ := store.Exists(context.Background(), unreadKey(1, 9)); found {
+		t.Fatal("increment started a counter that was not cached")
+	}
+	if got := service.UnreadCount(context.Background(), 1, 9); got != 3 {
+		t.Fatalf("unread = %d, want 3 (recounted)", got)
+	}
+}

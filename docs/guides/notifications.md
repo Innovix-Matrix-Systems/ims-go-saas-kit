@@ -28,7 +28,8 @@ POST /api/v1/internal/notification
 | Field | Meaning |
 | --- | --- |
 | `priority` | `INFO`, `WARNING` or `CRITICAL` |
-| `targets` | one or more of `USER`, `ROLE`, `BRANCH`, `TENANT` (with an `id`) or `GLOBAL` |
+| `targets` | one or more of `USER`, `ROLE`, `BRANCH`, `TENANT` (with an `id`) or `GLOBAL`. `ROLE`, `BRANCH` and `TENANT` need a tenant; a `USER` target without one must be a tenantless staff account (staff notices such as "a payment to review") |
+| `data` | free JSON; a `url` that is an in-app path (`/org/billing`) makes the app open it when the notification is clicked |
 | `group_key` | collapses repeats of the same event |
 | `expires_at` | hidden after this; purged 7 days later by `notifications.purge-expired` |
 | `channels` | the feed is always on; add `mail`, `sms` or `push` to deliver it too ([below](#mail-sms-and-push)) |

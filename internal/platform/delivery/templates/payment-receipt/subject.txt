@@ -1,0 +1,1 @@
+Payment received: your {{.Data.plan}} plan is active

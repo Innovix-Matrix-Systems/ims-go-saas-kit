@@ -58,6 +58,7 @@ type Config struct {
 	Activity     Activity
 	MCP          MCP
 	Maintenance  Maintenance
+	Realtime     Realtime
 }
 
 // IsProduction reports whether the application runs in production.
@@ -191,6 +192,9 @@ func Load(envFile string) (*Config, error) {
 		return nil, err
 	}
 	if err := cfg.loadMaintenance(); err != nil {
+		return nil, err
+	}
+	if err := cfg.loadRealtime(); err != nil {
 		return nil, err
 	}
 	if err := cfg.loadDevDashboard(); err != nil {

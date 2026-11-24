@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,6 +40,25 @@ func (h *Handler) invoice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
 	_ = invoiceTemplate.Execute(w, invoice)
+}
+
+// invoicePDF answers the same invoice as a PDF download.
+func (h *Handler) invoicePDF(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.PathID(w, r, "id")
+	if !ok {
+		return
+	}
+	invoice, data, err := h.invoices.PDF(r.Context(), tenancy.From(r).EffectiveTenantID(), id)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="invoice-%s.pdf"`, invoice.Number))
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
 }
 
 func invoiceMoney(minor int64, currency string) string {

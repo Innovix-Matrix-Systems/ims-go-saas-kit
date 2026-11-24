@@ -165,3 +165,12 @@ ORDER BY e.created_at;
 
 -- name: DeleteAnnouncementEventsForUser :execrows
 DELETE FROM announcement_events WHERE user_id = @user_id;
+
+-- name: ListAnnouncementsStartedOrEnded :many
+-- Published announcements whose window opened or closed in (since, until]:
+-- the scheduler tells their audience's open apps to refetch.
+SELECT * FROM announcements
+WHERE status = 'published'
+  AND ((starts_at > @since AND starts_at <= @until)
+    OR (ends_at > @since AND ends_at <= @until))
+ORDER BY id;

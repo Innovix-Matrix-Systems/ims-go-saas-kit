@@ -1,0 +1,6 @@
+<p>Hello{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>We received <strong>{{.Data.amount}}</strong> from {{.Data.organization}} for the <strong>{{.Data.plan}}</strong> plan, and the plan is now active.</p>
+<p>Invoice <strong>{{.Data.invoice}}</strong>, paid on {{.Data.paid_on}}. The invoice is attached as a PDF.</p>
+<p style="margin:24px 0;"><a href="{{.Data.url}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Open billing</a></p>
+<p style="font-size:13px;color:#6b7785;">Or open this link: <a href="{{.Data.url}}">{{.Data.url}}</a></p>
+<p>Thank you.</p>

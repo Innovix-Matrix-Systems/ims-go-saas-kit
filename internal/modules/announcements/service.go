@@ -13,6 +13,7 @@ import (
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/pubsub"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
@@ -31,6 +32,8 @@ type Service struct {
 	notify   Notifier
 	logger   *slog.Logger
 	now      func() time.Time
+	// publisher tells open live-update streams what changed (optional).
+	publisher pubsub.Publisher
 }
 
 // NewService creates the announcement service.
@@ -139,6 +142,7 @@ func (s *Service) Create(ctx context.Context, actorID int64, input Input) (_ *An
 		return nil, err
 	}
 	s.record(ctx, "announcement.created", *created)
+	s.publishAudiences(ctx, s.liveAudience(ctx, created))
 	return created, nil
 }
 
@@ -149,6 +153,15 @@ func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (_
 	input, err = s.normalize(input)
 	if err != nil {
 		return nil, err
+	}
+	// Who saw it before the change, for the live update below.
+	var seenBy *pubsub.Event
+	if s.publisher != nil {
+		before, err := s.repo.Get(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		seenBy = s.liveAudience(ctx, before)
 	}
 	var updated *Announcement
 	err = s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
@@ -162,6 +175,7 @@ func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (_
 		return nil, err
 	}
 	s.record(ctx, "announcement.updated", *updated)
+	s.publishAudiences(ctx, seenBy, s.liveAudience(ctx, updated))
 	return updated, nil
 }
 
@@ -173,10 +187,13 @@ func (s *Service) Delete(ctx context.Context, id int64) (err error) {
 	if err != nil {
 		return err
 	}
+	// Its audience, read before the delete takes the tenant list with it.
+	seenBy := s.liveAudience(ctx, current)
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 	s.record(ctx, "announcement.deleted", *current)
+	s.publishAudiences(ctx, seenBy)
 	return nil
 }
 

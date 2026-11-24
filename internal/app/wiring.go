@@ -36,6 +36,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/notifications"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/realtime"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/system"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/tenants"
@@ -47,6 +48,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/i18n"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/metrics"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/pubsub"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/ratelimit"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/scheduler"
@@ -96,6 +98,12 @@ type Dependencies struct {
 	Settings       *settings.Handler
 	Flags          *featureflags.Handler
 	Dev            *dev.Handler
+	// Realtime serves the live-update stream; RealtimeHub holds this
+	// process's open streams and RealtimeListener feeds it from Postgres
+	// (`ims serve` runs it).
+	Realtime         *realtime.Handler
+	RealtimeHub      *pubsub.Hub
+	RealtimeListener *pubsub.Listener
 	// OAuth is the authorization server behind the MCP connector, and
 	// MCPTools the tools built from the OpenAPI document.
 	OAuth        *oauth.Handler
@@ -121,6 +129,15 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 	binder := httpx.NewBinder(cfg.HTTP.MaxRequestBodyBytes, cfg.HTTP.StrictJSONFields)
 	validator := httpx.NewValidator()
 	kit := httpx.NewKit(binder, validator, responder)
+
+	// Live updates: a hub for this process's streams, fed by one LISTEN
+	// connection (started by `ims serve`).
+	var realtimeHub *pubsub.Hub
+	var realtimeListener *pubsub.Listener
+	if cfg.Realtime.Enabled {
+		realtimeHub = pubsub.NewHub(cfg.Realtime.MaxStreamsPerUser)
+		realtimeListener = pubsub.NewListener(cfg.Realtime.ListenDSN, realtimeHub, logger)
+	}
 	translator, err := i18n.Load()
 	if err != nil {
 		platformCleanup()
@@ -233,8 +250,11 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			Responder: responder,
 			Audit:     platform.Activity,
 		},
-		Platform: platform,
-		System:   systemModule,
+		Platform:         platform,
+		System:           systemModule,
+		Realtime:         realtime.NewHandler(realtimeHub, cfg.Realtime, logger, kit),
+		RealtimeHub:      realtimeHub,
+		RealtimeListener: realtimeListener,
 		Auth: auth.NewHandler(authService, userService, checker, kit).
 			WithRecovery(platform.Recovery).
 			WithSessions(platform.Sessions),
@@ -309,12 +329,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			checker,
 			kit,
 		).WithUsage(billingservice.NewUsageService(platform.BillingGuard, billingdomain.NewReportRepository(queries))).
-			WithInvoices(billingservice.NewInvoiceService(billingdomain.NewReportRepository(queries), func(ctx context.Context) string {
-				// The platform issues invoices under its own name (system.name).
-				value, _ := platform.Settings.Get(ctx, tenancy.Scope{}, "system.name")
-				name, _ := value.(string)
-				return name
-			})),
+			WithInvoices(platform.BillingInvoices),
 	}
 	deps.ActivityExport = activityexport.NewHandler(platform.ActivityExport, checker, kit)
 	deps.Onboarding = onboarding.NewHandler(

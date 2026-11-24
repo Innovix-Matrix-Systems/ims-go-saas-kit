@@ -54,6 +54,8 @@ tags:
   - name: Announcements
     description: Staff announcements to organizations, shown as banners, with views, clicks and dismissals.
   - name: Notifications
+  - name: Realtime
+    description: The live-update stream that tells the app when notifications or announcements change.
   - name: Webhooks
   - name: Files
   - name: Data Processing
@@ -1222,6 +1224,40 @@ paths:
                     type: array
                     items: {$ref: "#/components/schemas/Session"}
         "401": *unauthorized
+
+  /api/v1/realtime/stream:
+    get:
+      tags: [Realtime]
+      summary: Live updates for the caller (Server-Sent Events)
+      description: |
+        Holds a `text/event-stream` open and says when something changed for the caller, so the app
+        refetches it instead of polling. Events carry no data: the client refetches through the
+        normal endpoints, where permissions and tenancy apply.
+
+        - `event: ready` once, with `data: {"heartbeat": <seconds>}`
+        - `event: notifications`: refetch the notification feed and unread count
+        - `event: announcements`: refetch `GET /api/v1/announcements/live`
+        - `event: resync`: refetch everything (events may have been missed)
+        - `: ping` comments every `REALTIME_HEARTBEAT` while idle
+        - `event: reconnect` before the server closes the stream (after `REALTIME_MAX_STREAM`, or
+          on shutdown); the client opens a new one
+
+        Sign in with the usual bearer header (browsers use `fetch` with a stream reader, since
+        `EventSource` cannot send headers). Any signed-in account may open it. At most
+        `REALTIME_MAX_STREAMS_PER_USER` streams per user per server process (429 beyond). With
+        `REALTIME_ENABLED` off it answers 404 and clients keep polling. See
+        `docs/guides/realtime.md`.
+      operationId: realtimeStream
+      responses:
+        "200":
+          description: The event stream (stays open).
+          content:
+            text/event-stream:
+              schema: {type: string}
+        "401": *unauthorized
+        "404": *notFound
+        "429": *tooManyRequests
+        "503": *serviceUnavailable
 
   /api/v1/sessions/revoke-others:
     post:
@@ -3574,6 +3610,27 @@ paths:
           content:
             text/html:
               schema: {type: string}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /api/v1/billing/payments/{id}/invoice.pdf:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+      - $ref: "#/components/parameters/PathID"
+    get:
+      tags: [Billing]
+      summary: The invoice of one of the organization's payments, as a PDF
+      description: "The same invoice as `GET /billing/payments/{id}/invoice`, as a PDF download (one A4 page, standard fonts: amounts use the currency code). The receipt e-mail sent when a payment is approved attaches it."
+      operationId: getBillingInvoicePdf
+      responses:
+        "200":
+          description: The invoice.
+          content:
+            application/pdf:
+              schema: {type: string, format: binary}
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound

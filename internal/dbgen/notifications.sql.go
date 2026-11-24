@@ -1283,7 +1283,7 @@ const userExistsInTenant = `-- name: UserExistsInTenant :one
 SELECT EXISTS (
     SELECT 1 FROM users
     WHERE id = $1 AND deleted_at IS NULL
-      AND ($2::bigint = 0 OR tenant_id = $2::bigint)
+      AND (($2::bigint = 0 AND tenant_id IS NULL) OR tenant_id = $2::bigint)
 )
 `
 
@@ -1292,6 +1292,7 @@ type UserExistsInTenantParams struct {
 	TenantID int64 `json:"tenant_id"`
 }
 
+// tenant_id 0 means a tenantless platform account (a staff notice).
 func (q *Queries) UserExistsInTenant(ctx context.Context, arg UserExistsInTenantParams) (bool, error) {
 	row := q.db.QueryRow(ctx, userExistsInTenant, arg.ID, arg.TenantID)
 	var exists bool

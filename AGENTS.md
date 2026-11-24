@@ -114,13 +114,14 @@ internal/
     telemetry/  dashboard capture (requests, SQL, cache, queue, logs) + Redactor
     tracing/    OpenTelemetry: OTLP setup, HTTP/SQL/job/outbound spans, trace ids in logs; Begin/Annotate
     maintenance/ `ims down`/`up`: state row, cached Checker, Guard middleware (503 MAINTENANCE_MODE)
+    pubsub/     live-update bus: Publisher (pg_notify), Hub (this process's streams), Listener (one LISTEN)
     delivery/   the one way to reach a person: templates (txt/html, locale variants), mail/sms/push
                 channels, delivery.send job, deliveries log (no bodies, masked addresses)
     health/ i18n/ mail/ (smtp/log transport) sms/ (log/twilio transport) ratelimit/ metrics/
   modules/    business features (see "Module anatomy"):
     access activity announcements auth backup billing branches dashboard dataprocessing dev
-    featureflags files identity notifications oauth onboarding privacy settings system tenants
-    webhooks
+    featureflags files identity notifications oauth onboarding privacy realtime settings system
+    tenants webhooks
   privacy/    leaf registry for erasure/export: Contributor, Guard, Writer (modules declare, modules/privacy runs)
   scaffold/   `ims gen module` + `ims gen openapi` generators
   dbgen/      sqlc generated code (never edit)
@@ -292,6 +293,13 @@ Mandatory})`; a notification with `channels` (`mail`, `sms`, `push`) is delivere
 delivery system to the users fan-out newly addresses (retry-safe), honouring per-user preferences,
 verified addresses, the plan (`sms.notifications`) and `SMS_DAILY_LIMIT_PER_TENANT`.
 
+**Live updates** — after a write the app should see at once, a module publishes a nudge:
+`s.publisher.Publish(ctx, pubsub.ToUsers(RealtimeKind, ids...))` (or `pubsub.ToTenant`), wired with
+`WithPublisher(...)` in `platform.go`. Any process may publish (it is `pg_notify`); `ims serve`
+streams it at `GET /api/v1/realtime/stream` and the app refetches. Events carry no data, publish
+after the write succeeds, never fail the write on a publish error, and add the kind to
+`invalidates` in `web/app/src/components/realtime.ts` (`docs/guides/realtime.md`).
+
 **Webhooks** — `internal/modules/webhooks` delivers activity-log entries to tenants' endpoints
 (it is the `activity.Recorder` sink). Make an action deliverable with
 `webhooks.RegisterEvent("invoice.paid", "…")` where it is recorded; payloads carry the redacted
@@ -412,6 +420,9 @@ Keep this list accurate; add to it when you make a non-obvious choice (also upda
 - Scheduled runs are rows in `schedule_runs` (`SCHEDULE_HISTORY_DAYS`), not cache keys, so the
   history works with any cache driver; a task that runs too often to log sets `NoHistory`
   (the heartbeat).
+- Live updates are nudges (kind + audience, no data) over Postgres `LISTEN/NOTIFY`, streamed as
+  SSE read with `fetch` (bearer header, never a URL token); one `LISTEN` connection per `ims serve`,
+  any process publishes, polling stays as the fallback (`docs/guides/realtime.md`).
 - Erasure tombstones the `users` row (personal columns blanked, `erased_at` set) instead of
   deleting it. **A table that stores a user id or personal data needs a `PrivacyContributor`
   in its module** (`privacy.go`: `Columns`, `Export`, `Erase`), registered in

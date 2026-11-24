@@ -31,6 +31,7 @@ type Repository interface {
 	ToDeliver(ctx context.Context) ([]Announcement, error)
 	ClaimDelivery(ctx context.Context, id int64) (bool, error)
 	AudienceTenantIDs(ctx context.Context, a Announcement) ([]int64, error)
+	StartedOrEnded(ctx context.Context, since, until time.Time) ([]Announcement, error)
 }
 
 type repository struct {
@@ -246,6 +247,18 @@ func timestamp(t *time.Time) pgtype.Timestamptz {
 		return pgtype.Timestamptz{}
 	}
 	return pgtype.Timestamptz{Time: *t, Valid: true}
+}
+
+// StartedOrEnded lists published announcements whose window opened or
+// closed in (since, until].
+func (r *repository) StartedOrEnded(ctx context.Context, since, until time.Time) ([]Announcement, error) {
+	rows, err := r.queries.ListAnnouncementsStartedOrEnded(ctx, dbgen.ListAnnouncementsStartedOrEndedParams{
+		Since: timestamp(&since), Until: timestamp(&until),
+	})
+	if err != nil {
+		return nil, database.MapError("announcements.started_or_ended", err)
+	}
+	return mapAnnouncements(rows), nil
 }
 
 func mapAnnouncements(rows []dbgen.Announcement) []Announcement {

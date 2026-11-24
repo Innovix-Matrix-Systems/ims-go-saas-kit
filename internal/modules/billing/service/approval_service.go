@@ -23,6 +23,8 @@ type ApprovalService struct {
 	subscriptions domain.SubscriptionRepository
 	tx            *database.TxManager
 	activity      *activity.Recorder
+	// notices tells the organization (and staff) about reviews (optional).
+	notices PaymentNotifier
 }
 
 // NewApprovalService creates the approval service.
@@ -96,6 +98,9 @@ func (s *ApprovalService) Withdraw(ctx context.Context, tenantID, paymentID, act
 		Subject: "payment", SubjectID: payment.ID,
 		Changes: map[string]any{"invoice_number": payment.InvoiceNumber, "amount": payment.Amount, "currency": payment.Currency},
 	})
+	if s.notices != nil {
+		s.notices.PaymentWithdrawn(ctx, PaymentNotice{TenantID: tenantID, PaymentID: payment.ID})
+	}
 	return nil
 }
 
@@ -189,6 +194,9 @@ func (s *ApprovalService) Approve(ctx context.Context, id, reviewerID int64, not
 		}
 		return nil, database.MapError("domain.approve_payment", err)
 	}
+	if s.notices != nil {
+		s.notices.PaymentReceived(ctx, PaymentNotice{TenantID: approval.TenantID, PaymentID: approval.PaymentID, SubmittedBy: approval.CreatedBy})
+	}
 	return s.approvals.Get(ctx, id)
 }
 
@@ -244,6 +252,9 @@ func (s *ApprovalService) Reject(ctx context.Context, id, reviewerID int64, note
 			return nil, appErr
 		}
 		return nil, database.MapError("domain.reject_payment", err)
+	}
+	if s.notices != nil {
+		s.notices.PaymentRejected(ctx, PaymentNotice{TenantID: approval.TenantID, PaymentID: approval.PaymentID, SubmittedBy: approval.CreatedBy, Note: note})
 	}
 	return s.approvals.Get(ctx, id)
 }

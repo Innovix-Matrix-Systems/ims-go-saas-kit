@@ -38,6 +38,11 @@ func newServeCommand(state *State) *cobra.Command {
 
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
+			// Live updates: listen for events until shutdown, then end the
+			// open streams so the server's drain does not wait on them.
+			if deps.RealtimeListener != nil {
+				go deps.RealtimeListener.Run(ctx)
+			}
 			return app.RunHTTP(ctx, cfg, state.Logger(), deps.Router())
 		},
 	}
