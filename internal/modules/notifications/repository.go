@@ -73,7 +73,10 @@ type Visibility struct {
 	TenantID    int64
 	AllTenants  bool
 	IsNonTenant bool
+	// BranchID shows the notices sent to that branch; AllBranches shows
+	// those sent to any branch of the tenant.
 	BranchID    int64
+	AllBranches bool
 	RoleIDs     []int64
 }
 
@@ -395,6 +398,7 @@ func (r *repository) VisibleToUser(ctx context.Context, notificationID int64, v 
 		UserID:         v.UserID,
 		RoleIds:        emptyInt64Slice(v.RoleIDs),
 		BranchID:       v.BranchID,
+		AllBranches:    v.AllBranches,
 		IsNonTenant:    v.IsNonTenant,
 	})
 	if err != nil {
@@ -407,6 +411,7 @@ func (r *repository) MarkAllRead(ctx context.Context, v Visibility, readAt time.
 	inserted, err := r.queries.MarkAllNotificationsRead(ctx, dbgen.MarkAllNotificationsReadParams{
 		TenantID:    optionalInt64(v.TenantID),
 		BranchID:    optionalInt64(v.BranchID),
+		AllBranches: v.AllBranches,
 		UserID:      v.UserID,
 		ReadAt:      pgtype.Timestamptz{Time: readAt, Valid: true},
 		AllTenants:  v.AllTenants,
@@ -441,6 +446,7 @@ func (r *repository) Feed(ctx context.Context, params FeedParams, backward bool)
 			ReadAllBefore:   params.ReadAllBefore,
 			RoleIds:         emptyInt64Slice(params.RoleIDs),
 			BranchID:        params.BranchID,
+			AllBranches:     params.AllBranches,
 			IsNonTenant:     params.IsNonTenant,
 			CursorCreatedAt: cursor,
 			CursorID:        backwardCursorID,
@@ -465,6 +471,7 @@ func (r *repository) Feed(ctx context.Context, params FeedParams, backward bool)
 		ReadAllBefore:   params.ReadAllBefore,
 		RoleIds:         emptyInt64Slice(params.RoleIDs),
 		BranchID:        params.BranchID,
+		AllBranches:     params.AllBranches,
 		IsNonTenant:     params.IsNonTenant,
 		CursorCreatedAt: cursor,
 		CursorID:        cursorID,

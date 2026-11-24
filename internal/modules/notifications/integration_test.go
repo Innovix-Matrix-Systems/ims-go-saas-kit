@@ -172,7 +172,7 @@ func TestMarkAllReadAndCounters(t *testing.T) {
 	}
 
 	for i := 0; i < 2; i++ {
-		if err := service.ProcessMarkAllRead(ctx, 2); err != nil {
+		if err := service.ProcessMarkAllRead(ctx, 2, 0, false); err != nil {
 			t.Fatalf("ProcessMarkAllRead() error = %v", err)
 		}
 	}

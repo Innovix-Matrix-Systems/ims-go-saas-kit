@@ -1636,6 +1636,10 @@ paths:
     get:
       tags: [Users]
       summary: List users
+      description: >-
+        An organization's members, of one branch when the caller works in one: the branch they
+        switched to, the acting branch (`X-Acting-Branch`), or their own branch when they may not
+        switch. Members who may switch and have not picked a branch see every branch.
       operationId: listUsers
       x-mcp: {tool: list_users}
       parameters:
@@ -2230,9 +2234,35 @@ paths:
     patch:
       tags: [Users]
       summary: Switch a user's active branch
+      description: >-
+        Works in that branch: the member list and the notification feed show that branch only, and
+        new work is recorded under it. `DELETE /api/v1/user/switch-branch` goes back to every branch.
       operationId: switchUserBranch
       parameters:
         - $ref: "#/components/parameters/PathID"
+      responses:
+        "200":
+          description: The updated user.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/UserEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /api/v1/user/switch-branch:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    delete:
+      tags: [Users]
+      summary: Go back to every branch
+      description: >-
+        Clears the branch the user switched to (`active_branch_id`). Members who may see every branch
+        (`branch.view.all`) and switch (`user.branch.switch`) then see every branch's members and
+        branch notifications; new work is recorded under their own branch.
+      operationId: clearUserBranch
       responses:
         "200":
           description: The updated user.

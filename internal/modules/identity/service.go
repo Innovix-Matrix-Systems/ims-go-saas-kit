@@ -92,6 +92,7 @@ func (s *Service) List(ctx context.Context, scope tenancy.Scope, filter ListFilt
 			return nil, 0, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
 		}
 		filter.TenantID = tenantID
+		filter.BranchID = scope.ListBranchID()
 	}
 
 	items, err := s.repo.List(ctx, filter)
@@ -188,7 +189,9 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 	if tenantID != 0 {
 		tenant = &tenantID
 	}
-	activeBranch := branchID
+	// No branch switched to: the member works in their own branch, and one
+	// who may switch sees every branch until they pick one.
+	var activeBranch *int64
 
 	var verifiedAt time.Time
 	if s.cfg.NewUsersVerified && !input.SendInvitation && !input.RequireVerification {
@@ -712,6 +715,16 @@ func (s *Service) SwitchBranch(ctx context.Context, scope tenancy.Scope, userID,
 		})
 	}
 	if err := s.repo.SwitchBranch(ctx, userID, branchID); err != nil {
+		return nil, err
+	}
+	return s.repo.Get(ctx, tenancy.Unscoped(), userID)
+}
+
+// ClearBranch takes the user back to every branch: no branch switched to,
+// so lists span the organization and new work is stamped with their own
+// branch.
+func (s *Service) ClearBranch(ctx context.Context, userID int64) (*User, error) {
+	if err := s.repo.ClearActiveBranch(ctx, userID); err != nil {
 		return nil, err
 	}
 	return s.repo.Get(ctx, tenancy.Unscoped(), userID)

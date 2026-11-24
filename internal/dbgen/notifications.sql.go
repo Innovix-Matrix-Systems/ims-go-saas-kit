@@ -476,20 +476,22 @@ WHERE ($2::boolean OR n.tenant_id = $3)
         AND (
             (t.target_type = 'USER' AND t.target_id = $1::bigint)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY($7::bigint[]))
-            OR (t.target_type = 'BRANCH' AND $8::bigint > 0 AND t.target_id = $8::bigint)
+            OR (t.target_type = 'BRANCH' AND (
+                    ($8::bigint > 0 AND t.target_id = $8::bigint)
+                    OR ($9::boolean AND NOT $10::boolean AND n.tenant_id = $3)))
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
                 -- An organization-wide notice reaches that organization's members only,
                 -- never a staff account reading across organizations.
-                AND NOT $9::boolean AND n.tenant_id = $3)
-            OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $9::boolean)
+                AND NOT $10::boolean AND n.tenant_id = $3)
+            OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $10::boolean)
         )
   )
   AND (
-      $10::timestamptz IS NULL
-      OR (n.created_at, n.id) < ($10::timestamptz, $11::bigint)
+      $11::timestamptz IS NULL
+      OR (n.created_at, n.id) < ($11::timestamptz, $12::bigint)
   )
 ORDER BY n.created_at DESC, n.id DESC
-LIMIT $12
+LIMIT $13
 `
 
 type ListNotificationFeedParams struct {
@@ -501,6 +503,7 @@ type ListNotificationFeedParams struct {
 	ReadAllBefore   int64              `json:"read_all_before"`
 	RoleIds         []int64            `json:"role_ids"`
 	BranchID        int64              `json:"branch_id"`
+	AllBranches     bool               `json:"all_branches"`
 	IsNonTenant     bool               `json:"is_non_tenant"`
 	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
 	CursorID        *int64             `json:"cursor_id"`
@@ -529,6 +532,7 @@ func (q *Queries) ListNotificationFeed(ctx context.Context, arg ListNotification
 		arg.ReadAllBefore,
 		arg.RoleIds,
 		arg.BranchID,
+		arg.AllBranches,
 		arg.IsNonTenant,
 		arg.CursorCreatedAt,
 		arg.CursorID,
@@ -579,17 +583,19 @@ WHERE ($2::boolean OR n.tenant_id = $3)
         AND (
             (t.target_type = 'USER' AND t.target_id = $1::bigint)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY($7::bigint[]))
-            OR (t.target_type = 'BRANCH' AND $8::bigint > 0 AND t.target_id = $8::bigint)
+            OR (t.target_type = 'BRANCH' AND (
+                    ($8::bigint > 0 AND t.target_id = $8::bigint)
+                    OR ($9::boolean AND NOT $10::boolean AND n.tenant_id = $3)))
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
                 -- An organization-wide notice reaches that organization's members only,
                 -- never a staff account reading across organizations.
-                AND NOT $9::boolean AND n.tenant_id = $3)
-            OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $9::boolean)
+                AND NOT $10::boolean AND n.tenant_id = $3)
+            OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $10::boolean)
         )
   )
-  AND (n.created_at, n.id) > ($10::timestamptz, $11::bigint)
+  AND (n.created_at, n.id) > ($11::timestamptz, $12::bigint)
 ORDER BY n.created_at ASC, n.id ASC
-LIMIT $12
+LIMIT $13
 `
 
 type ListNotificationFeedBackwardParams struct {
@@ -601,6 +607,7 @@ type ListNotificationFeedBackwardParams struct {
 	ReadAllBefore   int64              `json:"read_all_before"`
 	RoleIds         []int64            `json:"role_ids"`
 	BranchID        int64              `json:"branch_id"`
+	AllBranches     bool               `json:"all_branches"`
 	IsNonTenant     bool               `json:"is_non_tenant"`
 	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
 	CursorID        int64              `json:"cursor_id"`
@@ -629,6 +636,7 @@ func (q *Queries) ListNotificationFeedBackward(ctx context.Context, arg ListNoti
 		arg.ReadAllBefore,
 		arg.RoleIds,
 		arg.BranchID,
+		arg.AllBranches,
 		arg.IsNonTenant,
 		arg.CursorCreatedAt,
 		arg.CursorID,
@@ -1074,12 +1082,14 @@ WHERE (n.expires_at IS NULL OR n.expires_at > $4)
         AND (
             (t.target_type = 'USER' AND t.target_id = $3::bigint)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY($6::bigint[]))
-            OR (t.target_type = 'BRANCH' AND $2::bigint > 0 AND t.target_id = $2::bigint)
+            OR (t.target_type = 'BRANCH' AND (
+                    ($2::bigint > 0 AND t.target_id = $2::bigint)
+                    OR ($7::boolean AND NOT $8::boolean AND n.tenant_id = $1)))
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
                 -- An organization-wide notice reaches that organization's members only,
                 -- never a staff account reading across organizations.
-                AND NOT $7::boolean AND n.tenant_id = $1)
-            OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $7::boolean)
+                AND NOT $8::boolean AND n.tenant_id = $1)
+            OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $8::boolean)
         )
   )
 ON CONFLICT (notification_id, user_id) DO NOTHING
@@ -1092,6 +1102,7 @@ type MarkAllNotificationsReadParams struct {
 	ReadAt      pgtype.Timestamptz `json:"read_at"`
 	AllTenants  bool               `json:"all_tenants"`
 	RoleIds     []int64            `json:"role_ids"`
+	AllBranches bool               `json:"all_branches"`
 	IsNonTenant bool               `json:"is_non_tenant"`
 }
 
@@ -1103,6 +1114,7 @@ func (q *Queries) MarkAllNotificationsRead(ctx context.Context, arg MarkAllNotif
 		arg.ReadAt,
 		arg.AllTenants,
 		arg.RoleIds,
+		arg.AllBranches,
 		arg.IsNonTenant,
 	)
 	if err != nil {
@@ -1124,12 +1136,14 @@ SELECT EXISTS (
             AND (
                 (t.target_type = 'USER' AND t.target_id = $4::bigint)
                 OR (t.target_type = 'ROLE' AND t.target_id = ANY($5::bigint[]))
-                OR (t.target_type = 'BRANCH' AND $6::bigint > 0 AND t.target_id = $6::bigint)
+                OR (t.target_type = 'BRANCH' AND (
+                    ($6::bigint > 0 AND t.target_id = $6::bigint)
+                    OR ($7::boolean AND NOT $8::boolean AND n.tenant_id = $3)))
                 OR (t.target_type = 'TENANT' AND t.target_id IS NULL
                     -- An organization-wide notice reaches that organization's members only,
                     -- never a staff account reading across organizations.
-                    AND NOT $7::boolean AND n.tenant_id = $3)
-                OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $7::boolean)
+                    AND NOT $8::boolean AND n.tenant_id = $3)
+                OR (t.target_type = 'GLOBAL' AND t.target_id IS NULL AND $8::boolean)
             )
       )
 ) AS visible
@@ -1142,6 +1156,7 @@ type NotificationVisibleToUserParams struct {
 	UserID         int64   `json:"user_id"`
 	RoleIds        []int64 `json:"role_ids"`
 	BranchID       int64   `json:"branch_id"`
+	AllBranches    bool    `json:"all_branches"`
 	IsNonTenant    bool    `json:"is_non_tenant"`
 }
 
@@ -1153,6 +1168,7 @@ func (q *Queries) NotificationVisibleToUser(ctx context.Context, arg Notificatio
 		arg.UserID,
 		arg.RoleIds,
 		arg.BranchID,
+		arg.AllBranches,
 		arg.IsNonTenant,
 	)
 	var visible bool

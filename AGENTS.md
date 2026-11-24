@@ -227,7 +227,7 @@ Business validation lives in services: `apperr.Validation(map[string][]string{..
 
 **Tenancy** — `tenancy.From(r)` gives the `Scope`; `scope.Filter()` is what repositories use for
 single-row reads: one tenant, or every tenant only for internal/global reads. A zero `Filter`
-matches **no** tenant rows (fails closed). `X-Acting-User` (`user.impersonate`) runs the request as
+matches **no** tenant rows (fails closed). Branch-scoped lists filter on `scope.ListBranchID()` (zero = every branch: a member who may switch and has not picked one); new rows are stamped with `scope.EffectiveBranchID()`. `X-Acting-User` (`user.impersonate`) runs the request as
 another user (`Identity.ImpersonatorID` is the caller; mount `authn.DenyImpersonated` on account
 changes). Public pre-sign-in routes use `tenancy.Public` (`X-Tenant-Code`). Impersonators send `X-Acting-Tenant` /
 `X-Acting-Branch`.

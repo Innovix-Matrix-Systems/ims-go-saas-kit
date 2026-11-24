@@ -28,6 +28,7 @@ SELECT * FROM users
 WHERE deleted_at IS NULL
   AND (@all_tenants::boolean OR users.tenant_id = @tenant_id)
   AND (NOT @platform_only::boolean OR users.tenant_id IS NULL)
+  AND (@branch_id::bigint = 0 OR users.branch_id = @branch_id::bigint)
   AND (
     sqlc.narg('search')::text IS NULL
     OR name ILIKE '%' || sqlc.narg('search')::text || '%'
@@ -66,6 +67,7 @@ SELECT count(*) FROM users
 WHERE deleted_at IS NULL
   AND (@all_tenants::boolean OR users.tenant_id = @tenant_id)
   AND (NOT @platform_only::boolean OR users.tenant_id IS NULL)
+  AND (@branch_id::bigint = 0 OR users.branch_id = @branch_id::bigint)
   AND (
     sqlc.narg('search')::text IS NULL
     OR name ILIKE '%' || sqlc.narg('search')::text || '%'
@@ -139,6 +141,12 @@ WHERE id = @id AND deleted_at IS NULL;
 -- name: SwitchUserBranch :execrows
 UPDATE users
 SET active_branch_id = @branch_id, updated_at = now()
+WHERE id = @id AND deleted_at IS NULL;
+
+-- name: ClearUserActiveBranch :execrows
+-- Back to every branch: the member works in their own branch again.
+UPDATE users
+SET active_branch_id = NULL, updated_at = now()
 WHERE id = @id AND deleted_at IS NULL;
 
 -- name: EmailExists :one

@@ -29,6 +29,10 @@ type Scope struct {
 	// tenant came from X-Tenant-Code. Services refuse writes that must not
 	// happen without a signed-in user.
 	Public bool
+	// AllBranches is set for a member who may switch branches and has not
+	// picked one: branch-scoped lists show every branch. BranchID stays the
+	// member's own branch, which new records are stamped with.
+	AllBranches bool
 }
 
 // EffectiveTenantID returns the tenant used for data access
@@ -54,6 +58,17 @@ func (s Scope) EffectiveBranchID() int64 {
 		return 0
 	}
 	return s.BranchID
+}
+
+// ListBranchID returns the branch that branch-scoped lists show (members,
+// the notification feed); zero means every branch of the tenant. It is the
+// branch the member switched to, the acting branch, or the member's own
+// branch when they may not switch.
+func (s Scope) ListBranchID() int64 {
+	if s.Acting == ActingNone && s.AllBranches {
+		return 0
+	}
+	return s.EffectiveBranchID()
 }
 
 // IsImpersonating reports whether an acting scope overrides identity.

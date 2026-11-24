@@ -249,6 +249,16 @@ func (h *Handler) switchBranch(w http.ResponseWriter, r *http.Request) {
 	h.Data(w, r, http.StatusOK, h.responseFor(r.Context(), *user))
 }
 
+// clearBranch goes back to every branch.
+func (h *Handler) clearBranch(w http.ResponseWriter, r *http.Request) {
+	user, err := h.service.ClearBranch(r.Context(), authn.UserID(r))
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.Data(w, r, http.StatusOK, h.responseFor(r.Context(), *user))
+}
+
 // changePasswordInternal sets another user's password across tenants.
 func (h *Handler) changePasswordInternal(w http.ResponseWriter, r *http.Request) {
 	var req ChangePasswordRequest

@@ -144,7 +144,27 @@ func resolveTenantUser(opts ResolveOptions, next http.Handler, w http.ResponseWr
 		opts.Responder.Error(w, r, apperr.New(apperr.Forbidden, "The assigned branch does not belong to the tenant."))
 		return
 	}
-	serve(next, w, r, Scope{TenantID: tenantID, BranchID: branchID})
+	allBranches, err := seesAllBranches(r.Context(), opts, identity)
+	if err != nil {
+		opts.Responder.Error(w, r, err)
+		return
+	}
+	serve(next, w, r, Scope{TenantID: tenantID, BranchID: branchID, AllBranches: allBranches})
+}
+
+// seesAllBranches reports whether a member's lists span every branch: they
+// have not switched to one and may switch (view every branch and switch).
+func seesAllBranches(ctx context.Context, opts ResolveOptions, identity *authn.Identity) (bool, error) {
+	if identity.ActiveBranchID != 0 || opts.Checker == nil {
+		return false, nil
+	}
+	for _, permission := range []string{authz.PermBranchViewAll, authz.PermUserBranchSwitch} {
+		allowed, err := opts.Checker.Can(ctx, identity.UserID, permission)
+		if err != nil || !allowed {
+			return false, err
+		}
+	}
+	return true, nil
 }
 
 // Exempt marks requests that operate outside tenant scoping (global/internal

@@ -56,6 +56,21 @@ func (q *Queries) ChangeUserEmail(ctx context.Context, arg ChangeUserEmailParams
 	return err
 }
 
+const clearUserActiveBranch = `-- name: ClearUserActiveBranch :execrows
+UPDATE users
+SET active_branch_id = NULL, updated_at = now()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+// Back to every branch: the member works in their own branch again.
+func (q *Queries) ClearUserActiveBranch(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.Exec(ctx, clearUserActiveBranch, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const countOtherActiveRoleHolders = `-- name: CountOtherActiveRoleHolders :one
 SELECT count(DISTINCT u.id)::bigint FROM users u
 JOIN model_has_roles mr ON mr.model_type = $1 AND mr.model_id = u.id
@@ -93,26 +108,27 @@ SELECT count(*) FROM users
 WHERE deleted_at IS NULL
   AND ($1::boolean OR users.tenant_id = $2)
   AND (NOT $3::boolean OR users.tenant_id IS NULL)
+  AND ($4::bigint = 0 OR users.branch_id = $4::bigint)
   AND (
-    $4::text IS NULL
-    OR name ILIKE '%' || $4::text || '%'
-    OR email ILIKE '%' || $4::text || '%'
-    OR COALESCE(phone, '') ILIKE '%' || $4::text || '%'
+    $5::text IS NULL
+    OR name ILIKE '%' || $5::text || '%'
+    OR email ILIKE '%' || $5::text || '%'
+    OR COALESCE(phone, '') ILIKE '%' || $5::text || '%'
   )
-  AND ($5::smallint IS NULL OR is_active = $5::smallint)
+  AND ($6::smallint IS NULL OR is_active = $6::smallint)
   AND (
-    $6::text IS NULL
+    $7::text IS NULL
     OR EXISTS (
       SELECT 1 FROM model_has_roles mr
       JOIN roles r ON r.id = mr.role_id
       WHERE mr.model_type = 'user' AND mr.model_id = users.id
-        AND r.name = $6::text
+        AND r.name = $7::text
     )
   )
   AND (
-    $7::text = ''
-    OR ($7::text = 'pending' AND invited_at IS NOT NULL AND invitation_accepted_at IS NULL)
-    OR ($7::text = 'accepted' AND invitation_accepted_at IS NOT NULL)
+    $8::text = ''
+    OR ($8::text = 'pending' AND invited_at IS NOT NULL AND invitation_accepted_at IS NULL)
+    OR ($8::text = 'accepted' AND invitation_accepted_at IS NOT NULL)
   )
 `
 
@@ -120,6 +136,7 @@ type CountUsersParams struct {
 	AllTenants   bool    `json:"all_tenants"`
 	TenantID     *int64  `json:"tenant_id"`
 	PlatformOnly bool    `json:"platform_only"`
+	BranchID     int64   `json:"branch_id"`
 	Search       *string `json:"search"`
 	IsActive     *int16  `json:"is_active"`
 	RoleName     *string `json:"role_name"`
@@ -131,6 +148,7 @@ func (q *Queries) CountUsers(ctx context.Context, arg CountUsersParams) (int64, 
 		arg.AllTenants,
 		arg.TenantID,
 		arg.PlatformOnly,
+		arg.BranchID,
 		arg.Search,
 		arg.IsActive,
 		arg.RoleName,
@@ -566,44 +584,46 @@ SELECT id, tenant_id, branch_id, active_branch_id, first_name, last_name, user_n
 WHERE deleted_at IS NULL
   AND ($1::boolean OR users.tenant_id = $2)
   AND (NOT $3::boolean OR users.tenant_id IS NULL)
+  AND ($4::bigint = 0 OR users.branch_id = $4::bigint)
   AND (
-    $4::text IS NULL
-    OR name ILIKE '%' || $4::text || '%'
-    OR email ILIKE '%' || $4::text || '%'
-    OR COALESCE(phone, '') ILIKE '%' || $4::text || '%'
+    $5::text IS NULL
+    OR name ILIKE '%' || $5::text || '%'
+    OR email ILIKE '%' || $5::text || '%'
+    OR COALESCE(phone, '') ILIKE '%' || $5::text || '%'
   )
-  AND ($5::smallint IS NULL OR is_active = $5::smallint)
+  AND ($6::smallint IS NULL OR is_active = $6::smallint)
   AND (
-    $6::text IS NULL
+    $7::text IS NULL
     OR EXISTS (
       SELECT 1 FROM model_has_roles mr
       JOIN roles r ON r.id = mr.role_id
       WHERE mr.model_type = 'user' AND mr.model_id = users.id
-        AND r.name = $6::text
+        AND r.name = $7::text
     )
   )
   AND (
-    $7::text = ''
-    OR ($7::text = 'pending' AND invited_at IS NOT NULL AND invitation_accepted_at IS NULL)
-    OR ($7::text = 'accepted' AND invitation_accepted_at IS NOT NULL)
+    $8::text = ''
+    OR ($8::text = 'pending' AND invited_at IS NOT NULL AND invitation_accepted_at IS NULL)
+    OR ($8::text = 'accepted' AND invitation_accepted_at IS NOT NULL)
   )
 ORDER BY
-  CASE WHEN $8::text = 'id' AND $9::text = 'asc' THEN id END ASC,
-  CASE WHEN $8::text = 'id' AND $9::text = 'desc' THEN id END DESC,
-  CASE WHEN $8::text = 'name' AND $9::text = 'asc' THEN name END ASC,
-  CASE WHEN $8::text = 'name' AND $9::text = 'desc' THEN name END DESC,
-  CASE WHEN $8::text = 'email' AND $9::text = 'asc' THEN lower(email) END ASC,
-  CASE WHEN $8::text = 'email' AND $9::text = 'desc' THEN lower(email) END DESC,
-  CASE WHEN $8::text = 'created_at' AND $9::text = 'asc' THEN created_at END ASC,
-  CASE WHEN $8::text = 'created_at' AND $9::text = 'desc' THEN created_at END DESC,
+  CASE WHEN $9::text = 'id' AND $10::text = 'asc' THEN id END ASC,
+  CASE WHEN $9::text = 'id' AND $10::text = 'desc' THEN id END DESC,
+  CASE WHEN $9::text = 'name' AND $10::text = 'asc' THEN name END ASC,
+  CASE WHEN $9::text = 'name' AND $10::text = 'desc' THEN name END DESC,
+  CASE WHEN $9::text = 'email' AND $10::text = 'asc' THEN lower(email) END ASC,
+  CASE WHEN $9::text = 'email' AND $10::text = 'desc' THEN lower(email) END DESC,
+  CASE WHEN $9::text = 'created_at' AND $10::text = 'asc' THEN created_at END ASC,
+  CASE WHEN $9::text = 'created_at' AND $10::text = 'desc' THEN created_at END DESC,
   id DESC
-LIMIT $11 OFFSET $10
+LIMIT $12 OFFSET $11
 `
 
 type ListUsersParams struct {
 	AllTenants   bool    `json:"all_tenants"`
 	TenantID     *int64  `json:"tenant_id"`
 	PlatformOnly bool    `json:"platform_only"`
+	BranchID     int64   `json:"branch_id"`
 	Search       *string `json:"search"`
 	IsActive     *int16  `json:"is_active"`
 	RoleName     *string `json:"role_name"`
@@ -619,6 +639,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 		arg.AllTenants,
 		arg.TenantID,
 		arg.PlatformOnly,
+		arg.BranchID,
 		arg.Search,
 		arg.IsActive,
 		arg.RoleName,

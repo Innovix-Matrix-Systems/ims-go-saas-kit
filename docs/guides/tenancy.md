@@ -34,7 +34,8 @@ scope := tenancy.FromContext(ctx)   // below the handler, if you must
 | --- | --- |
 | `scope.Filter()` | single-row reads/writes — rendered as `(@all_tenants OR tenant_id = @tenant_id)` |
 | `scope.EffectiveTenantID()` | lists and inserts |
-| `scope.EffectiveBranchID()` | branch-scoped lists |
+| `scope.EffectiveBranchID()` | stamping new records with the branch |
+| `scope.ListBranchID()` | branch-scoped lists (zero: every branch; see [Lists by branch](#lists-by-branch)) |
 
 :::tip[Fails closed]
 A zero `tenancy.Filter{}` matches **no** tenant rows. Forget to pass the scope and you get empty
@@ -115,6 +116,25 @@ func (h *Handler) RegisterPublicTenantRoutes(r chi.Router) {
 	r.Get("/public/catalogue", h.publicCatalogue) // tenancy.From(r) is the resolved tenant
 }
 ```
+
+## Lists by branch
+
+A member works in their own branch (`users.branch_id`) until they switch
+(`PATCH /api/v1/user/switch-branch/{id}` sets `active_branch_id`; `DELETE /api/v1/user/switch-branch`
+clears it). `scope.ListBranchID()` is the branch that branch-scoped lists show:
+
+| Who | Lists show |
+| --- | --- |
+| Switched to a branch | that branch |
+| Has not switched, may view every branch and switch (`branch.view.all` + `user.branch.switch`) | every branch (`scope.AllBranches`, `ListBranchID() == 0`) |
+| Has not switched and may not | their own branch |
+| Staff with `X-Acting-Branch` / only `X-Acting-Tenant` | that branch / every branch |
+
+The member list (`GET /api/v1/user`, by each member's own branch) and the notification feed (notices
+sent to a branch) follow it. New records are still stamped with `scope.EffectiveBranchID()`: the
+branch switched to, else the member's own. A module of your own makes a list branch-scoped by
+filtering on `ListBranchID()` with zero meaning every branch:
+`(@branch_id::bigint = 0 OR branch_id = @branch_id)`.
 
 ## Deleting a branch
 

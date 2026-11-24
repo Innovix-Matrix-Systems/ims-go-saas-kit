@@ -130,7 +130,9 @@ SELECT EXISTS (
             AND (
                 (t.target_type = 'USER' AND t.target_id = @user_id::bigint)
                 OR (t.target_type = 'ROLE' AND t.target_id = ANY(@role_ids::bigint[]))
-                OR (t.target_type = 'BRANCH' AND @branch_id::bigint > 0 AND t.target_id = @branch_id::bigint)
+                OR (t.target_type = 'BRANCH' AND (
+                    (@branch_id::bigint > 0 AND t.target_id = @branch_id::bigint)
+                    OR (@all_branches::boolean AND NOT @is_non_tenant::boolean AND n.tenant_id = @tenant_id)))
                 OR (t.target_type = 'TENANT' AND t.target_id IS NULL
                     -- An organization-wide notice reaches that organization's members only,
                     -- never a staff account reading across organizations.
@@ -153,7 +155,9 @@ WHERE (n.expires_at IS NULL OR n.expires_at > @read_at)
         AND (
             (t.target_type = 'USER' AND t.target_id = @user_id::bigint)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY(@role_ids::bigint[]))
-            OR (t.target_type = 'BRANCH' AND @branch_id::bigint > 0 AND t.target_id = @branch_id::bigint)
+            OR (t.target_type = 'BRANCH' AND (
+                    (@branch_id::bigint > 0 AND t.target_id = @branch_id::bigint)
+                    OR (@all_branches::boolean AND NOT @is_non_tenant::boolean AND n.tenant_id = @tenant_id)))
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
                 -- An organization-wide notice reaches that organization's members only,
                 -- never a staff account reading across organizations.
@@ -180,7 +184,9 @@ WHERE (@all_tenants::boolean OR n.tenant_id = @tenant_id)
         AND (
             (t.target_type = 'USER' AND t.target_id = @user_id::bigint)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY(@role_ids::bigint[]))
-            OR (t.target_type = 'BRANCH' AND @branch_id::bigint > 0 AND t.target_id = @branch_id::bigint)
+            OR (t.target_type = 'BRANCH' AND (
+                    (@branch_id::bigint > 0 AND t.target_id = @branch_id::bigint)
+                    OR (@all_branches::boolean AND NOT @is_non_tenant::boolean AND n.tenant_id = @tenant_id)))
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
                 -- An organization-wide notice reaches that organization's members only,
                 -- never a staff account reading across organizations.
@@ -212,7 +218,9 @@ WHERE (@all_tenants::boolean OR n.tenant_id = @tenant_id)
         AND (
             (t.target_type = 'USER' AND t.target_id = @user_id::bigint)
             OR (t.target_type = 'ROLE' AND t.target_id = ANY(@role_ids::bigint[]))
-            OR (t.target_type = 'BRANCH' AND @branch_id::bigint > 0 AND t.target_id = @branch_id::bigint)
+            OR (t.target_type = 'BRANCH' AND (
+                    (@branch_id::bigint > 0 AND t.target_id = @branch_id::bigint)
+                    OR (@all_branches::boolean AND NOT @is_non_tenant::boolean AND n.tenant_id = @tenant_id)))
             OR (t.target_type = 'TENANT' AND t.target_id IS NULL
                 -- An organization-wide notice reaches that organization's members only,
                 -- never a staff account reading across organizations.

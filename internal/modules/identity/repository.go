@@ -27,6 +27,7 @@ type Repository interface {
 	Delete(ctx context.Context, tenant tenancy.Filter, id int64, actorID *int64) error
 	UpdatePassword(ctx context.Context, tenant tenancy.Filter, id int64, hash string, actorID *int64) error
 	SwitchBranch(ctx context.Context, userID, branchID int64) error
+	ClearActiveBranch(ctx context.Context, userID int64) error
 	EmailExists(ctx context.Context, email string, excludeID int64) (bool, error)
 	PhoneExists(ctx context.Context, phone string, excludeID int64) (bool, error)
 	ClearRoles(ctx context.Context, userID int64) error
@@ -66,9 +67,12 @@ type Repository interface {
 type ListFilter struct {
 	AllTenants bool
 	TenantID   int64
-	Search     string
-	IsActive   *bool
-	RoleName   string
+	// BranchID keeps the members of one branch (their own branch); zero
+	// keeps every branch.
+	BranchID int64
+	Search   string
+	IsActive *bool
+	RoleName string
 	// Invitation is "", pending or accepted.
 	Invitation string
 	// PlatformOnly keeps accounts without a tenant (staff).
@@ -169,6 +173,7 @@ func (r *repository) List(ctx context.Context, filter ListFilter) ([]User, error
 		AllTenants:   filter.AllTenants,
 		PlatformOnly: filter.PlatformOnly,
 		TenantID:     optionalInt64(filter.TenantID),
+		BranchID:     filter.BranchID,
 		Search:       optionalString(filter.Search),
 		IsActive:     boolToSmallint(filter.IsActive),
 		RoleName:     optionalString(filter.RoleName),
@@ -193,6 +198,7 @@ func (r *repository) Count(ctx context.Context, filter ListFilter) (int64, error
 		AllTenants:   filter.AllTenants,
 		PlatformOnly: filter.PlatformOnly,
 		TenantID:     optionalInt64(filter.TenantID),
+		BranchID:     filter.BranchID,
 		Search:       optionalString(filter.Search),
 		IsActive:     boolToSmallint(filter.IsActive),
 		RoleName:     optionalString(filter.RoleName),
@@ -332,6 +338,17 @@ func (r *repository) SwitchBranch(ctx context.Context, userID, branchID int64) e
 	})
 	if err != nil {
 		return database.MapError("users.switch_branch", err)
+	}
+	if affected == 0 {
+		return apperr.Newf(apperr.ResourceNotFound, "User with ID '%d' was not found.", userID)
+	}
+	return nil
+}
+
+func (r *repository) ClearActiveBranch(ctx context.Context, userID int64) error {
+	affected, err := r.queries.ClearUserActiveBranch(ctx, userID)
+	if err != nil {
+		return database.MapError("users.clear_active_branch", err)
 	}
 	if affected == 0 {
 		return apperr.Newf(apperr.ResourceNotFound, "User with ID '%d' was not found.", userID)

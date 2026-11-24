@@ -28,6 +28,7 @@ func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.With(h.can(authz.PermUserTwoFactorReset)).Delete("/user/{id}/two-factor", h.resetTwoFactor)
 	r.With(h.can(authz.PermUserUpdate)).Post("/user/{id}/invitation", h.resendInvitation)
 	own.With(h.can(authz.PermUserBranchSwitch)).Patch("/user/switch-branch/{id}", h.switchBranch)
+	own.With(h.can(authz.PermUserBranchSwitch)).Delete("/user/switch-branch", h.clearBranch)
 	r.Post("/user/import-background", h.importUsersBackground)
 	r.Post("/user/export-background", h.exportUsersBackground)
 	r.With(h.can(authz.PermUserImport)).Post("/user/import-template", h.importTemplate)
