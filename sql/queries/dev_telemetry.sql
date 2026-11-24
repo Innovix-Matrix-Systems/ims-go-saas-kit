@@ -138,10 +138,15 @@ LIMIT @row_limit;
 
 -- name: DeleteDevTelemetryForUser :one
 -- Captured requests (headers, bodies, IP) the user made, or made while
--- acting as someone, and every row linked to them by request id. Dashboard
--- telemetry is local tooling, so it goes.
+-- acting as someone, or whose bodies carry the user's e-mail address (signing
+-- in, before anyone is authenticated), and every row linked to them by
+-- request id. Dashboard telemetry is local tooling, so it goes.
 WITH requests AS (
-    DELETE FROM dev_requests WHERE user_id = @user_id::bigint OR impersonator_id = @user_id::bigint RETURNING request_id
+    DELETE FROM dev_requests
+    WHERE user_id = @user_id::bigint OR impersonator_id = @user_id::bigint
+       OR (@email::text <> '' AND (strpos(lower(request_body::text), lower(@email::text)) > 0
+                                OR strpos(lower(response_body::text), lower(@email::text)) > 0))
+    RETURNING request_id
 ), queries AS (
     DELETE FROM dev_queries WHERE request_id IN (SELECT request_id FROM requests)
 ), cache_events AS (

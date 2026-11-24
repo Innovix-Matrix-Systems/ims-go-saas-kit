@@ -32,7 +32,7 @@ func (PrivacyContributor) Export(context.Context, *dbgen.Queries, privacy.Subjec
 
 // Erase implements privacy.Contributor.
 func (PrivacyContributor) Erase(ctx context.Context, q *dbgen.Queries, s privacy.Subject) (privacy.Report, error) {
-	deleted, err := q.DeleteDevTelemetryForUser(ctx, s.UserID)
+	deleted, err := q.DeleteDevTelemetryForUser(ctx, dbgen.DeleteDevTelemetryForUserParams{UserID: s.UserID, Email: s.Email})
 	if err != nil {
 		return privacy.Report{}, database.MapError("dev.privacy_erase", err)
 	}
