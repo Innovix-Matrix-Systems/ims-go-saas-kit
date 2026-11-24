@@ -1,10 +1,11 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { relativeTime } from '../format'
 import { useT } from '../i18n'
 import { useDismiss } from './inputs'
-import { feedKey, fetchFeed, markAllRead, markRead, type FeedItem } from './notifications'
+import { usePollInterval } from './realtime'
+import { feedKey, fetchFeed, markAllRead, markRead, notificationLink, type FeedItem } from './notifications'
 import { Icon } from './ui'
 
 /** The top bar's bell: unread count, the latest notifications, mark as read. */
@@ -17,14 +18,21 @@ export function NotificationBell() {
   const feed = useQuery({
     queryKey: [...feedKey, 'bell'],
     queryFn: () => fetchFeed({ limit: 8 }),
-    // New notifications show up without a reload; checked once a minute.
-    refetchInterval: 60_000,
+    // Live updates refetch it as soon as something changes; the poll is the
+    // fallback (every minute, every five while the stream is up).
+    refetchInterval: usePollInterval(60_000, 5 * 60_000),
     refetchIntervalInBackground: false,
   })
   const unread = feed.data?.meta.unread_count ?? 0
   const refresh = () => void client.invalidateQueries({ queryKey: feedKey })
 
+  const navigate = useNavigate()
   const read = async (item: FeedItem) => {
+    const link = notificationLink(item)
+    if (link) {
+      close()
+      void navigate({ to: link })
+    }
     if (!item.is_read) {
       await markRead(item.id)
       refresh()

@@ -32,5 +32,16 @@ export function markAllRead(): Promise<unknown> {
   return api(notificationPath('/notification/read-all'), { method: 'POST' })
 }
 
+/**
+ * Where a notification leads, if it says (data.url, an in-app path such as
+ * "/org/billing"). Anything that is not a plain in-app path is ignored.
+ */
+export function notificationLink(item: FeedItem): string | null {
+  const data = item.data
+  if (!data || typeof data !== 'object') return null
+  const url = (data as { url?: unknown }).url
+  return typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') ? url : null
+}
+
 /** Query key prefix shared by the bell and the page, so marking read refreshes both. */
 export const feedKey = ['notifications'] as const

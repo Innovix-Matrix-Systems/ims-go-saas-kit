@@ -599,6 +599,8 @@ export const bn: Messages = {
   'console.settingsSubtitle': 'প্ল্যাটফর্মজুড়ে প্রযোজ্য মান, যেমন চেকআউটে দেখানো ব্যাংকের তথ্য, এবং প্রতিষ্ঠানগুলোর শুরুর ডিফল্ট।',
   'console.overridable': 'প্রতিষ্ঠানগুলো এটি বদলাতে পারে',
   'billing.invoice': 'ইনভয়েস',
+  'billing.invoiceHtml': 'HTML',
+  'billing.invoiceHtmlHint': 'ইনভয়েসটি ওয়েব পাতা হিসেবে, খুলে প্রিন্ট করা যায়',
   'billing.withdraw': 'প্রত্যাহার',
   'billing.withdrawTitle': 'এই পেমেন্ট প্রত্যাহার করবেন?',
   'billing.withdrawConfirm': '{amount} ({invoice}) পেমেন্টটি প্রত্যাহার করবেন? ট্রান্সফারের রেফারেন্স ভুল হলে বা মত বদলালে এটি ব্যবহার করুন। পরে আবার পরিশোধ করতে পারবেন।',

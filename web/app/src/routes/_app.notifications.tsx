@@ -1,7 +1,7 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { feedKey, fetchFeed, markAllRead, markRead, type FeedItem } from '../components/notifications'
+import { feedKey, fetchFeed, markAllRead, markRead, notificationLink, type FeedItem } from '../components/notifications'
 import { CursorPagination, useCursorPages } from '../components/Pagination'
 import { Badge, Button, Card, EmptyState, PageHeader } from '../components/ui'
 import { intlLocale, useLocale, useT } from '../i18n'
@@ -29,7 +29,10 @@ function NotificationsPage() {
   const when = (value: string) =>
     new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 
+  const navigate = useNavigate()
   const read = async (item: FeedItem) => {
+    const link = notificationLink(item)
+    if (link) void navigate({ to: link })
     if (!item.is_read) {
       await markRead(item.id)
       refresh()

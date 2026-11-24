@@ -246,10 +246,11 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
   )
 }
 
-// The invoice is an HTML document; saved as a file it opens styled and prints.
-async function downloadInvoice(payment: Payment) {
+// The invoice as a PDF, or as an HTML page (opens styled and prints).
+async function downloadInvoice(payment: Payment, format: 'pdf' | 'html') {
+  const path = format === 'pdf' ? `/billing/payments/${payment.id}/invoice.pdf` : `/billing/payments/${payment.id}/invoice`
   try {
-    saveBlob(await apiBlob(`/billing/payments/${payment.id}/invoice`), `invoice-${payment.invoice_number}.html`)
+    saveBlob(await apiBlob(path), `invoice-${payment.invoice_number}.${format}`)
   } catch {
     // apiBlob reports the error.
   }
@@ -340,8 +341,11 @@ function PaymentsCard() {
                   </td>
                   <td className="right">
                     <div className="flex justify-end">
-                      <Button size="sm" variant="ghost" icon="download" onClick={() => void downloadInvoice(payment)}>
+                      <Button size="sm" variant="ghost" icon="download" onClick={() => void downloadInvoice(payment, 'pdf')}>
                         {t('billing.invoice')}
+                      </Button>
+                      <Button size="sm" variant="ghost" title={t('billing.invoiceHtmlHint')} onClick={() => void downloadInvoice(payment, 'html')}>
+                        {t('billing.invoiceHtml')}
                       </Button>
                       {canManage && payment.status === 'pending' ? <WithdrawButton payment={payment} /> : null}
                     </div>
