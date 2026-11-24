@@ -59,9 +59,14 @@ the last-Admin check.
 
 **Export** builds a zip in the queue: one folder per module with JSON files, the user's files,
 and `manifest.json`. It never contains a password hash, token, two-factor secret or recovery
-code. The user gets a mail with the link, polls `GET /api/v1/data-processing/job/{jobId}` and
-downloads `/api/v1/data-processing/job/{jobId}/download`. Only whoever asked can see or download
-it, whatever their data-processing permissions. One self-service export a day; the archive is
+code. The ready mail links to a client page, `AUTH_DATA_EXPORT_URL` (`{job}` is the job id;
+default `{APP_URL}/settings/privacy?export={job}`), never to the API: a browser following a link
+sends no token, and a link that downloads without signing in would hand personal data to whoever
+saw the mail. The page polls `GET /api/v1/data-processing/job/{jobId}` and downloads
+`/api/v1/data-processing/job/{jobId}/download` for the signed-in owner; the export also appears in
+their own job list (`GET /api/v1/data-processing/jobs/user`). Only whoever asked can see or
+download it, and they need no permission for it: a member whose role holds nothing can still
+export and download their own data. One self-service export a day; the archive is
 deleted after `privacy.export_ttl_hours` (72 by default) by `privacy.expire-exports`.
 
 ## For admins

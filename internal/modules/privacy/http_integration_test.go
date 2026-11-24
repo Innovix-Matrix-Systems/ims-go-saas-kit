@@ -183,9 +183,11 @@ func TestAdminErasure(t *testing.T) {
 }
 
 func TestExportOverHTTP(t *testing.T) {
+	t.Setenv("AUTH_DATA_EXPORT_URL", "https://app.example.test/settings/privacy?export={job}")
 	app := testkit.New(t)
 	ctx := context.Background()
-	user := app.User(t)
+	// Exporting one's own data needs no permission at all.
+	user := app.User(t, testkit.Role(app.Role(t, "No Permissions")))
 	other := app.User(t) // an Admin with data-processing access
 
 	var job struct {
@@ -211,8 +213,20 @@ func TestExportOverHTTP(t *testing.T) {
 	if err := app.Deps.Platform.Privacy.ProcessExport(ctx, requestID); err != nil {
 		t.Fatalf("process export: %v", err)
 	}
-	if url, _ := app.Queued(t, "privacy-export-ready")["url"].(string); url == "" {
-		t.Error("the export mail carries no link")
+	// The mail opens the client app, which downloads for the signed-in owner:
+	// a browser following a link to the API itself sends no token.
+	if link, _ := app.Queued(t, "privacy-export-ready")["url"].(string); link != "https://app.example.test/settings/privacy?export="+job.JobID {
+		t.Errorf("export mail link = %q, want the privacy page with the job", link)
+	}
+	var own struct {
+		Data []struct {
+			JobID string `json:"job_id"`
+			Type  string `json:"type"`
+		} `json:"data"`
+	}
+	app.As(user).Get("/api/v1/data-processing/jobs/user?type=privacy_export").Status(t, http.StatusOK).JSON(t, &own)
+	if len(own.Data) != 1 || own.Data[0].JobID != job.JobID {
+		t.Errorf("own job list = %+v, want the export", own.Data)
 	}
 
 	download := fmt.Sprintf("/api/v1/data-processing/job/%s/download", job.JobID)

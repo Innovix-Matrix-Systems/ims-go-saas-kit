@@ -34,7 +34,11 @@ type Auth struct {
 	// EmailChangeURL is the client page the "confirm your new address" mail
 	// links to ({token}); the link lasts AUTH_EMAIL_VERIFY_EXPIRY.
 	EmailChangeURL string
-	InvitationTTL  time.Duration
+	// DataExportURL is the client page the "your data export is ready" mail
+	// links to ({job} is the export's job id). The download itself needs the
+	// signed-in owner, so the link carries no secret.
+	DataExportURL string
+	InvitationTTL time.Duration
 	// NewUsersVerified marks users created by an admin/import as verified
 	// (AUTH_NEW_USERS_VERIFIED, default true). Set false to make them confirm
 	// their e-mail address first (a verification mail is sent).
@@ -100,6 +104,7 @@ func (c *Config) loadAuth() error {
 	cfg.EmailVerifyURL = strings.TrimSpace(getString("AUTH_EMAIL_VERIFY_URL", ""))
 	cfg.InvitationURL = strings.TrimSpace(getString("AUTH_INVITATION_URL", ""))
 	cfg.EmailChangeURL = strings.TrimSpace(getString("AUTH_EMAIL_CHANGE_URL", ""))
+	cfg.DataExportURL = strings.TrimSpace(getString("AUTH_DATA_EXPORT_URL", ""))
 	if cfg.OTPEnabled, err = getBool("AUTH_OTP_ENABLED", false); err != nil {
 		return err
 	}
@@ -147,6 +152,9 @@ func (c *Config) loadAuth() error {
 	}
 	if cfg.EmailChangeURL == "" {
 		cfg.EmailChangeURL = strings.TrimRight(c.App.URL, "/") + "/confirm-email-change?token={token}"
+	}
+	if cfg.DataExportURL == "" {
+		cfg.DataExportURL = strings.TrimRight(c.App.URL, "/") + "/settings/privacy?export={job}"
 	}
 	c.Auth = cfg
 	return nil

@@ -46,7 +46,7 @@ type Service struct {
 	processing    *dataprocessing.Service
 	processingCfg config.Processing
 	queue         queue.Engine
-	apiURL        string
+	exportURL     string
 }
 
 // NewService creates the privacy service.

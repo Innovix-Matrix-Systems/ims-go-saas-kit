@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -74,10 +75,12 @@ func (s *Service) WithDelivery(service *delivery.Service) *Service {
 
 // WithExports stores export archives as processing jobs (downloaded through
 // /api/v1/data-processing/job/{jobId}/download) built by a queue job.
-// apiURL is the API's public base URL, for the link in the mail.
-func (s *Service) WithExports(processing *dataprocessing.Service, cfg config.Processing, engine queue.Engine, apiURL string) *Service {
+// exportURL is the client page the ready mail links to ({job} is replaced by
+// the job id): a browser following a link sends no token, so the mail opens
+// the app, which downloads for the signed-in owner.
+func (s *Service) WithExports(processing *dataprocessing.Service, cfg config.Processing, engine queue.Engine, exportURL string) *Service {
 	s.processing, s.processingCfg, s.queue = processing, cfg, engine
-	s.apiURL = strings.TrimRight(apiURL, "/")
+	s.exportURL = exportURL
 	return s
 }
 
@@ -471,7 +474,7 @@ func (s *Service) ProcessExport(ctx context.Context, requestID int64) (err error
 		}
 	}
 	s.mail(ctx, owner, TemplateExportReady, map[string]any{
-		"url":   s.apiURL + "/api/v1/data-processing/job/" + *job.QueueJobID + "/download",
+		"url":   strings.ReplaceAll(s.exportURL, "{job}", url.QueryEscape(*job.QueueJobID)),
 		"hours": s.intSetting(ctx, tenancy.Scope{}, SettingExportTTLHours, defaultExportTTLHours),
 	})
 	actor := int64(0)
