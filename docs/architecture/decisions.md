@@ -224,3 +224,34 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     (activity log, dashboard audit) are kept and scrubbed, not deleted, so the trail has no holes;
     the last active Admin of a tenant cannot be erased
     (`docs/design/account-deletion-and-export.md`).
+48. **The client app is embedded in the binary and served at `/`.** `web/app` builds into the binary
+    like the developer dashboard, so one deploy carries the API, the app and both dashboards. Every
+    path outside the API and tool prefixes (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`,
+    `/.well-known`, `/metrics`, `/up`) serves the app, so its routes and links in e-mails open it,
+    while an unknown API path still answers a JSON 404. Its HTML carries a strict
+    `Content-Security-Policy` (same-origin scripts, styles and connections, no inline code).
+49. **An organization has an owner, and its Admin role is managed.** `tenants.owner_user_id` names
+    the person who signed it up; nobody else may delete, deactivate, demote or reset them, and
+    ownership moves only by transfer. The tenant Admin role is kept equal to
+    `AdminTenantPermissions` (`permission:sync` adds what is missing) and cannot be renamed, deleted
+    or edited, and a role editor can only grant permissions they hold. Together these stop an
+    organization from locking itself out, or one admin from raising another above themselves.
+50. **An announcement is one record with an audience.** Staff write it once: its kind, window,
+    button, whether members may dismiss it, and either every organization or listed ones
+    (`announcement_tenants`). Members read the live ones for their organization, and views, clicks
+    and dismissals are one row per person (`announcement_events`), so reach is counted per
+    organization without copying the announcement. Optional channels (mail, push) go out once
+    through the notification system when it starts, claimed before sending so a crash sends to
+    fewer organizations rather than twice to some.
+51. **Lists follow the branch a member works in; not switching means every branch.**
+    `users.active_branch_id` is set only by switching. A member who may view every branch and switch
+    (`branch.view.all` + `user.branch.switch`) and has not switched sees every branch
+    (`Scope.AllBranches`); anyone else sees the branch they switched to or their own.
+    `scope.ListBranchID()` is what lists filter on (zero: every branch), while new rows are still
+    stamped with `scope.EffectiveBranchID()` because a record always needs a real branch. A tenant
+    is the isolation boundary; a branch only narrows what a member looks at.
+52. **A background job belongs to whoever started it; admins see the organization's.** Owners
+    open, download, retry and remove their jobs; `data_processing_job.view.all`, held by the tenant
+    Admin role, does the same for every member's, since an admin may run those exports themselves.
+    A personal-data export stays its owner's whoever asks: it is the one job holding someone's
+    private data rather than the organization's.
