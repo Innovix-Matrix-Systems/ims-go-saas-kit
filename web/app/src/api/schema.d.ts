@@ -6116,8 +6116,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create or repair the hidden Developer role with all catalog permissions */
+        /** Create or reset the hidden Developer role with its baseline permissions */
         post: operations["devEnsureDeveloperRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dev/api/developers/role/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give the hidden Developer role every permission in the catalog
+         * @description Creates the role when it is missing and replaces its permissions with the whole catalog, so developer accounts can exercise any API feature. `POST /dev/api/developers/role` puts it back to the baseline.
+         */
+        post: operations["devGrantDeveloperAllPermissions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8964,8 +8984,16 @@ export interface components {
             role_name: string;
             /** Format: int64 */
             role_permissions: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description The Developer role's baseline (developer-dashboard access).
+             */
             total_permissions: number;
+            /**
+             * Format: int64
+             * @description Every permission in the catalog.
+             */
+            all_permissions: number;
         };
         DevDeveloperStatsEnvelope: {
             data: components["schemas"]["DevDeveloperStats"];
@@ -26467,6 +26495,53 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The role status after provisioning. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevDeveloperStatsEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    devGrantDeveloperAllPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The role status after the grant. */
             200: {
                 headers: {
                     [name: string]: unknown;

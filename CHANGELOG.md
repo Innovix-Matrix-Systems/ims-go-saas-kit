@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Give the Developer role every permission from the Developers page.** "Grant all permissions"
+  (after a confirmation) lets developer accounts test any API feature; "Reset to baseline" takes the
+  role back to developer-dashboard access only. New endpoint `POST /dev/api/developers/role/all`,
+  and the role stats now report `all_permissions` next to the baseline `total_permissions`.
+
+### Fixed
+
+- **The Developers page said the role had all permissions.** It holds the developer-dashboard
+  baseline unless you grant all; the page and its tiles now say which.
+
 ## [0.1.6] - 2026-11-24
 
 One frontend setup instead of two. The developer dashboard now builds the same way as the app, so
