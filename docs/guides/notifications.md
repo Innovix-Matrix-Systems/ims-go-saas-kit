@@ -61,15 +61,24 @@ The starter ships `renewal.reminder` (mail and SMS; billing sends it by mail) an
 
 ## Announcements to organizations
 
-Every notification belongs to one organization, and a `GLOBAL` target reaches platform staff
-only. To tell organizations something (planned maintenance, a policy change), staff call
-`POST /api/v1/internal/notification/broadcast` (`notification.create`) with a `priority`,
-`title`, optional `body` and `channels`, and optional `tenant_ids`: it creates one
-`platform.announcement` per organization, addressed to all its members, and answers how many
-organizations it reached. Without `tenant_ids` it reaches every active organization.
-`GET /api/v1/internal/notification?event_type=platform.announcement` lists what was sent.
-An organization-wide notification reaches that organization's members, and staff acting in it;
-a staff account's own feed (`/internal/notification/feed`) never shows them.
+Staff tell organizations something (planned maintenance, a policy change, a new product) with
+an **announcement** (`internal/modules/announcements`): one row, whatever it reaches. Its
+audience is every organization, or the ones listed in `tenant_ids` (stored in
+`announcement_tenants`). It has a `kind` (`info`, `promotion`, `warning`, `critical`), an
+optional button (`cta_label` and `cta_url`), a window (`starts_at`, optional `ends_at`), a
+`status` (`draft`, `published`, `archived`) and whether members may dismiss it.
+
+| Route | Who | What |
+|---|---|---|
+| `GET/POST /api/v1/internal/announcements`, `GET/PATCH/DELETE /api/v1/internal/announcements/{id}` | staff (`announcement.view`, `announcement.manage`) | manage them; the detail has unique views, clicks and dismissals in all and per organization |
+| `GET /api/v1/announcements/live` | every member | what to show now, most urgent first, without what the caller dismissed |
+| `POST /api/v1/announcements/{id}/events` | every member | `view`, `click` or `dismiss`, counted once per person |
+
+With `channels`, the `announcements.deliver` task (every minute) also delivers an announcement
+once when it starts: one `platform.announcement` notification per audience organization,
+addressed to all its members, grouped by announcement and expiring when it ends. An
+organization-wide notification reaches that organization's members, and staff acting in it; a
+staff account's own feed (`/internal/notification/feed`) never shows them.
 
 ## Mail, SMS and push
 

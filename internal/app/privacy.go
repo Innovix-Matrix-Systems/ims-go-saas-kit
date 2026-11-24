@@ -8,6 +8,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/auth"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
@@ -42,6 +43,7 @@ func newPrivacy(cfg *config.Config, tx *database.TxManager, disks *storage.Regis
 		oauth.PrivacyContributor{},
 		access.PrivacyContributor{},
 		notifications.PrivacyContributor{},
+		announcements.PrivacyContributor{},
 		onboarding.PrivacyContributor{},
 		files.NewPrivacyContributor(disks),
 		delivery.PrivacyContributor{},

@@ -98,6 +98,22 @@ func (p *Platform) schedule() []scheduler.Task {
 			},
 		},
 		{
+			ID:          "announcements.deliver",
+			Spec:        "* * * * *",
+			Description: "Sends started announcements through their channels (in-app, mail, sms, push), once each.",
+			Timeout:     10 * time.Minute,
+			Run: func(ctx context.Context) error {
+				sent, err := p.Announcements.DeliverDue(ctx)
+				if err != nil {
+					return err
+				}
+				if sent > 0 {
+					logger.Info("announcements delivered", "count", sent)
+				}
+				return nil
+			},
+		},
+		{
 			ID:          "billing.send-renewal-reminders",
 			Spec:        "0 8 * * *",
 			Description: "Logs renewal reminders for subscriptions expiring within 7/3/1 days.",

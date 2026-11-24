@@ -51,6 +51,8 @@ tags:
     description: Home-page figures for an organization and for platform staff.
   - name: Billing
     description: Packages, subscriptions, payments and manual approvals.
+  - name: Announcements
+    description: Staff announcements to organizations, shown as banners, with views, clicks and dismissals.
   - name: Notifications
   - name: Webhooks
   - name: Files
@@ -494,6 +496,166 @@ paths:
         "403": *forbidden
         "404": *notFound
         "422": *validationFailed
+
+  /api/v1/announcements/live:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Announcements]
+      summary: Announcements to show the caller now
+      description: "Every member: the published announcements inside their window whose audience includes the caller's organization, most urgent first (critical, warning, promotion, info), without the ones the caller dismissed. Staff outside an organization get an empty list."
+      operationId: liveAnnouncements
+      responses:
+        "200":
+          description: The live announcements.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: "#/components/schemas/LiveAnnouncement"}
+        "401": *unauthorized
+
+  /api/v1/announcements/{id}/events:
+    parameters:
+      - $ref: "#/components/parameters/PathID"
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    post:
+      tags: [Announcements]
+      summary: Record a view, click or dismissal
+      description: "Every member, for a live announcement their organization is in the audience of. Each kind counts once per person; repeats are ignored. A dismissed announcement leaves the caller's live list. Dismissing one that is not dismissible is a 409."
+      operationId: trackAnnouncement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: {type: string, enum: [view, click, dismiss]}
+      responses:
+        "204": {description: Recorded.}
+        "401": *unauthorized
+        "404": *notFound
+        "409": *conflict
+        "422": *validationFailed
+
+  /api/v1/internal/announcements:
+    get:
+      tags: [Announcements]
+      summary: List announcements (staff)
+      description: "Newest first, one row per announcement with its audience size and unique views, clicks and dismissals (`announcement.view`)."
+      operationId: listAnnouncements
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: status
+          in: query
+          schema: {type: string, enum: [draft, published, archived]}
+      responses:
+        "200":
+          description: A page of announcements.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, links, meta]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: "#/components/schemas/AnnouncementListItem"}
+                  links: {$ref: "#/components/schemas/PaginationLinks"}
+                  meta: {$ref: "#/components/schemas/PaginationMeta"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+    post:
+      tags: [Announcements]
+      summary: Create an announcement (staff)
+      description: "One announcement, whatever it reaches (`announcement.manage`): no `tenant_ids` reaches every organization, otherwise the listed ones. With `channels` it is also delivered once through the notification system when it starts."
+      operationId: createAnnouncement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AnnouncementRequest"}
+      responses:
+        "201":
+          description: The announcement.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/AnnouncementDetail"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
+  /api/v1/internal/announcements/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathID"
+    get:
+      tags: [Announcements]
+      summary: Get an announcement (staff)
+      description: "With its audience and unique views, clicks and dismissals in all and per organization (`announcement.view`)."
+      operationId: getAnnouncement
+      responses:
+        "200":
+          description: The announcement.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/AnnouncementDetail"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+    patch:
+      tags: [Announcements]
+      summary: Update an announcement (staff)
+      description: "Replaces its content, window, audience and channels (`announcement.manage`). An announcement already delivered is not delivered again."
+      operationId: updateAnnouncement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AnnouncementRequest"}
+      responses:
+        "200":
+          description: The announcement.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/AnnouncementDetail"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "422": *validationFailed
+    delete:
+      tags: [Announcements]
+      summary: Delete an announcement (staff)
+      description: "With its audience and counts (`announcement.manage`)."
+      operationId: deleteAnnouncement
+      responses:
+        "204": {description: Deleted.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
 
   /api/v1/dashboard:
     parameters:
@@ -4155,48 +4317,6 @@ paths:
         "403": *forbidden
         "422": *validationFailed
         "503": *serviceUnavailable
-
-  /api/v1/internal/notification/broadcast:
-    post:
-      tags: [Notifications]
-      summary: Send an announcement to organizations
-      description: "Creates one platform.announcement notification per organization (every notification belongs to one; GLOBAL targets reach platform staff only), addressed to all its members. Without tenant_ids it reaches every active organization."
-      operationId: broadcastNotification
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [priority, title]
-              properties:
-                priority: {type: string, enum: [INFO, WARNING, CRITICAL]}
-                title: {type: string, maxLength: 255}
-                body: {type: string, maxLength: 5000, nullable: true}
-                channels:
-                  type: array
-                  maxItems: 4
-                  items: {type: string, enum: [database, mail, sms, push]}
-                tenant_ids:
-                  type: array
-                  items: {type: integer, format: int64}
-      responses:
-        "201":
-          description: How many organizations it reached.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [data]
-                properties:
-                  data:
-                    type: object
-                    required: [organizations]
-                    properties:
-                      organizations: {type: integer}
-        "401": *unauthorized
-        "403": *forbidden
-        "422": *validationFailed
 
   /api/v1/internal/notification/{id}:
     parameters:
@@ -8052,6 +8172,110 @@ components:
             subscription: {$ref: "#/components/schemas/Subscription"}
             package: {$ref: "#/components/schemas/Package"}
             active: {type: boolean}
+
+    AnnouncementRequest:
+      type: object
+      required: [title, kind]
+      properties:
+        title: {type: string, maxLength: 255}
+        body: {type: string, maxLength: 5000, nullable: true}
+        kind: {type: string, enum: [info, promotion, warning, critical]}
+        cta_label: {type: string, maxLength: 60, nullable: true, description: The button's text; needs cta_url.}
+        cta_url: {type: string, maxLength: 2048, nullable: true, description: An http or https link; needs cta_label.}
+        tenant_ids:
+          type: array
+          description: The organizations it reaches; empty or absent reaches every organization.
+          items: {type: integer, format: int64}
+        starts_at: {type: string, format: date-time, nullable: true, description: Defaults to now.}
+        ends_at: {type: string, format: date-time, nullable: true, description: After starts_at; null runs until changed.}
+        dismissible: {type: boolean, default: true}
+        status: {type: string, enum: [draft, published, archived], default: published}
+        channels:
+          type: array
+          description: Also deliver it once through these notification channels when it starts.
+          items: {type: string, enum: [database, mail, sms, push]}
+
+    Announcement:
+      type: object
+      required: [id, title, body, kind, cta_label, cta_url, audience, starts_at, ends_at, dismissible, status, state, channels, delivered_at, created_at, updated_at]
+      properties:
+        id: {type: integer, format: int64}
+        title: {type: string}
+        body: {type: string, nullable: true}
+        kind: {type: string, enum: [info, promotion, warning, critical]}
+        cta_label: {type: string, nullable: true}
+        cta_url: {type: string, nullable: true}
+        audience: {type: string, enum: [all, tenants]}
+        starts_at: {type: string, format: date-time}
+        ends_at: {type: string, format: date-time, nullable: true}
+        dismissible: {type: boolean}
+        status: {type: string, enum: [draft, published, archived]}
+        state: {type: string, enum: [draft, scheduled, live, ended, archived], description: "Where it is now, from its status and window."}
+        channels:
+          type: array
+          items: {type: string}
+        delivered_at: {type: string, format: date-time, nullable: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    AnnouncementTotals:
+      type: object
+      description: Unique people who viewed, clicked and dismissed.
+      required: [views, clicks, dismissals]
+      properties:
+        views: {type: integer, format: int64}
+        clicks: {type: integer, format: int64}
+        dismissals: {type: integer, format: int64}
+
+    AnnouncementListItem:
+      allOf:
+        - $ref: "#/components/schemas/Announcement"
+        - type: object
+          required: [tenant_count, totals]
+          properties:
+            tenant_count: {type: integer, format: int64, description: Organizations listed; 0 with audience all.}
+            totals: {$ref: "#/components/schemas/AnnouncementTotals"}
+
+    AnnouncementDetail:
+      allOf:
+        - $ref: "#/components/schemas/Announcement"
+        - type: object
+          required: [tenants, totals, by_tenant]
+          properties:
+            tenants:
+              type: array
+              items:
+                type: object
+                required: [id, name]
+                properties:
+                  id: {type: integer, format: int64}
+                  name: {type: string}
+            totals: {$ref: "#/components/schemas/AnnouncementTotals"}
+            by_tenant:
+              type: array
+              description: Per organization, most views first (up to 50).
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/AnnouncementTotals"
+                  - type: object
+                    required: [id, name]
+                    properties:
+                      id: {type: integer, format: int64}
+                      name: {type: string}
+
+    LiveAnnouncement:
+      type: object
+      required: [id, title, body, kind, cta_label, cta_url, dismissible, starts_at, ends_at]
+      properties:
+        id: {type: integer, format: int64}
+        title: {type: string}
+        body: {type: string, nullable: true}
+        kind: {type: string, enum: [info, promotion, warning, critical]}
+        cta_label: {type: string, nullable: true}
+        cta_url: {type: string, nullable: true}
+        dismissible: {type: boolean}
+        starts_at: {type: string, format: date-time}
+        ends_at: {type: string, format: date-time, nullable: true}
 
     DashboardPeriod:
       type: object

@@ -85,6 +85,8 @@ var routesWithoutPermission = map[string]bool{
 	"GET /api/v1/data-processing/job/{jobId}/download":        true,
 	"POST /api/v1/data-processing/job/{jobId}/retry":          true, // the job owner (checked in the handler)
 	"DELETE /api/v1/data-processing/job/{jobId}":              true, // the job owner (checked in the handler)
+	"GET /api/v1/announcements/live":                          true, // every member; only their organization's live announcements
+	"POST /api/v1/announcements/{id}/events":                  true, // every member; their own view, click or dismissal
 	"GET /api/v1/dashboard":                                   true, // every member; each section checks its own permission
 	"GET /api/v1/internal/dashboard":                          true, // staff; each section checks its own permission
 	"POST /api/v1/internal/data-processing/job/{jobId}/retry": true, // staff, their own job (checked in the handler)

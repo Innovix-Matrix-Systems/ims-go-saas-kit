@@ -23,6 +23,39 @@ type ActivityLog struct {
 	ImpersonatorName *string            `json:"impersonator_name"`
 }
 
+type Announcement struct {
+	ID          int64              `json:"id"`
+	Title       string             `json:"title"`
+	Body        *string            `json:"body"`
+	Kind        string             `json:"kind"`
+	CtaLabel    *string            `json:"cta_label"`
+	CtaUrl      *string            `json:"cta_url"`
+	Audience    string             `json:"audience"`
+	StartsAt    pgtype.Timestamptz `json:"starts_at"`
+	EndsAt      pgtype.Timestamptz `json:"ends_at"`
+	Dismissible bool               `json:"dismissible"`
+	Status      string             `json:"status"`
+	Channels    []string           `json:"channels"`
+	DeliveredAt pgtype.Timestamptz `json:"delivered_at"`
+	CreatedBy   *int64             `json:"created_by"`
+	UpdatedBy   *int64             `json:"updated_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+type AnnouncementEvent struct {
+	AnnouncementID int64              `json:"announcement_id"`
+	UserID         int64              `json:"user_id"`
+	TenantID       *int64             `json:"tenant_id"`
+	Type           string             `json:"type"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type AnnouncementTenant struct {
+	AnnouncementID int64 `json:"announcement_id"`
+	TenantID       int64 `json:"tenant_id"`
+}
+
 type BackupRun struct {
 	ID             int64              `json:"id"`
 	Uuid           pgtype.UUID        `json:"uuid"`

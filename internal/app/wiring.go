@@ -19,6 +19,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/auth"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing"
@@ -86,6 +87,7 @@ type Dependencies struct {
 	Files         *files.Handler
 	Notifications *notifications.Handler
 	Dashboard     *dashboard.Handler
+	Announcements *announcements.Handler
 	Webhooks      *webhooks.Handler
 	Processing    *dataprocessing.Handler
 	Settings      *settings.Handler
@@ -246,6 +248,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		}),
 		Notifications: notifications.NewHandler(platform.Notifications, checker, kit),
 		Dashboard:     dashboard.NewHandler(dashboard.NewService(queries), checker, kit),
+		Announcements: announcements.NewHandler(platform.Announcements, checker, kit),
 		Webhooks:      webhooks.NewHandler(platform.Webhooks, checker, kit),
 		Processing:    dataprocessing.NewHandler(platform.Processing, platform.Settings, checker, kit),
 		Settings:      settings.NewHandler(platform.Settings, checker, kit),

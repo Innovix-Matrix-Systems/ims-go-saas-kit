@@ -16,6 +16,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	activityexport "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity/export"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing"
 	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
@@ -83,6 +84,7 @@ type Platform struct {
 	Files         *files.Service
 	Backup        *backup.Service
 	Notifications *notifications.Service
+	Announcements *announcements.Service
 	// Webhooks delivers activity-log events to tenants' endpoints (phase 26.8).
 	Webhooks         *webhooks.Service
 	Activity         *activity.Recorder
@@ -212,7 +214,10 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		settingsService,
 		logger,
 	)
-	notificationsService.WithTenantLister(txManager.Queries().ListActiveTenantIDs)
+	announcementService := announcements.NewService(txManager.Queries(), txManager, logger).
+		WithNotifier(func(ctx context.Context, tenantID int64, a announcements.Announcement) error {
+			return notifyAnnouncement(ctx, notificationsService, tenantID, a)
+		})
 	if err := notificationsService.RegisterJobs(queueRegistry); err != nil {
 		return nil, nil, err
 	}
@@ -363,6 +368,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		Files:            filesService,
 		Backup:           backupService,
 		Notifications:    notificationsService,
+		Announcements:    announcementService.WithActivity(activityRecorder),
 		Webhooks:         webhooksService,
 		BillingPackages:  billingPackageService,
 		BillingSubs:      billingSubscriptionService,

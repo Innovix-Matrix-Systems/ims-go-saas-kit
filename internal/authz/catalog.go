@@ -109,6 +109,9 @@ const (
 	PermSettingInternalUpdate     = "setting.internal.update"
 	PermFeatureFlagInternalUpdate = "feature_flag.internal.update"
 
+	PermAnnouncementView   = "announcement.view"
+	PermAnnouncementManage = "announcement.manage"
+
 	PermSettingsGroupViewAll = "settings_group.view.all"
 	PermSettingsGroupView    = "settings_group.view"
 	PermSettingsGroupCreate  = "settings_group.create"
@@ -234,6 +237,10 @@ var Catalog = []Permission{
 
 	// ── feature_flag ──────────────────────────────────────
 	{Name: PermFeatureFlagInternalUpdate, Group: "feature_flag", IsSystem: true, Description: "Can change feature flags for any target"},
+
+	// ── announcement ──────────────────────────────────────
+	{Name: PermAnnouncementView, Group: "announcement", IsSystem: true, Description: "Can view announcements and how they did"},
+	{Name: PermAnnouncementManage, Group: "announcement", IsSystem: true, Description: "Can create, change and delete announcements"},
 
 	// ── settings_group ────────────────────────────────────
 	{Name: PermSettingsGroupViewAll, Group: "settings_group", IsSystem: true, Description: "Can view all settings groups"},

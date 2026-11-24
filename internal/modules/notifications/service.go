@@ -31,7 +31,6 @@ type Service struct {
 	settings *settings.Service
 	logger   *slog.Logger
 	channels channelOptions
-	tenants  TenantLister
 }
 
 // NewService creates the notification service.
