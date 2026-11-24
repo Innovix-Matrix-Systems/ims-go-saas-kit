@@ -15,7 +15,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// Two-factor authentication (phase 26.4): TOTP and e-mail codes, recovery
+// Two-factor authentication: TOTP and e-mail codes, recovery
 // codes, the tenant policy with setup-only tokens, and the admin reset
 // (docs/guides/authentication.md#two-factor-authentication).
 

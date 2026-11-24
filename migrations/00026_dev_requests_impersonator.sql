@@ -1,5 +1,5 @@
 -- +goose Up
--- Phase 21: a captured request made while acting as a user (X-Acting-User)
+-- A captured request made while acting as a user (X-Acting-User)
 -- records who was really calling. user_id is then the user acted as.
 ALTER TABLE dev_requests ADD COLUMN impersonator_id bigint;
 CREATE INDEX dev_requests_impersonator_idx ON dev_requests (impersonator_id, created_at DESC)

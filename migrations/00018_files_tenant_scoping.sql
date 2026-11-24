@@ -1,5 +1,5 @@
 -- +goose Up
--- Phase 12 (C3 defence in depth): files gain explicit tenant scoping. The
+-- Files gain explicit tenant scoping. The
 -- column is nullable: rows that cannot be attributed to a tenant (uploads by
 -- tenantless platform accounts) stay global and are only visible to holders
 -- of the system-only file.view.all permission.

@@ -21,7 +21,7 @@ type Auth struct {
 	OTPExpiry          time.Duration
 	DefaultPassword    string
 	BcryptRounds       int
-	// Account recovery / verification (Phase 18).
+	// Account recovery / verification.
 	PasswordResetExpiry time.Duration // AUTH_PASSWORD_RESET_EXPIRY (default 60m)
 	EmailVerifyExpiry   time.Duration // AUTH_EMAIL_VERIFY_EXPIRY (default 24h)
 	// PasswordResetURL / EmailVerifyURL are the client pages the e-mails link
@@ -29,7 +29,7 @@ type Auth struct {
 	PasswordResetURL string
 	EmailVerifyURL   string
 	// InvitationURL is the client page invitation mails link to ({token},
-	// {email}); InvitationTTL is how long a link works (phase 26.5).
+	// {email}); InvitationTTL is how long a link works.
 	InvitationURL string
 	// EmailChangeURL is the client page the "confirm your new address" mail
 	// links to ({token}); the link lasts AUTH_EMAIL_VERIFY_EXPIRY.

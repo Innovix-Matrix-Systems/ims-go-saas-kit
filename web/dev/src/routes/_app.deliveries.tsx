@@ -23,7 +23,7 @@ import {
 } from '../components/ui'
 import { formatDateTime, relativeTime } from '../format'
 
-/* Deliveries (phase 26.2): the delivery log — every message sent by mail, SMS
+/* Deliveries: the delivery log — every message sent by mail, SMS
  * or push, one row per channel, never a body — and template previews rendered
  * with each template's sample data. */
 

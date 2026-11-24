@@ -17,7 +17,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// TestDeveloperDashboardEndToEnd proves the Phase 9 access model: the seeded
+// TestDeveloperDashboardEndToEnd proves the access model: the seeded
 // developer account logs in, reaches the gated /dev API, and the hidden
 // Developer role never appears in role responses.
 func TestDeveloperDashboardEndToEnd(t *testing.T) {

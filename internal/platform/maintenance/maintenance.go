@@ -1,4 +1,4 @@
-// Package maintenance is the application's maintenance mode (phase 24): one
+// Package maintenance is the application's maintenance mode: one
 // switch that takes the API down and brings it back (`ims down` / `ims up`,
 // or the developer dashboard). The state lives in the database so every
 // process — API servers, the worker, the scheduler — sees it; each process

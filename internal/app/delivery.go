@@ -22,7 +22,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
-// newDelivery builds the delivery system (phase 26.2): mail through the
+// newDelivery builds the delivery system: mail through the
 // configured mail driver, SMS through the SMS driver, push to the log until
 // a provider is added; the e-mail brand from settings.
 func newDelivery(cfg *config.Config, repo delivery.Repository, engine queue.Engine, mailDriver mail.Driver,

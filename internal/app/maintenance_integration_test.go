@@ -12,7 +12,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// TestMaintenanceModeEndToEnd covers phase 24: the dashboard takes the app
+// TestMaintenanceModeEndToEnd covers maintenance mode: the dashboard takes the app
 // down (dev.manage only, audited, in the activity log); /api/v1 answers 503
 // with Retry-After while /up, /api/health and /dev/api keep working; the
 // bypass header passes; up restores normal answers.

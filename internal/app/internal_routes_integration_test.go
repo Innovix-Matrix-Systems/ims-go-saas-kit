@@ -17,7 +17,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// TestInternalRoutesRejectTenantScopedCallers is the phase-12 regression net
+// TestInternalRoutesRejectTenantScopedCallers is the regression net
 // (docs/history/codebase-review.md C4): a tenant-bound identity — even one holding
 // every tenant-grantable permission — must be rejected with 403 on EVERY
 // /api/v1/internal/* route. "Internal" is a property of the account, proven

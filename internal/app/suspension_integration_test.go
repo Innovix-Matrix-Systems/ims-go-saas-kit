@@ -10,7 +10,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// Suspended tenants (phase 26.1): is_active false locks a tenant's users out
+// Suspended tenants: is_active false locks a tenant's users out
 // of every authenticated route and of sign-in; logout stays open and platform
 // accounts can still act inside the tenant (docs/guides/tenancy.md).
 

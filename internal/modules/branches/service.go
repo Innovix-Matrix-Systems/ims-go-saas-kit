@@ -122,7 +122,7 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 	if tenantID == 0 {
 		return nil, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
 	}
-	// An example span (phase 26.9): the request's trace shows this step and
+	// An example span: the request's trace shows this step and
 	// the queries under it. A no-op while tracing is off.
 	ctx, span := tracing.Start(ctx, "branches.create", attribute.Int64("tenant.id", tenantID))
 	defer span.End()

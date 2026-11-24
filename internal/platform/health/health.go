@@ -36,7 +36,7 @@ type CheckResult struct {
 type StoredResults struct {
 	FinishedAt   int64         `json:"finishedAt"`
 	CheckResults []CheckResult `json:"checkResults"`
-	// Maintenance is the maintenance-mode block (phase 24), filled per
+	// Maintenance is the maintenance-mode block, filled per
 	// request by the handler, never cached with the checks.
 	Maintenance any `json:"maintenance,omitempty"`
 }

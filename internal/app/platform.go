@@ -58,10 +58,10 @@ type Platform struct {
 	Storage  *storage.Registry
 	Queue    queue.Engine
 	Recovery *authn.Recovery
-	// Sessions lets users list and revoke their own sessions (phase 26.3).
+	// Sessions lets users list and revoke their own sessions.
 	Sessions *authn.Sessions
 	// OTP mails one-time sign-in codes; TwoFactor enrols and verifies second
-	// factors (phase 26.4).
+	// factors.
 	OTP              *authn.OTPService
 	TwoFactor        *authn.TwoFactor
 	QueueAdmin       queue.Admin
@@ -74,7 +74,7 @@ type Platform struct {
 	IdentityRepo     identity.Repository
 	Identity         *identity.Service
 	Mail             mail.Driver
-	// Delivery reaches people by mail, SMS and push (phase 26.2).
+	// Delivery reaches people by mail, SMS and push.
 	Delivery *delivery.Service
 	// Crypto encrypts values the app must read back, with APP_KEY.
 	Crypto        *crypto.Encrypter
@@ -85,7 +85,7 @@ type Platform struct {
 	Backup        *backup.Service
 	Notifications *notifications.Service
 	Announcements *announcements.Service
-	// Webhooks delivers activity-log events to tenants' endpoints (phase 26.8).
+	// Webhooks delivers activity-log events to tenants' endpoints.
 	Webhooks         *webhooks.Service
 	Activity         *activity.Recorder
 	Exchange         *identity.ExchangeService
@@ -95,7 +95,7 @@ type Platform struct {
 	BillingPayments  *billingservice.PaymentService
 	BillingApprovals *billingservice.ApprovalService
 	BillingGuard     *billingservice.Guard
-	// Maintenance is maintenance mode (phase 24): `ims down` / `ims up`,
+	// Maintenance is maintenance mode: `ims down` / `ims up`,
 	// the dashboard toggle, the HTTP guard and the scheduler skip.
 	Maintenance *maintenance.Service
 	// Privacy erases and exports a user's personal data
@@ -120,7 +120,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		}
 	}()
 
-	// OpenTelemetry (phase 26.9): a no-op until an OTLP endpoint is set.
+	// OpenTelemetry: a no-op until an OTLP endpoint is set.
 	shutdownTracing, err := tracing.Setup(context.Background(), tracing.Settings{
 		Enabled: cfg.Tracing.Enabled, ServiceName: cfg.App.Name, Version: version.Version, Environment: cfg.App.Env,
 		SampleRatio: cfg.Tracing.SampleRatio, SamplerFromEnv: cfg.Tracing.SamplerFromEnv,

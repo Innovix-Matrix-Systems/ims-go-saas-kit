@@ -57,7 +57,7 @@ func (s *Service) WithActivity(recorder *activity.Recorder) *Service {
 // (implemented by authn.Recovery).
 type Verifier interface {
 	SendVerificationTo(ctx context.Context, userID int64) error
-	// SendInvitation mails an invitation link (phase 26.5); inviter is the
+	// SendInvitation mails an invitation link; inviter is the
 	// name shown in the mail.
 	SendInvitation(ctx context.Context, userID int64, inviter string) error
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// Self-service sessions (phase 26.3): users list and sign out their own
+// Self-service sessions: users list and sign out their own
 // sessions; the optional new sign-in alert (docs/guides/authentication.md).
 
 type sessionRow struct {

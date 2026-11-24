@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Maintenance holds the maintenance-mode settings (phase 24). The message,
+// Maintenance holds the maintenance-mode settings. The message,
 // retry and bypass secret are chosen per `ims down`, not here.
 type Maintenance struct {
 	// CheckInterval is how often each process re-reads the maintenance state

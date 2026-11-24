@@ -1,4 +1,4 @@
-// Package tracing is the application's OpenTelemetry tracing (phase 26.9):
+// Package tracing is the application's OpenTelemetry tracing:
 // vendor-neutral spans exported over OTLP to whatever the team runs —
 // Grafana Tempo, Jaeger, Honeycomb, Datadog, New Relic or any OTLP backend.
 //

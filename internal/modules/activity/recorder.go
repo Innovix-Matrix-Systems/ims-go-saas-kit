@@ -46,7 +46,7 @@ type Entry struct {
 	Changes   map[string]any // new values; secrets are redacted before storing
 }
 
-// Action names for act-as (phase 21). They are system rows: tenant users never
+// Action names for act-as. They are system rows: tenant users never
 // see them.
 const (
 	ActionImpersonationStarted = "impersonation.started"
@@ -54,19 +54,19 @@ const (
 	ActionImpersonationDenied  = "impersonation.denied"
 )
 
-// ActionLogin is an API login attempt (password, OTP or social; phase 23).
+// ActionLogin is an API login attempt (password, OTP or social).
 const ActionLogin = "auth.login"
 
-// ActionSessionRevoked is a user signing their own sessions out (phase 26.3).
+// ActionSessionRevoked is a user signing their own sessions out.
 const ActionSessionRevoked = "auth.session_revoked"
 
-// Action names for maintenance mode (phase 24). They are system rows.
+// Action names for maintenance mode. They are system rows.
 const (
 	ActionMaintenanceDown = "maintenance.down"
 	ActionMaintenanceUp   = "maintenance.up"
 )
 
-// Action names for suspending a tenant and bringing it back (phase 26). They
+// Action names for suspending a tenant and bringing it back. They
 // are system rows: the platform acted on the tenant. A suspension made by
 // billing (BILLING_SUSPEND_ON_EXPIRY) carries "reason": "subscription_expired".
 const (
@@ -90,7 +90,7 @@ type Recorded struct {
 	At        time.Time
 }
 
-// Sink hears about every stored entry (outbound webhooks, phase 26.8). It
+// Sink hears about every stored entry (outbound webhooks). It
 // must not block or fail: the change it reports already happened.
 type Sink interface {
 	Recorded(ctx context.Context, entry Recorded)
@@ -150,7 +150,7 @@ func (r *Recorder) insert(ctx context.Context, entry Entry, impersonatorID int64
 	}
 	values := entry.Changes
 	// A change an AI agent made through an MCP tool says so: which tool,
-	// which client (phase 22).
+	// which client.
 	if call, ok := httpx.MCPCallFrom(ctx); ok {
 		values = make(map[string]any, len(entry.Changes)+1)
 		for k, v := range entry.Changes {

@@ -55,7 +55,7 @@ func (s *bkashStub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TestBillingIntegrity covers phase 14: gateway-confirmed callbacks,
+// TestBillingIntegrity covers gateway-confirmed callbacks,
 // manual-method callback rejection, idempotent subscribe, atomic
 // completion + activation, terminal cancelled subscriptions and storage.mb.
 func TestBillingIntegrity(t *testing.T) {

@@ -114,7 +114,7 @@ type Repository interface {
 	UserExistsInTenant(ctx context.Context, id, tenantID int64) (bool, error)
 	BranchExistsInTenant(ctx context.Context, id, tenantID int64) (bool, error)
 	RoleExistsForTenant(ctx context.Context, id int64, tenantID *int64) (bool, error)
-	// Channels and preferences (phase 26.6).
+	// Channels and preferences.
 	Recipients(ctx context.Context, userIDs []int64) ([]delivery.Recipient, error)
 	DisabledChannels(ctx context.Context, eventType string, userIDs []int64) (map[int64]map[string]bool, error)
 	Preferences(ctx context.Context, userID int64) (map[string]bool, error)

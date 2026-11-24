@@ -94,7 +94,7 @@ type Dependencies struct {
 	Flags         *featureflags.Handler
 	Dev           *dev.Handler
 	// OAuth is the authorization server behind the MCP connector, and
-	// MCPTools the tools built from the OpenAPI document (phase 22).
+	// MCPTools the tools built from the OpenAPI document.
 	OAuth        *oauth.Handler
 	OAuthService *oauth.Service
 	MCPTools     []mcp.Tool

@@ -21,7 +21,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
-// Two-factor authentication (phase 26.4). A user has one method:
+// Two-factor authentication. A user has one method:
 //
 //   - totp: an authenticator app (RFC 6238); the secret is encrypted with
 //     APP_KEY and each code works once (last_step);

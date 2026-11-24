@@ -75,7 +75,7 @@ const (
 	PermActivityView    = "activity.view"
 	PermActivityViewAll = "activity.view.all"
 
-	// OAuth clients registered by hand for the MCP connector (phase 22).
+	// OAuth clients registered by hand for the MCP connector.
 	PermOAuthClientManage  = "oauth_client.manage"
 	PermNotificationDelete = "notification.delete"
 
@@ -258,7 +258,7 @@ var Catalog = []Permission{
 // access (dev.view, dev.manage) plus user.impersonate. It holds no tenant or
 // system data-administration permissions — a leaked developer token must not
 // be a platform super-user (review H13). Acting as a user was granted on
-// purpose (phase 21): every use is written to the system audit log, and the
+// purpose: every use is written to the system audit log, and the
 // target refusals (no admins, no platform accounts) still apply.
 func DeveloperPermissions() []Permission {
 	out := make([]Permission, 0, 3)

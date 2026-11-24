@@ -1,5 +1,5 @@
 -- +goose Up
--- Two-factor authentication (phase 26.4): one row per user who started or
+-- Two-factor authentication: one row per user who started or
 -- finished enrolment. method is totp (an authenticator app; the secret is
 -- encrypted with APP_KEY) or email (a code mailed at sign-in; no secret).
 -- recovery_codes holds SHA-256 hashes, each with the time it was used.

@@ -6,7 +6,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
 )
 
-// Two-factor enrolment (phase 26.4). These are session routes: they run
+// Two-factor enrolment. These are session routes: they run
 // without tenant resolution, so platform accounts and setup-only tokens
 // (two-factor required, not yet on) reach them; X-Acting-User never applies,
 // so the account is always the caller's own.

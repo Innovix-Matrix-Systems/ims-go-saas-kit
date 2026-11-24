@@ -14,7 +14,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
 )
 
-// Notification channels (phase 26.6). Every notification is in the in-app
+// Notification channels. Every notification is in the in-app
 // feed (ChannelDatabase); it can also be delivered by mail, SMS or push
 // through the delivery system. Fan-out delivers to the users it newly
 // addresses, so a retried job never mails twice. Users turn a channel off

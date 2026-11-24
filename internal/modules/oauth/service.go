@@ -1,5 +1,5 @@
 // Package oauth is the OAuth 2.1 authorization server behind the MCP
-// connector (phase 22): a client (Claude, ChatGPT, Cursor…) sends the user to
+// connector: a client (Claude, ChatGPT, Cursor…) sends the user to
 // /oauth/authorize, the user signs in and consents, and the client gets an
 // MCP access token for /mcp.
 //

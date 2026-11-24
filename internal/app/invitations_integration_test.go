@@ -10,7 +10,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// Invite a user (phase 26.5): an admin creates the user inactive with
+// Invite a user: an admin creates the user inactive with
 // send_invitation; the invitee sets a password from the mailed link, which
 // activates the account; then they sign in normally (docs/guides/authentication.md).
 

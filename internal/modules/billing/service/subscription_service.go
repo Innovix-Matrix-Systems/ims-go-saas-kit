@@ -161,7 +161,7 @@ func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID
 		}
 		return s.Assign(ctx, AssignInput{TenantID: tenantID, PackageID: packageID, ActorID: actorID})
 	}
-	// An example span (phase 26.9) with a child around the gateway charge.
+	// An example span with a child around the gateway charge.
 	ctx, span := tracing.Start(ctx, "billing.subscribe",
 		attribute.Int64("tenant.id", tenantID),
 		attribute.Int64("package.id", packageID),

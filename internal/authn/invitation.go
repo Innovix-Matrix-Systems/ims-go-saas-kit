@@ -9,7 +9,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 )
 
-// Invitations (phase 26.5). An admin creates a user inactive and invites
+// Invitations. An admin creates a user inactive and invites
 // them; the invitation is a single-use link, like a password reset, and
 // setting a password from it activates the account and verifies the
 // address. The invitee then signs in normally, so every sign-in check (and

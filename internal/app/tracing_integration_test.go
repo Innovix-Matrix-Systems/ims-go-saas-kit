@@ -12,7 +12,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// OpenTelemetry (phase 26.9): with tracing on, a request is one trace — the
+// OpenTelemetry: with tracing on, a request is one trace — the
 // route-named server span, the module's own span and the SQL under it.
 func TestRequestIsTraced(t *testing.T) {
 	t.Setenv("OTEL_ENABLED", "true")

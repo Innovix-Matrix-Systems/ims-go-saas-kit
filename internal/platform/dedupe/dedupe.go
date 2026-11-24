@@ -1,5 +1,5 @@
 // Package dedupe protects write endpoints from running the same request
-// twice (phase 26.7): a double click, a client retry, a proxy re-send.
+// twice: a double click, a client retry, a proxy re-send.
 //
 // Two layers, one middleware:
 //

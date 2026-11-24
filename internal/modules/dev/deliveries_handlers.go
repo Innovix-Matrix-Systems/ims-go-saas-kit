@@ -11,7 +11,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
 )
 
-// Deliveries panel (phase 26.2): the delivery log (what was sent, on which
+// Deliveries panel: the delivery log (what was sent, on which
 // channel, with what outcome — never a body) and template previews.
 
 // deliveryTemplate is one registered template and the channels it renders.

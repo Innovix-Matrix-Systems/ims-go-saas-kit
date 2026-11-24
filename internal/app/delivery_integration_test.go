@@ -13,7 +13,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
 )
 
-// The delivery system (phase 26.2): account mails go through it, the log
+// The delivery system: account mails go through it, the log
 // keeps no body and a masked address, and the dashboard lists the log and
 // previews templates (docs/guides/delivery.md).
 

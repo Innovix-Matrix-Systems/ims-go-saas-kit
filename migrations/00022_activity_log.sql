@@ -1,5 +1,5 @@
 -- +goose Up
--- Phase 19: a tenant-scoped record of who did what (like
+-- A tenant-scoped record of who did what (like
 -- spatie/laravel-activitylog). tenant_id is NULL for platform-level actions.
 CREATE TABLE activity_log (
     id           bigserial PRIMARY KEY,

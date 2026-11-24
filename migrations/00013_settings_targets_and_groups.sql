@@ -1,6 +1,6 @@
 -- +goose Up
--- Phase 11: settings become polymorphic-target + grouped, and feature flags get
--- their own table. The phase-3 tenant_id column is migrated to target_type/
+-- Settings become polymorphic-target + grouped, and feature flags get
+-- their own table. The original tenant_id column is migrated to target_type/
 -- target_id so branch/user targets can be enabled later without a migration.
 
 CREATE TABLE settings_groups (
@@ -23,7 +23,7 @@ ALTER TABLE settings
     ADD COLUMN target_id   bigint,
     ADD COLUMN group_id    bigint REFERENCES settings_groups (id) ON DELETE SET NULL;
 
--- Backfill the phase-3 rows: tenant overrides become target_type = 'tenant'.
+-- Backfill the original rows: tenant overrides become target_type = 'tenant'.
 UPDATE settings SET target_type = 'tenant', target_id = tenant_id WHERE tenant_id IS NOT NULL;
 
 -- Existing indexes reference tenant_id; replace them with target-aware ones.
@@ -58,7 +58,7 @@ DROP TABLE feature_flags;
 
 ALTER TABLE settings ADD COLUMN tenant_id bigint REFERENCES tenants (id) ON DELETE CASCADE;
 UPDATE settings SET tenant_id = target_id WHERE target_type = 'tenant';
--- Only global + tenant targets existed before this phase; drop anything else.
+-- Only global + tenant targets existed before this migration; drop anything else.
 DELETE FROM settings WHERE target_type IS NOT NULL AND target_type <> 'tenant';
 
 DROP INDEX settings_global_key_unique;
