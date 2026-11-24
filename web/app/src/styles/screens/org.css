@@ -218,3 +218,4 @@
 .audience-list .check-row { gap: 10px; padding: 4px 6px; border-radius: var(--radius-sm); }
 .audience-list .check-row:hover { background: var(--surface-2); }
 .audience-list .org-mark { width: 24px; height: 24px; border-radius: 6px; font-size: var(--fs-xs); }
+.by-org-search { width: 200px; height: 30px; }

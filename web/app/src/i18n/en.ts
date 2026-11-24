@@ -991,6 +991,7 @@ export const en = {
   'announcements.savedDraft': 'Draft saved.',
   'announcements.published': 'Announcement published.',
   'announcements.orgOne': '1 organization',
+  'announcements.noMatch': 'No organization matches.',
 }
 
 export type MessageKey = keyof typeof en

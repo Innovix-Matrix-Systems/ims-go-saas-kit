@@ -477,7 +477,7 @@ export interface paths {
         };
         /**
          * Get an announcement (staff)
-         * @description With its audience and unique views, clicks and dismissals in all and per organization (`announcement.view`).
+         * @description With its audience and unique views, clicks and dismissals (`announcement.view`). Per organization: `/internal/announcements/{id}/organizations`.
          */
         get: operations["getAnnouncement"];
         put?: never;
@@ -494,6 +494,28 @@ export interface paths {
          * @description Replaces its content, window, audience and channels (`announcement.manage`). An announcement already delivered is not delivered again.
          */
         patch: operations["updateAnnouncement"];
+        trace?: never;
+    };
+    "/api/v1/internal/announcements/{id}/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * An announcement's reach per organization (staff)
+         * @description The organizations whose members viewed, clicked or dismissed it, with unique counts, most views first, a page at a time (`announcement.view`).
+         */
+        get: operations["listAnnouncementOrganizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/dashboard": {
@@ -7450,12 +7472,11 @@ export interface components {
                 name: string;
             }[];
             totals: components["schemas"]["AnnouncementTotals"];
-            /** @description Per organization, most views first (up to 50). */
-            by_tenant: (components["schemas"]["AnnouncementTotals"] & {
-                /** Format: int64 */
-                id: number;
-                name: string;
-            })[];
+        };
+        AnnouncementTenantTotals: components["schemas"]["AnnouncementTotals"] & {
+            /** Format: int64 */
+            id: number;
+            name: string;
         };
         LiveAnnouncement: {
             /** Format: int64 */
@@ -10691,6 +10712,64 @@ export interface operations {
             };
             /** @description Validation failed; `errors` carries field messages. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listAnnouncementOrganizations: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["Page"];
+                per_page?: components["parameters"]["PerPage"];
+                /** @description Part of the organization's name. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of organizations. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnnouncementTenantTotals"][];
+                        links: components["schemas"]["PaginationLinks"];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -993,4 +993,5 @@ export const bn: Messages = {
   'announcements.savedDraft': 'খসড়া রাখা হয়েছে।',
   'announcements.published': 'ঘোষণা প্রকাশিত হয়েছে।',
   'announcements.orgOne': '১টি সংস্থা',
+  'announcements.noMatch': 'কোনো সংস্থা মেলেনি।',
 }

@@ -288,39 +288,7 @@ function AnnouncementDrawer({ id, manage, onEdit, onClose }: { id: number; manag
               </>
             ) : null}
           </dl>
-          <Card title={t('announcements.byOrganization')} flush>
-            {data.by_tenant.length === 0 ? (
-              <EmptyState icon="tenants" title={t('announcements.noReach')} />
-            ) : (
-              <div className="table-wrap">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>{t('dashboard.colOrganization')}</th>
-                      <th className="right">{t('announcements.views')}</th>
-                      <th className="right">{t('announcements.clicks')}</th>
-                      <th className="right">{t('announcements.dismissals')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.by_tenant.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <span className="org-cell">
-                            <OrgMark name={row.name} />
-                            {row.name}
-                          </span>
-                        </td>
-                        <td className="right num">{row.views}</td>
-                        <td className="right num">{row.clicks}</td>
-                        <td className="right num">{row.dismissals}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
+          <ByOrganization id={data.id} />
         </div>
       )}
       <ConfirmDialog
@@ -334,6 +302,95 @@ function AnnouncementDrawer({ id, manage, onEdit, onClose }: { id: number; manag
         onCancel={() => setConfirm(false)}
       />
     </Drawer>
+  )
+}
+
+interface TenantTotalsPage {
+  data: Schemas['AnnouncementTenantTotals'][]
+  meta: Schemas['PaginationMeta']
+}
+
+/** How an announcement did in each organization, a page at a time, by name. */
+function ByOrganization({ id }: { id: number }) {
+  const t = useT()
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(10)
+  const rows = useQuery({
+    queryKey: ['console', 'announcement', id, 'organizations', search.trim(), page, perPage],
+    queryFn: () =>
+      api<TenantTotalsPage>(`/internal/announcements/${id}/organizations`, {
+        asStaff: true,
+        envelope: true,
+        query: { search: search.trim() || undefined, page, per_page: perPage },
+      }),
+    placeholderData: keepPreviousData,
+  })
+  const items = rows.data?.data ?? []
+  return (
+    <Card
+      title={t('announcements.byOrganization')}
+      actions={
+        <input
+          className="input sm by-org-search"
+          type="search"
+          placeholder={t('announcements.searchOrgs')}
+          aria-label={t('announcements.searchOrgs')}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
+        />
+      }
+      flush
+    >
+      {rows.isLoading ? (
+        <TableSkeleton columns={4} avatar={false} />
+      ) : items.length === 0 ? (
+        <EmptyState icon="tenants" title={search.trim() ? t('announcements.noMatch') : t('announcements.noReach')} />
+      ) : (
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>{t('dashboard.colOrganization')}</th>
+                <th className="right">{t('announcements.views')}</th>
+                <th className="right">{t('announcements.clicks')}</th>
+                <th className="right">{t('announcements.dismissals')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((row) => (
+                <tr key={row.id}>
+                  <td>
+                    <span className="org-cell">
+                      <OrgMark name={row.name} />
+                      {row.name}
+                    </span>
+                  </td>
+                  <td className="right num">{row.views}</td>
+                  <td className="right num">{row.clicks}</td>
+                  <td className="right num">{row.dismissals}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {rows.data && rows.data.meta.total > 0 ? (
+        <Pagination
+          page={page}
+          perPage={perPage}
+          total={rows.data.meta.total}
+          onPage={setPage}
+          onPerPage={(size) => {
+            setPerPage(size)
+            setPage(1)
+          }}
+        />
+      ) : null}
+    </Card>
   )
 }
 
