@@ -33,6 +33,8 @@ export interface Page {
   platformOnly?: boolean
   /** Shown only to members of an organization. */
   tenantOnly?: boolean
+  /** Left out of the sidebar (reached from a page that groups it); still in the palette. */
+  hidden?: boolean
 }
 
 export const pages: Page[] = [
@@ -55,13 +57,14 @@ export const pages: Page[] = [
   { to: '/org/webhooks', label: 'org.webhooks', icon: 'actions', group: 'organization', key: 'w', keywords: 'integrations events api', permission: 'webhook.manage', tenantOnly: true },
   { to: '/org/billing', label: 'org.billing', icon: 'package', group: 'organization', key: 'i', keywords: 'plan subscription payments invoice upgrade', permission: 'billing.view', tenantOnly: true },
   { to: '/org/settings', label: 'nav.orgSettings', icon: 'settings', group: 'organization', key: 'o', keywords: 'organization company owner transfer policies', tenantOnly: true },
-  { to: '/profile', label: 'nav.profile', icon: 'user', group: 'account', key: 'p', keywords: 'me photo avatar about' },
-  { to: '/settings/profile', label: 'account.settings', icon: 'settings', group: 'account', keywords: 'name language e-mail photo' },
-  { to: '/settings/security', label: 'settings.security', icon: 'shield', group: 'account', key: 's', keywords: 'password two-factor 2fa sessions devices' },
+  { to: '/settings', label: 'nav.account', icon: 'user', group: 'account', keywords: 'account settings me' },
+  { to: '/profile', label: 'nav.profile', icon: 'user', group: 'account', key: 'p', keywords: 'me photo avatar about', hidden: true },
+  { to: '/settings/profile', label: 'account.settings', icon: 'settings', group: 'account', keywords: 'name language e-mail photo', hidden: true },
+  { to: '/settings/security', label: 'settings.security', icon: 'shield', group: 'account', key: 's', keywords: 'password two-factor 2fa sessions devices', hidden: true },
   { to: '/notifications', label: 'notifications.title', icon: 'bell', group: 'workspace', key: 'n', keywords: 'inbox alerts' },
   { to: '/jobs', label: 'nav.jobs', icon: 'queue', group: 'workspace', key: 'j', keywords: 'background jobs export import download queue progress retry' },
-  { to: '/settings/notifications', label: 'settings.notificationSettings', icon: 'mail', group: 'account', keywords: 'notification preferences' },
-  { to: '/settings/privacy', label: 'settings.privacy', icon: 'eye', group: 'account', keywords: 'export delete account data' },
+  { to: '/settings/notifications', label: 'settings.notificationSettings', icon: 'mail', group: 'account', keywords: 'notification preferences', hidden: true },
+  { to: '/settings/privacy', label: 'settings.privacy', icon: 'eye', group: 'account', keywords: 'export delete account data', hidden: true },
 ]
 
 if (import.meta.env.DEV) {

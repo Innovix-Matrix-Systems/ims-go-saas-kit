@@ -6,6 +6,7 @@ import { ActingBanner } from './ActingBanner'
 import { AppearanceMenu } from './AppearanceMenu'
 import { BranchSwitcher } from './BranchSwitcher'
 import { JobsTray } from './JobsTray'
+import { PlanTray } from './PlanTray'
 import { CommandPalette } from './CommandPalette'
 import { navGroupLabels, navGroups, pageFor, visiblePages, type NavGroup } from './navigation'
 import { NotificationBell } from './NotificationBell'
@@ -102,7 +103,7 @@ export function AppShell() {
 
 
   const navGroup = (group: NavGroup) => {
-    const items = pages.filter((page) => page.group === group)
+    const items = pages.filter((page) => page.group === group && !page.hidden)
     if (items.length === 0) return null
     return (
       <div key={group} className="nav-group">
@@ -114,7 +115,7 @@ export function AppShell() {
             className="nav-item"
             activeProps={{ className: 'nav-item active' }}
             // A page with pages under it (Home, Organization) is active only on itself.
-            activeOptions={{ exact: page.to === '/' || pages.some((other) => other.to.startsWith(`${page.to}/`)) }}
+            activeOptions={{ exact: page.to === '/' || pages.some((other) => !other.hidden && other.to.startsWith(`${page.to}/`)) }}
             title={collapsed ? t(page.label) : undefined}
           >
             <Icon name={page.icon} />
@@ -206,6 +207,7 @@ export function AppShell() {
               </span>
             </button>
             <BranchSwitcher />
+            <PlanTray />
             <JobsTray />
             <NotificationBell />
             <AppearanceMenu />

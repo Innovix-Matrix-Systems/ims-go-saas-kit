@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import type { Schemas } from '../api/client'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { featureName, formatMB } from './billing'
-import { MeterList } from './charts'
+import { MeterList } from './MeterList'
 import { Badge, Card } from './ui'
 
 type Usage = Schemas['BillingUsage']

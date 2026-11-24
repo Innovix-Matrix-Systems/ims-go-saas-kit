@@ -156,3 +156,24 @@
 .input-unit { display: inline-flex; align-items: center; gap: 8px; }
 .input-unit .input { width: 96px; text-align: right; }
 .input-unit-label { font-size: var(--fs-md); color: var(--text-2); }
+
+/* Plan peek in the top bar */
+.plan-tray { width: 320px; padding: 0; }
+.plan-tray .jobs-menu-head { gap: 10px; }
+.plan-tray-body { padding: 4px 14px 14px; }
+.plan-tray-foot {
+  display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 1px solid var(--border);
+  color: var(--accent); font-size: var(--fs-md); font-weight: var(--fw-medium); text-decoration: none;
+}
+.plan-tray-foot:hover { background: var(--surface-2); }
+.plan-tray-foot svg { width: 14px; height: 14px; }
+.jobs-dot.warn { background: var(--warn-fg); }
+
+/* Organization settings: profile and owner side by side, then a card per settings group. */
+.settings-pair { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); align-items: start; }
+.settings-pair .form-narrow { max-width: none; }
+.settings-groups { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); align-items: start; }
+.section-intro h2 { margin: var(--space-2) 0 2px; font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+.section-intro p { margin: 0; font-size: var(--fs-sm); color: var(--text-3); }
+.setting-rows > .setting-row:first-child { border-top: 0; padding-top: 0; }
+.setting-rows > .setting-row:last-child { padding-bottom: 0; }

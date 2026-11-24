@@ -73,6 +73,13 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   security summary) and **Organization** profile page (details with an edit dialog, owner, people,
   plan usage, counts). IDs and codes are shown as text with a copy button instead of read-only
   inputs.
+- The organization dashboard's files section has `by_type` (count and bytes per file type).
+- Client app: dashboard charts use Recharts (trend areas, donuts for plans, organization status,
+  members by status and storage by type, ranked bars), loaded only with the home page; pricing
+  cards line up (price and cycle, features with "Show more", the action at the bottom) and name
+  unknown features readably; a plan-and-usage peek in the top bar; one "Account" entry in the
+  sidebar; organization settings with profile and owner side by side and a card per settings
+  group.
 - `GET`/`PATCH /api/v1/organization` return `branding` (`logo_url`, `color` from the
   organization's e-mail branding settings) so clients can show its logo.
 - Client app: a getting-started checklist for new organizations' admins; organization and

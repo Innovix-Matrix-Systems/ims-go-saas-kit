@@ -4,20 +4,10 @@ import { useState } from 'react'
 import { api, apiBlob, saveBlob, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { formatBytes } from '../format'
-import {
-  BankTransferForm,
-  featureName,
-  formatMB,
-  publicPackagesQuery,
-  subscriptionStatusQuery,
-  useFeatureText,
-  useMoney,
-  usePrice,
-  type Package,
-} from '../components/billing'
+import { BankTransferForm, featureName, formatMB, publicPackagesQuery, subscriptionStatusQuery, useMoney, usePrice, type Package, PricingCard } from '../components/billing'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Modal, PageHeader, type BadgeTone } from '../components/ui'
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Icon, Modal, PageHeader, type BadgeTone } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { CardsSkeleton, ListSkeleton, TableSkeleton } from '../components/Skeleton'
 
@@ -60,7 +50,7 @@ function BillingPage() {
   const session = useSession()
   const money = useMoney()
   const status = useQuery(subscriptionStatusQuery)
-  const usage = useQuery({ queryKey: ['billing-usage'], queryFn: () => api<Usage>('/billing/usage') })
+  const usage = useQuery({ queryKey: ['billing', 'usage'], queryFn: () => api<Usage>('/billing/usage') })
   const latest = useQuery({
     queryKey: ['payments', 'latest'],
     queryFn: () => api<PaymentPage>('/billing/payments', { envelope: true, query: { page: 1, per_page: 1 } }),
@@ -173,8 +163,6 @@ function UsageCard({ usage }: { usage?: Usage }) {
 
 function PlansCard({ currentId, canManage }: { currentId?: number; canManage: boolean }) {
   const t = useT()
-  const price = usePrice()
-  const featureText = useFeatureText()
   const client = useQueryClient()
   const { push } = useToast()
   const packages = useQuery(publicPackagesQuery)
@@ -188,7 +176,7 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
     try {
       await api('/billing/subscribe', { method: 'POST', idempotent: true, body: { package_id: pkg.id } })
       await client.invalidateQueries({ queryKey: ['subscription-status'] })
-      await client.invalidateQueries({ queryKey: ['billing-usage'] })
+      await client.invalidateQueries({ queryKey: ['billing', 'usage'] })
       await client.invalidateQueries({ queryKey: ['payments'] })
       push(t('billing.switched', { name: pkg.name }), 'success')
     } catch (cause) {
@@ -208,26 +196,25 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
           {packages.data.map((pkg) => {
             const current = pkg.id === currentId
             return (
-              <div key={pkg.id} className={`plan-card ${current ? 'current' : ''}`}>
-                <div className="flex g-2 align-center">
-                  <strong>{pkg.name}</strong>
-                  {current ? <Badge tone="info">{t('onboarding.currentPlan')}</Badge> : null}
-                </div>
-                <div className="plan-price">{price(pkg)}</div>
-                {pkg.description ? <p className="small muted">{pkg.description}</p> : null}
-                <ul className="plan-features">
-                  {pkg.features
-                    .filter((feature) => feature.is_enabled)
-                    .map((feature) => (
-                      <li key={feature.feature_key}>{featureText(feature.feature_key, feature.limit_value)}</li>
-                    ))}
-                </ul>
-                {canManage ? (
-                  <Button variant={current ? 'ghost' : 'default'} disabled={current} onClick={() => (pkg.price === 0 ? setFree(pkg) : setCheckout(pkg))}>
-                    {current ? t('onboarding.chosen') : t('billing.switch')}
-                  </Button>
-                ) : null}
-              </div>
+              <PricingCard
+                key={pkg.id}
+                pkg={pkg}
+                current={current}
+                action={
+                  canManage ? (
+                    current ? (
+                      <span className="plan-current-note">
+                        <Icon name="check" />
+                        {t('billing.yourPlan')}
+                      </span>
+                    ) : (
+                      <Button variant="primary" onClick={() => (pkg.price === 0 ? setFree(pkg) : setCheckout(pkg))}>
+                        {t('billing.switch')}
+                      </Button>
+                    )
+                  ) : undefined
+                }
+              />
             )
           })}
         </div>

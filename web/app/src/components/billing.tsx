@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { api, type Schemas } from '../api/client'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { Field, useApiErrors } from './form'
-import { Icon, Spinner } from './ui'
+import { Badge, Icon, Spinner } from './ui'
 
 export type Package = Schemas['Package']
 export type SubscriptionStatus = Schemas['SubscriptionStatusEnvelope']['data']
@@ -45,11 +45,21 @@ const featureLabels: Record<string, MessageKey> = {
   'reports.export': 'billing.feature.reportsExport',
 }
 
+const verbs = new Set(['manage', 'view', 'export', 'create', 'edit', 'delete', 'import', 'send'])
+
+/** A feature key the app has no label for, made readable: "patients.manage" → "Manage patients". */
+export function humanizeFeature(key: string): string {
+  const words = key.split(/[._-]+/).filter(Boolean)
+  if (words.length > 1 && verbs.has(words[words.length - 1])) words.unshift(words.pop()!)
+  const text = words.join(' ')
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1)
+}
+
 /** "50 members", "Unlimited branches", "1 GB storage", "API and webhooks". */
 export function useFeatureText() {
   const t = useT()
   return (key: string, limit: number) => {
-    const label = featureLabels[key] ? t(featureLabels[key]) : key
+    const label = featureLabels[key] ? t(featureLabels[key]) : humanizeFeature(key)
     if (key === 'storage.mb') return limit === -1 ? `${t('billing.unlimited')} ${label}` : `${formatMB(limit)} ${label}`
     if (key.endsWith('.max')) return limit === -1 ? `${t('billing.unlimited')} ${label}` : `${limit} ${label}`
     return label
@@ -58,7 +68,7 @@ export function useFeatureText() {
 
 /** A feature's name on its own, as a label ("Members", not "members"). */
 export function featureName(t: (key: MessageKey) => string, key: string): string {
-  const name = featureLabels[key] ? t(featureLabels[key]) : key
+  const name = featureLabels[key] ? t(featureLabels[key]) : humanizeFeature(key)
   return name.charAt(0).toLocaleUpperCase() + name.slice(1)
 }
 
@@ -128,5 +138,56 @@ export function BankTransferForm({ pkg, onSubmitted }: { pkg: Package; onSubmitt
         </button>
       </div>
     </form>
+  )
+}
+
+/** How many features a plan card lists before "Show more". */
+const FEATURES_SHOWN = 6
+
+/**
+ * One plan to choose: its name, price and cycle, what it includes (the
+ * first few, the rest behind "Show more") and the action, which stays at the
+ * bottom so cards side by side line up.
+ */
+export function PricingCard({ pkg, current, chosen, action }: { pkg: Package; current?: boolean; chosen?: boolean; action?: ReactNode }) {
+  const t = useT()
+  const money = useMoney()
+  const featureText = useFeatureText()
+  const [expanded, setExpanded] = useState(false)
+  const features = pkg.features.filter((feature) => feature.is_enabled)
+  const shown = expanded ? features : features.slice(0, FEATURES_SHOWN)
+  const hidden = features.length - shown.length
+  return (
+    <div className={`plan-card ${current ? 'current' : ''} ${chosen ? 'chosen' : ''}`}>
+      <div className="plan-head">
+        <span className="plan-title">{pkg.name}</span>
+        {current ? <Badge tone="accent">{t('onboarding.currentPlan')}</Badge> : null}
+      </div>
+      <div className="plan-amount">
+        {pkg.price === 0 ? (
+          <span className="plan-figure">{t('onboarding.free')}</span>
+        ) : (
+          <>
+            <span className="plan-figure">{money(pkg.price)}</span>
+            <span className="plan-cycle">{t(cycleLabels[pkg.billing_cycle])}</span>
+          </>
+        )}
+      </div>
+      {pkg.description ? <p className="plan-description">{pkg.description}</p> : null}
+      <ul className="plan-includes">
+        {shown.map((feature) => (
+          <li key={feature.feature_key}>
+            <Icon name="check" />
+            <span>{featureText(feature.feature_key, feature.limit_value)}</span>
+          </li>
+        ))}
+      </ul>
+      {hidden > 0 || expanded ? (
+        <button type="button" className="link-btn plan-more" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
+          {expanded ? t('billing.showFewer') : t('billing.showMore', { count: hidden })}
+        </button>
+      ) : null}
+      {action ? <div className="plan-foot">{action}</div> : null}
+    </div>
   )
 }

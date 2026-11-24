@@ -37,8 +37,10 @@ function OrganizationSettingsPage() {
         </div>
       ) : (
         <div className="stack g-4">
-          <ProfileCard organization={organization.data} editable={can(session, 'organization.update')} />
-          <OwnerCard organization={organization.data} />
+          <div className="settings-pair">
+            <ProfileCard organization={organization.data} editable={can(session, 'organization.update')} />
+            <OwnerCard organization={organization.data} />
+          </div>
           {can(session, 'setting.update') ? <PoliciesCard /> : null}
         </div>
       )}
@@ -187,22 +189,30 @@ function PoliciesCard() {
     }
   }
 
+  // One card per settings group, in the API's order.
   return (
-    <Card title={t('org.policiesTitle')} description={t('org.policiesHint')}>
+    <section className="stack g-4" aria-labelledby="org-preferences">
+      <div className="section-intro">
+        <h2 id="org-preferences">{t('org.policiesTitle')}</h2>
+        <p>{t('org.policiesHint')}</p>
+      </div>
       {!settings.data ? (
-        <SettingsSkeleton rows={5} />
+        <Card>
+          <SettingsSkeleton rows={5} />
+        </Card>
       ) : (
-        <div className="policy-groups">
+        <div className="settings-groups">
           {sections.map((section) => (
-            <section key={section.group.slug} className="policy-group">
-              <h3 className="policy-group-title">{groupName(section.group.slug, section.group.name)}</h3>
-              {section.settings.map((item) => (
-                <SettingRow key={item.key} item={item} save={save(item)} />
-              ))}
-            </section>
+            <Card key={section.group.slug} title={groupName(section.group.slug, section.group.name)}>
+              <div className="setting-rows">
+                {section.settings.map((item) => (
+                  <SettingRow key={item.key} item={item} save={save(item)} />
+                ))}
+              </div>
+            </Card>
           ))}
         </div>
       )}
-    </Card>
+    </section>
   )
 }

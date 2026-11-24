@@ -8,7 +8,7 @@ import { formatBytes, initials, relativeTimeIn } from '../format'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { actionLabel } from '../components/ActivityLog'
 import { subscriptionStatusQuery, useMoney } from '../components/billing'
-import { AreaChart, BarList, Delta, KpiCard } from '../components/charts'
+import { DonutChart, Delta, KpiCard, RankedBarChart, TrendChart } from '../components/charts'
 import { PlanCard } from '../components/PlanCard'
 import { GettingStarted } from '../components/GettingStarted'
 import { fetchFeed, feedKey } from '../components/notifications'
@@ -23,6 +23,13 @@ type TenantDashboard = Schemas['TenantDashboard']
 type PlatformDashboard = Schemas['PlatformDashboard']
 type Usage = Schemas['BillingUsage']
 type ActivityEntry = Schemas['ActivityEntry']
+
+const fileTypeLabels: Record<string, MessageKey> = {
+  image: 'files.image',
+  video: 'files.video',
+  document: 'files.document',
+  other: 'files.other',
+}
 
 const PERIOD_KEY = 'ims.app.dashboard.days'
 const periods = [7, 30, 90] as const
@@ -233,21 +240,22 @@ function PlatformHome({ session }: { session: Session }) {
             {data.revenue ? (
               <Card title={t('dashboard.revenue')} description={lead ? t('dashboard.revenueHint', { currency: lead.currency }) : t('dashboard.noRevenue')}>
                 {lead ? (
-                  <AreaChart points={lead.amount.points} label={t('dashboard.revenue')} format={moneyCompact(lead.currency)} />
+                  <TrendChart points={lead.amount.points} label={t('dashboard.revenue')} format={moneyCompact(lead.currency)} />
                 ) : (
                   <EmptyState icon="package" title={t('dashboard.noRevenue')} description={t('dashboard.noRevenueHint')} />
                 )}
               </Card>
             ) : data.organizations ? (
               <Card title={t('dashboard.newOrganizations')}>
-                <AreaChart points={data.organizations.added.points} label={t('dashboard.newOrganizations')} format={n.compact} />
+                <TrendChart points={data.organizations.added.points} label={t('dashboard.newOrganizations')} format={n.compact} />
               </Card>
             ) : null}
             {data.plans ? (
               <Card title={t('dashboard.plans')} description={t('dashboard.plansHint')} actions={<Link to="/console/plans" className="link-btn">{t('dashboard.manage')}</Link>}>
-                <BarList
-                  items={data.plans.map((plan) => ({ key: String(plan.package_id), label: plan.name, value: plan.organizations }))}
+                <DonutChart
+                  slices={data.plans.map((plan) => ({ key: String(plan.package_id), label: plan.name, value: plan.organizations }))}
                   format={n.plain}
+                  totalLabel={t('dashboard.organizationsShort')}
                   empty={t('dashboard.noPlans')}
                 />
               </Card>
@@ -257,20 +265,34 @@ function PlatformHome({ session }: { session: Session }) {
           <div className="dash-row">
             {data.organizations && data.revenue ? (
               <Card title={t('dashboard.newOrganizations')}>
-                <AreaChart points={data.organizations.added.points} label={t('dashboard.newOrganizations')} format={n.compact} height={180} />
+                <TrendChart points={data.organizations.added.points} label={t('dashboard.newOrganizations')} format={n.compact} height={200} />
               </Card>
             ) : null}
             {data.users ? (
               <Card title={t('dashboard.newMembers')}>
-                <AreaChart points={data.users.added.points} label={t('dashboard.newMembers')} format={n.compact} height={180} />
+                <TrendChart points={data.users.added.points} label={t('dashboard.newMembers')} format={n.compact} height={200} />
               </Card>
             ) : null}
-            {data.activity ? (
-              <Card title={t('dashboard.platformActivity')} actions={<Link to="/console/activity" className="link-btn">{t('dashboard.openLog')}</Link>}>
-                <AreaChart points={data.activity.points} label={t('dashboard.events')} format={n.compact} height={180} />
+            {data.organizations ? (
+              <Card title={t('dashboard.orgStatus')} description={t('dashboard.orgStatusHint')}>
+                <DonutChart
+                  slices={[
+                    { key: 'active', label: t('dashboard.active'), value: data.organizations.active, to: '/console/organizations' },
+                    { key: 'suspended', label: t('dashboard.suspended'), value: data.organizations.suspended, to: '/console/organizations' },
+                  ]}
+                  format={n.plain}
+                  totalLabel={t('dashboard.organizationsShort')}
+                  height={170}
+                />
               </Card>
             ) : null}
           </div>
+
+          {data.activity ? (
+            <Card title={t('dashboard.platformActivity')} description={t('dashboard.platformActivityHint')} actions={<Link to="/console/activity" className="link-btn">{t('dashboard.openLog')}</Link>}>
+              <TrendChart points={data.activity.points} label={t('dashboard.events')} format={n.compact} height={220} />
+            </Card>
+          ) : null}
 
           {data.organizations ? (
             <Card title={t('dashboard.newestOrganizations')} actions={<Link to="/console/organizations" className="link-btn">{t('dashboard.seeAll')}</Link>} flush>
@@ -416,17 +438,70 @@ function OrganizationHome({ session }: { session: Session }) {
             <div className="dash-row wide">
               {data.activity ? (
                 <Card title={t('dashboard.activity')} description={t('dashboard.activityHint')} actions={<Link to="/org/activity" className="link-btn">{t('dashboard.openLog')}</Link>}>
-                  <AreaChart points={data.activity.events.points} label={t('dashboard.events')} format={n.compact} />
+                  <TrendChart points={data.activity.events.points} label={t('dashboard.events')} format={n.compact} />
                 </Card>
               ) : null}
               {billing ? <PlanCard usage={usage.data} status={subscription.data} /> : null}
             </div>
           ) : null}
 
-          {data.activity ? (
+          {data.members || data.files || data.activity ? (
             <div className="dash-row">
+              {data.members ? (
+                <Card title={t('dashboard.membersByStatus')} actions={<Link to="/org/members" className="link-btn">{t('dashboard.seeAll')}</Link>}>
+                  <DonutChart
+                    slices={[
+                      { key: 'active', label: t('dashboard.statusActive'), value: data.members.active, to: '/org/members' },
+                      { key: 'invited', label: t('dashboard.statusInvited'), value: data.members.pending_invitations, to: '/org/members' },
+                      {
+                        key: 'inactive',
+                        label: t('dashboard.statusInactive'),
+                        value: Math.max(0, data.members.total - data.members.active - data.members.pending_invitations),
+                        to: '/org/members',
+                      },
+                    ]}
+                    format={n.plain}
+                    totalLabel={t('dashboard.membersShort')}
+                    height={170}
+                  />
+                </Card>
+              ) : null}
+              {data.files ? (
+                <Card title={t('dashboard.storageByType')} actions={<Link to="/org/files" className="link-btn">{t('dashboard.seeAll')}</Link>}>
+                  <DonutChart
+                    slices={data.files.by_type.map((row) => ({ key: row.type, label: t(fileTypeLabels[row.type] ?? 'files.other'), value: row.bytes, to: '/org/files' }))}
+                    format={formatBytes}
+                    totalLabel={t('dashboard.files', { count: n.plain(data.files.files) })}
+                    totalValue={formatBytes(data.files.bytes)}
+                    empty={t('dashboard.noFiles')}
+                    height={170}
+                  />
+                </Card>
+              ) : null}
+              {data.activity ? (
+                <Card title={t('dashboard.topActors')} description={t('dashboard.inPeriod', { days })}>
+                  <RankedBarChart
+                    label={t('dashboard.topActors')}
+                    items={data.activity.top_actors.map((row) => ({
+                      key: String(row.id),
+                      label: row.name,
+                      value: row.count,
+                      to: '/org/activity',
+                      search: { who: row.id },
+                    }))}
+                    format={n.plain}
+                    empty={t('dashboard.quiet')}
+                  />
+                </Card>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="dash-row">
+            {data.activity ? (
               <Card title={t('dashboard.topActions')} description={t('dashboard.inPeriod', { days })}>
-                <BarList
+                <RankedBarChart
+                  label={t('dashboard.topActions')}
                   items={data.activity.top_actions.map((row) => ({
                     key: row.action,
                     label: actionLabel(row.action),
@@ -438,30 +513,7 @@ function OrganizationHome({ session }: { session: Session }) {
                   empty={t('dashboard.quiet')}
                 />
               </Card>
-              <Card title={t('dashboard.topActors')} description={t('dashboard.inPeriod', { days })}>
-                <BarList
-                  items={data.activity.top_actors.map((row) => ({
-                    key: String(row.id),
-                    label: (
-                      <span className="bar-person">
-                        <span className="avatar xs" aria-hidden="true">
-                          {initials(row.name)}
-                        </span>
-                        {row.name}
-                      </span>
-                    ),
-                    value: row.count,
-                    to: '/org/activity',
-                    search: { who: row.id },
-                  }))}
-                  format={n.plain}
-                  empty={t('dashboard.quiet')}
-                />
-              </Card>
-            </div>
-          ) : null}
-
-          <div className="dash-row">
+            ) : null}
             {activityAllowed ? <RecentActivity entries={recent.data?.data} /> : <RecentNotifications items={notifications.data?.data} />}
             <QuickActions actions={quick} />
           </div>

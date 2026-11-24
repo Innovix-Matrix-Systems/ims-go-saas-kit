@@ -1,84 +1,66 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { intlLocale, useLocale, useT } from '../i18n'
 import { Icon } from './ui'
 
-// Small hand-drawn SVG charts for the dashboards. One series each, in the
-// accent hue (the series is the point; a ranked list is one hue too), with a
-// recessive grid, a crosshair readout on hover and arrow keys, and a hidden
-// table for screen readers.
+// The dashboards' charts, drawn with Recharts. Colours come from the theme
+// tokens (the accent for one series, --series-1… for parts of a whole), so
+// they follow light and dark mode and the chosen accent. Every chart has a
+// readout on hover or focus, and the figures are also in text (a legend, or
+// a hidden table) so nothing is told by colour alone.
+
+/** What a tooltip renderer gets: whether it shows, and the hovered datum. */
+interface TipProps {
+  active?: boolean
+  payload?: ReadonlyArray<{ payload?: unknown }>
+}
 
 export interface ChartPoint {
   date: string
   value: number
 }
 
-/** Width of an element, followed as it resizes. */
-function useWidth<T extends HTMLElement>(fallback = 600) {
-  const ref = useRef<T>(null)
-  const [width, setWidth] = useState(fallback)
+/** Theme colours read from CSS, read again when the theme or accent changes. */
+function useThemeColors() {
+  const read = () => {
+    const style = getComputedStyle(document.documentElement)
+    const value = (name: string) => style.getPropertyValue(name).trim()
+    return {
+      accent: value('--accent'),
+      grid: value('--border'),
+      axis: value('--text-3'),
+      surface: value('--surface-1'),
+      other: value('--text-3'),
+      series: [1, 2, 3, 4, 5, 6].map((n) => value(`--series-${n}`)),
+    }
+  }
+  const [colors, setColors] = useState(read)
   useEffect(() => {
-    const element = ref.current
-    if (!element) return
-    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(160, Math.round(entry.contentRect.width))))
-    observer.observe(element)
-    return () => observer.disconnect()
+    const update = () => setColors(read())
+    const observer = new MutationObserver(update)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-accent', 'class', 'style'] })
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    media.addEventListener('change', update)
+    return () => {
+      observer.disconnect()
+      media.removeEventListener('change', update)
+    }
   }, [])
-  return [ref, width] as const
-}
-
-/** A round axis maximum: 1, 2, 2.5, 5 × 10^n at or above value. */
-export function niceMax(value: number): number {
-  if (value <= 0) return 1
-  const power = 10 ** Math.floor(Math.log10(value))
-  for (const factor of [1, 2, 2.5, 5, 10]) {
-    if (factor * power >= value) return factor * power
-  }
-  return 10 * power
-}
-
-/**
- * A smooth path through the points that never overshoots them (monotone
- * cubic interpolation), so a flat stretch stays flat and zero stays zero.
- */
-function smoothPath(points: [number, number][]): string {
-  const n = points.length
-  if (n === 0) return ''
-  if (n === 1) return `M${points[0][0]},${points[0][1]}`
-  const dx: number[] = []
-  const slope: number[] = []
-  for (let i = 0; i < n - 1; i++) {
-    dx.push(points[i + 1][0] - points[i][0])
-    slope.push((points[i + 1][1] - points[i][1]) / (dx[i] || 1))
-  }
-  const tangent: number[] = [slope[0]]
-  for (let i = 1; i < n - 1; i++) {
-    tangent.push(slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2)
-  }
-  tangent.push(slope[n - 2])
-  for (let i = 0; i < n - 1; i++) {
-    if (slope[i] === 0) {
-      tangent[i] = 0
-      tangent[i + 1] = 0
-      continue
-    }
-    const a = tangent[i] / slope[i]
-    const b = tangent[i + 1] / slope[i]
-    const h = a * a + b * b
-    if (h > 9) {
-      const t = 3 / Math.sqrt(h)
-      tangent[i] = t * a * slope[i]
-      tangent[i + 1] = t * b * slope[i]
-    }
-  }
-  let d = `M${points[0][0]},${points[0][1]}`
-  for (let i = 0; i < n - 1; i++) {
-    const [x0, y0] = points[i]
-    const [x1, y1] = points[i + 1]
-    const h = dx[i] / 3
-    d += ` C${x0 + h},${y0 + tangent[i] * h} ${x1 - h},${y1 - tangent[i + 1] * h} ${x1},${y1}`
-  }
-  return d
+  return colors
 }
 
 function useDayFormat() {
@@ -93,112 +75,75 @@ function useDayFormat() {
   }, [locale])
 }
 
-/**
- * A value per day as a smooth line over a soft area, with a crosshair and a
- * readout of the day under the pointer (or the arrow keys).
- */
-export function AreaChart({
+function Readout({ title, rows }: { title?: ReactNode; rows: { color: string; label: ReactNode; value: ReactNode }[] }) {
+  return (
+    <div className="chart-readout">
+      {title ? <span className="chart-readout-date">{title}</span> : null}
+      {rows.map((row, index) => (
+        <span key={index} className="chart-readout-value">
+          <i className="chart-swatch" style={{ background: row.color }} aria-hidden="true" />
+          {row.label} <strong>{row.value}</strong>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/** A value per day as a smooth line over a soft area, with a crosshair readout. */
+export function TrendChart({
   points,
   label,
   format = (value) => String(value),
-  height = 220,
+  height = 240,
 }: {
   points: ChartPoint[]
-  /** What the series is: names the chart for screen readers and the readout. */
+  /** What the series is: names the chart and the readout. */
   label: string
   format?: (value: number) => string
   height?: number
 }) {
   const t = useT()
   const days = useDayFormat()
-  const gradient = useId()
-  const [box, width] = useWidth<HTMLDivElement>()
-  const [hover, setHover] = useState<number | null>(null)
-  const top = 12
-  const bottom = 26
-  const left = 44
-  const right = 8
-  const plot = height - top - bottom
-  const count = points.length
-  const max = niceMax(Math.max(0, ...points.map((point) => point.value)))
-  const x = (index: number) => left + (count <= 1 ? 0 : (index / (count - 1)) * (width - left - right))
-  const y = (value: number) => top + plot - (value / max) * plot
-  const coords = points.map((point, index) => [x(index), y(point.value)] as [number, number])
-  const line = smoothPath(coords)
-  const area = count > 1 ? `${line} L${x(count - 1)},${top + plot} L${x(0)},${top + plot} Z` : ''
-  const ticks = [0, 0.5, 1]
-  // A few evenly spaced day labels, the last always today.
-  const labelEvery = Math.max(1, Math.ceil(count / Math.max(2, Math.floor((width - left) / 90))))
-  const dayLabels = points.map((_, index) => index).filter((index) => index === count - 1 || (index % labelEvery === 0 && count - 1 - index >= labelEvery / 2))
-
-  const pick = (event: PointerEvent<SVGRectElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const ratio = (event.clientX - rect.left) / rect.width
-    setHover(Math.min(count - 1, Math.max(0, Math.round(ratio * (count - 1)))))
+  const colors = useThemeColors()
+  const gradient = `trend-${useId().replace(/:/g, '')}`
+  const tooltip = ({ active, payload }: TipProps) => {
+    if (!active || !payload?.length) return null
+    const point = payload[0].payload as ChartPoint
+    return <Readout title={days.long(point.date)} rows={[{ color: colors.accent, label, value: format(point.value) }]} />
   }
-  const keys = (event: KeyboardEvent<SVGSVGElement>) => {
-    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
-      event.preventDefault()
-      const step = event.key === 'ArrowRight' ? 1 : -1
-      setHover((current) => Math.min(count - 1, Math.max(0, (current ?? (step > 0 ? -1 : count)) + step)))
-    } else if (event.key === 'Escape') {
-      setHover(null)
-    }
-  }
-  const active = hover === null ? null : points[hover]
-  const readoutLeft = hover === null ? 0 : Math.min(Math.max(x(hover), 70), width - 70)
-
   return (
-    <div className="chart" ref={box}>
-      <svg
-        className="chart-svg"
-        viewBox={`0 0 ${width} ${height}`}
-        width={width}
-        height={height}
-        role="img"
-        aria-label={t('chart.summary', { label, days: count })}
-        tabIndex={0}
-        onKeyDown={keys}
-        onBlur={() => setHover(null)}
-      >
-        <defs>
-          <linearGradient id={gradient} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" className="chart-area-top" />
-            <stop offset="100%" className="chart-area-bottom" />
-          </linearGradient>
-        </defs>
-        {ticks.map((share) => (
-          <g key={share}>
-            <line className={share === 0 ? 'chart-baseline' : 'chart-grid'} x1={left} x2={width - right} y1={y(max * share)} y2={y(max * share)} />
-            <text className="chart-axis" x={left - 8} y={y(max * share) + 4} textAnchor="end">
-              {format(max * share)}
-            </text>
-          </g>
-        ))}
-        {dayLabels.map((index) => (
-          <text key={index} className="chart-axis" x={x(index)} y={height - 6} textAnchor={index === 0 ? 'start' : index === count - 1 ? 'end' : 'middle'}>
-            {days.short(points[index].date)}
-          </text>
-        ))}
-        {area ? <path className="chart-area" d={area} fill={`url(#${gradient})`} /> : null}
-        <path className="chart-line" d={line} pathLength={1} />
-        {hover !== null ? (
-          <g className="chart-cursor">
-            <line x1={x(hover)} x2={x(hover)} y1={top} y2={top + plot} />
-            <circle cx={x(hover)} cy={y(points[hover].value)} r={5} />
-          </g>
-        ) : null}
-        <rect className="chart-hit" x={left} y={0} width={Math.max(0, width - left - right)} height={top + plot} onPointerMove={pick} onPointerLeave={() => setHover(null)} />
-      </svg>
-      {active ? (
-        <div className="chart-readout" style={{ left: readoutLeft }} role="status">
-          <span className="chart-readout-date">{days.long(active.date)}</span>
-          <span className="chart-readout-value">
-            <i className="chart-swatch" aria-hidden="true" />
-            {label} <strong>{format(active.value)}</strong>
-          </span>
-        </div>
-      ) : null}
+    <div className="chart" role="figure" aria-label={t('chart.summary', { label, days: points.length })}>
+      <ResponsiveContainer width="100%" height={height}>
+        <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id={gradient} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={colors.accent} stopOpacity={0.28} />
+              <stop offset="100%" stopColor={colors.accent} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 4" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={days.short}
+            tick={{ fill: colors.axis, fontSize: 11 }}
+            tickLine={false}
+            axisLine={{ stroke: colors.grid }}
+            minTickGap={28}
+          />
+          <YAxis tickFormatter={format} tick={{ fill: colors.axis, fontSize: 11 }} tickLine={false} axisLine={false} width={48} allowDecimals={false} />
+          <Tooltip content={(props) => tooltip(props as TipProps)} cursor={{ stroke: colors.axis, strokeDasharray: '3 3' }} />
+          <Area
+            type="monotone"
+            dataKey="value"
+            name={label}
+            stroke={colors.accent}
+            strokeWidth={2}
+            fill={`url(#${gradient})`}
+            activeDot={{ r: 5, stroke: colors.surface, strokeWidth: 2, fill: colors.accent }}
+            animationDuration={700}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
       <table className="sr-only">
         <caption>{label}</caption>
         <tbody>
@@ -215,21 +160,206 @@ export function AreaChart({
 }
 
 /** A tiny trend line for a stat card; decoration beside the number it summarizes. */
-export function Sparkline({ points, height = 36 }: { points: ChartPoint[]; height?: number }) {
-  const [box, width] = useWidth<HTMLDivElement>(120)
-  if (points.length < 2) return <div className="sparkline" ref={box} />
-  const max = Math.max(1, ...points.map((point) => point.value))
-  const pad = 3
-  const coords = points.map(
-    (point, index) => [(index / (points.length - 1)) * width, pad + (height - pad * 2) * (1 - point.value / max)] as [number, number],
-  )
-  const line = smoothPath(coords)
+export function Sparkline({ points, height = 40 }: { points: ChartPoint[]; height?: number }) {
+  const colors = useThemeColors()
+  const gradient = `spark-${useId().replace(/:/g, '')}`
+  if (points.length < 2) return <div className="sparkline" />
   return (
-    <div className="sparkline" ref={box} aria-hidden="true">
-      <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height}>
-        <path className="sparkline-area" d={`${line} L${width},${height} L0,${height} Z`} />
-        <path className="sparkline-line" d={line} />
-      </svg>
+    <div className="sparkline" aria-hidden="true">
+      <ResponsiveContainer width="100%" height={height}>
+        <AreaChart data={points} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id={gradient} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={colors.accent} stopOpacity={0.25} />
+              <stop offset="100%" stopColor={colors.accent} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area type="monotone" dataKey="value" stroke={colors.accent} strokeWidth={1.5} fill={`url(#${gradient})`} isAnimationActive={false} dot={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+export interface Slice {
+  key: string
+  label: string
+  value: number
+  to?: string
+  search?: Record<string, unknown>
+}
+
+/**
+ * Parts of a whole as a donut, the total in the middle and a legend with
+ * each part's figure and share. More than five parts fold the smallest into
+ * "Other" so every colour stays distinct.
+ */
+export function DonutChart({
+  slices,
+  format = (value) => String(value),
+  totalLabel,
+  totalValue,
+  empty,
+  height = 200,
+}: {
+  slices: Slice[]
+  format?: (value: number) => string
+  totalLabel: string
+  /** The figure in the middle; the sum when not given. */
+  totalValue?: string
+  empty?: ReactNode
+  height?: number
+}) {
+  const t = useT()
+  const colors = useThemeColors()
+  const navigate = useNavigate()
+  const locale = intlLocale(useLocale())
+  const percent = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 })
+  const sorted = [...slices].filter((slice) => slice.value > 0).sort((a, b) => b.value - a.value)
+  const shown = sorted.length > 5 ? [...sorted.slice(0, 4), { key: 'other', label: t('chart.other'), value: sorted.slice(4).reduce((sum, s) => sum + s.value, 0) }] : sorted
+  const total = shown.reduce((sum, slice) => sum + slice.value, 0)
+  const color = (index: number, key: string) => (key === 'other' ? colors.other : colors.series[index % colors.series.length])
+  const [active, setActive] = useState<number | null>(null)
+
+  if (total === 0) return <div className="small muted bar-list-empty">{empty}</div>
+
+  const tooltip = ({ active: on, payload }: TipProps) => {
+    if (!on || !payload?.length) return null
+    const slice = payload[0].payload as Slice
+    const index = shown.findIndex((s) => s.key === slice.key)
+    return <Readout rows={[{ color: color(index, slice.key), label: slice.label, value: `${format(slice.value)} · ${percent.format(slice.value / total)}` }]} />
+  }
+
+  return (
+    <div className="donut-box">
+      <div className="donut">
+        <div className="donut-chart" style={{ height }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Tooltip content={(props) => tooltip(props as TipProps)} />
+              <Pie
+                data={shown}
+                dataKey="value"
+                nameKey="label"
+                innerRadius="64%"
+                outerRadius="96%"
+                paddingAngle={shown.length > 1 ? 2 : 0}
+                cornerRadius={4}
+                stroke={colors.surface}
+                strokeWidth={2}
+                animationDuration={700}
+                onMouseEnter={(_, index) => setActive(index)}
+                onMouseLeave={() => setActive(null)}
+                onClick={(_, index) => {
+                  const slice = shown[index] as Slice
+                  if (slice?.to) void navigate({ to: slice.to, search: slice.search })
+                }}
+              >
+                {shown.map((slice, index) => (
+                  <Cell
+                    key={slice.key}
+                    fill={color(index, slice.key)}
+                    opacity={active === null || active === index ? 1 : 0.45}
+                    cursor={'to' in slice && slice.to ? 'pointer' : undefined}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="donut-center" aria-hidden="true">
+            <span className="donut-total">{totalValue ?? format(total)}</span>
+            <span className="donut-total-label">{totalLabel}</span>
+          </div>
+        </div>
+        <ul className="donut-legend">
+          {shown.map((slice, index) => {
+            const body = (
+              <>
+                <i className="chart-swatch" style={{ background: color(index, slice.key) }} aria-hidden="true" />
+                <span className="donut-legend-label">{slice.label}</span>
+                <span className="donut-legend-value">{format(slice.value)}</span>
+                <span className="donut-legend-share">{percent.format(slice.value / total)}</span>
+              </>
+            )
+            return (
+              <li key={slice.key} onMouseEnter={() => setActive(index)} onMouseLeave={() => setActive(null)} className={active === index ? 'active' : ''}>
+                {'to' in slice && slice.to ? (
+                  <Link to={slice.to} search={slice.search} className="donut-legend-row">
+                    {body}
+                  </Link>
+                ) : (
+                  <span className="donut-legend-row">{body}</span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+export interface BarItem {
+  key: string
+  label: string
+  value: number
+  to?: string
+  search?: Record<string, unknown>
+}
+
+/** Ranked horizontal bars, largest first, one hue; a bar with `to` opens it. */
+export function RankedBarChart({ items, format = (value) => String(value), label, empty }: { items: BarItem[]; format?: (value: number) => string; label: string; empty?: ReactNode }) {
+  const colors = useThemeColors()
+  const navigate = useNavigate()
+  if (items.length === 0) return <div className="small muted bar-list-empty">{empty}</div>
+  const data = [...items].sort((a, b) => b.value - a.value)
+  const height = data.length * 36 + 8
+  const tooltip = ({ active, payload }: TipProps) => {
+    if (!active || !payload?.length) return null
+    const item = payload[0].payload as BarItem
+    return <Readout rows={[{ color: colors.accent, label: item.label, value: format(item.value) }]} />
+  }
+  return (
+    <div className="ranked-chart" role="figure" aria-label={label}>
+      <ResponsiveContainer width="100%" height={height}>
+        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 40, bottom: 0, left: 0 }} barCategoryGap={8}>
+          <XAxis type="number" hide domain={[0, 'dataMax']} />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={150}
+            tick={{ fill: colors.axis, fontSize: 12 }}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value: string) => (value.length > 22 ? `${value.slice(0, 21)}…` : value)}
+          />
+          <Tooltip content={(props) => tooltip(props as TipProps)} cursor={{ fill: colors.grid, opacity: 0.4 }} />
+          <Bar
+            dataKey="value"
+            name={label}
+            fill={colors.accent}
+            radius={[0, 4, 4, 0]}
+            maxBarSize={22}
+            animationDuration={600}
+            label={{ position: 'right', fill: colors.axis, fontSize: 12, formatter: (value: unknown) => format(Number(value)) }}
+            onClick={(item: { payload?: BarItem }) => {
+              if (item.payload?.to) void navigate({ to: item.payload.to, search: item.payload.search })
+            }}
+            cursor={data.some((item) => item.to) ? 'pointer' : undefined}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+      <table className="sr-only">
+        <caption>{label}</caption>
+        <tbody>
+          {data.map((item) => (
+            <tr key={item.key}>
+              <th scope="row">{item.label}</th>
+              <td>{format(item.value)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -293,81 +423,5 @@ export function KpiCard({
     </Link>
   ) : (
     <div className="kpi-card">{body}</div>
-  )
-}
-
-export interface BarItem {
-  key: string
-  label: ReactNode
-  value: number
-  to?: string
-  search?: Record<string, unknown>
-}
-
-/** Ranked horizontal bars on one baseline, largest first, one hue. */
-export function BarList({ items, format = (value) => String(value), empty }: { items: BarItem[]; format?: (value: number) => string; empty?: ReactNode }) {
-  if (items.length === 0) return <div className="small muted bar-list-empty">{empty}</div>
-  const max = Math.max(1, ...items.map((item) => item.value))
-  return (
-    <ul className="bar-list">
-      {items.map((item) => {
-        const row = (
-          <>
-            <span className="bar-list-track" aria-hidden="true">
-              <span className="bar-list-fill" style={{ width: `${Math.max(2, (item.value / max) * 100)}%` }} />
-            </span>
-            <span className="bar-list-label">{item.label}</span>
-            <span className="bar-list-value">{format(item.value)}</span>
-          </>
-        )
-        return (
-          <li key={item.key}>
-            {item.to ? (
-              <Link to={item.to} search={item.search} className="bar-list-row linked">
-                {row}
-              </Link>
-            ) : (
-              <div className="bar-list-row">{row}</div>
-            )}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-export interface MeterItem {
-  key: string
-  label: ReactNode
-  used: number
-  /** -1 unlimited. */
-  limit: number
-  format?: (value: number) => string
-}
-
-/** Use against a limit, one row each: name, bar and figure, bars aligned. */
-export function MeterList({ items }: { items: MeterItem[] }) {
-  const t = useT()
-  return (
-    <ul className="meter-list">
-      {items.map((item) => {
-        const format = item.format ?? ((value: number) => String(value))
-        const unlimited = item.limit < 0
-        const share = unlimited || item.limit === 0 ? 0 : Math.min(1, item.used / item.limit)
-        const tone = share >= 1 ? 'danger' : share >= 0.8 ? 'warn' : ''
-        return (
-          <li key={item.key}>
-            <span className="meter-list-label">{item.label}</span>
-            <span className="meter-list-figure">
-              {format(item.used)}
-              <span className="muted"> / {unlimited ? t('dashboard.unlimited') : format(item.limit)}</span>
-            </span>
-            <span className="meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
-              <span className={`meter-fill ${tone}`} style={{ width: unlimited ? '0%' : `${Math.max(share > 0 ? 3 : 0, share * 100)}%` }} />
-            </span>
-          </li>
-        )
-      })}
-    </ul>
   )
 }

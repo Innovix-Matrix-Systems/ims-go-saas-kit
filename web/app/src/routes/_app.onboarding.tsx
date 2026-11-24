@@ -3,10 +3,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api, ApiError, type Schemas } from '../api/client'
 import { useSession } from '../auth/session'
-import { BankTransferForm, publicPackagesQuery, subscriptionStatusQuery, useFeatureText, usePrice, type Package } from '../components/billing'
+import { BankTransferForm, publicPackagesQuery, subscriptionStatusQuery, type Package, PricingCard } from '../components/billing'
 import { Field } from '../components/form'
 import { TwoFactorSetup } from '../components/TwoFactorSetup'
-import { Badge, Button, Card, Icon, PageHeader, Spinner } from '../components/ui'
+import { Button, Card, Icon, PageHeader, Spinner } from '../components/ui'
 import { useT, type MessageKey } from '../i18n'
 import { queryClient } from '../query'
 import { CardsSkeleton, FormSkeleton } from '../components/Skeleton'
@@ -119,8 +119,6 @@ function StepActions({ onNext, canContinue = true }: { onNext: (skip: boolean) =
 
 function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
   const t = useT()
-  const price = usePrice()
-  const featureText = useFeatureText()
   const packages = useQuery(publicPackagesQuery)
   const status = useQuery(subscriptionStatusQuery)
   const [chosen, setChosen] = useState<Package | null>(null)
@@ -142,31 +140,24 @@ function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
           {packages.data.map((pkg) => {
             const current = pkg.id === currentId
             return (
-              <div key={pkg.id} className={`plan-card ${current ? 'current' : ''} ${chosen?.id === pkg.id ? 'chosen' : ''}`}>
-                <div className="flex g-2 align-center">
-                  <strong>{pkg.name}</strong>
-                  {current ? <Badge tone="info">{t('onboarding.currentPlan')}</Badge> : null}
-                </div>
-                <div className="plan-price">{price(pkg)}</div>
-                {pkg.description ? <p className="small muted">{pkg.description}</p> : null}
-                <ul className="plan-features">
-                  {pkg.features
-                    .filter((feature) => feature.is_enabled)
-                    .map((feature) => (
-                      <li key={feature.feature_key}>{featureText(feature.feature_key, feature.limit_value)}</li>
-                    ))}
-                </ul>
-                <Button
-                  variant={current ? 'ghost' : 'default'}
-                  disabled={current || pkg.price === 0}
-                  onClick={() => {
-                    setChosen(pkg)
-                    setPending(false)
-                  }}
-                >
-                  {current ? t('onboarding.chosen') : t('onboarding.choose')}
-                </Button>
-              </div>
+              <PricingCard
+                key={pkg.id}
+                pkg={pkg}
+                current={current}
+                chosen={chosen?.id === pkg.id}
+                action={
+                  <Button
+                    variant={current ? 'ghost' : chosen?.id === pkg.id ? 'primary' : 'default'}
+                    disabled={current || pkg.price === 0}
+                    onClick={() => {
+                      setChosen(pkg)
+                      setPending(false)
+                    }}
+                  >
+                    {current ? t('onboarding.chosen') : t('onboarding.choose')}
+                  </Button>
+                }
+              />
             )
           })}
         </div>

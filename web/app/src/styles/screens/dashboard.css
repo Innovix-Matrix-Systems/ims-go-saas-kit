@@ -46,50 +46,43 @@
 
 .sparkline { height: 36px; }
 .sparkline svg { display: block; }
-.sparkline-line { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
-.sparkline-area { fill: var(--accent-subtle); stroke: none; }
 
-/* Area chart */
+/* Charts (Recharts) */
 .chart { position: relative; }
-.chart-svg { display: block; width: 100%; height: auto; overflow: visible; }
-.chart-svg:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; border-radius: 4px; }
-.chart-grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 4; }
-.chart-baseline { stroke: var(--border-strong); stroke-width: 1; }
-.chart-axis { fill: var(--text-3); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
-.chart-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; animation: chartDraw 0.7s ease-out; }
-.chart-area { animation: fadeIn 0.6s ease-out; }
-.chart-area-top { stop-color: var(--accent); stop-opacity: 0.22; }
-.chart-area-bottom { stop-color: var(--accent); stop-opacity: 0; }
-.chart-cursor line { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 3 3; }
-.chart-cursor circle { fill: var(--accent); stroke: var(--surface-1); stroke-width: 2; }
-.chart-hit { fill: transparent; cursor: crosshair; }
+.chart .recharts-wrapper, .donut .recharts-wrapper, .ranked-chart .recharts-wrapper { outline: none; }
+.chart .recharts-surface:focus, .ranked-chart .recharts-surface:focus { outline: none; }
 .chart-readout {
-  position: absolute; top: 0; transform: translate(-50%, -6px); pointer-events: none; z-index: 2;
   display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; white-space: nowrap;
-  background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-md, var(--shadow-sm));
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
   font-size: var(--fs-sm);
 }
 .chart-readout-date { color: var(--text-3); }
 .chart-readout-value { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
 .chart-readout-value strong { color: var(--text-1); font-variant-numeric: tabular-nums; }
-.chart-swatch { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
-@keyframes chartDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-@media (prefers-reduced-motion: reduce) { .chart-line, .chart-area { animation: none; } }
-
-/* Ranked bars */
-.bar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.bar-list-row {
-  position: relative; display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 0 10px;
-  border-radius: var(--radius-sm); color: inherit; text-decoration: none; overflow: hidden;
-}
-.bar-list-row.linked:hover .bar-list-fill { background: color-mix(in srgb, var(--accent) 26%, var(--surface-1)); }
-.bar-list-row.linked:focus-visible { outline: 2px solid var(--focus-ring); }
-.bar-list-track { position: absolute; inset: 0; }
-.bar-list-fill { display: block; height: 100%; border-radius: var(--radius-sm); background: var(--accent-subtle); transition: width 0.5s ease, background-color var(--ease); }
-.bar-list-label { position: relative; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
-.bar-list-value { position: relative; font-size: var(--fs-md); font-weight: var(--fw-medium); font-variant-numeric: tabular-nums; }
+.chart-swatch { width: 8px; height: 8px; border-radius: 2px; flex: none; display: inline-block; }
 .bar-list-empty { padding: 8px 0; }
-.bar-person { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Donut: the chart with its total in the middle, the legend beside it. */
+.donut-box { container-type: inline-size; }
+.donut { display: grid; grid-template-columns: minmax(140px, 200px) minmax(0, 1fr); gap: 16px; align-items: center; }
+/* A narrow card puts the legend under the ring. */
+@container (max-width: 400px) {
+  .donut { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .donut-chart { max-width: 200px; width: 100%; justify-self: center; }
+}
+.donut-chart { position: relative; min-width: 0; }
+.donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-align: center; }
+.donut-total { font-size: var(--fs-lg); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.donut-total-label { font-size: var(--fs-sm); color: var(--text-3); }
+.donut-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.donut-legend-row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: var(--radius-sm); color: inherit; text-decoration: none; font-size: var(--fs-md);
+}
+.donut-legend li.active .donut-legend-row, a.donut-legend-row:hover { background: var(--surface-2); }
+.donut-legend-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.donut-legend-value { font-weight: var(--fw-medium); font-variant-numeric: tabular-nums; }
+.donut-legend-share { min-width: 38px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; }
 
 /* Meters against a limit */
 .meter-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }

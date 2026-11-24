@@ -7257,6 +7257,15 @@ export interface components {
                 files: number;
                 /** Format: int64 */
                 bytes: number;
+                /** @description Per file type, largest first. */
+                by_type: {
+                    /** @enum {string} */
+                    type: "image" | "video" | "document" | "other";
+                    /** Format: int64 */
+                    files: number;
+                    /** Format: int64 */
+                    bytes: number;
+                }[];
             } | null;
             /** Format: int64 */
             branches: number | null;
