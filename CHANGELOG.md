@@ -8,7 +8,7 @@ All notable changes to this project are documented here. The format follows
 
 **Upgrading:** run `ims migrate` (migrations `00037_create_onboarding`: `tenant_onboarding` and
 `user_agreements`; `00038_user_locale`: `users.locale`; `00039_tenant_owner`: `tenants.owner_user_id`;
-`00040_payment_cancelled`: payments may be `cancelled`), `ims permission:sync` (adds `billing.view`, `billing.manage` and `organization.update`, and now also
+`00040_payment_cancelled`: payments may be `cancelled`; `00041_create_announcements`: announcements, their audience and their events), `ims permission:sync` (adds `billing.view`, `billing.manage`, `organization.update`, `announcement.view` and `announcement.manage`, and now also
 grants every tenant Admin role the permissions it is missing) and `ims settings:sync` (the new
 **Sign-up** and **Billing** groups).
 
@@ -73,6 +73,19 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   security summary) and **Organization** profile page (details with an edit dialog, owner, people,
   plan usage, counts). IDs and codes are shown as text with a copy button instead of read-only
   inputs.
+- **Announcements** (`internal/modules/announcements`): one record per announcement, whatever it
+  reaches. Staff manage them at `/api/v1/internal/announcements` (`announcement.view`,
+  `announcement.manage`): a kind (`info`, `promotion`, `warning`, `critical`), an optional
+  button, a window, a status, whether members may dismiss it, an audience of every organization
+  or listed ones, and optional channels that deliver it once through the notification system
+  when it starts (task `announcements.deliver`). Members get `GET /api/v1/announcements/live` and
+  record views, clicks and dismissals (`POST /api/v1/announcements/{id}/events`, once per person);
+  staff see the counts in all and per organization. Replaces
+  `POST /api/v1/internal/notification/broadcast`, which wrote one notification per organization.
+- Client app: the console's Announcements page lists one row per announcement with its state and
+  reach, edits with a live preview (kind, button, audience, window, channels, draft or publish),
+  and shows how each did per organization; members see the most urgent live one as a banner,
+  closing it is remembered on the device and the server.
 - Client app banners: the organization's plan when it needs attention (ending within a week,
   cancelled, overdue, ended, a payment awaiting approval, or no plan) for those who see billing,
   hidden for the day on request; and the newest unread warning or critical staff announcement,

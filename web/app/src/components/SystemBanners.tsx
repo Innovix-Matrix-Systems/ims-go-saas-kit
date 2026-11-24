@@ -1,22 +1,21 @@
 import { Link } from '@tanstack/react-router'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState, type ReactNode } from 'react'
+import { api, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { intlLocale, useLocale, useT } from '../i18n'
 import { subscriptionStatusQuery } from './billing'
-import { feedKey, fetchFeed, markRead } from './notifications'
 import { organizationQuery } from './organization'
 import { Icon, type IconName } from './ui'
 import { inOrganization } from './WorkspaceMenu'
 
-// Banners across the top of the app for what must not be missed: the
-// organization's plan running out, and staff announcements marked warning
-// or critical. Each can be put away; a plan warning comes back the next day.
+// Banners across the top of the app for what must not be missed: staff
+// announcements, and the organization's plan running out.
 
 /** How soon a plan's end is worth a warning, in days. */
 const WARN_DAYS = 7
 
-type Tone = 'info' | 'warn' | 'danger'
+type Tone = 'info' | 'promo' | 'warn' | 'danger'
 
 function Banner({
   tone,
@@ -33,7 +32,7 @@ function Banner({
   body?: string | null
   action?: ReactNode
   onDismiss?: () => void
-  dismissLabel: string
+  dismissLabel?: string
 }) {
   return (
     <div className={`system-banner ${tone}`} role={tone === 'danger' ? 'alert' : 'status'}>
@@ -51,6 +50,118 @@ function Banner({
     </div>
   )
 }
+
+/* ── Announcements ─────────────────────────────────────── */
+
+export type LiveAnnouncement = Schemas['LiveAnnouncement']
+export type AnnouncementKind = LiveAnnouncement['kind']
+
+const kindTones: Record<AnnouncementKind, Tone> = { info: 'info', promotion: 'promo', warning: 'warn', critical: 'danger' }
+const kindIcons: Record<AnnouncementKind, IconName> = { info: 'bell', promotion: 'package', warning: 'alert', critical: 'alert' }
+
+/**
+ * An announcement as members see it. The console's editor shows the same
+ * component as a preview (without the callbacks).
+ */
+export function AnnouncementView({
+  announcement,
+  onDismiss,
+  onAction,
+}: {
+  announcement: Pick<LiveAnnouncement, 'title' | 'body' | 'kind' | 'cta_label' | 'cta_url' | 'dismissible'>
+  onDismiss?: () => void
+  onAction?: () => void
+}) {
+  const t = useT()
+  const { title, body, kind, cta_label: label, cta_url: url, dismissible } = announcement
+  return (
+    <Banner
+      tone={kindTones[kind]}
+      icon={kindIcons[kind]}
+      title={title || t('announcements.untitled')}
+      body={body}
+      action={
+        label && url ? (
+          <a className={`btn sm ${kind === 'promotion' ? 'primary' : ''}`} href={url} target="_blank" rel="noopener noreferrer" onClick={onAction}>
+            {label}
+            <Icon name="external" />
+          </a>
+        ) : undefined
+      }
+      onDismiss={dismissible ? (onDismiss ?? (() => undefined)) : undefined}
+      dismissLabel={t('announcementBanner.dismiss')}
+    />
+  )
+}
+
+const DISMISSED_KEY = 'ims.app.announcements.dismissed'
+const VIEWED_KEY = 'ims.app.announcements.viewed'
+
+function readIds(store: Storage | undefined, key: string): number[] {
+  try {
+    const parsed = JSON.parse(store?.getItem(key) ?? '[]')
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'number') : []
+  } catch {
+    return []
+  }
+}
+
+function writeIds(store: Storage | undefined, key: string, ids: number[]) {
+  try {
+    // Only the latest hundred: old announcements end anyway.
+    store?.setItem(key, JSON.stringify(ids.slice(-100)))
+  } catch {
+    // Storage is off: the server still knows what was dismissed.
+  }
+}
+
+const local = () => (typeof window === 'undefined' ? undefined : window.localStorage)
+const session = () => (typeof window === 'undefined' ? undefined : window.sessionStorage)
+
+/** Tells the API what the member did; a failure is not worth bothering them. */
+function track(id: number, type: 'view' | 'click' | 'dismiss') {
+  void api(`/announcements/${id}/events`, { method: 'POST', body: { type } }).catch(() => undefined)
+}
+
+/**
+ * The most urgent live announcement for the member's organization, as a
+ * banner. Closing it is remembered on this device and on the server (so it
+ * stays closed elsewhere); the first view, a click on its button and the
+ * dismissal are counted.
+ */
+export function AnnouncementBanner() {
+  const user = useSession()
+  const inside = inOrganization(user)
+  const live = useQuery({
+    queryKey: ['announcements', 'live'],
+    queryFn: () => api<LiveAnnouncement[]>('/announcements/live'),
+    enabled: inside,
+    refetchInterval: 5 * 60_000,
+    refetchIntervalInBackground: false,
+  })
+  const [dismissed, setDismissed] = useState(() => readIds(local(), DISMISSED_KEY))
+  const current = (live.data ?? []).find((item) => !dismissed.includes(item.id))
+
+  useEffect(() => {
+    if (!current) return
+    const viewed = readIds(session(), VIEWED_KEY)
+    if (viewed.includes(current.id)) return
+    writeIds(session(), VIEWED_KEY, [...viewed, current.id])
+    track(current.id, 'view')
+  }, [current?.id])
+
+  if (!inside || !current) return null
+
+  const dismiss = () => {
+    const next = [...dismissed, current.id]
+    writeIds(local(), DISMISSED_KEY, next)
+    setDismissed(next)
+    track(current.id, 'dismiss')
+  }
+  return <AnnouncementView announcement={current} onDismiss={dismiss} onAction={() => track(current.id, 'click')} />
+}
+
+/* ── Plan ──────────────────────────────────────────────── */
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -84,8 +195,8 @@ function useDismissedToday(key: string | null) {
 export function PlanBanner() {
   const t = useT()
   const locale = intlLocale(useLocale())
-  const session = useSession()
-  const allowed = inOrganization(session) && can(session, 'billing.view')
+  const user = useSession()
+  const allowed = inOrganization(user) && can(user, 'billing.view')
   const status = useQuery({ ...subscriptionStatusQuery, enabled: allowed })
   const organization = useQuery({ ...organizationQuery, enabled: allowed })
   const data = status.data
@@ -133,55 +244,6 @@ export function PlanBanner() {
       }
       onDismiss={dismiss}
       dismissLabel={t('planBanner.hide')}
-    />
-  )
-}
-
-/**
- * The newest unread staff announcement marked warning or critical, until it
- * is read here or in the notifications. Informational ones stay in the bell.
- */
-export function AnnouncementBanner() {
-  const t = useT()
-  const session = useSession()
-  const client = useQueryClient()
-  const feed = useQuery({
-    queryKey: [...feedKey, 'banner'],
-    queryFn: () => fetchFeed({ unreadOnly: true, limit: 20 }),
-    enabled: !!session,
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: false,
-  })
-  const announcements = (feed.data?.data ?? []).filter((item) => item.event_type === 'platform.announcement' && item.priority !== 'INFO' && !item.is_read)
-  const [busy, setBusy] = useState(false)
-  if (announcements.length === 0) return null
-  const current = announcements[0]
-
-  const dismiss = async () => {
-    setBusy(true)
-    try {
-      await markRead(current.id)
-      await client.invalidateQueries({ queryKey: feedKey })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Banner
-      tone={current.priority === 'CRITICAL' ? 'danger' : 'warn'}
-      icon="bell"
-      title={current.title}
-      body={current.body}
-      action={
-        announcements.length > 1 ? (
-          <Link to="/notifications" className="btn sm ghost">
-            {t('announcementBanner.more', { count: announcements.length - 1 })}
-          </Link>
-        ) : undefined
-      }
-      onDismiss={busy ? undefined : () => void dismiss()}
-      dismissLabel={t('announcementBanner.dismiss')}
     />
   )
 }

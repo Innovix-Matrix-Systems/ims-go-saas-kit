@@ -206,3 +206,15 @@
 .system-banner-close:hover { background: color-mix(in srgb, var(--text-1) 8%, transparent); color: var(--text-1); }
 .system-banner-close svg { width: 14px; height: 14px; }
 @media (max-width: 640px) { .system-banner { flex-wrap: wrap; } .system-banner .btn { order: 3; } }
+.system-banner.promo { background: linear-gradient(90deg, var(--accent-subtle), color-mix(in srgb, var(--accent) 22%, var(--surface-1))); border-bottom-color: var(--accent-border); }
+.system-banner.promo > svg { color: var(--accent); }
+.system-banner .btn svg { width: 12px; height: 12px; }
+
+/* Announcement editor and detail */
+.announcement-preview { display: flex; flex-direction: column; gap: 6px; }
+.announcement-preview .system-banner { border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.audience-picker { display: flex; flex-direction: column; gap: 8px; }
+.audience-list { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 4px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.audience-list .check-row { gap: 10px; padding: 4px 6px; border-radius: var(--radius-sm); }
+.audience-list .check-row:hover { background: var(--surface-2); }
+.audience-list .org-mark { width: 24px; height: 24px; border-radius: 6px; font-size: var(--fs-xs); }
