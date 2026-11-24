@@ -6,7 +6,7 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-## [0.1.7] - 2026-11-25
+## [0.1.8] - 2026-11-25
 
 Fixes: logging out no longer signs out your other browsers, sign-up refuses a plan it cannot
 finish on before creating anything, error messages say when a record is still in use, and the
@@ -283,8 +283,8 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.7...HEAD
-[0.1.7]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.6...v0.1.7
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.6...v0.1.8
 [0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.0...v0.1.5
 [0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/releases/tag/v0.1.0
