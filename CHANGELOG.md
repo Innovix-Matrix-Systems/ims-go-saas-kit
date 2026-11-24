@@ -6,6 +6,66 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-24
+
+A tidy-up and visibility release. Every change to your data now shows up as a named step in a
+trace, the personal-data export email works from any inbox, and the code reads the same way in
+every module. Nothing in the API changes shape.
+
+### Added
+
+- **A span for every change.** With tracing on, each create, update, delete, import, export,
+  erasure, sign-in, payment approval and delivery is its own step in the trace (`identity.create`,
+  `billing.approve_payment`, `privacy.erase` …), with the queries it ran underneath. Spans carry ids
+  and counts only, never names, e-mail addresses or tokens.
+- **Failures and refusals look different.** A refused request (validation, not found, conflict)
+  records its error code on the step without turning the trace red; only real failures do.
+- **Traces now include file storage, Redis, mail and maintenance mode.** S3, R2 and MinIO calls,
+  every Redis command (through the official `redisotel` package), SMTP sends, message deliveries,
+  turning maintenance mode on and off, and retrying, cancelling, deleting, pausing or resuming queue
+  jobs.
+- **A test that keeps it that way.** A new service write without a span fails the test suite unless
+  it is listed with a reason, and `ims gen module` writes services that already comply.
+- **HTML versions of six account emails**, in English and Bangla: data export ready (with a
+  download button), account deletion scheduled, account erased, recovery code used, and two-factor
+  turned on or off.
+
+### Fixed
+
+- **The "your data export is ready" link answered 401.** It pointed straight at the API, which a
+  browser opens without a sign-in token. It now opens the app's privacy page, which downloads the
+  file for the signed-in owner. The new `AUTH_DATA_EXPORT_URL` setting chooses that page (default
+  `{APP_URL}/settings/privacy?export={job}`); the link carries no secret.
+- **The privacy page forgot your export after a reload.** It now finds the export the email links
+  to, or your latest one, says until when it can be downloaded, and offers a new one when it has
+  expired or failed.
+- **Signing in from a link lost part of it.** After signing in you now land on the exact link you
+  opened, query included.
+- Members whose role holds no permissions can export and download their own data. This was always
+  allowed; it is now tested.
+
+### Changed
+
+- **Every module reads the database through its repository.** Announcements, the dashboard, the
+  activity feed and its export, data-processing retries and billing invoices and usage called the
+  database from their services; they now follow the same handler → service → repository shape as
+  the rest, with their own `routes.go` and request or model files.
+- Internal roadmap references were removed from comments, tests and migration headers.
+- The renewal-reminder task's description says what it does: it notifies organizations whose plan
+  expires in 7, 3 or 1 days.
+- The README links straight to the API starter's documentation site.
+
+### Upgrading from 0.1.0
+
+No migrations. If you build on the starter's Go packages, a few constructors changed:
+`activity.NewService`, `announcements.NewService` and `dashboard.NewService` take a repository
+(`NewRepository(queries)`), `billingservice.NewInvoiceService` and `NewUsageService` take
+`domain.NewReportRepository(queries)`, the activity export's `New` takes a repository instead of
+the queries and checker (its routes move to `activityexport.NewHandler`), `dataprocessing.Service`
+lost `WithQueries`, `privacy.Service.WithExports` takes the export page URL instead of the API
+URL, and the Redis cache's `New` now also returns an error.
+Optionally set `AUTH_DATA_EXPORT_URL` if your client app does not live at `APP_URL`.
+
 ## [0.1.0] - 2026-11-24
 
 The first release of **IMS Go Admin Starter**. It is the
@@ -114,5 +174,6 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.0...v0.1.5
 [0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/releases/tag/v0.1.0
