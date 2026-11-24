@@ -351,6 +351,8 @@ export const bn: Messages = {
   'branches.save': 'শাখা সংরক্ষণ করুন',
   'branches.delete': 'শাখা মুছুন',
   'branches.deleteConfirm': '{name} শাখাটি মুছবেন? আগে এর সদস্যদের অন্য শাখায় সরাতে হবে।',
+  'branches.all': 'সব শাখা',
+  'branches.switchedAll': 'আপনি এখন সব শাখা দেখছেন।',
   'branches.switch': 'শাখা পরিবর্তন',
   'branches.switched': 'আপনি এখন {name}-এ কাজ করছেন।',
   'org.activity': 'কার্যকলাপের লগ',

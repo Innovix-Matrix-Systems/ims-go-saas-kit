@@ -66,20 +66,22 @@ function JobsPage() {
                           {job.file_name ? <span className="small muted mono">{job.file_name}</span> : null}
                         </span>
                       </td>
-                      <td className="jobs-status-cell">
-                        <Badge tone={statusTones[status]}>{t(`jobs.status.${status}`)}</Badge>
-                        {isRunning(job) ? (
-                          <>
-                            <div className="meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={job.progress_percentage}>
-                              <span className="meter-fill" style={{ width: `${Math.max(4, job.progress_percentage)}%` }} />
-                            </div>
-                            {job.total_items > 0 ? (
-                              <span className="small muted">{t('jobs.progress', { processed: job.processed_items, total: job.total_items })}</span>
-                            ) : null}
-                          </>
-                        ) : null}
-                        {status === 'failed' && job.error_message ? <span className="small danger-text">{job.error_message}</span> : null}
-                        {job.error_count > 0 ? <span className="small muted">{t('jobs.rowErrors', { count: job.error_count })}</span> : null}
+                      <td>
+                        <div className="jobs-status-cell">
+                          <Badge tone={statusTones[status]}>{t(`jobs.status.${status}`)}</Badge>
+                          {isRunning(job) ? (
+                            <>
+                              <div className="meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={job.progress_percentage}>
+                                <span className="meter-fill" style={{ width: `${Math.max(4, job.progress_percentage)}%` }} />
+                              </div>
+                              {job.total_items > 0 ? (
+                                <span className="small muted">{t('jobs.progress', { processed: job.processed_items, total: job.total_items })}</span>
+                              ) : null}
+                            </>
+                          ) : null}
+                          {status === 'failed' && job.error_message ? <span className="small danger-text">{job.error_message}</span> : null}
+                          {job.error_count > 0 ? <span className="small muted">{t('jobs.rowErrors', { count: job.error_count })}</span> : null}
+                        </div>
                       </td>
                       <td className="small muted nowrap">{when(job.created_at)}</td>
                       <td className="small muted nowrap">{when(job.expires_at)}</td>

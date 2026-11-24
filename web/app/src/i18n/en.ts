@@ -349,6 +349,8 @@ export const en = {
   'branches.save': 'Save branch',
   'branches.delete': 'Delete branch',
   'branches.deleteConfirm': 'Delete the branch {name}? Its members must be moved to another branch first.',
+  'branches.all': 'All branches',
+  'branches.switchedAll': 'You now see every branch.',
   'branches.switch': 'Switch branch',
   'branches.switched': 'You are now working in {name}.',
   'org.activity': 'Activity log',
