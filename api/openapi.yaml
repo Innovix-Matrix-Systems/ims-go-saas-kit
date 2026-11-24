@@ -1061,15 +1061,17 @@ paths:
       - {$ref: "#/components/parameters/ActingBranch"}
     post:
       tags: [Auth]
-      summary: Revoke the token for one device
+      summary: Revoke the token that made the request
+      description: >-
+        Signs this session out. The caller's other sessions stay signed in, even on a device with
+        the same name. The body is optional; `device` is accepted for older clients.
       operationId: authLogout
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               type: object
-              required: [device]
               properties:
                 device: {type: string, maxLength: 100}
       responses:

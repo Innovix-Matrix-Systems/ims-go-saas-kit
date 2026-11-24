@@ -12,11 +12,11 @@ UPDATE personal_access_tokens
 SET last_used_at = @last_used_at, updated_at = now()
 WHERE id = @id;
 
--- name: DeleteTokenByDevice :execrows
+-- name: DeleteTokenForUser :execrows
 DELETE FROM personal_access_tokens
-WHERE tokenable_type = @tokenable_type
-  AND tokenable_id = @tokenable_id
-  AND device = @device;
+WHERE id = @id
+  AND tokenable_type = @tokenable_type
+  AND tokenable_id = @tokenable_id;
 
 -- name: DeleteTokensForUser :execrows
 DELETE FROM personal_access_tokens

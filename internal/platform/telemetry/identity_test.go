@@ -23,7 +23,7 @@ func (f fakeAuth) Verify(context.Context, string) (*authn.Identity, error) {
 	identity := f.identity
 	return &identity, nil
 }
-func (f fakeAuth) Revoke(context.Context, int64, string) error      { return nil }
+func (f fakeAuth) Revoke(context.Context, int64, int64) error       { return nil }
 func (f fakeAuth) RevokeAll(context.Context, int64) error           { return nil }
 func (f fakeAuth) RevokeOthers(context.Context, int64, int64) error { return nil }
 

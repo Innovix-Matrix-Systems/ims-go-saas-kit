@@ -149,8 +149,10 @@ type VerifyOTPRequest struct {
 }
 
 // LogoutRequest revokes one device token.
+// LogoutRequest is optional: logout revokes the calling token. Device only
+// tells the dashboard's sign-out apart (older clients still send theirs).
 type LogoutRequest struct {
-	Device string `json:"device" validate:"required,max=100"`
+	Device string `json:"device" validate:"omitempty,max=100"`
 }
 
 type loginData struct {
@@ -219,10 +221,10 @@ func (h *Handler) acceptInvitation(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	identity, _ := authn.IdentityFromContext(r.Context())
 	var req LogoutRequest
-	if !h.Bind(w, r, &req) {
+	if r.ContentLength != 0 && !h.Bind(w, r, &req) {
 		return
 	}
-	if err := h.service.Logout(r.Context(), identity.UserID, req.Device); err != nil {
+	if err := h.service.Logout(r.Context(), identity.UserID, identity.TokenID); err != nil {
 		h.Error(w, r, err)
 		return
 	}

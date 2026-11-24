@@ -857,7 +857,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Revoke the token for one device */
+        /**
+         * Revoke the token that made the request
+         * @description Signs this session out. The caller's other sessions stay signed in, even on a device with the same name. The body is optional; `device` is accepted for older clients.
+         */
         post: operations["authLogout"];
         delete?: never;
         options?: never;
@@ -11738,10 +11741,10 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": {
-                    device: string;
+                    device?: string;
                 };
             };
         };
