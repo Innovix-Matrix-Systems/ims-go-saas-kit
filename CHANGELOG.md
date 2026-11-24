@@ -6,6 +6,44 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-11-25
+
+Fixes: logging out no longer signs out your other browsers, sign-up refuses a plan it cannot
+finish on before creating anything, error messages say when a record is still in use, and the
+developer tooling works the same in PowerShell as in a Unix shell.
+
+**Upgrading from 0.1.6:** no migrations. `POST /api/v1/logout` now revokes only the token that
+made the request; `device` is optional. If you implement `authn.Authenticator` yourself, `Revoke`
+takes the token id instead of the device name. A `.env` copied from an older `.env.example` may
+still carry `KEY=   # comment` lines; move those comments to their own line.
+
+### Changed
+
+- `POST /api/v1/logout` revokes the calling token; the body is optional.
+- `make skills-sync` and `make skills-check` run `go run ./cmd/skills`, and `make gen-check`
+  calls `git --no-pager diff`, so they work in PowerShell and in non-interactive shells.
+- The local-tracing docs explain why the endpoint is `http://127.0.0.1:4318`, name every port the
+  Jaeger binary opens on Windows, and explain the failed `hello` span on Redis older than 6. The
+  realtime guide lists the `billing` event.
+
+### Fixed
+
+- Logout deleted every token of the user with the same device name, so two browsers called
+  "Web · Chrome on Windows" signed each other out.
+- Sign-up with a plan whose `users.max` is 0 created the organization and its subscription
+  before refusing the owner, and the clean-up left the subscription active, which kept the plan
+  from being deleted. Such a plan is refused up front (503), and the clean-up cancels the
+  subscription.
+- Deleting a record that others still point at (a package with subscriptions) answered "The
+  operation references a record that does not exist"; it now says the record is still in use.
+- The last Admin of a deleted organization could not be erased.
+- `.env.example` copied as-is did not load: six empty keys read their comment as the value
+  (`APP_KEY` failed to decode); `TestEnvExampleLoads` keeps it loadable.
+- `make rename` turned a URL-encoded title in the OpenAPI `otpauth://` example into
+  "Your Title%20Go%20API"; encoded titles are renamed whole.
+- `make dev` on Windows kept answering with an old API build left running by an air that was
+  stopped without its process tree; it now stops that build first.
+
 ## [0.1.6] - 2026-11-25
 
 Live updates, invoice PDFs and payment notices, plus one frontend setup instead of two. The
@@ -245,7 +283,8 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.0...v0.1.5
 [0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/releases/tag/v0.1.0

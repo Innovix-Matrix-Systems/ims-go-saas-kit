@@ -5,13 +5,13 @@ description: The VERSION file, semantic versioning, the changelog, cutting a rel
 
 ## One version, one file
 
-The `VERSION` file at the repository root holds the current release — `0.1.6` — as plain
+The `VERSION` file at the repository root holds the current release — `0.1.7` — as plain
 [semver](https://semver.org) (no leading `v`). Everything reads it:
 
 | Where | Shows |
 | --- | --- |
-| `make build` | stamps it into the binary: `ims version` → `ims 0.1.6` |
-| `go run`, air, tests | the same number with a suffix: `ims 0.1.6-dev` — a local build is never mistaken for a release |
+| `make build` | stamps it into the binary: `ims version` → `ims 0.1.7` |
+| `go run`, air, tests | the same number with a suffix: `ims 0.1.7-dev` — a local build is never mistaken for a release |
 | `/api/v1/system/info`, `/api/health`, the dashboard | the running version |
 | the README | the version badge |
 
