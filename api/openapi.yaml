@@ -589,6 +589,36 @@ paths:
         "403": *forbidden
         "422": *validationFailed
 
+  /api/v1/organization/logo:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    post:
+      tags: [Tenants]
+      summary: Upload the organization's logo
+      description: "Replaces the organization's logo (`organization.update`): an image (max 5 MB) on the public disk, attached to the organization and listed with its files. The response's `url` is public; set it as the `branding.logo_url` setting to use it in e-mails and as the organization's mark."
+      operationId: uploadOrganizationLogo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [logo]
+              properties:
+                logo: {type: string, format: binary, description: The logo image.}
+      responses:
+        "201":
+          description: The stored logo.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/FileEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "413": *requestTooLarge
+        "422": *validationFailed
+
   /api/v1/organization/transfer-ownership:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -8586,6 +8616,10 @@ components:
         generated:
           type: boolean
           description: Written by a background job (an export). It is removed with the job, and deleting it here is refused (409).
+        collection:
+          type: string
+          nullable: true
+          description: What an attached file is for, such as `logo` (the organization's logo), `profile` (a user's photo) or `output` (an export); null for library files.
         created_at: {type: string, format: date-time}
 
     FileEnvelope:

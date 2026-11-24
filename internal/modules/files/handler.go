@@ -303,3 +303,24 @@ func filePathID(r *http.Request) (int64, error) {
 func (h *Handler) can(permission string) func(http.Handler) http.Handler {
 	return authz.Require(h.checker, permission, h.Responder)
 }
+
+// uploadLogo replaces the organization's logo (multipart field "logo"). The
+// response is the stored file; its url is public, for the e-mail branding.
+func (h *Handler) uploadLogo(w http.ResponseWriter, r *http.Request) {
+	form, err := httpx.Multipart(w, r, MaxAvatarSize+multipartSlack)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	header, err := httpx.FormFile(form, "logo")
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	file, err := h.service.UpdateLogo(r.Context(), authn.UserID(r), tenancy.From(r).EffectiveTenantID(), header)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.Data(w, r, http.StatusCreated, NewResponse(*file, h.fileURL(r, tenantSurface, *file)))
+}

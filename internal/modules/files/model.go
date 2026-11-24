@@ -25,6 +25,8 @@ const (
 const (
 	OwnerUser         = "user"
 	CollectionProfile = "profile"
+	OwnerTenant       = "tenant"
+	CollectionLogo    = "logo"
 )
 
 // collections is the collection registry: owner type → collection → single
@@ -33,6 +35,9 @@ const (
 var collections = map[string]map[string]bool{
 	OwnerUser: {
 		CollectionProfile: true,
+	},
+	OwnerTenant: {
+		CollectionLogo: true,
 	},
 }
 

@@ -15,6 +15,7 @@ func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.Get("/files/{id}", h.show)
 	r.Get("/files/{id}/download", h.download)
 	r.Delete("/files/{id}", h.destroy)
+	r.With(h.can(authz.PermOrganizationUpdate)).Post("/organization/logo", h.uploadLogo)
 }
 
 // RegisterRoutesExempt mounts the internal file routes (tenant-exempt,
