@@ -82,9 +82,8 @@ type ListedResponse struct {
 // DetailResponse is an announcement with its audience and counts.
 type DetailResponse struct {
 	Response
-	Tenants  []TenantRef    `json:"tenants"`
-	Totals   Totals         `json:"totals"`
-	ByTenant []TenantTotals `json:"by_tenant"`
+	Tenants []TenantRef `json:"tenants"`
+	Totals  Totals      `json:"totals"`
 }
 
 // LiveResponse is what members see: the banner's content.
@@ -127,6 +126,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 func (h *Handler) RegisterInternalRoutes(r chi.Router) {
 	r.With(h.can(authz.PermAnnouncementView)).Get("/internal/announcements", h.index)
 	r.With(h.can(authz.PermAnnouncementView)).Get("/internal/announcements/{id}", h.show)
+	r.With(h.can(authz.PermAnnouncementView)).Get("/internal/announcements/{id}/organizations", h.organizations)
 	r.With(h.can(authz.PermAnnouncementManage)).Post("/internal/announcements", h.store)
 	r.With(h.can(authz.PermAnnouncementManage)).Patch("/internal/announcements/{id}", h.update)
 	r.With(h.can(authz.PermAnnouncementManage)).Delete("/internal/announcements/{id}", h.destroy)
@@ -168,8 +168,25 @@ func (h *Handler) respondDetail(w http.ResponseWriter, r *http.Request, id int64
 		return
 	}
 	h.Data(w, r, status, DetailResponse{
-		Response: newResponse(detail.Announcement, h.service.now()), Tenants: detail.Tenants, Totals: detail.Totals, ByTenant: detail.ByTenant,
+		Response: newResponse(detail.Announcement, h.service.now()), Tenants: detail.Tenants, Totals: detail.Totals,
 	})
+}
+
+// organizations is a page of the organizations whose members reacted, with
+// their counts (?search= by name).
+func (h *Handler) organizations(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.PathID(w, r, "id")
+	if !ok {
+		return
+	}
+	page, perPage, offset := httpx.PageParams(r)
+	items, total, err := h.service.TenantTotalsPage(r.Context(), id, r.URL.Query().Get("search"), int32(perPage), int32(offset))
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	meta, links := httpx.NewPagination(r, page, perPage, total)
+	h.Paginated(w, r, http.StatusOK, items, meta, links)
 }
 
 func (h *Handler) store(w http.ResponseWriter, r *http.Request) {

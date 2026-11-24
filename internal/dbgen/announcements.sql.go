@@ -49,51 +49,24 @@ func (q *Queries) AnnouncementTotals(ctx context.Context, announcementID int64) 
 	return i, err
 }
 
-const announcementTotalsByTenant = `-- name: AnnouncementTotalsByTenant :many
-SELECT e.tenant_id::bigint AS tenant_id, t.name,
-       count(*) FILTER (WHERE e.type = 'view')::bigint AS views,
-       count(*) FILTER (WHERE e.type = 'click')::bigint AS clicks,
-       count(*) FILTER (WHERE e.type = 'dismiss')::bigint AS dismissals
+const countAnnouncementTenantTotals = `-- name: CountAnnouncementTenantTotals :one
+SELECT count(DISTINCT e.tenant_id)::bigint
 FROM announcement_events e
 JOIN tenants t ON t.id = e.tenant_id
 WHERE e.announcement_id = $1
-GROUP BY e.tenant_id, t.name
-ORDER BY count(*) FILTER (WHERE e.type = 'view') DESC, t.name
-LIMIT 50
+  AND ($2::text IS NULL OR t.name ILIKE '%' || $2::text || '%')
 `
 
-type AnnouncementTotalsByTenantRow struct {
-	TenantID   int64  `json:"tenant_id"`
-	Name       string `json:"name"`
-	Views      int64  `json:"views"`
-	Clicks     int64  `json:"clicks"`
-	Dismissals int64  `json:"dismissals"`
+type CountAnnouncementTenantTotalsParams struct {
+	AnnouncementID int64   `json:"announcement_id"`
+	Search         *string `json:"search"`
 }
 
-func (q *Queries) AnnouncementTotalsByTenant(ctx context.Context, announcementID int64) ([]AnnouncementTotalsByTenantRow, error) {
-	rows, err := q.db.Query(ctx, announcementTotalsByTenant, announcementID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []AnnouncementTotalsByTenantRow{}
-	for rows.Next() {
-		var i AnnouncementTotalsByTenantRow
-		if err := rows.Scan(
-			&i.TenantID,
-			&i.Name,
-			&i.Views,
-			&i.Clicks,
-			&i.Dismissals,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) CountAnnouncementTenantTotals(ctx context.Context, arg CountAnnouncementTenantTotalsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAnnouncementTenantTotals, arg.AnnouncementID, arg.Search)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const countAnnouncements = `-- name: CountAnnouncements :one
@@ -338,6 +311,68 @@ func (q *Queries) ListAnnouncementEventsForUser(ctx context.Context, userID int6
 	for rows.Next() {
 		var i ListAnnouncementEventsForUserRow
 		if err := rows.Scan(&i.Title, &i.Type, &i.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAnnouncementTenantTotals = `-- name: ListAnnouncementTenantTotals :many
+SELECT e.tenant_id::bigint AS tenant_id, t.name,
+       count(*) FILTER (WHERE e.type = 'view')::bigint AS views,
+       count(*) FILTER (WHERE e.type = 'click')::bigint AS clicks,
+       count(*) FILTER (WHERE e.type = 'dismiss')::bigint AS dismissals
+FROM announcement_events e
+JOIN tenants t ON t.id = e.tenant_id
+WHERE e.announcement_id = $1
+  AND ($2::text IS NULL OR t.name ILIKE '%' || $2::text || '%')
+GROUP BY e.tenant_id, t.name
+ORDER BY count(*) FILTER (WHERE e.type = 'view') DESC, t.name, e.tenant_id
+LIMIT $4 OFFSET $3
+`
+
+type ListAnnouncementTenantTotalsParams struct {
+	AnnouncementID int64   `json:"announcement_id"`
+	Search         *string `json:"search"`
+	PageOffset     int32   `json:"page_offset"`
+	PageLimit      int32   `json:"page_limit"`
+}
+
+type ListAnnouncementTenantTotalsRow struct {
+	TenantID   int64  `json:"tenant_id"`
+	Name       string `json:"name"`
+	Views      int64  `json:"views"`
+	Clicks     int64  `json:"clicks"`
+	Dismissals int64  `json:"dismissals"`
+}
+
+// Each organization whose members reacted, most views first, a page at a
+// time, optionally by name.
+func (q *Queries) ListAnnouncementTenantTotals(ctx context.Context, arg ListAnnouncementTenantTotalsParams) ([]ListAnnouncementTenantTotalsRow, error) {
+	rows, err := q.db.Query(ctx, listAnnouncementTenantTotals,
+		arg.AnnouncementID,
+		arg.Search,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAnnouncementTenantTotalsRow{}
+	for rows.Next() {
+		var i ListAnnouncementTenantTotalsRow
+		if err := rows.Scan(
+			&i.TenantID,
+			&i.Name,
+			&i.Views,
+			&i.Clicks,
+			&i.Dismissals,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

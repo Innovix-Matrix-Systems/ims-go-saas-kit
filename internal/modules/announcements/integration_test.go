@@ -22,10 +22,6 @@ type detail struct {
 		Clicks     int64 `json:"clicks"`
 		Dismissals int64 `json:"dismissals"`
 	} `json:"totals"`
-	ByTenant []struct {
-		ID    int64 `json:"id"`
-		Views int64 `json:"views"`
-	} `json:"by_tenant"`
 }
 
 type live struct {
@@ -149,9 +145,19 @@ func TestAnnouncementEvents(t *testing.T) {
 	if got.Totals.Views != 2 || got.Totals.Clicks != 1 || got.Totals.Dismissals != 1 {
 		t.Fatalf("totals = %+v, want 2 views, 1 click, 1 dismissal", got.Totals)
 	}
-	if len(got.ByTenant) != 1 || got.ByTenant[0].ID != testkit.DefaultTenant || got.ByTenant[0].Views != 2 {
-		t.Fatalf("by tenant = %+v", got.ByTenant)
+	var byTenant []struct {
+		ID    int64 `json:"id"`
+		Views int64 `json:"views"`
 	}
+	app.As(staff).Get(fmt.Sprintf("/api/v1/internal/announcements/%d/organizations?per_page=10", promo.ID)).Status(t, http.StatusOK).Data(t, &byTenant)
+	if len(byTenant) != 1 || byTenant[0].ID != testkit.DefaultTenant || byTenant[0].Views != 2 {
+		t.Fatalf("by organization = %+v", byTenant)
+	}
+	app.As(staff).Get(fmt.Sprintf("/api/v1/internal/announcements/%d/organizations?search=nothing-like-this", promo.ID)).Status(t, http.StatusOK).Data(t, &byTenant)
+	if len(byTenant) != 0 {
+		t.Fatalf("a search with no match = %+v", byTenant)
+	}
+	app.As(member).Get(fmt.Sprintf("/api/v1/internal/announcements/%d/organizations", promo.ID)).Status(t, http.StatusForbidden)
 
 	app.As(staff).Delete(fmt.Sprintf("/api/v1/internal/announcements/%d", promo.ID)).Status(t, http.StatusNoContent)
 	app.As(staff).Get(fmt.Sprintf("/api/v1/internal/announcements/%d", promo.ID)).Status(t, http.StatusNotFound)

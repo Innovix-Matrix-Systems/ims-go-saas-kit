@@ -607,7 +607,7 @@ paths:
     get:
       tags: [Announcements]
       summary: Get an announcement (staff)
-      description: "With its audience and unique views, clicks and dismissals in all and per organization (`announcement.view`)."
+      description: "With its audience and unique views, clicks and dismissals (`announcement.view`). Per organization: `/internal/announcements/{id}/organizations`."
       operationId: getAnnouncement
       responses:
         "200":
@@ -653,6 +653,39 @@ paths:
       operationId: deleteAnnouncement
       responses:
         "204": {description: Deleted.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /api/v1/internal/announcements/{id}/organizations:
+    parameters:
+      - $ref: "#/components/parameters/PathID"
+    get:
+      tags: [Announcements]
+      summary: An announcement's reach per organization (staff)
+      description: "The organizations whose members viewed, clicked or dismissed it, with unique counts, most views first, a page at a time (`announcement.view`)."
+      operationId: listAnnouncementOrganizations
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: search
+          in: query
+          description: Part of the organization's name.
+          schema: {type: string}
+      responses:
+        "200":
+          description: A page of organizations.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, links, meta]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: "#/components/schemas/AnnouncementTenantTotals"}
+                  links: {$ref: "#/components/schemas/PaginationLinks"}
+                  meta: {$ref: "#/components/schemas/PaginationMeta"}
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
@@ -8240,7 +8273,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/Announcement"
         - type: object
-          required: [tenants, totals, by_tenant]
+          required: [tenants, totals]
           properties:
             tenants:
               type: array
@@ -8251,17 +8284,15 @@ components:
                   id: {type: integer, format: int64}
                   name: {type: string}
             totals: {$ref: "#/components/schemas/AnnouncementTotals"}
-            by_tenant:
-              type: array
-              description: Per organization, most views first (up to 50).
-              items:
-                allOf:
-                  - $ref: "#/components/schemas/AnnouncementTotals"
-                  - type: object
-                    required: [id, name]
-                    properties:
-                      id: {type: integer, format: int64}
-                      name: {type: string}
+
+    AnnouncementTenantTotals:
+      allOf:
+        - $ref: "#/components/schemas/AnnouncementTotals"
+        - type: object
+          required: [id, name]
+          properties:
+            id: {type: integer, format: int64}
+            name: {type: string}
 
     LiveAnnouncement:
       type: object

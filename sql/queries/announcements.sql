@@ -109,7 +109,9 @@ SELECT
 FROM announcement_events
 WHERE announcement_id = @announcement_id;
 
--- name: AnnouncementTotalsByTenant :many
+-- name: ListAnnouncementTenantTotals :many
+-- Each organization whose members reacted, most views first, a page at a
+-- time, optionally by name.
 SELECT e.tenant_id::bigint AS tenant_id, t.name,
        count(*) FILTER (WHERE e.type = 'view')::bigint AS views,
        count(*) FILTER (WHERE e.type = 'click')::bigint AS clicks,
@@ -117,9 +119,17 @@ SELECT e.tenant_id::bigint AS tenant_id, t.name,
 FROM announcement_events e
 JOIN tenants t ON t.id = e.tenant_id
 WHERE e.announcement_id = @announcement_id
+  AND (sqlc.narg('search')::text IS NULL OR t.name ILIKE '%' || sqlc.narg('search')::text || '%')
 GROUP BY e.tenant_id, t.name
-ORDER BY count(*) FILTER (WHERE e.type = 'view') DESC, t.name
-LIMIT 50;
+ORDER BY count(*) FILTER (WHERE e.type = 'view') DESC, t.name, e.tenant_id
+LIMIT @page_limit OFFSET @page_offset;
+
+-- name: CountAnnouncementTenantTotals :one
+SELECT count(DISTINCT e.tenant_id)::bigint
+FROM announcement_events e
+JOIN tenants t ON t.id = e.tenant_id
+WHERE e.announcement_id = @announcement_id
+  AND (sqlc.narg('search')::text IS NULL OR t.name ILIKE '%' || sqlc.narg('search')::text || '%');
 
 -- name: ListAnnouncementsToDeliver :many
 -- Live announcements with channels that have not gone out yet.

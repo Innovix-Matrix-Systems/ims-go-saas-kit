@@ -70,7 +70,7 @@ optional button (`cta_label` and `cta_url`), a window (`starts_at`, optional `en
 
 | Route | Who | What |
 |---|---|---|
-| `GET/POST /api/v1/internal/announcements`, `GET/PATCH/DELETE /api/v1/internal/announcements/{id}` | staff (`announcement.view`, `announcement.manage`) | manage them; the detail has unique views, clicks and dismissals in all and per organization |
+| `GET/POST /api/v1/internal/announcements`, `GET/PATCH/DELETE /api/v1/internal/announcements/{id}`, `GET /api/v1/internal/announcements/{id}/organizations` | staff (`announcement.view`, `announcement.manage`) | manage them; unique views, clicks and dismissals in all, and per organization a page at a time |
 | `GET /api/v1/announcements/live` | every member | what to show now, most urgent first, without what the caller dismissed |
 | `POST /api/v1/announcements/{id}/events` | every member | `view`, `click` or `dismiss`, counted once per person |
 

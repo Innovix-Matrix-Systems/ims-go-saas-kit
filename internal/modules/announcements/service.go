@@ -278,13 +278,11 @@ type TenantTotals struct {
 	Totals
 }
 
-// Detail is an announcement with its audience and counts, overall and per
-// organization.
+// Detail is an announcement with its audience and counts.
 type Detail struct {
 	Announcement
-	Tenants  []TenantRef
-	Totals   Totals
-	ByTenant []TenantTotals
+	Tenants []TenantRef
+	Totals  Totals
 }
 
 // Detail loads an announcement for staff.
@@ -301,21 +299,41 @@ func (s *Service) Detail(ctx context.Context, id int64) (*Detail, error) {
 	if err != nil {
 		return nil, database.MapError("announcements.detail", err)
 	}
-	byTenant, err := s.queries.AnnouncementTotalsByTenant(ctx, id)
-	if err != nil {
-		return nil, database.MapError("announcements.detail", err)
-	}
-	out := &Detail{Announcement: *current, Tenants: []TenantRef{}, Totals: Totals(totals), ByTenant: []TenantTotals{}}
+	out := &Detail{Announcement: *current, Tenants: []TenantRef{}, Totals: Totals(totals)}
 	for _, row := range tenants {
 		out.Tenants = append(out.Tenants, TenantRef{ID: row.ID, Name: row.Name})
 	}
-	for _, row := range byTenant {
-		out.ByTenant = append(out.ByTenant, TenantTotals{
+	return out, nil
+}
+
+// TenantTotalsPage is one page of the organizations whose members reacted to
+// an announcement, most views first, optionally matching a name.
+func (s *Service) TenantTotalsPage(ctx context.Context, id int64, search string, limit, offset int32) ([]TenantTotals, int64, error) {
+	if _, err := s.Get(ctx, id); err != nil {
+		return nil, 0, err
+	}
+	var filter *string
+	if trimmed := strings.TrimSpace(search); trimmed != "" {
+		filter = &trimmed
+	}
+	rows, err := s.queries.ListAnnouncementTenantTotals(ctx, dbgen.ListAnnouncementTenantTotalsParams{
+		AnnouncementID: id, Search: filter, PageLimit: limit, PageOffset: offset,
+	})
+	if err != nil {
+		return nil, 0, database.MapError("announcements.tenant_totals", err)
+	}
+	total, err := s.queries.CountAnnouncementTenantTotals(ctx, dbgen.CountAnnouncementTenantTotalsParams{AnnouncementID: id, Search: filter})
+	if err != nil {
+		return nil, 0, database.MapError("announcements.tenant_totals", err)
+	}
+	out := make([]TenantTotals, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, TenantTotals{
 			TenantRef: TenantRef{ID: row.TenantID, Name: row.Name},
 			Totals:    Totals{Views: row.Views, Clicks: row.Clicks, Dismissals: row.Dismissals},
 		})
 	}
-	return out, nil
+	return out, total, nil
 }
 
 // Live lists what a member of the tenant should see now, without what they
