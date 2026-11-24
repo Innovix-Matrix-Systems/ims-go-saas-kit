@@ -227,7 +227,11 @@ function AnnouncementDrawer({ id, manage, onEdit, onClose }: { id: number; manag
             <Button size="sm" icon="edit" onClick={() => onEdit(data)}>
               {t('announcements.edit')}
             </Button>
-            {data.status === 'archived' ? (
+            {data.status === 'draft' ? (
+              <Button size="sm" variant="primary" icon="bell" disabled={busy} onClick={() => void setStatus('published')}>
+                {t('announcements.publish')}
+              </Button>
+            ) : data.status === 'archived' ? (
               <Button size="sm" disabled={busy} onClick={() => void setStatus('published')}>
                 {t('announcements.publish')}
               </Button>
