@@ -217,8 +217,8 @@ function headersFor(options: RequestOptions): Headers {
  */
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? 'GET'
-  // The API only accepts JSON on writes, even when there is nothing to send
-  // (POST /logout answers 415 without a body), so writes always carry one.
+  // Most write endpoints decode a JSON body and refuse an empty one, even when
+  // there is nothing to send, so writes always carry one.
   if (options.body === undefined && method !== 'GET' && method !== 'DELETE') options = { ...options, body: {} }
   const body =
     options.body === undefined ? undefined : options.body instanceof FormData ? options.body : JSON.stringify(options.body)
