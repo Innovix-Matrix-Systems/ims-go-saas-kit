@@ -255,6 +255,7 @@ func (s *DeveloperService) Stats(ctx context.Context) (DeveloperStats, error) {
 		Developers:       developers,
 		RoleName:         authz.DeveloperRole,
 		TotalPermissions: int64(len(authz.DeveloperPermissions())),
+		AllPermissions:   int64(len(authz.Catalog)),
 	}
 	role, err := s.role(ctx)
 	if err != nil || role == nil {
@@ -303,6 +304,22 @@ func (s *DeveloperService) EnsureRole(ctx context.Context, actorID int64) (Devel
 		target = formatTarget("role", role.ID)
 	}
 	s.audit.Record(ctx, actorID, "developers.role.ensure", target,
+		map[string]any{"role": authz.DeveloperRole, "permissions": assigned}, started, err)
+	if err != nil {
+		return DeveloperStats{}, err
+	}
+	return s.Stats(ctx)
+}
+
+// GrantAll gives the Developer role every permission in the catalog.
+func (s *DeveloperService) GrantAll(ctx context.Context, actorID int64) (DeveloperStats, error) {
+	started := time.Now()
+	role, assigned, err := s.roleService.GrantDeveloperAllPermissions(ctx, actorID)
+	target := authz.DeveloperRole
+	if role != nil {
+		target = formatTarget("role", role.ID)
+	}
+	s.audit.Record(ctx, actorID, "developers.role.grant_all", target,
 		map[string]any{"role": authz.DeveloperRole, "permissions": assigned}, started, err)
 	if err != nil {
 		return DeveloperStats{}, err

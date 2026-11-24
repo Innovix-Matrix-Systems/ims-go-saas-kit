@@ -105,6 +105,21 @@ func (s *RoleService) CreateInternal(ctx context.Context, tenantID *int64, actor
 func (s *RoleService) EnsureDeveloperRole(ctx context.Context, actorID int64) (_ *Role, _ int64, err error) {
 	ctx, end := tracing.Begin(ctx, "access.ensure_developer_role")
 	defer end(&err)
+	return s.syncDeveloperRole(ctx, actorID, authz.DeveloperPermissions())
+}
+
+// GrantDeveloperAllPermissions does what EnsureDeveloperRole does but gives the
+// Developer role every permission in the catalog, so developer accounts can
+// exercise any API feature. EnsureDeveloperRole puts it back to the baseline.
+func (s *RoleService) GrantDeveloperAllPermissions(ctx context.Context, actorID int64) (_ *Role, _ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "access.grant_developer_all_permissions")
+	defer end(&err)
+	return s.syncDeveloperRole(ctx, actorID, authz.Catalog)
+}
+
+// syncDeveloperRole creates or un-hides the Developer role and replaces its
+// permissions with perms.
+func (s *RoleService) syncDeveloperRole(ctx context.Context, actorID int64, perms []authz.Permission) (*Role, int64, error) {
 	role, err := s.roles.GetSystemByName(ctx, authz.DeveloperRole)
 	if err != nil {
 		if !apperr.Is(err, apperr.ResourceNotFound) {
@@ -135,9 +150,8 @@ func (s *RoleService) EnsureDeveloperRole(ctx context.Context, actorID int64) (_
 	if _, err := s.perms.Upsert(ctx, authz.Catalog); err != nil {
 		return nil, 0, err
 	}
-	devPerms := authz.DeveloperPermissions()
-	names := make([]string, 0, len(devPerms))
-	for _, permission := range devPerms {
+	names := make([]string, 0, len(perms))
+	for _, permission := range perms {
 		names = append(names, permission.Name)
 	}
 	permissions, err := s.perms.GetByNames(ctx, names)

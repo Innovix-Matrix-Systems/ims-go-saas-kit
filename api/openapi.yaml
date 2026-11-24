@@ -6453,11 +6453,30 @@ paths:
   /dev/api/developers/role:
     post:
       tags: [Dev]
-      summary: Create or repair the hidden Developer role with all catalog permissions
+      summary: Create or reset the hidden Developer role with its baseline permissions
       operationId: devEnsureDeveloperRole
       responses:
         "200":
           description: The role status after provisioning.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/DevDeveloperStatsEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /dev/api/developers/role/all:
+    post:
+      tags: [Dev]
+      summary: Give the hidden Developer role every permission in the catalog
+      description: >-
+        Creates the role when it is missing and replaces its permissions with the whole catalog, so
+        developer accounts can exercise any API feature. `POST /dev/api/developers/role` puts it back
+        to the baseline.
+      operationId: devGrantDeveloperAllPermissions
+      responses:
+        "200":
+          description: The role status after the grant.
           content:
             application/json:
               schema: {$ref: "#/components/schemas/DevDeveloperStatsEnvelope"}
@@ -9983,14 +10002,21 @@ components:
 
     DevDeveloperStats:
       type: object
-      required: [developers, role_exists, role_name, role_permissions, total_permissions]
+      required: [developers, role_exists, role_name, role_permissions, total_permissions, all_permissions]
       properties:
         developers: {type: integer, format: int64}
         role_exists: {type: boolean}
         role_id: {type: integer, format: int64, nullable: true}
         role_name: {type: string}
         role_permissions: {type: integer, format: int64}
-        total_permissions: {type: integer, format: int64}
+        total_permissions:
+          type: integer
+          format: int64
+          description: The Developer role's baseline (developer-dashboard access).
+        all_permissions:
+          type: integer
+          format: int64
+          description: Every permission in the catalog.
 
     DevDeveloperStatsEnvelope:
       type: object

@@ -52,6 +52,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/developers/stats", h.developerStats)
 	r.With(h.manage).Post("/developers", h.createDeveloper)
 	r.With(h.manage).Post("/developers/role", h.ensureDeveloperRole)
+	r.With(h.manage).Post("/developers/role/all", h.grantDeveloperAllPermissions)
 	r.With(h.manage).Delete("/developers/{user_id}", h.removeDeveloper)
 
 	r.Get("/files", h.listFiles)
