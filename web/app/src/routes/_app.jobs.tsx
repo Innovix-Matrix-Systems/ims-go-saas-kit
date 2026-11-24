@@ -1,10 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { api, type User } from '../api/client'
+import { can, useSession } from '../auth/session'
+import { Select } from '../components/inputs'
 import { fetchJobs, isRunning, jobStatus, jobsKey, refreshWhileRunning, statusTones, useJobActions, useJobDates, useJobName, type Job } from '../components/jobs'
 import { Pagination } from '../components/Pagination'
 import { TableSkeleton } from '../components/Skeleton'
-import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, PageHeader } from '../components/ui'
+import { Avatar, Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, PageHeader } from '../components/ui'
 import { useT } from '../i18n'
 
 export const Route = createFileRoute('/_app/jobs')({
@@ -16,38 +19,113 @@ interface RowError {
   errors?: Record<string, string[]>
 }
 
-/** Every export and import the signed-in person started, while they last. */
+const jobTypes = ['export', 'import', 'privacy_export'] as const
+const jobStatuses = ['pending', 'processing', 'completed', 'failed'] as const
+
+/**
+ * The exports and imports the signed-in person started, while they last;
+ * those who may see every job (data_processing_job.view.all) switch to all
+ * of them and narrow them by member, type and status.
+ */
 function JobsPage() {
   const t = useT()
+  const session = useSession()
   const name = useJobName()
   const when = useJobDates()
   const actions = useJobActions()
+  const canSeeAll = can(session, 'data_processing_job.view.all')
+  const [everyone, setEveryone] = useState(false)
+  const [userId, setUserId] = useState('')
+  const [type, setType] = useState('')
+  const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
   const [removing, setRemoving] = useState<Job | null>(null)
   const [details, setDetails] = useState<Job | null>(null)
+  const showAll = canSeeAll && everyone
+  const filters = { everyone: showAll, userId: userId ? Number(userId) : undefined, type, status }
   const jobs = useQuery({
-    queryKey: [...jobsKey, 'page', page, perPage],
-    queryFn: () => fetchJobs(page, perPage),
+    queryKey: [...jobsKey, 'page', page, perPage, filters],
+    queryFn: () => fetchJobs(page, perPage, filters),
     placeholderData: keepPreviousData,
     refetchInterval: (query) => refreshWhileRunning(query.state.data),
   })
+  const members = useQuery({
+    queryKey: ['jobs', 'members'],
+    queryFn: () => api<User[]>('/user', { query: { per_page: 100, order_by: 'name', order_direction: 'asc' } }),
+    enabled: showAll && can(session, 'user.view.all'),
+    staleTime: 60_000,
+  })
   const items = jobs.data?.data ?? []
+  const filtered = showAll || !!type || !!status
+  const pick = (set: (value: string) => void) => (value: string) => {
+    set(value)
+    setPage(1)
+  }
 
   return (
     <>
       <PageHeader title={t('jobs.title')} description={t('jobs.subtitle')} />
+      <div className="toolbar">
+        {canSeeAll ? (
+          <div className="segmented">
+            {([false, true] as const).map((value) => (
+              <button
+                key={String(value)}
+                type="button"
+                className={everyone === value ? 'active' : ''}
+                onClick={() => {
+                  setEveryone(value)
+                  setUserId('')
+                  setPage(1)
+                }}
+              >
+                {t(value ? 'jobs.everyone' : 'jobs.mine')}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {showAll && members.data ? (
+          <Select
+            value={userId}
+            onChange={pick(setUserId)}
+            ariaLabel={t('jobs.colBy')}
+            searchable
+            options={[
+              { value: '', label: t('jobs.anyone') },
+              ...members.data.map((member) => ({ value: String(member.id), label: member.name, text: `${member.name} ${member.email}` })),
+            ]}
+          />
+        ) : null}
+        <Select
+          value={type}
+          onChange={pick(setType)}
+          ariaLabel={t('jobs.anyType')}
+          options={[{ value: '', label: t('jobs.anyType') }, ...jobTypes.map((value) => ({ value, label: t(`jobs.type.${value}`) }))]}
+        />
+        <Select
+          value={status}
+          onChange={pick(setStatus)}
+          ariaLabel={t('jobs.anyStatus')}
+          options={[{ value: '', label: t('jobs.anyStatus') }, ...jobStatuses.map((value) => ({ value, label: t(`jobs.status.${value}`) }))]}
+        />
+      </div>
       <Card flush>
         {jobs.isLoading ? (
-          <TableSkeleton columns={5} avatar={false} />
+          <TableSkeleton columns={showAll ? 6 : 5} avatar={false} />
         ) : items.length === 0 ? (
-          <EmptyState icon="download" title={t('jobs.none')} description={t('jobs.noneHint')} />
+          filtered ? (
+            <EmptyState icon="download" title={t('jobs.noneFiltered')} />
+          ) : (
+            <EmptyState icon="download" title={t('jobs.none')} description={t('jobs.noneHint')} />
+          )
         ) : (
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
                   <th>{t('jobs.colWhat')}</th>
+                  {showAll ? <th>{t('jobs.colBy')}</th> : null}
                   <th>{t('jobs.colStatus')}</th>
                   <th>{t('jobs.colStarted')}</th>
                   <th>{t('jobs.colAvailable')}</th>
@@ -66,6 +144,18 @@ function JobsPage() {
                           {job.file_name ? <span className="small muted mono">{job.file_name}</span> : null}
                         </span>
                       </td>
+                      {showAll ? (
+                        <td>
+                          {job.user_name ? (
+                            <span className="member-cell">
+                              <Avatar name={job.user_name} size="sm" />
+                              <span className="nowrap">{job.user_id === session?.user.id ? t('jobs.you') : job.user_name}</span>
+                            </span>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
+                        </td>
+                      ) : null}
                       <td>
                         <div className="jobs-status-cell">
                           <Badge tone={statusTones[status]}>{t(`jobs.status.${status}`)}</Badge>

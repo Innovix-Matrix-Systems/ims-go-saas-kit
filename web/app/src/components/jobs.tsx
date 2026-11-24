@@ -7,8 +7,8 @@ import { useToast } from './Toasts'
 import type { BadgeTone } from './ui'
 
 // Exports and imports run as background jobs (the API's data-processing
-// jobs). The tray in the top bar and the Exports & imports page read the
-// signed-in person's own jobs from here.
+// jobs). The tray in the top bar reads the signed-in person's own jobs; the
+// Background jobs page also lists everyone's for those who may see them.
 
 export type Job = Schemas['ProcessingJob']
 export interface JobPage {
@@ -19,8 +19,26 @@ export interface JobPage {
 /** Query key shared by the tray and the page, so starting an export refreshes both. */
 export const jobsKey = ['jobs'] as const
 
-export function fetchJobs(page: number, perPage: number): Promise<JobPage> {
-  return api<JobPage>('/data-processing/jobs/user', { envelope: true, query: { page, per_page: perPage } })
+export interface JobFilters {
+  /** Everyone's jobs (needs data_processing_job.view.all) rather than one's own. */
+  everyone?: boolean
+  userId?: number
+  type?: string
+  status?: string
+}
+
+export function fetchJobs(page: number, perPage: number, filters: JobFilters = {}): Promise<JobPage> {
+  const path = filters.everyone ? '/data-processing/jobs' : '/data-processing/jobs/user'
+  return api<JobPage>(path, {
+    envelope: true,
+    query: {
+      page,
+      per_page: perPage,
+      type: filters.type || undefined,
+      status: filters.status || undefined,
+      user_id: filters.everyone && filters.userId ? filters.userId : undefined,
+    },
+  })
 }
 
 export const jobStatus = (job: Job) => job.status.toLowerCase() as 'pending' | 'processing' | 'completed' | 'failed'

@@ -67,7 +67,10 @@ export function JobsTray() {
                       </div>
                     ) : null}
                     <div className="jobs-item-foot">
-                      <span className="small muted">{when(job.created_at)}</span>
+                      <span className="jobs-item-dates small muted">
+                        <span>{when(job.created_at)}</span>
+                        {job.expires_at ? <span>{t('jobs.availableUntil', { date: when(job.expires_at) })}</span> : null}
+                      </span>
                       <span className="spacer" />
                       {status === 'completed' && job.file_name ? (
                         <Button size="sm" variant="ghost" icon="download" onClick={() => void actions.download(job)}>
