@@ -9,6 +9,7 @@ import (
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
@@ -19,11 +20,18 @@ type ApprovalService struct {
 	payments      domain.PaymentRepository
 	subscriptions domain.SubscriptionRepository
 	tx            *database.TxManager
+	activity      *activity.Recorder
 }
 
 // NewApprovalService creates the approval service.
 func NewApprovalService(approvals domain.ApprovalRepository, payments domain.PaymentRepository, subscriptions domain.SubscriptionRepository, tx *database.TxManager) *ApprovalService {
 	return &ApprovalService{approvals: approvals, payments: payments, subscriptions: subscriptions, tx: tx}
+}
+
+// WithActivity records withdrawn checkouts in the organization's activity log.
+func (s *ApprovalService) WithActivity(recorder *activity.Recorder) *ApprovalService {
+	s.activity = recorder
+	return s
 }
 
 // Withdraw lets an organization take back a checkout nobody has confirmed yet
@@ -43,7 +51,7 @@ func (s *ApprovalService) Withdraw(ctx context.Context, tenantID, paymentID, act
 	}
 	note := "Withdrawn by the organization."
 	gatewayStatus := "withdrawn by the organization"
-	return s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
+	err = s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
 		if approval, err := q.PendingApprovalForPayment(ctx, payment.ID); err == nil {
 			if _, err := q.UpdatePaymentApproval(ctx, dbgen.UpdatePaymentApprovalParams{
 				ID: approval.ID, Status: domain.ApprovalRejected, ReviewerNote: &note, UpdatedBy: &actorID,
@@ -73,6 +81,15 @@ func (s *ApprovalService) Withdraw(ctx context.Context, tenantID, paymentID, act
 		})
 		return err
 	})
+	if err != nil {
+		return err
+	}
+	s.activity.Record(ctx, activity.Entry{
+		TenantID: tenantID, ActorID: actorID, Action: "billing.payment_withdrawn",
+		Subject: "payment", SubjectID: payment.ID,
+		Changes: map[string]any{"invoice_number": payment.InvoiceNumber, "amount": payment.Amount, "currency": payment.Currency},
+	})
+	return nil
 }
 
 // ApprovalDetail is what a reviewer sees beside an approval.

@@ -1,8 +1,10 @@
 package auth_test
 
 import (
+	"context"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
@@ -70,6 +72,15 @@ func TestChangeOwnEmail(t *testing.T) {
 		Status(t, http.StatusUnauthorized)
 	if notice := app.Queued(t, "email-changed"); notice["new_email"] == nil {
 		t.Fatalf("old address not told: %v", notice)
+	}
+	// The change is in the activity log, with both addresses masked.
+	var changes string
+	if err := app.Pool.QueryRow(context.Background(),
+		`SELECT changes::text FROM activity_log WHERE action = 'user.email_changed' AND subject_id = $1`, user.ID).Scan(&changes); err != nil {
+		t.Fatalf("user.email_changed entry: %v", err)
+	}
+	if strings.Contains(changes, "old@acme.test") || strings.Contains(changes, "new@acme.test") {
+		t.Errorf("the entry keeps an address unmasked: %s", changes)
 	}
 	app.Guest().Post("/api/v1/email/change/confirm", map[string]any{"token": token}).Status(t, http.StatusUnprocessableEntity)
 }

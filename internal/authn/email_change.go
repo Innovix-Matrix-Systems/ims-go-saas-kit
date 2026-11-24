@@ -28,6 +28,17 @@ type EmailWriter interface {
 	ChangeEmail(ctx context.Context, userID int64, email string) error
 }
 
+// EmailChangeAudit records a confirmed e-mail change (the activity log).
+type EmailChangeAudit interface {
+	EmailChanged(ctx context.Context, user *UserRecord, oldEmail, newEmail string)
+}
+
+// WithEmailChangeAudit records confirmed e-mail changes.
+func (r *Recovery) WithEmailChangeAudit(audit EmailChangeAudit) *Recovery {
+	r.emailAudit = audit
+	return r
+}
+
 // WithEmailChange enables changing one's own e-mail address.
 func (r *Recovery) WithEmailChange(writer EmailWriter) *Recovery {
 	r.emails = writer
@@ -98,12 +109,15 @@ func (r *Recovery) ConfirmEmailChange(ctx context.Context, token string) error {
 	if err := r.emails.ChangeEmail(ctx, user.ID, ticket.Email); err != nil {
 		return err
 	}
+	if r.emailAudit != nil {
+		r.emailAudit.EmailChanged(ctx, user, oldEmail, ticket.Email)
+	}
 	if r.deliverer != nil {
 		old := *user
 		old.Email = oldEmail
 		if err := r.deliverer.DeliverAccount(ctx, AccountMessage{
 			User: &old, Template: TemplateEmailChanged,
-			Data: map[string]any{"new_email": maskEmail(ticket.Email)},
+			Data: map[string]any{"new_email": MaskEmail(ticket.Email)},
 		}); err != nil {
 			r.logger.Warn("e-mail change: notice to the old address failed", "user_id", user.ID, "error", err)
 		}
@@ -111,8 +125,8 @@ func (r *Recovery) ConfirmEmailChange(ctx context.Context, token string) error {
 	return r.auth.RevokeAll(ctx, user.ID)
 }
 
-// maskEmail shows enough of an address to recognize it: "na***@acme.test".
-func maskEmail(email string) string {
+// MaskEmail shows enough of an address to recognize it: "na***@acme.test".
+func MaskEmail(email string) string {
 	at := strings.LastIndex(email, "@")
 	if at <= 0 {
 		return "***"

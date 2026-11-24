@@ -39,6 +39,7 @@ type Recovery struct {
 	deliverer   Deliverer
 	invitations InvitationAudit
 	emails      EmailWriter
+	emailAudit  EmailChangeAudit
 	cfg         config.Auth
 	logger      *slog.Logger
 }

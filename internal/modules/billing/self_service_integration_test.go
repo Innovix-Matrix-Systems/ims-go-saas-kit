@@ -1,6 +1,7 @@
 package billing_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -50,6 +51,12 @@ func TestTenantWithdrawsPendingCheckout(t *testing.T) {
 
 	app.As(admin).Post(fmt.Sprintf("/api/v1/billing/payments/%d/cancel", created.Payment.ID), nil).Status(t, http.StatusNoContent)
 	app.As(admin).Post(fmt.Sprintf("/api/v1/billing/payments/%d/cancel", created.Payment.ID), nil).Status(t, http.StatusConflict)
+	var logged int
+	if err := app.Pool.QueryRow(context.Background(),
+		`SELECT count(*) FROM activity_log WHERE action = 'billing.payment_withdrawn' AND subject_id = $1 AND actor_id = $2`,
+		created.Payment.ID, admin.ID).Scan(&logged); err != nil || logged != 1 {
+		t.Errorf("billing.payment_withdrawn entries = %d (%v), want 1", logged, err)
+	}
 
 	var payments []payment
 	app.As(admin).Get("/api/v1/billing/payments").Status(t, http.StatusOK).Data(t, &payments)

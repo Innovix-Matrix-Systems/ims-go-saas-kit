@@ -264,7 +264,8 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		WithTx(txManager).
 		WithActivity(activityRecorder)
 	billingPaymentService := billingservice.NewPaymentService(billingPayments, cfg.Billing.Currency)
-	billingApprovalService := billingservice.NewApprovalService(billingApprovals, billingPayments, billingSubscriptions, txManager)
+	billingApprovalService := billingservice.NewApprovalService(billingApprovals, billingPayments, billingSubscriptions, txManager).
+		WithActivity(activityRecorder)
 	billingGuard := billingservice.NewGuard(billingSubscriptions, billingPackages)
 	filesService.WithStorageLimit(billingGuard)
 
@@ -297,7 +298,8 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	accounts := accountDeliverer{delivery: deliveryService}
 	recovery := authn.NewRecovery(identityRepo, identityRepo, authenticator, store, accounts, cfg.Auth, logger).
 		WithInvitationAudit(activityRecorder).
-		WithEmailChange(identityRepo)
+		WithEmailChange(identityRepo).
+		WithEmailChangeAudit(activityRecorder)
 	sessions := authn.NewSessions(txManager.Queries(), authenticator).WithAudit(activityRecorder)
 	otpService := authn.NewOTPService(store, cfg.Auth, logger, cfg.IsDebug()).WithDeliverer(accounts)
 	twoFactor := authn.NewTwoFactor(txManager.Queries(), encrypter, otpService, cfg.App.Name).

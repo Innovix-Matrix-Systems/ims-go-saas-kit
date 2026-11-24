@@ -307,6 +307,19 @@ func (r *Recorder) InvitationAccepted(ctx context.Context, user *authn.UserRecor
 	})
 }
 
+// EmailChanged implements authn.EmailChangeAudit. Both addresses are
+// masked: the entry says the address changed without keeping either.
+func (r *Recorder) EmailChanged(ctx context.Context, user *authn.UserRecord, oldEmail, newEmail string) {
+	if r == nil || user == nil {
+		return
+	}
+	r.Record(ctx, Entry{
+		TenantID: user.TenantID, ActorID: user.ID, Action: "user.email_changed",
+		Subject: "user", SubjectID: user.ID,
+		Changes: map[string]any{"from": authn.MaskEmail(oldEmail), "to": authn.MaskEmail(newEmail)},
+	})
+}
+
 // Maintenance implements maintenance.Audit: `ims down` / `ims up` and the
 // dashboard toggle are system rows, by the user who toggled (none from the
 // CLI).
