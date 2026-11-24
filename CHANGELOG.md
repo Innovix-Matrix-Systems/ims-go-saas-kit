@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-25
+
+Live updates, invoice PDFs and payment notices, plus one frontend setup instead of two. The
+notification bell, announcement banners and billing screens update the moment something changes,
+over one Server-Sent Events stream per browser fed by Postgres `LISTEN/NOTIFY` (no Redis needed).
+Invoices download as PDF, and a bank-transfer payment now tells the staff who approve it and the
+organization's billing managers what is happening, ending with a receipt e-mail that carries the
+invoice PDF. The developer dashboard builds the same way as the app, and the Developers page can
+give the Developer role every permission or reset it.
+
 ### Added
 
 - **Live updates instead of polling.** The notification bell and announcement banners now update
@@ -29,24 +39,6 @@ All notable changes to this project are documented here. The format follows
   sends the reviewer's note. Billing pages and the approval list refresh on their own.
 - **Notifications can open a page.** A notification whose data has an in-app `url` (the payment
   ones do) opens it when clicked.
-
-### Fixed
-
-- **The notification badge could show too few.** When the unread counter was not cached (never
-  read yet, or expired after a week), a new notification set it to 1 instead of recounting, so
-  someone with three unread saw "1". The counter is now recounted from the database instead.
-- **A notification arriving while the app loaded could leave the badge stale.** The app now
-  refetches notifications and announcements every time its live-update stream connects, not
-  only after a reconnect.
-
-## [0.1.6] - 2026-11-24
-
-One frontend setup instead of two, and a Developer role you can open up. The developer dashboard now
-builds the same way as the app, so both are plain single-page apps on Vite and the TanStack Router
-plugin, and the Developers page can give the Developer role every permission or reset it.
-
-### Added
-
 - **Give the Developer role every permission from the Developers page.** "Grant all permissions"
   (after a confirmation) lets developer accounts test any API feature; "Reset to baseline" takes the
   role back to developer-dashboard access only. New endpoint `POST /dev/api/developers/role/all`,
@@ -64,8 +56,26 @@ plugin, and the Developers page can give the Developer role every permission or 
 
 ### Fixed
 
+- **The notification badge could show too few.** When the unread counter was not cached (never
+  read yet, or expired after a week), a new notification set it to 1 instead of recounting, so
+  someone with three unread saw "1". The counter is now recounted from the database instead.
+- **A notification arriving while the app loaded could leave the badge stale.** The app now
+  refetches notifications and announcements every time its live-update stream connects, not
+  only after a reconnect.
 - **The Developers page said the role had all permissions.** It holds the developer-dashboard
   baseline unless you grant all; the page and its tiles now say which.
+
+### Upgrading from 0.1.5
+
+- **No migrations and no required settings.** Live updates are on by default
+  (`REALTIME_ENABLED=true`); the `REALTIME_*` settings are optional.
+- **Behind nginx**, give `/api/v1/realtime/stream` `proxy_buffering off` and a long
+  `proxy_read_timeout` (see `docs/guides/realtime.md`), or the stream is held back and the app
+  falls back to polling.
+- **Behind PgBouncer in transaction mode**, set `REALTIME_LISTEN_DSN` to a direct (or session-mode)
+  connection: `LISTEN` does not work through a transaction pooler.
+- **Restart the server, the worker and the scheduler together**: they share mail templates and
+  notification events, and the receipt mail is sent by the worker.
 
 ## [0.1.5] - 2026-11-24
 
