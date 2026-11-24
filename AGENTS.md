@@ -1,8 +1,8 @@
 # AGENTS.md — Working Guide for This Repository
 
 Instructions for AI coding agents (and humans) working on the IMS Go Admin Starter. Read this before
-writing code. The human documentation lives in [`docs/`](docs/README.md) (rendered as a site by
-`website/`): start with the [tutorial](docs/tutorial/first-module.mdx), the
+writing code. The human documentation lives in [`docs/`](docs/README.md) (Markdown, read on GitHub;
+the published site is the API starter's): start with the [tutorial](docs/tutorial/first-module.mdx), the
 [guides](docs/guides/modules.md) and the [design decisions](docs/architecture/decisions.md). Task
 recipes live in
 **skills**: `.agents/skills/` (canonical) and the identical copy in `.claude/skills/`
@@ -50,7 +50,6 @@ make web-build             # dashboard: build web/dev/dist (embedded by the bina
 make app-typecheck         # client app: tsc --noEmit (also app-style-check, app-openapi-check)
 make app-build             # client app: build web/app/dist (embedded, served at /)
 make docs-gen              # docs/reference/* from the CLI, .env.example, permission catalog, Makefile
-make docs                  # docs site preview at :4321 (website/, Node 22.23+); make docs-build checks links
 
 # Integration tests (real Postgres; each package gets its own schema):
 $env:DATABASE_TEST_DSN = "postgres://postgres:postgres@127.0.0.1:5432/ims_go_api_test?sslmode=disable"
@@ -80,8 +79,7 @@ cmd/app/                      single binary entry point
 module.go                     root package: embeds go.mod and VERSION
 VERSION                       release version (semver); release builds stamp it, local builds report <v>-dev
 CHANGELOG.md                  Keep a Changelog; update it with every user-visible change
-docs/                         human documentation (Markdown, renders on GitHub and as the site)
-website/                      Astro Starlight shell that renders docs/ (deployed to Cloudflare on release)
+docs/                         human documentation (Markdown, read on GitHub)
 web/dev/                      dashboard SPA (TanStack Router/Query, cmdk); embed.go also embeds package.json
   src/components/ui.tsx       Card, Button, Chip, Drawer, Modal, Tabs, StatCard, Icon, ...
   src/components/inputs.tsx   Select, DatePicker, TimePicker (use these, never native <select>/date)

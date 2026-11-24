@@ -128,25 +128,6 @@ jobs:
           git diff --exit-code -- src/api/schema.d.ts src/routeTree.gen.ts
         working-directory: web/app
 
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: website/package-lock.json
-
-      - name: install
-        run: npm ci
-        working-directory: website
-
-      - name: build and check every link
-        run: npm run build
-        working-directory: website
-
   # Docker is optional, but it must keep working: build the image, bring the
   # whole compose stack up and probe it.
   docker:

@@ -39,30 +39,17 @@ make check               # gofmt + vet + golangci-lint + unit tests
 make test-integration    # DATABASE_TEST_DSN=postgres://…/ims_go_api_test
 make gen-check           # generated code and docs are current
 make openapi-check       # the contract matches the router
-make docs-build          # the docs site builds and every link resolves
 ```
 
 ## Writing documentation
 
-The site's pages are the Markdown files in `docs/`; `website/` only renders them.
+The documentation is the Markdown in `docs/`, read on GitHub.
 
 - **Add a page**: create `docs/<section>/<page>.md` with a `title` and `description` in its front
-  matter, then add it to the `sidebar` in `website/astro.config.mjs`.
-- **Link between pages** with relative file links — `[Tenancy](../guides/tenancy.md)` — they work on
-  GitHub and on the site. Links that leave `docs/` (to `AGENTS.md`, source files) point at GitHub.
-- **Asides**: `:::note`, `:::tip`, `:::caution`, `:::danger` with an optional `[Title]`.
-- **Components** (`.mdx` pages only): Starlight's `Steps`, `Tabs`, `Aside`, `FileTree`, `Card`,
-  and this site's `Terminal` (animated commands) and `RequestFlow`:
-
-  ```mdx
-  import Terminal from '@components/Terminal.astro'
-
-  <Terminal title="make dev" lines={[{ cmd: 'make dev' }, { out: 'listening on :8081', tone: 'ok' }]} />
-  ```
-
+  matter, and link it from [`docs/README.md`](../README.md).
+- **Link between pages** with relative file links — `[Tenancy](../guides/tenancy.md)`.
 - **Screenshots** go in `docs/images/` and are referenced relatively (`../images/x.png`).
 - **Never edit** `docs/reference/{cli,configuration,permissions,make}.md` — run `make docs-gen`.
-- **Preview**: `make docs` (Node 22.23+). `make docs-build` fails on any broken link or anchor.
 
 Write for someone who just cloned the repository: say what a thing is for before how it works,
 show real commands and real code from this codebase, and prefer a table to a paragraph of options.

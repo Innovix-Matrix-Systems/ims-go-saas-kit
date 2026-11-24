@@ -52,48 +52,12 @@ usual rules apply:
 6. Deploy the binary with the [deploy runbook](./deploy.md) (`release.sh` builds with the tag's
    version and runs migrations as a gated step).
 
-## Publishing the documentation
+## Documentation
 
-The docs site is a fully static [Astro Starlight](https://starlight.astro.build) build in
-`website/`; its pages are this repository's `docs/` folder. Cloudflare only serves the built files —
-nothing of the Go application runs there.
-
-**Automatically:** publishing a GitHub Release runs `.github/workflows/docs-deploy.yml`, which
-builds the site and uploads it to Cloudflare Workers (static assets). You can also run the
-workflow by hand from the **Actions** tab, e.g. after a docs-only fix.
-
-**One-time setup:**
-
-1. In Cloudflare: **My Profile → API Tokens → Create Token**, template **Edit Cloudflare
-   Workers**.
-2. In GitHub: **Settings → Secrets and variables → Actions**, add `CLOUDFLARE_API_TOKEN` and
-   `CLOUDFLARE_ACCOUNT_ID` (shown on your Cloudflare Workers overview page).
-3. **Workers & Pages → Your subdomain** must be registered once per Cloudflare account, or the
-   first deploy fails with "You need to register a workers.dev subdomain".
-
-The first deploy creates the `ims-go-admin-starter` Worker. The site is published at
-**[ims-go-api-starter.innovixmatrixsystem.com](https://ims-go-api-starter.innovixmatrixsystem.com)**, a **Custom Domain** attached to the Worker in the Cloudflare
-dashboard (**Worker → Settings → Domains & Routes → Add → Custom domain**). Cloudflare creates the DNS
-record and certificate. The domain is not in `wrangler.jsonc`, so the deploy token needs no zone
-permissions, and later deploys keep it.
-
-The site's own address (canonical links, sitemap) defaults to that domain in
-`website/astro.config.mjs`. If you fork the starter and publish somewhere else, set a repository
-**variable** `DOCS_SITE_URL` to your address.
-
-**By hand**, from your machine:
+This repository publishes no documentation site: `docs/` reads on GitHub, and the backend's guides
+are also on the API starter's site ([ims-go-api-starter.innovixmatrixsystem.com](https://ims-go-api-starter.innovixmatrixsystem.com)). After a change to the
+CLI, configuration, permissions or Make targets, regenerate the reference pages:
 
 ```bash
-cd website
-npm ci
-npx wrangler login      # once
-npm run deploy          # builds, checks every link, uploads dist/
-```
-
-### Writing docs locally
-
-```bash
-make docs               # live preview at http://localhost:4321 (Node 22.23+)
-make docs-build         # production build + link check
 make docs-gen           # regenerate the reference pages (CLI, config, permissions, make)
 ```

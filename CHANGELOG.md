@@ -208,6 +208,12 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   has run); new targets `app-build`, `app-typecheck`, `app-style-check`, `app-openapi-check` and
   `dev-app`; `build-all`, the Dockerfile and CI build the client app too.
 
+### Removed
+
+- The documentation website (`website/`, `make docs`, `make docs-build`, the docs-deploy
+  workflow). `docs/` reads on GitHub, and the backend's guides are on the IMS Go API Starter's
+  site; the README describes the app and links there.
+
 ## [0.2.1] - 2026-11-23
 
 Account deletion and personal-data export (the right to erasure and the right of access):

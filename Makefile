@@ -250,15 +250,7 @@ skills-sync: ## Copy the agent skills (.agents/skills, canonical) to .claude/ski
 skills-check: ## Fail when .claude/skills differs from .agents/skills (run `make skills-sync`).
 	diff -r .agents/skills .claude/skills
 
-# ── Documentation site (website/, content in docs/) ─────────────────────────
-docs: ## Preview the documentation site with hot reload at http://localhost:4321.
-	npm --prefix website ci
-	npm --prefix website run dev
-
-docs-build: ## Build the documentation site into website/dist and check every link.
-	npm --prefix website ci
-	npm --prefix website run build
-
+# ── Documentation (docs/, read on GitHub) ───────────────────────────────────
 docs-gen: ## Regenerate docs/reference (CLI, configuration, permissions, make) from the code.
 	go run ./cmd/app gen docs
 
