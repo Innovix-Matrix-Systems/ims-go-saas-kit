@@ -58,7 +58,7 @@ New Relic or an OpenTelemetry Collector. Tracing is **off** until an endpoint is
 every span is a no-op and costs nothing.
 
 ```dotenv
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318   # OTLP/HTTP; set = tracing on
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318   # OTLP/HTTP; set = tracing on
 OTEL_EXPORTER_OTLP_HEADERS=x-honeycomb-team=KEY     # backend auth, if any
 ```
 
@@ -160,9 +160,13 @@ docker compose --profile otel up -d jaeger
 For `make dev`, put the endpoint in `.env` and restart it (settings are read at startup):
 
 ```dotenv
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318
 OTEL_TRACES_SAMPLER_ARG=1        # keep every trace while you look
 ```
+
+Write `127.0.0.1`, not `localhost`: on Windows `localhost` resolves to `::1` first, and the Jaeger
+binary listens on `127.0.0.1` only, so the exporter would drop every trace without an error. The
+container publishes on both, so `127.0.0.1` works for either.
 
 Open http://localhost:16686 and pick the service `ims-go-admin-starter` (your `APP_NAME`). The list shows
 every request and scheduled task, with failed ones flagged; click one for its timeline.
@@ -173,11 +177,13 @@ every request and scheduled task, with failed ones flagged; click one for its ti
 No Docker? Jaeger is also a single binary for Linux, macOS and Windows
 ([releases](https://github.com/jaegertracing/jaeger/releases)): run `jaeger` with no arguments for
 the same setup. On Windows, if it fails with "An attempt was made to access a socket in a way
-forbidden by its access permissions", the port is in a range Windows reserves (list them with
-`netsh interface ipv4 show excludedportrange protocol=tcp`); its health check uses 13132 and
-13133, so move those in a copy of Jaeger's
-[default config](https://github.com/jaegertracing/jaeger/blob/v2.23.0/cmd/jaeger/internal/all-in-one.yaml)
-and start it with `jaeger --config <file>`.
+forbidden by its access permissions", a port it opens is in a range Windows reserves (list them
+with `netsh interface ipv4 show excludedportrange protocol=tcp`; the ranges differ from machine to
+machine). Besides OTLP and the UI it opens the health check on 13132 and 13133 and a Zipkin
+receiver on 9411. In a copy of Jaeger's
+[default config](https://github.com/jaegertracing/jaeger/blob/v2.23.0/cmd/jaeger/internal/all-in-one.yaml),
+move the health-check ports out of the reserved ranges and remove the Zipkin receiver (the app
+sends OTLP only), then start it with `jaeger --config <file>`.
 
 Prefer Grafana? The compose file keeps a commented `otel-lgtm` service (Grafana with Tempo, Loki
 and Prometheus in one container, UI on :3000). Use it instead of Jaeger, not beside it: both take

@@ -168,7 +168,7 @@ Most of these are also one click away in the dashboard's **Commands** page
 | Email | `MAIL_DRIVER=log` (default) or `smtp` + `MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/`MAIL_PASSWORD` |
 | Uploads | `FILES_DISK=public` (any disk: `private`, `public`, `s3` or a `STORAGE_DISKS` name such as an R2/MinIO bucket); `APP_STORAGE_DIR`, `STORAGE_*` |
 | Metrics / docs | `METRICS_ENABLED=true` (`/metrics`), `DOCS_ENABLED=true` (`/docs`) |
-| Traces | `docker compose --profile otel up -d jaeger` (or the Jaeger binary) + `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`; Jaeger UI on `:16686` |
+| Traces | `docker compose --profile otel up -d jaeger` (or the Jaeger binary) + `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318` (not `localhost`: on Windows it resolves to `::1`, where the Jaeger binary does not listen); Jaeger UI on `:16686` |
 | Developer dashboard | `DEV_DASHBOARD_ENABLED=true` (default outside production); `/dev` |
 | Billing gateways | `BKASH_*`, `NAGAD_*`, `BANK_TRANSFER_*` |
 | Database backups | `BACKUP_ENABLED=true`, `BACKUP_DIR`, `BACKUP_DESTINATIONS=local,s3` + `S3_*` (see `backups.md`) |
@@ -195,6 +195,9 @@ real environment variables always override file values).
   starts; when air runs on its own, stop the old process
   (`Get-Process ims | Where-Object Path -like "*	mp\ims.exe" | Stop-Process`). The worker and
   scheduler never hot-reload: restart `make queue` / `make schedule` after changing jobs or tasks.
+- Every new Redis connection shows a failed `hello` span in the trace: the server is older than
+  Redis 6. go-redis first asks for the RESP3 protocol (`HELLO 3`), Redis 5 refuses, and it falls
+  back to RESP2. Harmless; it goes away on Redis 6 or later.
 - `backup:run` fails: install PostgreSQL client tools and point `BACKUP_PG_DUMP_PATH` at a
   `pg_dump` version matching or exceeding the server; see [`backups.md`](backups.md).
 
