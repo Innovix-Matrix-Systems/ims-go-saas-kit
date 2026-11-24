@@ -183,14 +183,18 @@ real environment variables always override file values).
 - Health shows a stale-scheduler warning: `CACHE_DRIVER=memory` is per-process — set `database`/`redis`.
 - `migrate` fails: it creates the schema, not the database. Create the database first, or repoint
   `DATABASE_DSN`.
-- `make dev` cannot find Vite: run `npm --prefix web/dev ci` once (Node.js 20.19+).
+- `make dev` cannot find Vite: run `npm --prefix web/dev ci` once (Node.js 20.19+; with an older
+  Node the install silently skips Vite's native bundler and the build fails to load it).
 - `/dev` returns 404: set `DEV_DASHBOARD_ENABLED=true`; the dashboard is off in production by default.
 - Dashboard login fails: run `make seed` (it creates `developer@ims.com` and the hidden role).
 - Integration tests: set `DATABASE_TEST_DSN` (they skip, never fail, when it is unset).
-- New API routes answer 404/405 after an edit (Windows): air could not restart the API because the
-  old process still holds `:8081`. Stop the old `ims` process (`Get-Process ims`) and save a Go
-  file with a real change, or restart `make dev`. The worker and scheduler never hot-reload —
-  restart `make queue` / `make schedule` after changing jobs or tasks.
+- New API routes answer 404/405 after an edit, and air logs `bind: Only one usage of each socket
+  address` (Windows): an earlier build is still running and holds `:8081`. It is left over when air
+  is stopped without its process tree (a closed terminal, a killed `node`); air itself replaces
+  its builds cleanly. `make dev` now stops a leftover `tmp\ims.exe` of this project before it
+  starts; when air runs on its own, stop the old process
+  (`Get-Process ims | Where-Object Path -like "*	mp\ims.exe" | Stop-Process`). The worker and
+  scheduler never hot-reload: restart `make queue` / `make schedule` after changing jobs or tasks.
 - `backup:run` fails: install PostgreSQL client tools and point `BACKUP_PG_DUMP_PATH` at a
   `pg_dump` version matching or exceeding the server; see [`backups.md`](backups.md).
 

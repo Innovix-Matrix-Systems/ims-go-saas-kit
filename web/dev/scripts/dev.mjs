@@ -60,6 +60,23 @@ process.on('SIGTERM', () => shutdown(0))
 const isWindows = process.platform === 'win32'
 const hasAir = spawnSync(isWindows ? 'where' : 'which', ['air'], { stdio: 'ignore' }).status === 0
 
+// On Windows an air that was stopped without its process tree (a closed
+// terminal, a killed node) leaves this project's tmp\ims.exe running. It keeps
+// the API port, so the next build cannot bind and the stale one goes on
+// answering. Stop it first; only this project's binary path is matched.
+function stopLeftoverBuild() {
+  const binary = path.join(root, 'tmp', 'ims.exe').replaceAll("'", "''")
+  const script =
+    `Get-CimInstance Win32_Process -Filter "name='ims.exe'" | ` +
+    `Where-Object { $_.ExecutablePath -eq '${binary}' } | ` +
+    `ForEach-Object { Stop-Process -Id $_.ProcessId -Force; Write-Output $_.ProcessId }`
+  const result = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8' })
+  const stopped = (result.stdout ?? '').trim()
+  if (stopped) console.log(`[dev] stopped a leftover API build from an earlier run (pid ${stopped.split(/\s+/).join(', ')}).`)
+}
+
+if (isWindows) stopLeftoverBuild()
+
 console.log(`[dev] dashboard (Vite HMR): http://127.0.0.1:${webPort}/dev/`)
 console.log(`[dev] API (air): ${apiOrigin} - /api, /dev/api, /storage and /docs are proxied through ${webPort}.`)
 start(
