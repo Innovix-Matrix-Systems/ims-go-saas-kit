@@ -73,6 +73,10 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   security summary) and **Organization** profile page (details with an edit dialog, owner, people,
   plan usage, counts). IDs and codes are shown as text with a copy button instead of read-only
   inputs.
+- Client app banners: the organization's plan when it needs attention (ending within a week,
+  cancelled, overdue, ended, a payment awaiting approval, or no plan) for those who see billing,
+  hidden for the day on request; and the newest unread warning or critical staff announcement,
+  which dismissing marks read.
 - `POST /api/v1/organization/logo` uploads the organization's logo (an image on the public disk,
   attached to the organization and listed with its files, replaced by the next upload) and sets
   its public `url` as the `branding.logo_url` setting. Tenant responses (staff) carry `branding`

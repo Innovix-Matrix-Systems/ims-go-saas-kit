@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, ty
 import { useSession } from '../auth/session'
 import { useT } from '../i18n'
 import { ActingBanner } from './ActingBanner'
+import { AnnouncementBanner, PlanBanner } from './SystemBanners'
 import { AppearanceMenu } from './AppearanceMenu'
 import { BranchSwitcher } from './BranchSwitcher'
 import { JobsTray } from './JobsTray'
@@ -178,6 +179,8 @@ export function AppShell() {
       <div className="sidebar-scrim" onClick={() => setMenuOpen(false)} role="presentation" />
       <div className="main">
         <ActingBanner />
+        <AnnouncementBanner />
+        <PlanBanner />
         <header className="topbar">
           <button type="button" className="icon-btn menu-btn" aria-label={t('nav.openMenu')} onClick={() => setMenuOpen(true)}>
             <Icon name="list" />
