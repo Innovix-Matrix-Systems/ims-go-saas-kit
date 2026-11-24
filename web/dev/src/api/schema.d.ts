@@ -358,6 +358,227 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/announcements/live": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Announcements to show the caller now
+         * @description Every member: the published announcements inside their window whose audience includes the caller's organization, most urgent first (critical, warning, promotion, info), without the ones the caller dismissed. Staff outside an organization get an empty list.
+         */
+        get: operations["liveAnnouncements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/events": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a view, click or dismissal
+         * @description Every member, for a live announcement their organization is in the audience of. Each kind counts once per person; repeats are ignored. A dismissed announcement leaves the caller's live list. Dismissing one that is not dismissible is a 409.
+         */
+        post: operations["trackAnnouncement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List announcements (staff)
+         * @description Newest first, one row per announcement with its audience size and unique views, clicks and dismissals (`announcement.view`).
+         */
+        get: operations["listAnnouncements"];
+        put?: never;
+        /**
+         * Create an announcement (staff)
+         * @description One announcement, whatever it reaches (`announcement.manage`): no `tenant_ids` reaches every organization, otherwise the listed ones. With `channels` it is also delivered once through the notification system when it starts.
+         */
+        post: operations["createAnnouncement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/announcements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get an announcement (staff)
+         * @description With its audience and unique views, clicks and dismissals (`announcement.view`). Per organization: `/internal/announcements/{id}/organizations`.
+         */
+        get: operations["getAnnouncement"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an announcement (staff)
+         * @description With its audience and counts (`announcement.manage`).
+         */
+        delete: operations["deleteAnnouncement"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an announcement (staff)
+         * @description Replaces its content, window, audience and channels (`announcement.manage`). An announcement already delivered is not delivered again.
+         */
+        patch: operations["updateAnnouncement"];
+        trace?: never;
+    };
+    "/api/v1/internal/announcements/{id}/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * An announcement's reach per organization (staff)
+         * @description The organizations whose members viewed, clicked or dismissed it, with unique counts, most views first, a page at a time (`announcement.view`).
+         */
+        get: operations["listAnnouncementOrganizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The organization's dashboard
+         * @description Any member. Each section is null unless the caller holds its permission: members (`user.view.all`), activity (`activity.view`), files (`file.view.all`), branches (`branch.view.all`), roles (`role.view.all`). Daily series are counted in `tz`. Staff not acting in an organization get 403 and use `/internal/dashboard`.
+         */
+        get: operations["getDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The platform dashboard (staff)
+         * @description Each section is null unless the caller holds its permission: organizations (`tenant.view.all`), users (`user.view.all`), activity (`activity.view.all`), revenue (`payment.view.all`), plans (`package.view.all`). Daily series are counted in `tz`.
+         */
+        get: operations["getPlatformDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organization": {
         parameters: {
             query?: never;
@@ -401,6 +622,47 @@ export interface paths {
          * @description Name and contact details (`organization.update`). Code, slug, domain and status stay with platform staff.
          */
         patch: operations["updateOrganization"];
+        trace?: never;
+    };
+    "/api/v1/organization/logo": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload the organization's logo
+         * @description Replaces the organization's logo (`organization.update`): an image (max 5 MB) on the public disk, attached to the organization and listed with its files. Its public `url` becomes the organization's `branding.logo_url` setting, so e-mails and the organization's mark use it at once.
+         */
+        post: operations["uploadOrganizationLogo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/organization/transfer-ownership": {
@@ -4042,26 +4304,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/internal/notification/broadcast": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send an announcement to organizations
-         * @description Creates one platform.announcement notification per organization (every notification belongs to one; GLOBAL targets reach platform staff only), addressed to all its members. Without tenant_ids it reaches every active organization.
-         */
-        post: operations["broadcastNotification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/internal/notification/{id}": {
         parameters: {
             query?: never;
@@ -4420,6 +4662,50 @@ export interface paths {
          * @description The same job, with the same filters or uploaded file, goes back to pending and is queued again. 409 unless it failed, or when its kind cannot be retried.
          */
         post: operations["retryProcessingJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/data-processing/job/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: components["parameters"]["PathJobID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove one of your finished jobs (staff)
+         * @description For staff not acting in an organization. 409 while it is still pending or running.
+         */
+        delete: operations["removeInternalProcessingJob"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/data-processing/job/{jobId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: components["parameters"]["PathJobID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run one of your failed jobs again (staff)
+         * @description For staff not acting in an organization. 409 unless it failed, or when its kind cannot be retried.
+         */
+        post: operations["retryInternalProcessingJob"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6339,6 +6625,12 @@ export interface components {
                     email: string;
                 } | null;
                 is_owner: boolean;
+                /** @description The organization's e-mail branding (`branding.logo_url`, `branding.color` settings), for its mark in clients. Null when unset. */
+                branding: {
+                    logo_url: string | null;
+                    /** @example #2563eb */
+                    color: string | null;
+                };
                 /** Format: date-time */
                 created_at: string;
             };
@@ -6936,6 +7228,11 @@ export interface components {
             phone?: string | null;
             email?: string | null;
             is_active: boolean;
+            /** @description The organization's logo and colour (its `branding.logo_url` and `branding.color` settings); null values are unset. */
+            branding?: {
+                logo_url: string | null;
+                color: string | null;
+            };
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -7088,6 +7385,239 @@ export interface components {
                 package?: components["schemas"]["Package"];
                 active: boolean;
             };
+        };
+        AnnouncementRequest: {
+            title: string;
+            body?: string | null;
+            /** @enum {string} */
+            kind: "info" | "promotion" | "warning" | "critical";
+            /** @description The button's text; needs cta_url. */
+            cta_label?: string | null;
+            /** @description An http or https link; needs cta_label. */
+            cta_url?: string | null;
+            /** @description The organizations it reaches; empty or absent reaches every organization. */
+            tenant_ids?: number[];
+            /**
+             * Format: date-time
+             * @description Defaults to now.
+             */
+            starts_at?: string | null;
+            /**
+             * Format: date-time
+             * @description After starts_at; null runs until changed.
+             */
+            ends_at?: string | null;
+            /** @default true */
+            dismissible: boolean;
+            /**
+             * @default published
+             * @enum {string}
+             */
+            status: "draft" | "published" | "archived";
+            /** @description Also deliver it once through these notification channels when it starts. */
+            channels?: ("database" | "mail" | "sms" | "push")[];
+        };
+        Announcement: {
+            /** Format: int64 */
+            id: number;
+            title: string;
+            body: string | null;
+            /** @enum {string} */
+            kind: "info" | "promotion" | "warning" | "critical";
+            cta_label: string | null;
+            cta_url: string | null;
+            /** @enum {string} */
+            audience: "all" | "tenants";
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string | null;
+            dismissible: boolean;
+            /** @enum {string} */
+            status: "draft" | "published" | "archived";
+            /**
+             * @description Where it is now, from its status and window.
+             * @enum {string}
+             */
+            state: "draft" | "scheduled" | "live" | "ended" | "archived";
+            channels: string[];
+            /** Format: date-time */
+            delivered_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Unique people who viewed, clicked and dismissed. */
+        AnnouncementTotals: {
+            /** Format: int64 */
+            views: number;
+            /** Format: int64 */
+            clicks: number;
+            /** Format: int64 */
+            dismissals: number;
+        };
+        AnnouncementListItem: components["schemas"]["Announcement"] & {
+            /**
+             * Format: int64
+             * @description Organizations listed; 0 with audience all.
+             */
+            tenant_count: number;
+            totals: components["schemas"]["AnnouncementTotals"];
+        };
+        AnnouncementDetail: components["schemas"]["Announcement"] & {
+            tenants: {
+                /** Format: int64 */
+                id: number;
+                name: string;
+            }[];
+            totals: components["schemas"]["AnnouncementTotals"];
+        };
+        AnnouncementTenantTotals: components["schemas"]["AnnouncementTotals"] & {
+            /** Format: int64 */
+            id: number;
+            name: string;
+        };
+        LiveAnnouncement: {
+            /** Format: int64 */
+            id: number;
+            title: string;
+            body: string | null;
+            /** @enum {string} */
+            kind: "info" | "promotion" | "warning" | "critical";
+            cta_label: string | null;
+            cta_url: string | null;
+            dismissible: boolean;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string | null;
+        };
+        DashboardPeriod: {
+            days: number;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            time_zone: string;
+        };
+        /** @description A value per day over the period, its total, and the total of the same number of days before it. */
+        DashboardSeries: {
+            points: {
+                /** Format: date */
+                date: string;
+                /** Format: int64 */
+                value: number;
+            }[];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            previous_total: number;
+        };
+        TenantDashboard: {
+            period: components["schemas"]["DashboardPeriod"];
+            members: {
+                /** Format: int64 */
+                total: number;
+                /** Format: int64 */
+                active: number;
+                /** Format: int64 */
+                pending_invitations: number;
+                /**
+                 * Format: int64
+                 * @description Signed in during the period.
+                 */
+                signed_in_recently: number;
+                added: components["schemas"]["DashboardSeries"];
+            } | null;
+            activity: {
+                events: components["schemas"]["DashboardSeries"];
+                top_actions: {
+                    action: string;
+                    /** Format: int64 */
+                    count: number;
+                }[];
+                top_actors: {
+                    /** Format: int64 */
+                    id: number;
+                    name: string;
+                    /** Format: int64 */
+                    count: number;
+                }[];
+            } | null;
+            files: {
+                /** Format: int64 */
+                files: number;
+                /** Format: int64 */
+                bytes: number;
+                /** @description Per file type, largest first. */
+                by_type: {
+                    /** @enum {string} */
+                    type: "image" | "video" | "document" | "other";
+                    /** Format: int64 */
+                    files: number;
+                    /** Format: int64 */
+                    bytes: number;
+                }[];
+            } | null;
+            /** Format: int64 */
+            branches: number | null;
+            /** Format: int64 */
+            roles: number | null;
+        };
+        PlatformDashboard: {
+            period: components["schemas"]["DashboardPeriod"];
+            organizations: {
+                /** Format: int64 */
+                total: number;
+                /** Format: int64 */
+                active: number;
+                /** Format: int64 */
+                suspended: number;
+                added: components["schemas"]["DashboardSeries"];
+                recent: {
+                    /** Format: int64 */
+                    id: number;
+                    name: string;
+                    code: string;
+                    active: boolean;
+                    /** Format: int64 */
+                    members: number;
+                    /** Format: date-time */
+                    created_at: string;
+                }[];
+            } | null;
+            users: {
+                /** Format: int64 */
+                total: number;
+                /** Format: int64 */
+                signed_in_recently: number;
+                added: components["schemas"]["DashboardSeries"];
+            } | null;
+            activity: components["schemas"]["DashboardSeries"] | null;
+            /** @description Completed payments per currency (most payments first), in minor units, and those awaiting approval. */
+            revenue: {
+                currencies: {
+                    currency: string;
+                    /** Format: int64 */
+                    payments: number;
+                    amount: components["schemas"]["DashboardSeries"];
+                }[];
+                pending: {
+                    currency: string;
+                    /** Format: int64 */
+                    count: number;
+                    /** Format: int64 */
+                    amount: number;
+                }[];
+            } | null;
+            plans: {
+                /** Format: int64 */
+                package_id: number;
+                name: string;
+                /** Format: int64 */
+                organizations: number;
+            }[] | null;
         };
         BillingUsage: {
             limits: {
@@ -7469,6 +7999,10 @@ export interface components {
             /** Format: int64 */
             size: number;
             attached: boolean;
+            /** @description Written by a background job (an export). It is removed with the job, and deleting it here is refused (409). */
+            generated: boolean;
+            /** @description What an attached file is for, such as `logo` (the organization's logo), `profile` (a user's photo) or `output` (an export); null for library files. */
+            collection?: string | null;
             /** Format: date-time */
             created_at: string;
         };
@@ -9021,6 +9555,10 @@ export interface components {
         };
     };
     parameters: {
+        /** @description The period, in days up to today. */
+        DashboardDays: 7 | 30 | 90;
+        /** @description The IANA time zone days are counted in. */
+        DashboardTimeZone: string;
         /** @description Optional on any write. Reuse the same value when retrying: the first answer is replayed for 24 h (`Idempotent-Replayed: true`) and the action runs once. A different body with the same key answers 422 `IDEMPOTENCY_KEY_REUSED`. */
         IdempotencyKey: string;
         PathID: number;
@@ -9777,6 +10315,599 @@ export interface operations {
             };
         };
     };
+    liveAnnouncements: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The live announcements. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LiveAnnouncement"][];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    trackAnnouncement: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    type: "view" | "click" | "dismiss";
+                };
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listAnnouncements: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["Page"];
+                per_page?: components["parameters"]["PerPage"];
+                status?: "draft" | "published" | "archived";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of announcements. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnnouncementListItem"][];
+                        links: components["schemas"]["PaginationLinks"];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createAnnouncement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            /** @description The announcement. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnnouncementDetail"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getAnnouncement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The announcement. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnnouncementDetail"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteAnnouncement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateAnnouncement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            /** @description The announcement. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnnouncementDetail"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listAnnouncementOrganizations: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["Page"];
+                per_page?: components["parameters"]["PerPage"];
+                /** @description Part of the organization's name. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of organizations. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnnouncementTenantTotals"][];
+                        links: components["schemas"]["PaginationLinks"];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getDashboard: {
+        parameters: {
+            query?: {
+                /** @description The period, in days up to today. */
+                days?: components["parameters"]["DashboardDays"];
+                /** @description The IANA time zone days are counted in. */
+                tz?: components["parameters"]["DashboardTimeZone"];
+            };
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dashboard. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["TenantDashboard"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getPlatformDashboard: {
+        parameters: {
+            query?: {
+                /** @description The period, in days up to today. */
+                days?: components["parameters"]["DashboardDays"];
+                /** @description The IANA time zone days are counted in. */
+                tz?: components["parameters"]["DashboardTimeZone"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dashboard. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PlatformDashboard"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     getOrganization: {
         parameters: {
             query?: never;
@@ -9895,6 +11026,93 @@ export interface operations {
             };
             /** @description Authenticated but not permitted, or tenant context missing. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    uploadOrganizationLogo: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description The logo image.
+                     */
+                    logo: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The stored logo. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Payload exceeds the configured limit. */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -19605,68 +20823,6 @@ export interface operations {
             };
         };
     };
-    broadcastNotification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    priority: "INFO" | "WARNING" | "CRITICAL";
-                    title: string;
-                    body?: string | null;
-                    channels?: ("database" | "mail" | "sms" | "push")[];
-                    tenant_ids?: number[];
-                };
-            };
-        };
-        responses: {
-            /** @description How many organizations it reached. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: {
-                            organizations: number;
-                        };
-                    };
-                };
-            };
-            /** @description Missing, invalid or expired bearer token. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Authenticated but not permitted, or tenant context missing. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Validation failed; `errors` carries field messages. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problem"];
-                };
-            };
-        };
-    };
     getNotification: {
         parameters: {
             query?: never;
@@ -20118,6 +21274,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     downloadFile: {
@@ -20383,6 +21548,15 @@ export interface operations {
             };
             /** @description Resource not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -20728,6 +21902,122 @@ export interface operations {
                  */
                 "X-Acting-User"?: components["parameters"]["ActingUser"];
             };
+            path: {
+                jobId: components["parameters"]["PathJobID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The job, pending again. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProcessingJob"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    removeInternalProcessingJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: components["parameters"]["PathJobID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    retryInternalProcessingJob: {
+        parameters: {
+            query?: never;
+            header?: never;
             path: {
                 jobId: components["parameters"]["PathJobID"];
             };
