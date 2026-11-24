@@ -908,6 +908,17 @@ export const en = {
   'planTray.nearlyFull': 'a limit is nearly reached',
   'planTray.manage': 'Manage billing',
   'nav.account': 'Account',
+  'logo.uploaded': 'Logo uploaded.',
+  'logo.preview': 'Logo preview',
+  'logo.link': 'Link to your uploaded logo',
+  'logo.use': 'Use as logo',
+  'logo.inUse': 'This is your logo',
+  'logo.replace': 'Upload another',
+  'logo.hint': 'Upload an image (PNG, JPG, WebP or GIF, up to 5 MB) and use its link as your logo.',
+  'logo.upload': 'Upload logo',
+  'files.logo': 'Organization logo',
+  'files.photo': 'Profile photo',
+  'files.publicLink': 'Public link',
 }
 
 export type MessageKey = keyof typeof en

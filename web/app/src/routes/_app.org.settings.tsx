@@ -8,6 +8,7 @@ import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
 import { Avatar, Badge, Card, CopyField, Icon, PageHeader, Spinner } from '../components/ui'
 import { OrganizationForm } from '../components/OrganizationForm'
+import { LogoUploader } from '../components/LogoUploader'
 import { useT } from '../i18n'
 import { SettingRow, useGroupName, type Setting } from '../components/SettingField'
 import { FormSkeleton, ListSkeleton, SettingsSkeleton } from '../components/Skeleton'
@@ -169,6 +170,7 @@ function TransferForm({ ownerId }: { ownerId?: number }) {
 // API returns them.
 function PoliciesCard() {
   const t = useT()
+  const session = useSession()
   const client = useQueryClient()
   const { push } = useToast()
   const groupName = useGroupName()
@@ -206,7 +208,16 @@ function PoliciesCard() {
             <Card key={section.group.slug} title={groupName(section.group.slug, section.group.name)}>
               <div className="setting-rows">
                 {section.settings.map((item) => (
-                  <SettingRow key={item.key} item={item} save={save(item)} />
+                  <SettingRow
+                    key={item.key}
+                    item={item}
+                    save={save(item)}
+                    extra={
+                      item.key === 'branding.logo_url' && can(session, 'organization.update') ? (
+                        <LogoUploader current={typeof item.value === 'string' ? item.value : ''} onUse={save(item)} />
+                      ) : undefined
+                    }
+                  />
                 ))}
               </div>
             </Card>

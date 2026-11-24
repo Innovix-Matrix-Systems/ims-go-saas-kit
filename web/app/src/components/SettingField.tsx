@@ -73,11 +73,14 @@ export function SettingRow({
   save,
   editable = true,
   badge,
+  extra,
 }: {
   item: Setting
   save: (value: unknown) => Promise<void>
   editable?: boolean
   badge?: ReactNode
+  /** Shown under the setting, across the row (the logo uploader). */
+  extra?: ReactNode
 }) {
   const t = useT()
   const known = knownSettings[item.key]
@@ -204,6 +207,7 @@ export function SettingRow({
         {badge ? <div className="mt-4">{badge}</div> : null}
       </div>
       <div className="setting-control">{control}</div>
+      {extra ? <div className="setting-extra">{extra}</div> : null}
     </div>
   )
 }

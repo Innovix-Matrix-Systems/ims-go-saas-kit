@@ -6,7 +6,7 @@ import { can, useSession } from '../auth/session'
 import { formatBytes } from '../format'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
-import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, PageHeader, Spinner, type BadgeTone, type IconName } from '../components/ui'
+import { Badge, Button, Card, ConfirmDialog, CopyField, Drawer, EmptyState, Icon, PageHeader, Spinner, type BadgeTone, type IconName } from '../components/ui'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { TableSkeleton } from '../components/Skeleton'
 
@@ -211,7 +211,7 @@ function FilesPage() {
                     <FileThumb file={file} />
                     <span className="file-card-badges">
                       <Badge tone={typeTones[file.type]}>{t(typeLabels[file.type])}</Badge>
-                      {file.generated ? <Badge tone="accent">{t('jobs.generated')}</Badge> : null}
+                      <UsageBadge file={file} />
                     </span>
                     <div className="file-card-actions">{fileActions(file)}</div>
                   </div>
@@ -221,12 +221,7 @@ function FilesPage() {
                     </div>
                     <div className="file-card-meta">
                       <span>{formatBytes(file.size)}</span>
-                      {file.attached && !file.generated ? (
-                        <>
-                          <span className="dot-sep">·</span>
-                          <span>{t('files.attached')}</span>
-                        </>
-                      ) : null}
+
                     </div>
                     <div className="file-card-sub">{when(file.created_at)}</div>
                   </div>
@@ -257,7 +252,7 @@ function FilesPage() {
                             <span className="file-name" title={file.file_name}>
                               {file.name}
                             </span>
-                            {file.generated ? <Badge tone="accent">{t('jobs.generated')}</Badge> : file.attached ? <Badge tone="neutral">{t('files.attached')}</Badge> : null}
+                            <UsageBadge file={file} />
                           </span>
                           <span className="small muted file-mime" title={file.mime_type}>
                             {file.mime_type}
@@ -343,7 +338,15 @@ function FilesPage() {
               <dt>{t('files.colUploaded')}</dt>
               <dd>{when(selected.created_at)}</dd>
               <dt>{t('files.usage')}</dt>
-              <dd>{selected.generated ? t('jobs.generated') : selected.attached ? t('files.attached') : t('files.library')}</dd>
+              <dd>{usageText(t, selected)}</dd>
+              {isPublic(selected) ? (
+                <>
+                  <dt>{t('files.publicLink')}</dt>
+                  <dd>
+                    <CopyField value={selected.url} />
+                  </dd>
+                </>
+              ) : null}
             </dl>
           </div>
         ) : null}
@@ -360,6 +363,25 @@ function FilesPage() {
       />
     </>
   )
+}
+
+/** A public file's url is its own address; a private one points at the download route. */
+const isPublic = (file: StoredFile) => !!file.url && !file.url.includes('/api/v1/')
+
+function usageText(t: ReturnType<typeof useT>, file: StoredFile): string {
+  if (file.generated) return t('jobs.generated')
+  if (file.collection === 'logo') return t('files.logo')
+  if (file.collection === 'profile') return t('files.photo')
+  return file.attached ? t('files.attached') : t('files.library')
+}
+
+/** What a file is for, when it is more than a library file. */
+function UsageBadge({ file }: { file: StoredFile }) {
+  const t = useT()
+  if (file.generated) return <Badge tone="accent">{t('jobs.generated')}</Badge>
+  if (file.collection === 'logo') return <Badge tone="violet">{t('files.logo')}</Badge>
+  if (file.collection === 'profile') return <Badge tone="info">{t('files.photo')}</Badge>
+  return file.attached ? <Badge tone="neutral">{t('files.attached')}</Badge> : null
 }
 
 function useFileDate() {
