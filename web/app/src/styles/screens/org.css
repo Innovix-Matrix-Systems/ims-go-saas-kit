@@ -172,7 +172,7 @@
 /* Organization settings: profile and owner side by side, then a card per settings group. */
 .settings-pair { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); align-items: start; }
 .settings-pair .form-narrow { max-width: none; }
-.settings-groups { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); align-items: start; }
+.settings-groups { display: flex; flex-direction: column; gap: var(--space-4); }
 .section-intro h2 { margin: var(--space-2) 0 2px; font-size: var(--fs-base); font-weight: var(--fw-semibold); }
 .section-intro p { margin: 0; font-size: var(--fs-sm); color: var(--text-3); }
 .setting-rows > .setting-row:first-child { border-top: 0; padding-top: 0; }
