@@ -2,9 +2,11 @@ package app
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
@@ -333,5 +335,38 @@ func (p *Platform) schedule() []scheduler.Task {
 		})
 	}
 
+	if cfg.Realtime.Enabled {
+		tasks = append(tasks, scheduler.Task{
+			ID:          "announcements.publish-transitions",
+			Spec:        "* * * * *",
+			Description: "Tells open apps when a scheduled announcement starts or ends (live updates).",
+			Timeout:     time.Minute,
+			// Every minute, usually with nothing to say: kept out of the run
+			// history like the heartbeat.
+			NoHistory: true,
+			Run:       announcementTransitionsTask(p.Announcements, logger),
+		})
+	}
+
 	return tasks
+}
+
+// announcementTransitionsTask publishes the announcements that started or
+// ended since its last run. The window lives in the task (one scheduler
+// runs at a time); after a restart it starts from one minute back, and the
+// app's slow fallback poll covers anything older.
+func announcementTransitionsTask(service *announcements.Service, logger *slog.Logger) func(context.Context) error {
+	since := time.Now().Add(-time.Minute)
+	return func(ctx context.Context) error {
+		until := time.Now()
+		changed, err := service.PublishTransitions(ctx, since, until)
+		if err != nil {
+			return err
+		}
+		since = until
+		if changed > 0 {
+			logger.Info("announcement transitions published", "count", changed)
+		}
+		return nil
+	}
 }

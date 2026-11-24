@@ -27,7 +27,9 @@ var readPrefixes = []string{
 var unspannedOperations = map[string]string{
 	// Run on every request or audited change: a span each would bury the
 	// trace, and their SQL, cache and HTTP spans already show them.
-	"activity.Recorder.Record":                 "one INSERT per audited change",
+	"activity.Recorder.Record": "one INSERT per audited change",
+	// Reads whose names look like writes.
+	"service.InvoiceService.PDF":               "renders an invoice PDF; reads one payment, writes nothing",
 	"activity.Recorder.ImpersonationStarted":   "one INSERT per audited change",
 	"activity.Recorder.ImpersonationRequested": "one INSERT per audited change",
 	"activity.Recorder.ImpersonationDenied":    "one INSERT per audited change",

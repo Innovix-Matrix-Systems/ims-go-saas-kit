@@ -7,6 +7,7 @@ import { intlLocale, useLocale, useT } from '../i18n'
 import { subscriptionStatusQuery } from './billing'
 import { organizationQuery } from './organization'
 import { Icon, type IconName } from './ui'
+import { usePollInterval } from './realtime'
 import { inOrganization } from './WorkspaceMenu'
 
 // Banners across the top of the app for what must not be missed: staff
@@ -136,7 +137,9 @@ export function AnnouncementBanner() {
     queryKey: ['announcements', 'live'],
     queryFn: () => api<LiveAnnouncement[]>('/announcements/live'),
     enabled: inside,
-    refetchInterval: 5 * 60_000,
+    // Live updates refetch it when an announcement starts, changes or ends;
+    // the poll is the fallback.
+    refetchInterval: usePollInterval(5 * 60_000, 15 * 60_000),
     refetchIntervalInBackground: false,
   })
   const [dismissed, setDismissed] = useState(() => readIds(local(), DISMISSED_KEY))

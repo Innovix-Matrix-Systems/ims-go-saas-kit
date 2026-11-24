@@ -81,13 +81,22 @@ function DevelopersPage() {
     onSuccess: (result) => {
       push(
         result.role_exists
-          ? `Developer role ready with ${result.role_permissions} permissions`
+          ? `Developer role reset to its ${result.role_permissions} baseline permissions`
           : 'Developer role provisioned',
         'success',
       )
       invalidate()
     },
     onError: (error) => push(error instanceof Error ? error.message : 'Unable to provision the role', 'error'),
+  })
+
+  const grantAll = useMutation({
+    mutationFn: () => api<DevDeveloperStats>('/dev/api/developers/role/all', { method: 'POST' }),
+    onSuccess: (result) => {
+      push(`Developer role now has all ${result.role_permissions} permissions`, 'success')
+      invalidate()
+    },
+    onError: (error) => push(error instanceof Error ? error.message : 'Unable to update the role', 'error'),
   })
 
   const create = useMutation({
@@ -122,7 +131,9 @@ function DevelopersPage() {
   const roleExists = stats.data?.role_exists ?? false
   const rolePermissions = stats.data?.role_permissions ?? 0
   const totalPermissions = stats.data?.total_permissions ?? 0
+  const allPermissions = stats.data?.all_permissions ?? 0
   const roleOutOfSync = roleExists && rolePermissions < totalPermissions
+  const roleHasAll = roleExists && allPermissions > 0 && rolePermissions >= allPermissions
   const statsReady = Boolean(stats.data) && !stats.isError
   const rows = developers.data?.data ?? []
   const meta = developers.data?.meta
@@ -138,6 +149,15 @@ function DevelopersPage() {
     if (!roleExists || create.isPending) return
     create.mutate(form)
   }
+
+  const askGrantAll = () =>
+    setConfirm({
+      title: 'Give the Developer role every permission?',
+      description: `Every developer account gets all ${allPermissions} permissions, tenant and platform alike, so it can test any API feature. A leaked developer token can then do anything. Reset to baseline takes it back to developer-dashboard access only.`,
+      confirmLabel: 'Grant all permissions',
+      danger: true,
+      run: () => grantAll.mutateAsync(),
+    })
 
   const askRemove = (event: MouseEvent, developer: DevDeveloper) => {
     event.stopPropagation()
@@ -226,7 +246,7 @@ function DevelopersPage() {
     <>
       <PageHeader
         title="Developers"
-        description="Dedicated developer accounts for testing API features — every account carries the Developer role with all permissions."
+        description="Dedicated developer accounts for testing API features — every account carries the hidden Developer role."
         actions={
           <Button variant="primary" icon="developers" onClick={() => setCreateOpen(true)}>
             New developer
@@ -244,9 +264,9 @@ function DevelopersPage() {
           label="Role status"
           value={roleExists ? 'Present' : 'Missing'}
           tone={roleExists ? 'ok' : 'danger'}
-          hint={roleExists ? `${rolePermissions}/${totalPermissions} permissions` : 'create it below'}
+          hint={roleExists ? `${rolePermissions}/${allPermissions} permissions` : 'create it below'}
         />
-        <StatTile label="Total permissions" value={totalPermissions} hint="catalog entries" />
+        <StatTile label="Total permissions" value={allPermissions} hint={`catalog entries · baseline ${totalPermissions}`} />
         <StatTile label="Role" value="Developer" hint="hidden system role" />
       </div>
 
@@ -256,29 +276,53 @@ function DevelopersPage() {
             message={stats.error instanceof Error ? stats.error.message : 'Unable to load developer settings.'}
           />
         </div>
-      ) : statsReady && (!roleExists || roleOutOfSync) ? (
-        <Card className="mt-24 role-warning">
+      ) : statsReady ? (
+        <Card className={`mt-24${!roleExists || roleOutOfSync ? ' role-warning' : ''}`}>
           <div className="flex align-start g-4">
             <div className="fill">
-              <div className="card-title">Developer role</div>
+              <div className="card-title">Developer role permissions</div>
               <div className="card-sub mt-8">
-                {roleExists
-                  ? `The role has ${rolePermissions} of ${totalPermissions} catalog permissions. Sync it to mirror Super-Admin.`
-                  : 'The "Developer" role does not exist yet. One click creates it and syncs it with all permissions, mirroring Super-Admin.'}
+                {!roleExists
+                  ? 'The "Developer" role does not exist yet. One click creates it with developer-dashboard access.'
+                  : roleOutOfSync
+                    ? `The role has ${rolePermissions} of its ${totalPermissions} baseline permissions. Reset it to restore developer-dashboard access.`
+                    : roleHasAll
+                      ? `The role has all ${allPermissions} permissions, so developer accounts can test every API feature. Reset to baseline when you no longer need that.`
+                      : `The role has ${rolePermissions} of ${allPermissions} permissions: developer-dashboard access only. Grant all to test every API feature with a developer account.`}
               </div>
             </div>
-            <Button
-              variant="primary"
-              icon="check"
-              disabled={ensureRole.isPending}
-              onClick={() => ensureRole.mutate()}
-            >
-              {ensureRole.isPending
-                ? 'Provisioning…'
-                : roleExists
-                  ? 'Sync permissions'
-                  : 'Create Developer role'}
-            </Button>
+            <div className="flex g-2">
+              {roleExists && rolePermissions !== totalPermissions ? (
+                <Button
+                  variant={roleOutOfSync ? 'primary' : undefined}
+                  icon="check"
+                  disabled={ensureRole.isPending || grantAll.isPending}
+                  onClick={() => ensureRole.mutate()}
+                >
+                  {ensureRole.isPending ? 'Resetting…' : 'Reset to baseline'}
+                </Button>
+              ) : null}
+              {!roleExists ? (
+                <Button
+                  variant="primary"
+                  icon="check"
+                  disabled={ensureRole.isPending}
+                  onClick={() => ensureRole.mutate()}
+                >
+                  {ensureRole.isPending ? 'Provisioning…' : 'Create Developer role'}
+                </Button>
+              ) : null}
+              {!roleHasAll ? (
+                <Button
+                  variant={roleExists && !roleOutOfSync ? 'primary' : undefined}
+                  icon="shield"
+                  disabled={grantAll.isPending || ensureRole.isPending || allPermissions === 0}
+                  onClick={askGrantAll}
+                >
+                  {grantAll.isPending ? 'Granting…' : 'Grant all permissions'}
+                </Button>
+              ) : null}
+            </div>
           </div>
         </Card>
       ) : null}
@@ -318,7 +362,7 @@ function DevelopersPage() {
               empty={
                 <EmptyState
                   title="No developer accounts"
-                  description="Create one with the button above. Accounts get the Developer role (all permissions) and are meant for testing API features."
+                  description="Create one with the button above. Accounts get the hidden Developer role and are meant for testing API features."
                   icon="developers"
                   action={
                     <Button variant="primary" icon="developers" onClick={() => setCreateOpen(true)}>

@@ -597,6 +597,8 @@ export const en = {
   'console.settingsSubtitle': 'Platform-wide values, such as the bank details shown at checkout, and the defaults organizations start from.',
   'console.overridable': 'Organizations can change this',
   'billing.invoice': 'Invoice',
+  'billing.invoiceHtml': 'HTML',
+  'billing.invoiceHtmlHint': 'The invoice as a web page you can open and print',
   'billing.withdraw': 'Withdraw',
   'billing.withdrawTitle': 'Withdraw this payment?',
   'billing.withdrawConfirm': 'Withdraw the payment of {amount} ({invoice})? Use this if the transfer reference was wrong or you changed your mind. You can pay again afterwards.',

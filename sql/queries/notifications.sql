@@ -255,10 +255,11 @@ WHERE model_type = 'user' AND model_id = @user_id
 ORDER BY role_id;
 
 -- name: UserExistsInTenant :one
+-- tenant_id 0 means a tenantless platform account (a staff notice).
 SELECT EXISTS (
     SELECT 1 FROM users
     WHERE id = @id AND deleted_at IS NULL
-      AND (@tenant_id::bigint = 0 OR tenant_id = @tenant_id::bigint)
+      AND ((@tenant_id::bigint = 0 AND tenant_id IS NULL) OR tenant_id = @tenant_id::bigint)
 );
 
 -- name: BranchExistsInTenant :one

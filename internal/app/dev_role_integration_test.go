@@ -87,6 +87,32 @@ func TestDeveloperRoleProvisioning(t *testing.T) {
 		t.Fatalf("ensure developer role stats = %+v, want %d permissions", stats.Data, len(authz.DeveloperPermissions()))
 	}
 
+	// Grant all: the role gets the whole catalog; ensuring it again resets it
+	// to the baseline.
+	var grant struct {
+		Data struct {
+			RolePermissions int64 `json:"role_permissions"`
+			AllPermissions  int64 `json:"all_permissions"`
+		} `json:"data"`
+	}
+	rec = apiRequest(t, router, http.MethodPost, "/dev/api/developers/role/all", "", superToken, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("grant all status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	decodeBody(t, rec, &grant)
+	if want := int64(len(authz.Catalog)); grant.Data.RolePermissions != want || grant.Data.AllPermissions != want {
+		t.Fatalf("grant all stats = %+v, want %d of %d", grant.Data, want, want)
+	}
+	rec = apiRequest(t, router, http.MethodPost, "/dev/api/developers/role", "", superToken, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("reset developer role status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	grant.Data.RolePermissions = 0
+	decodeBody(t, rec, &grant)
+	if grant.Data.RolePermissions != int64(len(authz.DeveloperPermissions())) {
+		t.Fatalf("reset role permissions = %d, want %d", grant.Data.RolePermissions, len(authz.DeveloperPermissions()))
+	}
+
 	var hidden, system bool
 	if err := pool.QueryRow(context.Background(),
 		`SELECT hidden, is_system FROM roles WHERE name = $1 AND tenant_id IS NULL`, authz.DeveloperRole,

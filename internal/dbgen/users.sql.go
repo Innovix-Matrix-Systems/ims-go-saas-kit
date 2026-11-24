@@ -800,6 +800,65 @@ func (q *Queries) ListUsersForExport(ctx context.Context, arg ListUsersForExport
 	return items, nil
 }
 
+const listUsersWithPermission = `-- name: ListUsersWithPermission :many
+SELECT DISTINCT u.id, u.tenant_id, u.name, u.email, u.locale
+FROM users u
+JOIN model_has_roles mr ON mr.model_type = 'user' AND mr.model_id = u.id
+JOIN roles r ON r.id = mr.role_id
+WHERE u.deleted_at IS NULL
+  AND u.erased_at IS NULL
+  AND u.is_active = 1
+  AND (($1::bigint = 0 AND u.tenant_id IS NULL) OR u.tenant_id = $1::bigint)
+  AND (r.name = $2::text OR EXISTS (
+      SELECT 1 FROM role_has_permissions rp
+      JOIN permissions p ON p.id = rp.permission_id
+      WHERE rp.role_id = r.id AND p.name = $3::text))
+ORDER BY u.id
+`
+
+type ListUsersWithPermissionParams struct {
+	TenantID       int64  `json:"tenant_id"`
+	SuperAdminRole string `json:"super_admin_role"`
+	Permission     string `json:"permission"`
+}
+
+type ListUsersWithPermissionRow struct {
+	ID       int64   `json:"id"`
+	TenantID *int64  `json:"tenant_id"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	Locale   *string `json:"locale"`
+}
+
+// Active accounts of one tenant (0: the tenantless platform accounts) that
+// hold a permission through one of their roles, or the Super-Admin role:
+// who to tell about something only they can act on (a payment to review).
+func (q *Queries) ListUsersWithPermission(ctx context.Context, arg ListUsersWithPermissionParams) ([]ListUsersWithPermissionRow, error) {
+	rows, err := q.db.Query(ctx, listUsersWithPermission, arg.TenantID, arg.SuperAdminRole, arg.Permission)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUsersWithPermissionRow{}
+	for rows.Next() {
+		var i ListUsersWithPermissionRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Name,
+			&i.Email,
+			&i.Locale,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markUserEmailVerified = `-- name: MarkUserEmailVerified :execrows
 UPDATE users
 SET email_verified_at = COALESCE(email_verified_at, now()), updated_at = now()

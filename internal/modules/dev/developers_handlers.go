@@ -21,6 +21,7 @@ type DeveloperStats struct {
 	RoleName         string `json:"role_name"`
 	RolePermissions  int64  `json:"role_permissions"`
 	TotalPermissions int64  `json:"total_permissions"`
+	AllPermissions   int64  `json:"all_permissions"`
 }
 
 func (h *Handler) listDevelopers(w http.ResponseWriter, r *http.Request) {
@@ -72,6 +73,15 @@ func (h *Handler) createDeveloper(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ensureDeveloperRole(w http.ResponseWriter, r *http.Request) {
 	stats, err := h.developers.EnsureRole(r.Context(), authn.UserID(r))
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.Data(w, r, http.StatusOK, stats)
+}
+
+func (h *Handler) grantDeveloperAllPermissions(w http.ResponseWriter, r *http.Request) {
+	stats, err := h.developers.GrantAll(r.Context(), authn.UserID(r))
 	if err != nil {
 		h.Error(w, r, err)
 		return

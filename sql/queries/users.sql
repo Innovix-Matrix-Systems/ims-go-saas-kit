@@ -299,3 +299,21 @@ WHERE u.id = @id AND u.deleted_at IS NULL;
 SELECT EXISTS (
     SELECT 1 FROM tenants WHERE owner_user_id = @user_id AND deleted_at IS NULL
 )::boolean;
+
+-- name: ListUsersWithPermission :many
+-- Active accounts of one tenant (0: the tenantless platform accounts) that
+-- hold a permission through one of their roles, or the Super-Admin role:
+-- who to tell about something only they can act on (a payment to review).
+SELECT DISTINCT u.id, u.tenant_id, u.name, u.email, u.locale
+FROM users u
+JOIN model_has_roles mr ON mr.model_type = 'user' AND mr.model_id = u.id
+JOIN roles r ON r.id = mr.role_id
+WHERE u.deleted_at IS NULL
+  AND u.erased_at IS NULL
+  AND u.is_active = 1
+  AND ((@tenant_id::bigint = 0 AND u.tenant_id IS NULL) OR u.tenant_id = @tenant_id::bigint)
+  AND (r.name = @super_admin_role::text OR EXISTS (
+      SELECT 1 FROM role_has_permissions rp
+      JOIN permissions p ON p.id = rp.permission_id
+      WHERE rp.role_id = r.id AND p.name = @permission::text))
+ORDER BY u.id;

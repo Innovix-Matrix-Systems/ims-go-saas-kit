@@ -6,6 +6,77 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-25
+
+Live updates, invoice PDFs and payment notices, plus one frontend setup instead of two. The
+notification bell, announcement banners and billing screens update the moment something changes,
+over one Server-Sent Events stream per browser fed by Postgres `LISTEN/NOTIFY` (no Redis needed).
+Invoices download as PDF, and a bank-transfer payment now tells the staff who approve it and the
+organization's billing managers what is happening, ending with a receipt e-mail that carries the
+invoice PDF. The developer dashboard builds the same way as the app, and the Developers page can
+give the Developer role every permission or reset it.
+
+### Added
+
+- **Live updates instead of polling.** The notification bell and announcement banners now update
+  as soon as something changes. One Server-Sent Events stream per browser
+  (`GET /api/v1/realtime/stream`) says when the account's notifications or announcements changed,
+  and the app refetches them. A new notification shows up when its fan-out finishes, reading one
+  clears the badge in your other tabs, and an announcement appears the minute it starts. Polling
+  stays as a slower fallback (bell every 5 minutes, banners every 15 while the stream is up).
+- **A live-update bus for every module.** Any process (API, queue worker, scheduler) publishes a
+  nudge with `pg_notify`; each server keeps one `LISTEN` connection and feeds its open streams.
+  No Redis needed, works across several servers. Settings: `REALTIME_ENABLED`,
+  `REALTIME_HEARTBEAT`, `REALTIME_MAX_STREAM`, `REALTIME_MAX_STREAMS_PER_USER` and
+  `REALTIME_LISTEN_DSN` (for installs whose database URL goes through PgBouncer in transaction
+  mode). See `docs/guides/realtime.md`, which also covers nginx.
+- **Invoices as PDF.** `GET /api/v1/billing/payments/{id}/invoice.pdf` and an **Invoice** button
+  on the billing page download a one-page PDF (the HTML invoice stays, as **HTML**).
+- **Everyone hears about a payment.** When an organization submits a bank-transfer or cash
+  payment, the staff who can approve it get a "Payment to review" notification and e-mail, and
+  the organization's billing managers (and whoever paid) get "Payment submitted". Approving it
+  sends them "Payment received" and a receipt e-mail with the invoice PDF attached; rejecting it
+  sends the reviewer's note. Billing pages and the approval list refresh on their own.
+- **Notifications can open a page.** A notification whose data has an in-app `url` (the payment
+  ones do) opens it when clicked.
+- **Give the Developer role every permission from the Developers page.** "Grant all permissions"
+  (after a confirmation) lets developer accounts test any API feature; "Reset to baseline" takes the
+  role back to developer-dashboard access only. New endpoint `POST /dev/api/developers/role/all`,
+  and the role stats now report `all_permissions` next to the baseline `total_permissions`.
+
+### Changed
+
+- **The developer dashboard no longer uses TanStack Start.** It only ran Start in SPA mode, so it
+  used none of Start's server features. It now has an `index.html` and `src/main.tsx` like the
+  app, and the `@tanstack/react-start` package is gone. The pages, routes and look are unchanged.
+- **The dashboard's theme script is a file.** The saved theme, accent and density are applied
+  before first paint from `/dev/appearance.js` instead of an inline script, so a strict
+  Content Security Policy can cover the dashboard too.
+- **The `/dev` handler serves `index.html`** (it served Start's `_shell.html`).
+
+### Fixed
+
+- **The notification badge could show too few.** When the unread counter was not cached (never
+  read yet, or expired after a week), a new notification set it to 1 instead of recounting, so
+  someone with three unread saw "1". The counter is now recounted from the database instead.
+- **A notification arriving while the app loaded could leave the badge stale.** The app now
+  refetches notifications and announcements every time its live-update stream connects, not
+  only after a reconnect.
+- **The Developers page said the role had all permissions.** It holds the developer-dashboard
+  baseline unless you grant all; the page and its tiles now say which.
+
+### Upgrading from 0.1.5
+
+- **No migrations and no required settings.** Live updates are on by default
+  (`REALTIME_ENABLED=true`); the `REALTIME_*` settings are optional.
+- **Behind nginx**, give `/api/v1/realtime/stream` `proxy_buffering off` and a long
+  `proxy_read_timeout` (see `docs/guides/realtime.md`), or the stream is held back and the app
+  falls back to polling.
+- **Behind PgBouncer in transaction mode**, set `REALTIME_LISTEN_DSN` to a direct (or session-mode)
+  connection: `LISTEN` does not work through a transaction pooler.
+- **Restart the server, the worker and the scheduler together**: they share mail templates and
+  notification events, and the receipt mail is sent by the worker.
+
 ## [0.1.5] - 2026-11-24
 
 A tidy-up and visibility release. Every change to your data now shows up as a named step in a
@@ -174,6 +245,7 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.0...v0.1.5
 [0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/releases/tag/v0.1.0

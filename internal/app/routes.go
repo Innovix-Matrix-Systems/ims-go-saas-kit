@@ -16,6 +16,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/realtime"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/dedupe"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/docs"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
@@ -65,7 +66,8 @@ func (d *Dependencies) Router() http.Handler {
 	if d.Platform != nil && d.Platform.Maintenance != nil {
 		r.Use(maintenance.Guard(d.Platform.Maintenance.Checker(), d.Responder, maintenance.OpenPaths...))
 	}
-	r.Use(httpx.Timeout(d.Config.HTTP.RequestTimeout, d.Responder))
+	// The live-update stream ends on its own schedule (REALTIME_MAX_STREAM).
+	r.Use(httpx.Timeout(d.Config.HTTP.RequestTimeout, d.Responder, realtime.StreamPath))
 	// Health probes and metrics scrapes never spend the per-IP budget.
 	r.Use(ratelimit.Middleware(d.Limiter, ratelimit.KeyByIP, d.Responder, "/up", "/api/health", "/metrics"))
 	r.Use(d.I18n.Middleware(d.Config.App.SupportedLocales, d.Config.App.FallbackLocale))
@@ -134,6 +136,9 @@ func (d *Dependencies) Router() http.Handler {
 			// resolution, so tenantless accounts (super-admin, developer)
 			// can sign out too.
 			d.Auth.RegisterRoutes(r)
+			// The live-update stream: every signed-in account, no tenancy
+			// (the events carry no data).
+			d.Realtime.RegisterRoutes(r)
 			// The caller's own deletion request and export, the same way.
 			d.Privacy.RegisterRoutes(r)
 

@@ -14,7 +14,7 @@ func newTestHandler(files fstest.MapFS) http.Handler {
 
 func testFS() fstest.MapFS {
 	return fstest.MapFS{
-		"_shell.html":       &fstest.MapFile{Data: []byte("<!doctype html><html><body>shell</body></html>")},
+		"index.html":        &fstest.MapFile{Data: []byte("<!doctype html><html><body>shell</body></html>")},
 		"assets/app-abc.js": &fstest.MapFile{Data: []byte("console.log('dev')")},
 	}
 }

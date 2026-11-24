@@ -236,6 +236,16 @@ effective values with secrets masked.
 | `CORS_MAX_AGE` | `600` | *Optional.* seconds |
 | `MAINTENANCE_CHECK_INTERVAL` | `5s` | *Optional.* how often each process re-reads the maintenance state (ims down/up) |
 
+## Live updates (SSE)
+
+| Variable | Example | Notes |
+| --- | --- | --- |
+| `REALTIME_ENABLED` | `true` | *Optional.* GET /api/v1/realtime/stream; off: clients keep polling |
+| `REALTIME_HEARTBEAT` | `25s` | *Optional.* idle comment so proxies keep the stream open |
+| `REALTIME_MAX_STREAM` | `30m` | *Optional.* then the client reconnects (re-checks its token) |
+| `REALTIME_MAX_STREAMS_PER_USER` | `5` | *Optional.* open streams per user, per server process |
+| `REALTIME_LISTEN_DSN` | — | *Optional.* LISTEN connection (default DATABASE_DSN); not via PgBouncer transaction mode |
+
 ## Developer dashboard
 
 | Variable | Example | Notes |

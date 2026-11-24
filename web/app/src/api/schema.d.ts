@@ -957,6 +957,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/realtime/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Live updates for the caller (Server-Sent Events)
+         * @description Holds a `text/event-stream` open and says when something changed for the caller, so the app
+         *     refetches it instead of polling. Events carry no data: the client refetches through the
+         *     normal endpoints, where permissions and tenancy apply.
+         *
+         *     - `event: ready` once, with `data: {"heartbeat": <seconds>}`
+         *     - `event: notifications`: refetch the notification feed and unread count
+         *     - `event: announcements`: refetch `GET /api/v1/announcements/live`
+         *     - `event: resync`: refetch everything (events may have been missed)
+         *     - `: ping` comments every `REALTIME_HEARTBEAT` while idle
+         *     - `event: reconnect` before the server closes the stream (after `REALTIME_MAX_STREAM`, or
+         *       on shutdown); the client opens a new one
+         *
+         *     Sign in with the usual bearer header (browsers use `fetch` with a stream reader, since
+         *     `EventSource` cannot send headers). Any signed-in account may open it. At most
+         *     `REALTIME_MAX_STREAMS_PER_USER` streams per user per server process (429 beyond). With
+         *     `REALTIME_ENABLED` off it answers 404 and clients keep polling. See
+         *     `docs/guides/realtime.md`.
+         */
+        get: operations["realtimeStream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/revoke-others": {
         parameters: {
             query?: never;
@@ -3421,6 +3457,49 @@ export interface paths {
          * @description A printable HTML document (download), issued under the platform's name (system.name). An unpaid payment's invoice says it is not paid yet.
          */
         get: operations["getBillingInvoice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/payments/{id}/invoice.pdf": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The invoice of one of the organization's payments, as a PDF
+         * @description The same invoice as `GET /billing/payments/{id}/invoice`, as a PDF download (one A4 page, standard fonts: amounts use the currency code). The receipt e-mail sent when a payment is approved attaches it.
+         */
+        get: operations["getBillingInvoicePdf"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6116,8 +6195,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create or repair the hidden Developer role with all catalog permissions */
+        /** Create or reset the hidden Developer role with its baseline permissions */
         post: operations["devEnsureDeveloperRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dev/api/developers/role/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give the hidden Developer role every permission in the catalog
+         * @description Creates the role when it is missing and replaces its permissions with the whole catalog, so developer accounts can exercise any API feature. `POST /dev/api/developers/role` puts it back to the baseline.
+         */
+        post: operations["devGrantDeveloperAllPermissions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8964,8 +9063,16 @@ export interface components {
             role_name: string;
             /** Format: int64 */
             role_permissions: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description The Developer role's baseline (developer-dashboard access).
+             */
             total_permissions: number;
+            /**
+             * Format: int64
+             * @description Every permission in the catalog.
+             */
+            all_permissions: number;
         };
         DevDeveloperStatsEnvelope: {
             data: components["schemas"]["DevDeveloperStats"];
@@ -11972,6 +12079,63 @@ export interface operations {
             };
             /** @description Missing, invalid or expired bearer token. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    realtimeStream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event stream (stays open). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Rate limit exceeded; see `retry_after`. */
+            429: {
+                headers: {
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description A dependency or gateway is unavailable. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18663,6 +18827,76 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getBillingInvoicePdf: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invoice. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
             /** @description Missing, invalid or expired bearer token. */
@@ -26467,6 +26701,53 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The role status after provisioning. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevDeveloperStatsEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    devGrantDeveloperAllPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The role status after the grant. */
             200: {
                 headers: {
                     [name: string]: unknown;

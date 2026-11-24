@@ -253,6 +253,30 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   return payload as T
 }
 
+/**
+ * Opens a Server-Sent Events stream with the bearer header (EventSource cannot
+ * send one) and returns the open response for the caller to read. Errors are
+ * ApiError, reported like any other call (a 401 signs out).
+ */
+export async function apiStream(path: string, signal: AbortSignal): Promise<Response> {
+  const headers = headersFor({ asStaff: true })
+  headers.set('Accept', 'text/event-stream')
+  let response: Response
+  try {
+    response = await fetch(buildURL(path), { headers, signal, cache: 'no-store', referrerPolicy: 'no-referrer' })
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+    throw new ApiError('The server could not be reached.', 0)
+  }
+  if (!response.ok || !response.body) {
+    const payload = await response.json().catch(() => null)
+    const error = problemError(response.status, payload)
+    report(error)
+    throw error
+  }
+  return response
+}
+
 /** Downloads a file the API serves behind authentication. */
 export async function apiBlob(path: string, signal?: AbortSignal): Promise<Blob> {
   const response = await fetch(buildURL(path), { headers: headersFor({}), signal, referrerPolicy: 'no-referrer' })

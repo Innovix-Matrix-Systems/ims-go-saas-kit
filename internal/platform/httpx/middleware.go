@@ -190,11 +190,16 @@ func AccessLog(logger *slog.Logger) func(http.Handler) http.Handler {
 }
 
 // Timeout bounds handler execution with a context deadline and writes a 503
-// problem when the deadline elapses without a response.
-func Timeout(d time.Duration, rsp *Responder) func(http.Handler) http.Handler {
+// problem when the deadline elapses without a response. Paths in skip (live
+// streams, which end on their own schedule) run without the deadline.
+func Timeout(d time.Duration, rsp *Responder, skip ...string) func(http.Handler) http.Handler {
+	skipped := make(map[string]bool, len(skip))
+	for _, path := range skip {
+		skipped[path] = true
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if d <= 0 {
+			if d <= 0 || skipped[r.URL.Path] {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -209,6 +214,12 @@ func Timeout(d time.Duration, rsp *Responder) func(http.Handler) http.Handler {
 			}
 		})
 	}
+}
+
+// WantsEventStream reports whether the client asked for a Server-Sent Events
+// stream (Accept: text/event-stream).
+func WantsEventStream(r *http.Request) bool {
+	return strings.Contains(r.Header.Get("Accept"), "text/event-stream")
 }
 
 // SecurityHeaders applies baseline hardening headers to every response. HSTS

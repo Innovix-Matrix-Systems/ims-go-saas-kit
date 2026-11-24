@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 // Appearance preferences: theme, accent preset and density. Each is stored
 // per browser and applied as a data attribute on <html>, which the tokens in
 // styles/tokens.css read. The same rules run before first paint from
-// appearanceBootstrap (routes/__root.tsx), so a reload shows no flash.
+// public/appearance.js (loaded by index.html), so a reload shows no flash.
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 export type Accent = 'indigo' | 'blue' | 'teal' | 'violet' | 'slate'
@@ -24,9 +24,6 @@ const ACCENT_KEY = 'ims.dev.accent'
 const DENSITY_KEY = 'ims.dev.density'
 const defaults: Appearance = { theme: 'system', accent: 'indigo', density: 'comfortable' }
 
-// Runs inline in <head>: keep it small, dependency-free and in step with
-// apply() below.
-export const appearanceBootstrap = `(function(){try{var s=localStorage,d=document.documentElement,t=s.getItem('${THEME_KEY}');if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';d.dataset.theme=t;d.dataset.accent=s.getItem('${ACCENT_KEY}')||'${defaults.accent}';d.dataset.density=s.getItem('${DENSITY_KEY}')||'${defaults.density}'}catch(e){}})()`
 
 function read<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
   try {

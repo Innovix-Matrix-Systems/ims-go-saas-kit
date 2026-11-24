@@ -22,6 +22,7 @@ func (h *Handler) RegisterRoutesResolve(r chi.Router) {
 	r.With(h.can(authz.PermBillingManage)).Post("/billing/subscribe", h.subscribe)
 	r.With(h.can(authz.PermBillingManage)).Post("/billing/payments/{id}/cancel", h.cancelPayment)
 	r.With(h.can(authz.PermBillingView)).Get("/billing/payments/{id}/invoice", h.invoice)
+	r.With(h.can(authz.PermBillingView)).Get("/billing/payments/{id}/invoice.pdf", h.invoicePDF)
 }
 
 // RegisterRoutesExempt mounts system billing management routes.

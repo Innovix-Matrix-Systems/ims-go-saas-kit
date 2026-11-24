@@ -263,3 +263,13 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     (reads, and checks that run on every request or row). Refusals carry their `apperr` code
     without failing the span: only real failures turn a trace red. Redis uses the official
     `redisotel` instrumentation; metrics stay Prometheus.
+54. **Live updates are nudges over Postgres LISTEN/NOTIFY, streamed as SSE.** The API, the queue
+    worker and the scheduler run as separate processes, so the one that learns of a change is
+    rarely the one holding the browser's connection. Postgres is always there (Redis is optional),
+    so any process publishes with `pg_notify` and each `ims serve` keeps one `LISTEN` connection
+    feeding an in-memory hub (`internal/platform/pubsub`, the notifier pattern River uses). Events
+    name what changed and for whom, never the data: the app refetches through the normal
+    endpoints, so permissions and tenancy stay in one place and a lost or extra event costs a
+    refetch. Browsers read the stream with `fetch` so the bearer header stays a header (not a URL
+    parameter), one tab per user holds it, and polling stays as a slow fallback
+    (`docs/guides/realtime.md`).

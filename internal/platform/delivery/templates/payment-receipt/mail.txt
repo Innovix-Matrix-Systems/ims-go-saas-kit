@@ -1,0 +1,12 @@
+Hello{{if .To.Name}} {{.To.Name}}{{end}},
+
+We received {{.Data.amount}} from {{.Data.organization}} for the {{.Data.plan}} plan, and the plan is now active.
+
+Invoice: {{.Data.invoice}}
+Paid on: {{.Data.paid_on}}
+
+The invoice is attached as a PDF. You can also download it any time from the billing page:
+
+{{.Data.url}}
+
+Thank you.

@@ -502,6 +502,59 @@ func (q *Queries) ListAnnouncements(ctx context.Context, arg ListAnnouncementsPa
 	return items, nil
 }
 
+const listAnnouncementsStartedOrEnded = `-- name: ListAnnouncementsStartedOrEnded :many
+SELECT id, title, body, kind, cta_label, cta_url, audience, starts_at, ends_at, dismissible, status, channels, delivered_at, created_by, updated_by, created_at, updated_at FROM announcements
+WHERE status = 'published'
+  AND ((starts_at > $1 AND starts_at <= $2)
+    OR (ends_at > $1 AND ends_at <= $2))
+ORDER BY id
+`
+
+type ListAnnouncementsStartedOrEndedParams struct {
+	Since pgtype.Timestamptz `json:"since"`
+	Until pgtype.Timestamptz `json:"until"`
+}
+
+// Published announcements whose window opened or closed in (since, until]:
+// the scheduler tells their audience's open apps to refetch.
+func (q *Queries) ListAnnouncementsStartedOrEnded(ctx context.Context, arg ListAnnouncementsStartedOrEndedParams) ([]Announcement, error) {
+	rows, err := q.db.Query(ctx, listAnnouncementsStartedOrEnded, arg.Since, arg.Until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Announcement{}
+	for rows.Next() {
+		var i Announcement
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Body,
+			&i.Kind,
+			&i.CtaLabel,
+			&i.CtaUrl,
+			&i.Audience,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.Dismissible,
+			&i.Status,
+			&i.Channels,
+			&i.DeliveredAt,
+			&i.CreatedBy,
+			&i.UpdatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAnnouncementsToDeliver = `-- name: ListAnnouncementsToDeliver :many
 SELECT id, title, body, kind, cta_label, cta_url, audience, starts_at, ends_at, dismissible, status, channels, delivered_at, created_by, updated_by, created_at, updated_at FROM announcements
 WHERE status = 'published'

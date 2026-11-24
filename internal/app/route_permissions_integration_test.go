@@ -45,6 +45,7 @@ var routesWithoutPermission = map[string]bool{
 	// self-service: the caller's own session, profile and inbox
 	"POST /api/v1/logout":                                 true,
 	"GET /api/v1/sessions":                                true, // the caller's own sessions
+	"GET /api/v1/realtime/stream":                         true, // the caller's own live updates (no data)
 	"GET /api/v1/two-factor":                              true, // the caller's own two-factor
 	"POST /api/v1/two-factor":                             true,
 	"DELETE /api/v1/two-factor":                           true,

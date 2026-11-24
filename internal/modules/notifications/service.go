@@ -11,6 +11,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/pubsub"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
@@ -34,6 +35,8 @@ type Service struct {
 	settings *settings.Service
 	logger   *slog.Logger
 	channels channelOptions
+	// publisher tells open live-update streams a feed changed (optional).
+	publisher pubsub.Publisher
 }
 
 // NewService creates the notification service.
@@ -75,7 +78,11 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 	if err != nil {
 		return nil, nil, err
 	}
-	s.dispatchFanOut(ctx, scope, *notification)
+	// The fan-out job tells the addressed users once their unread counts
+	// are in; without one, the feed shows it now.
+	if !s.dispatchFanOut(ctx, scope, *notification) {
+		s.publishToTenant(ctx, tenantValue(notification.TenantID))
+	}
 	return notification, targets, nil
 }
 
@@ -113,6 +120,9 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 		return nil, nil, err
 	}
 	s.dispatchFanOut(ctx, scope, *notification)
+	// Everyone who could see it (including anyone the new targets dropped)
+	// refetches the changed content.
+	s.publishToTenant(ctx, tenantValue(notification.TenantID))
 	return notification, targets, nil
 }
 
@@ -136,6 +146,7 @@ func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, id int64) (er
 		return err
 	}
 	s.dispatchDecrement(ctx, tenantValue(existing.TenantID), userIDs)
+	s.publishToTenant(ctx, tenantValue(existing.TenantID))
 	return nil
 }
 
@@ -192,6 +203,8 @@ func (s *Service) MarkRead(ctx context.Context, scope tenancy.Scope, userID, not
 	}
 	if inserted > 0 {
 		s.decrementUnread(ctx, visibility.TenantID, userID)
+		// The user's other tabs and devices clear it too.
+		s.publishToUsers(ctx, visibility.TenantID, []int64{userID})
 	}
 	return nil
 }
@@ -346,6 +359,8 @@ func (s *Service) ProcessFanOut(ctx context.Context, notificationID int64) (err 
 		// retried fan-out never sends twice.
 		s.deliver(ctx, *notification, inserted)
 	}
+	// Unread counts are in: the addressed users' open apps refetch.
+	s.publishToUsers(ctx, tenantID, userIDs)
 	return nil
 }
 
@@ -370,6 +385,7 @@ func (s *Service) ProcessMarkAllRead(ctx context.Context, userID, branchID int64
 	}
 	_ = s.cache.Set(ctx, readAllBeforeKey(visibility.TenantID, userID), readAt.Unix(), readAllBeforeTTL)
 	_ = s.cache.Set(ctx, unreadKey(visibility.TenantID, userID), 0, unreadTTL)
+	s.publishToUsers(ctx, visibility.TenantID, []int64{userID})
 	return nil
 }
 
@@ -384,12 +400,14 @@ func (s *Service) ProcessCounterDecrement(ctx context.Context, tenantID int64, u
 	for _, userID := range userIDs {
 		s.decrementUnread(ctx, tenantID, userID)
 	}
+	s.publishToUsers(ctx, tenantID, userIDs)
 	return nil
 }
 
-func (s *Service) dispatchFanOut(ctx context.Context, scope tenancy.Scope, notification Notification) {
+// dispatchFanOut enqueues the fan-out job and reports whether it did.
+func (s *Service) dispatchFanOut(ctx context.Context, scope tenancy.Scope, notification Notification) bool {
 	if s.queue == nil || !s.fanOutEnabled(ctx) {
-		return
+		return false
 	}
 	enqueueCtx := tenancy.WithScope(ctx, tenancy.Scope{
 		TenantID: tenantValue(notification.TenantID),
@@ -400,7 +418,9 @@ func (s *Service) dispatchFanOut(ctx context.Context, scope tenancy.Scope, notif
 		// The notification exists; a failed dispatch is logged and can be
 		// recovered by re-saving the notification.
 		s.logWarn(ctx, "notification fan-out enqueue failed", "notification_id", notification.ID, "error", err)
+		return false
 	}
+	return true
 }
 
 func (s *Service) dispatchDecrement(ctx context.Context, tenantID int64, userIDs []int64) {
@@ -518,18 +538,20 @@ func (s *Service) fanOutEnabled(ctx context.Context) bool {
 	return enabled
 }
 
+// incrementUnread adds one to a cached counter. A counter that was not
+// cached (never read, or expired) is not started at 1, which would hide the
+// user's older unread notifications: it is dropped, and the next read counts
+// from the database, where the new delivery already is.
 func (s *Service) incrementUnread(ctx context.Context, tenantID, userID int64) {
 	key := unreadKey(tenantID, userID)
-	created, err := s.cache.SetNX(ctx, key, int64(1), unreadTTL)
+	count, err := s.cache.Increment(ctx, key, 1)
 	if err != nil {
 		s.logWarn(ctx, "unread increment failed", "user_id", userID, "error", err)
 		return
 	}
-	if created {
-		return
-	}
-	if _, err := s.cache.Increment(ctx, key, 1); err != nil {
-		s.logWarn(ctx, "unread increment failed", "user_id", userID, "error", err)
+	if count <= 1 {
+		// The key did not exist (or held 0): let the next read recount.
+		_ = s.cache.Delete(ctx, key)
 	}
 }
 
@@ -565,7 +587,13 @@ func (s *Service) validateTargets(ctx context.Context, scope tenancy.Scope, tena
 	for i, target := range targets {
 		key := fmt.Sprintf("targets.%d", i)
 		switch target.Type {
-		case TargetUser, TargetRole, TargetBranch:
+		case TargetUser:
+			// Without a tenant, a user target must be a platform account
+			// (checked below): staff notices go to named staff.
+			if target.ID == nil || *target.ID < 1 {
+				fields[key+".id"] = append(fields[key+".id"], "The target id field is required.")
+			}
+		case TargetRole, TargetBranch:
 			hasNonGlobal = true
 			if target.ID == nil || *target.ID < 1 {
 				fields[key+".id"] = append(fields[key+".id"], "The target id field is required.")

@@ -18,13 +18,14 @@ import (
 // HTTPMiddleware captures request/response pairs. It never touches request
 // handling: bodies are bounded and non-JSON payloads are skipped; entries are
 // handed to the collector through bounded channels. /dev traffic is excluded to
-// avoid capturing the dashboard itself.
+// avoid capturing the dashboard itself, and event streams (Accept:
+// text/event-stream) because they are not requests with an end worth timing.
 func (c *Collector) HTTPMiddleware(next http.Handler) http.Handler {
 	if c == nil || !c.capture.Enabled || !c.capture.Capture.HTTP {
 		return next
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/dev") {
+		if strings.HasPrefix(r.URL.Path, "/dev") || httpx.WantsEventStream(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -172,6 +173,9 @@ func (w *captureWriter) Write(payload []byte) (int, error) {
 	}
 	return w.ResponseWriter.Write(payload)
 }
+
+// Unwrap lets http.ResponseController reach the real writer.
+func (w *captureWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 // Flush forwards to the underlying writer when it supports flushing.
 func (w *captureWriter) Flush() {

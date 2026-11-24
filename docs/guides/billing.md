@@ -66,7 +66,7 @@ Statuses: `trial`, `pending`, `active`, `past_due`, `cancelled`, `expired`. Only
 | tenant payment history | `GET /api/v1/billing/payments` (`billing.view`) |
 | see the current plan | `GET /api/v1/billing/subscription/status` |
 | withdraw a checkout nobody confirmed yet | `POST /api/v1/billing/payments/{id}/cancel` (`billing.manage`): the payment and its pending subscription are cancelled, the approval request closed as withdrawn |
-| download an invoice | `GET /api/v1/billing/payments/{id}/invoice` (`billing.view`): a printable HTML document under the platform's name |
+| download an invoice | `GET /api/v1/billing/payments/{id}/invoice.pdf` (`billing.view`): a one-page PDF under the platform's name; `…/invoice` is the same as a printable HTML page |
 | see the use of each plan limit | `GET /api/v1/billing/usage` (`billing.view`): `users.max`, `branches.max` and `storage.mb` with the limit (-1 unlimited, 0 not in the plan) and what is used, counted as the limit checks count |
 | staff assigns a plan | `POST /api/v1/billing/internal/tenants/{tenant_id}/subscription` |
 | staff cancels | `POST /api/v1/billing/internal/subscriptions/{id}/cancel` — immediate |
@@ -129,7 +129,21 @@ An **orchestrator** picks a driver per method:
   `POST …/payment-approvals/{id}/approve|reject` update the payment and the
   subscription atomically.
 - **Invoices** are `INV-XXXX-timestamp` from `crypto/rand`; cash and bank payments get
-  unguessable `CASH-…` / `BANK-…` references.
+  unguessable `CASH-…` / `BANK-…` references. The PDF (`codeberg.org/go-pdf/fpdf`, pure Go) uses
+  the standard PDF fonts, so amounts show the currency code and characters outside Western
+  European scripts print as `?`; embed a TrueType font in `service/invoice_pdf.go` to change that.
+- **Who hears about a payment** (`internal/app/billing_notices.go`, billing's `PaymentNotifier`):
+
+  | When | Who | How |
+  | --- | --- | --- |
+  | a bank-transfer or cash checkout is submitted | staff holding `payment_approval.review` (Super-Admins included) | in-app "Payment to review" (opens the approvals page) + mail |
+  | the same | the organization's members holding `billing.manage`, and the submitter | in-app "Payment submitted" + mail |
+  | it is approved, or a gateway payment completes | the same members | in-app "Payment received" + the `payment-receipt` mail with the invoice PDF attached |
+  | it is rejected | the same members | in-app "Payment not confirmed" with the reviewer's note + mail |
+
+  Every change also sends a `billing` live update, so the organization's billing page and the
+  staff approval list refresh on their own (`docs/guides/realtime.md`). A notice that cannot go
+  out is logged; it never fails the payment.
 - Payment statuses only move along allowed transitions (pending → any, failed → completed,
   completed → refunded).
 

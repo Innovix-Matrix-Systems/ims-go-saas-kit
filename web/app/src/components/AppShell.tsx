@@ -11,6 +11,7 @@ import { PlanTray } from './PlanTray'
 import { CommandPalette } from './CommandPalette'
 import { navGroupLabels, navGroups, pageFor, visiblePages, type NavGroup } from './navigation'
 import { NotificationBell } from './NotificationBell'
+import { RealtimeConnector } from './realtime'
 import { ShortcutsSheet } from './ShortcutsSheet'
 import { useShortcuts } from './shortcuts'
 import { Icon, Kbd } from './ui'
@@ -231,6 +232,7 @@ export function AppShell() {
           </div>
         </main>
       </div>
+      <RealtimeConnector />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
       <ShortcutsSheet open={helpOpen} pages={pages} onClose={() => setHelpOpen(false)} />
     </div>

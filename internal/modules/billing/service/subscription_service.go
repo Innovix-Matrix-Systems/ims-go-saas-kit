@@ -29,6 +29,8 @@ type SubscriptionService struct {
 	now           func() time.Time
 	activity      *activity.Recorder
 	currency      string
+	// payNotices tells staff and the organization about payments (optional).
+	payNotices PaymentNotifier
 }
 
 // WithActivity records subscription changes in the tenant's activity log.
@@ -200,6 +202,10 @@ func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID
 		s.record(ctx, "subscription.created", subscription, map[string]any{
 			"package_id": packageID, "method": method, "status": subscription.Status,
 		})
+		if s.payNotices != nil && domain.IsManualMethod(method) && payment != nil {
+			submitter := actorID
+			s.payNotices.PaymentSubmitted(ctx, PaymentNotice{TenantID: tenantID, PaymentID: payment.ID, SubmittedBy: &submitter})
+		}
 	}
 	return subscription, payment, nil
 }
@@ -427,7 +433,11 @@ func (s *SubscriptionService) HandleGatewayCallback(ctx context.Context, payment
 
 	switch {
 	case result.IsSuccessful:
-		return s.completeAndActivate(ctx, payment, gatewayStatus)
+		completed, err := s.completeAndActivate(ctx, payment, gatewayStatus)
+		if err == nil && s.payNotices != nil {
+			s.payNotices.PaymentReceived(ctx, PaymentNotice{TenantID: payment.TenantID, PaymentID: payment.ID, SubmittedBy: payment.CreatedBy})
+		}
+		return completed, err
 	case result.IsFailed:
 		return s.payments.UpdateStatus(ctx, payment.ID, domain.PaymentFailed, nil, gatewayStatus)
 	default:
