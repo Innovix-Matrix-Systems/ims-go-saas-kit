@@ -49,9 +49,11 @@ type (
 		Delete(ctx context.Context, actorID, id int64) error
 		SetOwner(ctx context.Context, tenantID, userID int64) error
 	}
-	// PlanAssigner starts a tenant's subscription.
+	// PlanAssigner starts a tenant's subscription, and ends it again when the
+	// sign-up cannot finish.
 	PlanAssigner interface {
 		Assign(ctx context.Context, input billingservice.AssignInput) (*domain.Subscription, *domain.Payment, error)
+		Cancel(ctx context.Context, subscriptionID int64, reason *string) (*domain.Subscription, error)
 	}
 	// PackageCatalog lists packages.
 	PackageCatalog interface {
@@ -199,21 +201,46 @@ func (s *Service) SignUp(ctx context.Context, input SignUpInput) (err error) {
 		return err
 	}
 	// The services below are not one transaction: if a later step fails, the
-	// half-made organization is removed again (soft delete).
-	if err := s.provision(ctx, tenant, pkg, input); err != nil {
-		if cleanupErr := s.Tenants.Delete(ctx, 0, tenant.ID); cleanupErr != nil {
-			s.Logger.Error("sign-up: remove half-created organization", "tenant_id", tenant.ID, "error", cleanupErr)
-		}
+	// half-made organization is removed again (soft delete), and its
+	// subscription is cancelled so it no longer holds the package.
+	if subscription, err := s.provision(ctx, tenant, pkg, input); err != nil {
+		s.undoSignUp(ctx, tenant.ID, subscription)
 		return err
 	}
 	return nil
 }
 
-func (s *Service) provision(ctx context.Context, tenant *tenants.Tenant, pkg *domain.Package, input SignUpInput) error {
-	// The plan comes first: creating a user checks the plan's user limit.
-	if _, _, err := s.Plans.Assign(ctx, billingservice.AssignInput{TenantID: tenant.ID, PackageID: pkg.ID}); err != nil {
-		return err
+// undoSignUp removes what a failed sign-up created (best effort: the caller
+// still gets the original error).
+func (s *Service) undoSignUp(ctx context.Context, tenantID int64, subscription *domain.Subscription) {
+	if subscription != nil {
+		reason := "Sign-up did not complete."
+		if _, err := s.Plans.Cancel(ctx, subscription.ID, &reason); err != nil {
+			s.Logger.Error("sign-up: cancel the half-created organization's subscription",
+				"tenant_id", tenantID, "subscription_id", subscription.ID, "error", err)
+		}
 	}
+	if err := s.Tenants.Delete(ctx, 0, tenantID); err != nil {
+		s.Logger.Error("sign-up: remove half-created organization", "tenant_id", tenantID, "error", err)
+	}
+}
+
+// provision fills a new organization in. It returns the subscription it
+// started even when a later step fails, so the clean-up can cancel it.
+func (s *Service) provision(ctx context.Context, tenant *tenants.Tenant, pkg *domain.Package, input SignUpInput) (*domain.Subscription, error) {
+	// The plan comes first: creating a user checks the plan's user limit.
+	subscription, _, err := s.Plans.Assign(ctx, billingservice.AssignInput{TenantID: tenant.ID, PackageID: pkg.ID})
+	if err != nil {
+		return nil, err
+	}
+	if err := s.fillIn(ctx, tenant, pkg, input); err != nil {
+		return subscription, err
+	}
+	return subscription, nil
+}
+
+// fillIn creates the owner and records the first steps of a new organization.
+func (s *Service) fillIn(ctx context.Context, tenant *tenants.Tenant, pkg *domain.Package, input SignUpInput) error {
 	admin, err := s.Roles.GetByName(ctx, tenant.ID, authz.AdminRole)
 	if err != nil {
 		return err
@@ -257,7 +284,9 @@ func (s *Service) provision(ctx context.Context, tenant *tenants.Tenant, pkg *do
 	return nil
 }
 
-// signupPackage is the configured package, or the first active free one.
+// signupPackage is the configured package, or the first active free one. It
+// must let the organization have a user (its owner): a package whose
+// users.max is 0 would fail only after the organization was created.
 func (s *Service) signupPackage(ctx context.Context) (*domain.Package, error) {
 	unavailable := apperr.New(apperr.ServiceUnavailable, "Sign-up is not available right now. Please try again later.")
 	id, err := s.Settings.GetInt(ctx, tenancy.Scope{}, "signup.package_id")
@@ -270,6 +299,10 @@ func (s *Service) signupPackage(ctx context.Context) (*domain.Package, error) {
 			s.Logger.Error("sign-up: signup.package_id points at a missing package", "package_id", id, "error", err)
 			return nil, unavailable
 		}
+		if !allowsAUser(pkg) {
+			s.Logger.Error("sign-up: signup.package_id allows no users (users.max is 0 or missing)", "package_id", id)
+			return nil, unavailable
+		}
 		return pkg, nil
 	}
 	active, err := s.Packages.ListPublic(ctx)
@@ -278,12 +311,23 @@ func (s *Service) signupPackage(ctx context.Context) (*domain.Package, error) {
 	}
 	sort.SliceStable(active, func(i, j int) bool { return active[i].SortOrder < active[j].SortOrder })
 	for i := range active {
-		if active[i].Price == 0 {
+		if active[i].Price == 0 && allowsAUser(&active[i]) {
 			return &active[i], nil
 		}
 	}
-	s.Logger.Warn("sign-up refused: no active free package and signup.package_id is 0")
+	s.Logger.Warn("sign-up refused: no active free package that allows users, and signup.package_id is 0")
 	return nil, unavailable
+}
+
+// allowsAUser reports whether a package's users.max lets an organization
+// have at least one user (-1 is unlimited; a missing limit is 0).
+func allowsAUser(pkg *domain.Package) bool {
+	for _, feature := range pkg.Features {
+		if feature.FeatureKey == string(domain.FeatureUsersMax) {
+			return feature.LimitValue == -1 || feature.LimitValue > 0
+		}
+	}
+	return false
 }
 
 func (s *Service) termsVersion(ctx context.Context) string {

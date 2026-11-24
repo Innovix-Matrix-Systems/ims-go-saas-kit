@@ -35,18 +35,19 @@ gets the `signup-account-exists` mail (sign-in and password-reset links) instead
 
 Refusals: `422` for a missing `accept_terms`, an invalid field or a password that breaks the
 [password rule](authentication.md); `403` when sign-up is closed; `503` when there is no package
-to start on; `429` after ten attempts from one IP address in an hour.
+to start on (or it allows no users); `429` after ten attempts from one IP address in an hour.
 
 ### Settings (group **Sign-up**)
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `signup.enabled` | `true` | Off: only staff create organizations (`403`). |
-| `signup.package_id` | `0` | The package new organizations start on. `0` picks the first active free package by sort order; with none, sign-up answers `503`. |
+| `signup.package_id` | `0` | The package new organizations start on. `0` picks the first active free package by sort order; with none, sign-up answers `503`. Either way the package needs `users.max` of at least 1 (or `-1`) for the owner. |
 | `signup.terms_version` | `"1"` | The terms and privacy-policy version recorded with each acceptance. Raise it when the documents change. |
 
 The seeded **Unlimited** package is hidden (inactive), so it is never picked by `0`: create a
-free package for sign-ups.
+free package for sign-ups, with room for at least one user. Every check runs before anything is
+created; if a later step still fails, the organization is removed and its subscription cancelled.
 
 ## First-run setup
 
