@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
@@ -25,14 +23,6 @@ type Handler struct {
 // NewHandler creates the activity handler.
 func NewHandler(service *Service, checker *authz.Checker, kit httpx.Kit) *Handler {
 	return &Handler{service: service, checker: checker, Kit: kit}
-}
-
-// RegisterRoutes mounts the tenant-resolved activity routes.
-func (h *Handler) RegisterRoutes(r chi.Router) {
-	r.With(authz.RequireAny(h.checker, h.Responder, authz.PermActivityView, authz.PermActivityViewAll)).
-		Get("/activity", h.index)
-	r.With(authz.RequireAny(h.checker, h.Responder, authz.PermActivityView, authz.PermActivityViewAll)).
-		Get("/activity/facets", h.facets)
 }
 
 // Actor is who performed an action (null for system actions).

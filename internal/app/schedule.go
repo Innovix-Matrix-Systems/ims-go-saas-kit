@@ -116,7 +116,7 @@ func (p *Platform) schedule() []scheduler.Task {
 		{
 			ID:          "billing.send-renewal-reminders",
 			Spec:        "0 8 * * *",
-			Description: "Logs renewal reminders for subscriptions expiring within 7/3/1 days.",
+			Description: "Notifies organizations whose subscription expires in 7, 3 or 1 days.",
 			Timeout:     10 * time.Minute,
 			Run: func(ctx context.Context) error {
 				sent, err := p.BillingSubs.SendRenewalReminders(ctx, logger, []int{7, 3, 1})
@@ -239,7 +239,7 @@ func (p *Platform) schedule() []scheduler.Task {
 	}
 
 	if days := cfg.Activity.RetentionDays; days > 0 {
-		feed := activity.NewService(queries)
+		feed := activity.NewService(activity.NewRepository(queries))
 		tasks = append(tasks, scheduler.Task{
 			ID:          "activity.prune",
 			Spec:        "45 3 * * *",

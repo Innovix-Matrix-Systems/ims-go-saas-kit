@@ -28,14 +28,6 @@ type Service struct {
 	cfg     config.Processing
 	logger  *slog.Logger
 	hasDisk bool
-	queries lifecycleQueries
-}
-
-// WithQueries enables Retry (it resets the job row directly) and lists
-// export files among the organization's files.
-func (s *Service) WithQueries(queries lifecycleQueries) *Service {
-	s.queries = queries
-	return s
 }
 
 // NewService creates the processing-job service.
@@ -337,7 +329,7 @@ func (s *Service) CleanupType(ctx context.Context, jobType string, maxAgeHours i
 
 // removeJobFile deletes the stored artifact from the first disk that has it.
 func (s *Service) removeJobFile(ctx context.Context, job ExpiredJob) {
-	if err := s.removeOutput(ctx, job.ID); err != nil && s.logger != nil {
+	if err := s.repo.RemoveOutputFile(ctx, job.ID); err != nil && s.logger != nil {
 		s.logger.WarnContext(ctx, "processing job files entry cleanup failed", "error", err)
 	}
 	if !s.hasDisk || job.FilePath == nil || *job.FilePath == "" {

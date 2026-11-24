@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -137,6 +138,12 @@ type Repository interface {
 	ListExpiredOfType(ctx context.Context, jobType string, maxAgeHours int, limit int32) ([]ExpiredJob, error)
 	DeleteByIDs(ctx context.Context, ids []int64) (int64, error)
 	ActorNames(ctx context.Context, userIDs []int64) (map[int64]string, error)
+	// Reset puts a failed job back to pending (InvalidState if it is not failed).
+	Reset(ctx context.Context, id int64) (*Job, error)
+	// AddOutputFile lists an export's file among its organization's files.
+	AddOutputFile(ctx context.Context, job Job, file FileInput) error
+	// RemoveOutputFile drops that files entry.
+	RemoveOutputFile(ctx context.Context, jobID int64) error
 }
 
 type repository struct {
@@ -403,4 +410,51 @@ func (r *repository) ActorNames(ctx context.Context, userIDs []int64) (map[int64
 		names[row.ID] = row.Name
 	}
 	return names, nil
+}
+
+func (r *repository) Reset(ctx context.Context, id int64) (*Job, error) {
+	row, err := r.queries.ResetDataProcessingJob(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apperr.New(apperr.InvalidState, "Only a failed job can be retried.")
+	}
+	if err != nil {
+		return nil, database.MapError("dataprocessing.reset", err)
+	}
+	job := mapJob(row)
+	return &job, nil
+}
+
+func (r *repository) AddOutputFile(ctx context.Context, job Job, file FileInput) error {
+	ownerType, collection := OutputOwnerType, OutputCollection
+	_, err := r.queries.CreateFile(ctx, dbgen.CreateFileParams{
+		Uuid:       pgtype.UUID{Bytes: uuid.New(), Valid: true},
+		Name:       file.Name,
+		FileName:   file.Name,
+		Disk:       file.Disk,
+		Path:       file.Path,
+		MimeType:   file.Mime,
+		Size:       file.Size,
+		Type:       "document",
+		OwnerType:  &ownerType,
+		OwnerID:    &job.ID,
+		Collection: &collection,
+		TenantID:   job.TenantID,
+		CreatedBy:  job.UserID,
+		UpdatedBy:  job.UserID,
+	})
+	if err != nil {
+		return database.MapError("dataprocessing.register_output", err)
+	}
+	return nil
+}
+
+func (r *repository) RemoveOutputFile(ctx context.Context, jobID int64) error {
+	if _, err := r.queries.DeleteFilesByOwner(ctx, dbgen.DeleteFilesByOwnerParams{
+		OwnerType:  OutputOwnerType,
+		OwnerID:    jobID,
+		Collection: OutputCollection,
+	}); err != nil {
+		return database.MapError("dataprocessing.remove_output", err)
+	}
+	return nil
 }

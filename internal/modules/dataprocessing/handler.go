@@ -1,6 +1,7 @@
 package dataprocessing
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -187,4 +188,38 @@ func (h *Handler) ownedJob(w http.ResponseWriter, r *http.Request, scope tenancy
 // can is route middleware requiring a permission (Laravel's can:...).
 func (h *Handler) can(permission string) func(http.Handler) http.Handler {
 	return authz.Require(h.checker, permission, h.Responder)
+}
+
+// respond adds the expiry to a job response.
+func (h *Handler) respond(ctx context.Context, job Job) Response {
+	response := NewResponse(job)
+	response.ExpiresAt = ExpiresAt(ctx, h.settings, job)
+	return response
+}
+
+func (h *Handler) retry(w http.ResponseWriter, r *http.Request) {
+	identity, _ := authn.IdentityFromContext(r.Context())
+	job, _ := h.ownedJob(w, r, tenancy.From(r), identity.UserID)
+	if job == nil {
+		return
+	}
+	fresh, err := h.service.Retry(r.Context(), job)
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.Data(w, r, http.StatusOK, h.respond(r.Context(), *fresh))
+}
+
+func (h *Handler) remove(w http.ResponseWriter, r *http.Request) {
+	identity, _ := authn.IdentityFromContext(r.Context())
+	job, _ := h.ownedJob(w, r, tenancy.From(r), identity.UserID)
+	if job == nil {
+		return
+	}
+	if err := h.service.Remove(r.Context(), job); err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.NoContent(w)
 }

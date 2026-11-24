@@ -99,7 +99,7 @@ type Sink interface {
 // Recorder writes activity entries. A nil *Recorder records nothing, so a
 // service works without one (unit tests, tools that do not need the log).
 type Recorder struct {
-	queries  *dbgen.Queries
+	repo     Repository
 	redactor *telemetry.Redactor
 	logger   *slog.Logger
 	sink     Sink
@@ -107,7 +107,7 @@ type Recorder struct {
 
 // NewRecorder creates the activity recorder.
 func NewRecorder(queries *dbgen.Queries, redactor *telemetry.Redactor, logger *slog.Logger) *Recorder {
-	return &Recorder{queries: queries, redactor: redactor, logger: logger}
+	return &Recorder{repo: NewRepository(queries), redactor: redactor, logger: logger}
 }
 
 // WithSink passes every stored entry on (outbound webhooks).
@@ -177,17 +177,11 @@ func (r *Recorder) insert(ctx context.Context, entry Entry, impersonatorID int64
 	}
 	// The request may already be finishing; the insert must not be cancelled
 	// with it.
-	return stored, r.queries.InsertActivity(context.WithoutCancel(ctx), dbgen.InsertActivityParams{
-		TenantID:         optional(entry.TenantID),
-		ActorID:          optional(actorID),
-		ImpersonatorID:   optional(impersonatorID),
-		ImpersonatorName: optionalString(impersonatorName),
-		Action:           entry.Action,
-		SubjectType:      entry.Subject,
-		SubjectID:        optional(entry.SubjectID),
-		Changes:          changes,
-		Ip:               optionalString(httpx.ClientIP(ctx)),
-		RequestID:        optionalString(httpx.RequestIDFromContext(ctx)),
+	return stored, r.repo.Insert(context.WithoutCancel(ctx), NewEntry{
+		TenantID: entry.TenantID, ActorID: actorID,
+		ImpersonatorID: impersonatorID, ImpersonatorName: impersonatorName,
+		Action: entry.Action, SubjectType: entry.Subject, SubjectID: entry.SubjectID, Changes: changes,
+		IP: httpx.ClientIP(ctx), RequestID: httpx.RequestIDFromContext(ctx),
 	})
 }
 

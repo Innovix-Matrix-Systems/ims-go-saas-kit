@@ -2,18 +2,11 @@ package dataprocessing
 
 import (
 	"context"
-	"errors"
-	"net/http"
 	"sync"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -54,24 +47,20 @@ func (s *Service) Retry(ctx context.Context, job *Job) (*Job, error) {
 		return nil, apperr.New(apperr.InvalidState, "Only a failed job can be retried.")
 	}
 	rerun, ok := rerunFor(job)
-	if !ok || s.queries == nil {
+	if !ok {
 		return nil, apperr.New(apperr.InvalidState, "This kind of job cannot be retried; start it again instead.")
 	}
-	reset, err := s.queries.ResetDataProcessingJob(ctx, job.ID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apperr.New(apperr.InvalidState, "Only a failed job can be retried.")
-	}
+	fresh, err := s.repo.Reset(ctx, job.ID)
 	if err != nil {
-		return nil, database.MapError("dataprocessing.reset", err)
-	}
-	if err := s.removeOutput(ctx, job.ID); err != nil {
 		return nil, err
 	}
-	fresh := mapJob(reset)
-	if err := rerun(ctx, &fresh); err != nil {
+	if err := s.repo.RemoveOutputFile(ctx, job.ID); err != nil {
 		return nil, err
 	}
-	return &fresh, nil
+	if err := rerun(ctx, fresh); err != nil {
+		return nil, err
+	}
+	return fresh, nil
 }
 
 // Remove deletes a finished job and its file. A job that is still waiting or
@@ -107,46 +96,4 @@ func ExpiresAt(ctx context.Context, settingsService *settings.Service, job Job) 
 		at = job.CompletedAt.AddDate(0, 0, CleanupSetting(ctx, settingsService, scope))
 	}
 	return &at
-}
-
-// respond adds the expiry to a job response.
-func (h *Handler) respond(ctx context.Context, job Job) Response {
-	response := NewResponse(job)
-	response.ExpiresAt = ExpiresAt(ctx, h.settings, job)
-	return response
-}
-
-func (h *Handler) retry(w http.ResponseWriter, r *http.Request) {
-	identity, _ := authn.IdentityFromContext(r.Context())
-	job, _ := h.ownedJob(w, r, tenancy.From(r), identity.UserID)
-	if job == nil {
-		return
-	}
-	fresh, err := h.service.Retry(r.Context(), job)
-	if err != nil {
-		h.Error(w, r, err)
-		return
-	}
-	h.Data(w, r, http.StatusOK, h.respond(r.Context(), *fresh))
-}
-
-func (h *Handler) remove(w http.ResponseWriter, r *http.Request) {
-	identity, _ := authn.IdentityFromContext(r.Context())
-	job, _ := h.ownedJob(w, r, tenancy.From(r), identity.UserID)
-	if job == nil {
-		return
-	}
-	if err := h.service.Remove(r.Context(), job); err != nil {
-		h.Error(w, r, err)
-		return
-	}
-	h.NoContent(w)
-}
-
-// lifecycleQueries are the sqlc queries Retry and the files entries of
-// exports need.
-type lifecycleQueries interface {
-	ResetDataProcessingJob(ctx context.Context, id int64) (dbgen.DataProcessingJob, error)
-	CreateFile(ctx context.Context, arg dbgen.CreateFileParams) (dbgen.File, error)
-	DeleteFilesByOwner(ctx context.Context, arg dbgen.DeleteFilesByOwnerParams) ([]dbgen.File, error)
 }

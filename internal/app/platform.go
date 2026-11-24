@@ -214,7 +214,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		settingsService,
 		logger,
 	)
-	announcementService := announcements.NewService(txManager.Queries(), txManager, logger).
+	announcementService := announcements.NewService(announcements.NewRepository(txManager.Queries()), txManager, logger).
 		WithNotifier(func(ctx context.Context, tenantID int64, a announcements.Announcement) error {
 			return notifyAnnouncement(ctx, notificationsService, tenantID, a)
 		})
@@ -228,7 +228,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	}
 	filesService := files.NewService(files.NewRepository(txManager.Queries()), storageRegistry, cfg.Files.Disk, txManager, logger).
 		WithPublicDisk(cfg.Files.PublicDisk)
-	processingService := dataprocessing.NewService(dataprocessing.NewRepository(txManager.Queries())).WithQueries(txManager.Queries()).
+	processingService := dataprocessing.NewService(dataprocessing.NewRepository(txManager.Queries())).
 		WithFiles(storageRegistry, cfg.Processing).
 		WithLogger(logger)
 	backupService := backup.NewService(backup.Options{
@@ -314,8 +314,8 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	if err := exchangeService.RegisterJobs(queueRegistry); err != nil {
 		return nil, nil, err
 	}
-	activityExport := activityexport.New(activity.NewService(txManager.Queries()), processingService, storageRegistry, cfg.Processing,
-		queueEngine, txManager.Queries(), checker, logger)
+	activityExport := activityexport.New(activity.NewService(activity.NewRepository(txManager.Queries())), processingService, storageRegistry, cfg.Processing,
+		queueEngine, activityexport.NewRepository(txManager.Queries()), logger)
 	if err := activityExport.RegisterJobs(queueRegistry); err != nil {
 		return nil, nil, err
 	}

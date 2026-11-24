@@ -72,7 +72,7 @@ func newActivityPruneCommand(state *State) *cobra.Command {
 				if days < 1 {
 					return fmt.Errorf("--days must be at least 1")
 				}
-				deleted, err := activity.NewService(platform.Tx.Queries()).Purge(cmd.Context(), days)
+				deleted, err := activity.NewService(activity.NewRepository(platform.Tx.Queries())).Purge(cmd.Context(), days)
 				if err != nil {
 					return err
 				}

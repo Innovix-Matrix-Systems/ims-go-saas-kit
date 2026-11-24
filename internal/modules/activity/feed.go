@@ -8,11 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
-
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -94,21 +90,14 @@ type ActorCount struct {
 	Total int64
 }
 
-// scopePredicate is the tenant part every feed query shares.
-type scopePredicate struct {
-	SystemOnly bool
-	AllTenants bool
-	TenantID   *int64
-}
-
 // Service reads the activity feed.
 type Service struct {
-	queries *dbgen.Queries
+	repo Repository
 }
 
 // NewService creates the activity feed service.
-func NewService(queries *dbgen.Queries) *Service {
-	return &Service{queries: queries}
+func NewService(repo Repository) *Service {
+	return &Service{repo: repo}
 }
 
 // Feed lists the activity the reader may see.
@@ -127,43 +116,33 @@ func (s *Service) Feed(ctx context.Context, scope tenancy.Scope, reader Reader, 
 	if err != nil {
 		return nil, err
 	}
-	params := dbgen.ListActivityParams{
-		SystemOnly:  where.SystemOnly,
-		AllTenants:  where.AllTenants,
-		TenantID:    where.TenantID,
-		SubjectType: optionalString(filter.SubjectType),
-		SubjectID:   optional(filter.SubjectID),
-		ActorID:     optional(filter.ActorID),
-		Action:      optionalString(filter.Action),
-		FromAt:      optionalTime(filter.From),
-		ToAt:        optionalTime(filter.To),
-		Search:      optionalString(strings.TrimSpace(filter.Search)),
-		RowLimit:    int32(perPage + 1),
+	query := FeedQuery{
+		scopePredicate: where,
+		SubjectType:    filter.SubjectType,
+		SubjectID:      filter.SubjectID,
+		ActorID:        filter.ActorID,
+		Action:         filter.Action,
+		From:           filter.From,
+		To:             filter.To,
+		Search:         strings.TrimSpace(filter.Search),
+		Limit:          perPage + 1,
 	}
 	if reader.System {
-		params.ImpersonatorID = optional(filter.ImpersonatorID)
-		params.ImpersonatedOnly = filter.Impersonated
+		query.ImpersonatorID = filter.ImpersonatorID
+		query.ImpersonatedOnly = filter.Impersonated
 	}
-	total, err := s.queries.CountActivity(ctx, dbgen.CountActivityParams{
-		SystemOnly: params.SystemOnly, AllTenants: params.AllTenants, TenantID: params.TenantID,
-		SubjectType: params.SubjectType, SubjectID: params.SubjectID, ActorID: params.ActorID,
-		ImpersonatorID: params.ImpersonatorID, ImpersonatedOnly: params.ImpersonatedOnly,
-		Action: params.Action, FromAt: params.FromAt, ToAt: params.ToAt, Search: params.Search,
-	})
+	total, err := s.repo.Count(ctx, query)
 	if err != nil {
-		return nil, database.MapError("activity.count", err)
+		return nil, err
 	}
 	if filter.Cursor != "" {
-		at, id, err := decodeCursor(filter.Cursor)
-		if err != nil {
+		if query.BeforeAt, query.BeforeID, err = decodeCursor(filter.Cursor); err != nil {
 			return nil, err
 		}
-		params.BeforeAt = pgtype.Timestamptz{Time: at, Valid: true}
-		params.BeforeID = &id
 	}
-	rows, err := s.queries.ListActivity(ctx, params)
+	rows, err := s.repo.List(ctx, query)
 	if err != nil {
-		return nil, database.MapError("activity.list", err)
+		return nil, err
 	}
 	page := &Page{PerPage: perPage, Total: total, Items: make([]Item, 0, min(len(rows), perPage))}
 	for i, row := range rows {
@@ -173,13 +152,7 @@ func (s *Service) Feed(ctx context.Context, scope tenancy.Scope, reader Reader, 
 			page.NextCursor = &next
 			break
 		}
-		page.Items = append(page.Items, Item{
-			ID: row.ID, TenantID: row.TenantID, ActorID: row.ActorID, ActorName: row.ActorName,
-			ImpersonatorID: row.ImpersonatorID, ImpersonatorName: row.ImpersonatorName,
-			Action: row.Action, SubjectType: row.SubjectType, SubjectID: row.SubjectID,
-			Changes: json.RawMessage(row.Changes), IP: row.Ip, RequestID: row.RequestID,
-			CreatedAt: row.CreatedAt.Time,
-		})
+		page.Items = append(page.Items, row)
 	}
 	return page, nil
 }
@@ -222,41 +195,12 @@ func (s *Service) Facets(ctx context.Context, scope tenancy.Scope, reader Reader
 	if err != nil {
 		return nil, err
 	}
-	out := &Facets{Actions: []Count{}, Subjects: []Count{}, Actors: []ActorCount{}}
-	actions, err := s.queries.ActivityActionFacets(ctx, dbgen.ActivityActionFacetsParams(where))
-	if err != nil {
-		return nil, database.MapError("activity.facets", err)
-	}
-	for _, row := range actions {
-		out.Actions = append(out.Actions, Count{Value: row.Action, Total: row.Total})
-	}
-	subjects, err := s.queries.ActivitySubjectFacets(ctx, dbgen.ActivitySubjectFacetsParams(where))
-	if err != nil {
-		return nil, database.MapError("activity.facets", err)
-	}
-	for _, row := range subjects {
-		out.Subjects = append(out.Subjects, Count{Value: row.SubjectType, Total: row.Total})
-	}
-	actors, err := s.queries.ActivityActorFacets(ctx, dbgen.ActivityActorFacetsParams(where))
-	if err != nil {
-		return nil, database.MapError("activity.facets", err)
-	}
-	for _, row := range actors {
-		out.Actors = append(out.Actors, ActorCount{ID: row.ActorID, Name: row.ActorName, Total: row.Total})
-	}
-	if out.LastDay, err = s.queries.ActivityLastDay(ctx, dbgen.ActivityLastDayParams(where)); err != nil {
-		return nil, database.MapError("activity.facets", err)
-	}
-	return out, nil
-}
-
-func optionalTime(value time.Time) pgtype.Timestamptz {
-	return pgtype.Timestamptz{Time: value, Valid: !value.IsZero()}
+	return s.repo.Facets(ctx, where)
 }
 
 // Purge deletes activity older than the retention window.
 func (s *Service) Purge(ctx context.Context, days int) (int64, error) {
-	return s.queries.PurgeActivity(ctx, int32(days))
+	return s.repo.Purge(ctx, days)
 }
 
 func encodeCursor(at time.Time, id int64) string {

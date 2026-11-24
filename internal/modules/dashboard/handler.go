@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
@@ -26,18 +24,6 @@ type Handler struct {
 // NewHandler creates the dashboard handler.
 func NewHandler(service *Service, checker *authz.Checker, kit httpx.Kit) *Handler {
 	return &Handler{service: service, checker: checker, Kit: kit}
-}
-
-// RegisterRoutes mounts the organization dashboard (tenant-resolved; every
-// member, each section behind its own permission).
-func (h *Handler) RegisterRoutes(r chi.Router) {
-	r.Get("/dashboard", h.tenant)
-}
-
-// RegisterInternalRoutes mounts the platform dashboard (InternalOnly; each
-// section behind its own permission).
-func (h *Handler) RegisterInternalRoutes(r chi.Router) {
-	r.Get("/internal/dashboard", h.platform)
 }
 
 // window reads ?days= (7, 30 or 90; default 30) and ?tz= (an IANA time zone;

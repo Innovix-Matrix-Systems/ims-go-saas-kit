@@ -3,9 +3,7 @@ package service
 import (
 	"context"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // UsageItem is one plan limit and how much of it a tenant uses.
@@ -25,20 +23,20 @@ type Usage struct {
 // UsageService reads what a tenant uses of its plan.
 type UsageService struct {
 	guard   *Guard
-	queries *dbgen.Queries
+	reports domain.ReportRepository
 }
 
 // NewUsageService creates the usage reader.
-func NewUsageService(guard *Guard, queries *dbgen.Queries) *UsageService {
-	return &UsageService{guard: guard, queries: queries}
+func NewUsageService(guard *Guard, reports domain.ReportRepository) *UsageService {
+	return &UsageService{guard: guard, reports: reports}
 }
 
 // For returns the tenant's usage of users.max, branches.max and storage.mb
 // (storage in whole megabytes, rounded up) against its current plan.
 func (s *UsageService) For(ctx context.Context, tenantID int64) (*Usage, error) {
-	row, err := s.queries.TenantUsage(ctx, tenantID)
+	row, err := s.reports.Usage(ctx, tenantID)
 	if err != nil {
-		return nil, database.MapError("billing.usage", err)
+		return nil, err
 	}
 	const mb = 1 << 20
 	used := map[domain.Feature]int64{
