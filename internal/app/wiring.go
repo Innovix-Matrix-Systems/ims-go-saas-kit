@@ -233,14 +233,17 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		Auth: auth.NewHandler(authService, userService, checker, kit).
 			WithRecovery(platform.Recovery).
 			WithSessions(platform.Sessions),
-		Users:         identity.NewHandler(userService, platform.Files, platform.Exchange, checker, kit),
-		Privacy:       privacy.NewHandler(platform.Privacy, authService, checker, kit),
-		Tenants:       tenants.NewHandler(tenantService, checker, kit).WithSettings(platform.Settings),
-		Branches:      branches.NewHandler(branchService, checker, kit),
-		Activity:      activity.NewHandler(activity.NewService(queries), checker, kit),
-		Roles:         access.NewRoleHandler(roleService, checker, tenantLookup, kit),
-		Permissions:   access.NewPermissionHandler(permissionService, checker, kit),
-		Files:         files.NewHandler(platform.Files, checker, kit),
+		Users:       identity.NewHandler(userService, platform.Files, platform.Exchange, checker, kit),
+		Privacy:     privacy.NewHandler(platform.Privacy, authService, checker, kit),
+		Tenants:     tenants.NewHandler(tenantService, checker, kit).WithSettings(platform.Settings),
+		Branches:    branches.NewHandler(branchService, checker, kit),
+		Activity:    activity.NewHandler(activity.NewService(queries), checker, kit),
+		Roles:       access.NewRoleHandler(roleService, checker, tenantLookup, kit),
+		Permissions: access.NewPermissionHandler(permissionService, checker, kit),
+		Files: files.NewHandler(platform.Files, checker, kit).WithLogoSetter(func(ctx context.Context, tenantID int64, url string) error {
+			_, err := platform.Settings.SetTenant(ctx, tenancy.Scope{TenantID: tenantID}, "branding.logo_url", url)
+			return err
+		}),
 		Notifications: notifications.NewHandler(platform.Notifications, checker, kit),
 		Dashboard:     dashboard.NewHandler(dashboard.NewService(queries), checker, kit),
 		Webhooks:      webhooks.NewHandler(platform.Webhooks, checker, kit),

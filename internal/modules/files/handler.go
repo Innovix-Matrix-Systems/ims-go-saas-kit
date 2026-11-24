@@ -24,6 +24,7 @@ type Handler struct {
 	service *Service
 	checker *authz.Checker
 	httpx.Kit
+	setLogo LogoSetter
 }
 
 // NewHandler creates the file handler.
@@ -304,8 +305,19 @@ func (h *Handler) can(permission string) func(http.Handler) http.Handler {
 	return authz.Require(h.checker, permission, h.Responder)
 }
 
-// uploadLogo replaces the organization's logo (multipart field "logo"). The
-// response is the stored file; its url is public, for the e-mail branding.
+// LogoSetter makes an uploaded logo the organization's logo (the
+// branding.logo_url setting).
+type LogoSetter func(ctx context.Context, tenantID int64, url string) error
+
+// WithLogoSetter has a logo upload also set it as the organization's logo.
+func (h *Handler) WithLogoSetter(set LogoSetter) *Handler {
+	h.setLogo = set
+	return h
+}
+
+// uploadLogo replaces the organization's logo (multipart field "logo") and
+// sets its public url as the branding.logo_url setting. The response is the
+// stored file.
 func (h *Handler) uploadLogo(w http.ResponseWriter, r *http.Request) {
 	form, err := httpx.Multipart(w, r, MaxAvatarSize+multipartSlack)
 	if err != nil {
@@ -317,10 +329,18 @@ func (h *Handler) uploadLogo(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
-	file, err := h.service.UpdateLogo(r.Context(), authn.UserID(r), tenancy.From(r).EffectiveTenantID(), header)
+	tenantID := tenancy.From(r).EffectiveTenantID()
+	file, err := h.service.UpdateLogo(r.Context(), authn.UserID(r), tenantID, header)
 	if err != nil {
 		h.Error(w, r, err)
 		return
 	}
-	h.Data(w, r, http.StatusCreated, NewResponse(*file, h.fileURL(r, tenantSurface, *file)))
+	url := h.fileURL(r, tenantSurface, *file)
+	if h.setLogo != nil {
+		if err := h.setLogo(r.Context(), tenantID, url); err != nil {
+			h.Error(w, r, err)
+			return
+		}
+	}
+	h.Data(w, r, http.StatusCreated, NewResponse(*file, url))
 }

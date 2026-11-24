@@ -168,6 +168,33 @@ func TestOrganizationLogo(t *testing.T) {
 	}
 	app.As(other).Get(fmt.Sprintf("/api/v1/files/%d", second.ID)).Status(t, http.StatusNotFound)
 
+	// The upload is the organization's logo: its own view and the staff list show it.
+	var org struct {
+		Branding struct {
+			LogoURL *string `json:"logo_url"`
+		} `json:"branding"`
+	}
+	app.As(admin).Get("/api/v1/organization").Status(t, http.StatusOK).Data(t, &org)
+	if org.Branding.LogoURL == nil || *org.Branding.LogoURL != second.URL {
+		t.Fatalf("organization logo = %v, want %s", org.Branding.LogoURL, second.URL)
+	}
+	var tenants []struct {
+		ID       int64 `json:"id"`
+		Branding *struct {
+			LogoURL *string `json:"logo_url"`
+		} `json:"branding"`
+	}
+	app.As(app.SuperAdmin(t)).Get("/api/v1/tenant?per_page=100").Status(t, http.StatusOK).Data(t, &tenants)
+	seen := false
+	for _, tenant := range tenants {
+		if tenant.ID == testkit.DefaultTenant {
+			seen = tenant.Branding != nil && tenant.Branding.LogoURL != nil && *tenant.Branding.LogoURL == second.URL
+		}
+	}
+	if !seen {
+		t.Fatalf("the staff list shows the logo: %+v", tenants)
+	}
+
 	viewer := app.User(t, testkit.Role(app.Role(t, "Logo Viewer", "file.view.all")))
 	uploadLogo(t, app.As(viewer), "logo.png").Status(t, http.StatusForbidden)
 }

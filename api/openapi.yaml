@@ -597,7 +597,7 @@ paths:
     post:
       tags: [Tenants]
       summary: Upload the organization's logo
-      description: "Replaces the organization's logo (`organization.update`): an image (max 5 MB) on the public disk, attached to the organization and listed with its files. The response's `url` is public; set it as the `branding.logo_url` setting to use it in e-mails and as the organization's mark."
+      description: "Replaces the organization's logo (`organization.update`): an image (max 5 MB) on the public disk, attached to the organization and listed with its files. Its public `url` becomes the organization's `branding.logo_url` setting, so e-mails and the organization's mark use it at once."
       operationId: uploadOrganizationLogo
       requestBody:
         required: true
@@ -7885,6 +7885,13 @@ components:
         phone: {type: string, nullable: true}
         email: {type: string, nullable: true}
         is_active: {type: boolean}
+        branding:
+          type: object
+          description: The organization's logo and colour (its `branding.logo_url` and `branding.color` settings); null values are unset.
+          required: [logo_url, color]
+          properties:
+            logo_url: {type: string, nullable: true}
+            color: {type: string, nullable: true}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
 
