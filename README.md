@@ -1,7 +1,7 @@
 # IMS Go Admin Starter
 
 [![CI](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.2.1-ff5c1a)
+![Version](https://img.shields.io/badge/version-0.1.0-ff5c1a)
 [![API docs](https://img.shields.io/badge/API%20docs-website-ff5c1a)](https://ims-go-api-starter.innovixmatrixsystem.com)
 [![Use this template](https://img.shields.io/badge/use%20this-template-2ea44f?logo=github)](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/generate)
 <br>

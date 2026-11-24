@@ -1,19 +1,19 @@
 ---
 title: Releases and versioning
-description: The VERSION file, semantic versioning, the changelog, cutting a release and publishing these docs.
+description: The VERSION file, semantic versioning, the changelog, cutting a release and the reference docs.
 ---
 
 ## One version, one file
 
-The `VERSION` file at the repository root holds the current release — `0.2.1` — as plain
+The `VERSION` file at the repository root holds the current release — `0.1.0` — as plain
 [semver](https://semver.org) (no leading `v`). Everything reads it:
 
 | Where | Shows |
 | --- | --- |
-| `make build` | stamps it into the binary: `ims version` → `ims 0.2.1` |
-| `go run`, air, tests | the same number with a suffix: `ims 0.2.1-dev` — a local build is never mistaken for a release |
+| `make build` | stamps it into the binary: `ims version` → `ims 0.1.0` |
+| `go run`, air, tests | the same number with a suffix: `ims 0.1.0-dev` — a local build is never mistaken for a release |
 | `/api/v1/system/info`, `/api/health`, the dashboard | the running version |
-| this site | the badge next to the title |
+| the README | the version badge |
 
 `internal/version/version_test.go` fails if `VERSION` isn't valid semver.
 
