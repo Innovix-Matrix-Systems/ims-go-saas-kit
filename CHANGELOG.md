@@ -6,6 +6,27 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+**Upgrading:** run `ims migrate` (`00042_active_branch_unset`: accounts whose active branch was
+only their own branch now have none).
+
+### Changed
+
+- The member list (`GET /api/v1/user`) and the notification feed follow the branch a member works
+  in: the branch they switched to, every branch for those who may switch (`branch.view.all` and
+  `user.branch.switch`) and have not picked one, else their own branch. New accounts start with no
+  branch switched to.
+
+### Added
+
+- `DELETE /api/v1/user/switch-branch` goes back to every branch; the client app's branch switcher
+  offers **All branches**.
+
+### Fixed
+
+- Erasing a user also deletes the captured sign-in requests that carry their e-mail address
+  (developer dashboard telemetry).
+- Client app: the Background jobs table's rows line up again.
+
 ## [0.1.0] - 2026-11-24
 
 The first release of IMS Go Admin Starter: the
