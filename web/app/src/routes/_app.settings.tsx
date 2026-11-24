@@ -6,6 +6,7 @@ const tabs: { to: string; label: MessageKey }[] = [
   { to: '/settings/profile', label: 'settings.profile' },
   { to: '/settings/security', label: 'settings.security' },
   { to: '/settings/notifications', label: 'settings.notifications' },
+  { to: '/settings/connections', label: 'connections.tab' },
   { to: '/settings/privacy', label: 'settings.privacy' },
 ]
 

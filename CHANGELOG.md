@@ -73,6 +73,10 @@ grants every tenant Admin role the permissions it is missing) and `ims settings:
   security summary) and **Organization** profile page (details with an edit dialog, owner, people,
   plan usage, counts). IDs and codes are shown as text with a copy button instead of read-only
   inputs.
+- Client app **Connected apps** (Account settings): the AI assistants and other MCP clients
+  connected to the account, with what they may do, where they act, when they were connected and
+  last used, and a Disconnect button; it shows the connector address to paste when MCP is on, and
+  says it is off otherwise.
 - **Announcements** (`internal/modules/announcements`): one record per announcement, whatever it
   reaches. Staff manage them at `/api/v1/internal/announcements` (`announcement.view`,
   `announcement.manage`): a kind (`info`, `promotion`, `warning`, `critical`), an optional

@@ -77,3 +77,13 @@
 .bell-time { font-size: var(--fs-xs); color: var(--text-3); }
 .bell-all { display: block; text-align: center; padding: 10px; border-top: 1px solid var(--border); font-size: var(--fs-sm); color: var(--accent); text-decoration: none; }
 .bell-all:hover { background: var(--surface-2); }
+
+/* Connected apps */
+.connection-list { list-style: none; margin: 0; padding: 0; }
+.connection { display: flex; align-items: center; gap: 12px; padding: var(--row-pad-y) var(--row-pad-x); }
+.connection + .connection { border-top: 1px solid var(--border); }
+.connection-icon { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--accent-subtle); color: var(--accent); }
+.connection-icon svg { width: 18px; height: 18px; }
+.connection-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.connection-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: var(--fw-medium); }
+.connection-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; color: var(--text-2); font-size: var(--fs-md); }

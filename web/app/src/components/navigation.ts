@@ -64,6 +64,7 @@ export const pages: Page[] = [
   { to: '/notifications', label: 'notifications.title', icon: 'bell', group: 'workspace', key: 'n', keywords: 'inbox alerts' },
   { to: '/jobs', label: 'nav.jobs', icon: 'queue', group: 'workspace', key: 'j', keywords: 'background jobs export import download queue progress retry' },
   { to: '/settings/notifications', label: 'settings.notificationSettings', icon: 'mail', group: 'account', keywords: 'notification preferences', hidden: true },
+  { to: '/settings/connections', label: 'connections.tab', icon: 'actions', group: 'account', keywords: 'mcp ai agent claude chatgpt cursor oauth connected apps revoke', hidden: true },
   { to: '/settings/privacy', label: 'settings.privacy', icon: 'eye', group: 'account', keywords: 'export delete account data', hidden: true },
 ]
 

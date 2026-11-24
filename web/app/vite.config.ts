@@ -28,6 +28,7 @@ export default defineConfig({
       '/docs': apiOrigin,
       '/storage': apiOrigin,
       '/up': apiOrigin,
+      '/.well-known': apiOrigin,
     },
   },
 })

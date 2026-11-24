@@ -44,6 +44,7 @@ import { Route as AppOrgMembersRouteImport } from './routes/_app.org.members'
 import { Route as AppOrgRolesRouteImport } from './routes/_app.org.roles'
 import { Route as AppOrgSettingsRouteImport } from './routes/_app.org.settings'
 import { Route as AppOrgWebhooksRouteImport } from './routes/_app.org.webhooks'
+import { Route as AppSettingsConnectionsRouteImport } from './routes/_app.settings.connections'
 import { Route as AppSettingsNotificationsRouteImport } from './routes/_app.settings.notifications'
 import { Route as AppSettingsPrivacyRouteImport } from './routes/_app.settings.privacy'
 import { Route as AppSettingsProfileRouteImport } from './routes/_app.settings.profile'
@@ -223,6 +224,11 @@ const AppOrgWebhooksRoute = AppOrgWebhooksRouteImport.update({
   path: '/org/webhooks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsConnectionsRoute = AppSettingsConnectionsRouteImport.update({
+  id: '/connections',
+  path: '/connections',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const AppSettingsNotificationsRoute =
   AppSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/org/roles': typeof AppOrgRolesRoute
   '/org/settings': typeof AppOrgSettingsRoute
   '/org/webhooks': typeof AppOrgWebhooksRoute
+  '/settings/connections': typeof AppSettingsConnectionsRoute
   '/settings/notifications': typeof AppSettingsNotificationsRoute
   '/settings/privacy': typeof AppSettingsPrivacyRoute
   '/settings/profile': typeof AppSettingsProfileRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/org/roles': typeof AppOrgRolesRoute
   '/org/settings': typeof AppOrgSettingsRoute
   '/org/webhooks': typeof AppOrgWebhooksRoute
+  '/settings/connections': typeof AppSettingsConnectionsRoute
   '/settings/notifications': typeof AppSettingsNotificationsRoute
   '/settings/privacy': typeof AppSettingsPrivacyRoute
   '/settings/profile': typeof AppSettingsProfileRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/_app/org/roles': typeof AppOrgRolesRoute
   '/_app/org/settings': typeof AppOrgSettingsRoute
   '/_app/org/webhooks': typeof AppOrgWebhooksRoute
+  '/_app/settings/connections': typeof AppSettingsConnectionsRoute
   '/_app/settings/notifications': typeof AppSettingsNotificationsRoute
   '/_app/settings/privacy': typeof AppSettingsPrivacyRoute
   '/_app/settings/profile': typeof AppSettingsProfileRoute
@@ -403,6 +412,7 @@ export interface FileRouteTypes {
     | '/org/roles'
     | '/org/settings'
     | '/org/webhooks'
+    | '/settings/connections'
     | '/settings/notifications'
     | '/settings/privacy'
     | '/settings/profile'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/org/roles'
     | '/org/settings'
     | '/org/webhooks'
+    | '/settings/connections'
     | '/settings/notifications'
     | '/settings/privacy'
     | '/settings/profile'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/_app/org/roles'
     | '/_app/org/settings'
     | '/_app/org/webhooks'
+    | '/_app/settings/connections'
     | '/_app/settings/notifications'
     | '/_app/settings/privacy'
     | '/_app/settings/profile'
@@ -752,6 +764,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgWebhooksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/connections': {
+      id: '/_app/settings/connections'
+      path: '/connections'
+      fullPath: '/settings/connections'
+      preLoaderRoute: typeof AppSettingsConnectionsRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/settings/notifications': {
       id: '/_app/settings/notifications'
       path: '/notifications'
@@ -784,6 +803,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppSettingsRouteChildren {
+  AppSettingsConnectionsRoute: typeof AppSettingsConnectionsRoute
   AppSettingsNotificationsRoute: typeof AppSettingsNotificationsRoute
   AppSettingsPrivacyRoute: typeof AppSettingsPrivacyRoute
   AppSettingsProfileRoute: typeof AppSettingsProfileRoute
@@ -791,6 +811,7 @@ interface AppSettingsRouteChildren {
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
+  AppSettingsConnectionsRoute: AppSettingsConnectionsRoute,
   AppSettingsNotificationsRoute: AppSettingsNotificationsRoute,
   AppSettingsPrivacyRoute: AppSettingsPrivacyRoute,
   AppSettingsProfileRoute: AppSettingsProfileRoute,
