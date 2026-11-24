@@ -32,9 +32,15 @@ type tenantDashboard struct {
 			Count  int64  `json:"count"`
 		} `json:"top_actions"`
 	} `json:"activity"`
-	Files    *struct{ Files int64 } `json:"files"`
-	Branches *int64                 `json:"branches"`
-	Roles    *int64                 `json:"roles"`
+	Files *struct {
+		Files  int64 `json:"files"`
+		ByType []struct {
+			Type  string `json:"type"`
+			Files int64  `json:"files"`
+		} `json:"by_type"`
+	} `json:"files"`
+	Branches *int64 `json:"branches"`
+	Roles    *int64 `json:"roles"`
 }
 
 // An organization's dashboard counts its own members and activity only, and
@@ -65,6 +71,10 @@ func TestTenantDashboard(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("top actions %+v miss role.created", mine.Activity.TopActions)
+	}
+
+	if mine.Files.ByType == nil {
+		t.Fatal("by_type is a list, even when empty")
 	}
 
 	var theirs tenantDashboard

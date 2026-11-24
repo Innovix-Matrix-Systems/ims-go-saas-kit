@@ -31,6 +31,7 @@ type Queries interface {
 	DashboardTenantTopActions(ctx context.Context, arg dbgen.DashboardTenantTopActionsParams) ([]dbgen.DashboardTenantTopActionsRow, error)
 	DashboardTenantTopActors(ctx context.Context, arg dbgen.DashboardTenantTopActorsParams) ([]dbgen.DashboardTenantTopActorsRow, error)
 	DashboardTenantFiles(ctx context.Context, tenantID int64) (dbgen.DashboardTenantFilesRow, error)
+	DashboardTenantFilesByType(ctx context.Context, tenantID int64) ([]dbgen.DashboardTenantFilesByTypeRow, error)
 	DashboardTenantBranches(ctx context.Context, tenantID int64) (int64, error)
 	DashboardTenantRoles(ctx context.Context, tenantID int64) (int64, error)
 	DashboardPlatformTenants(ctx context.Context) (dbgen.DashboardPlatformTenantsRow, error)
@@ -156,7 +157,15 @@ func (s *Service) Tenant(ctx context.Context, tenantID int64, w Window, show Ten
 		if err != nil {
 			return nil, database.MapError("dashboard.files", err)
 		}
-		out.Files = &FilesSummary{Files: files.Files, Bytes: files.Bytes}
+		types, err := s.queries.DashboardTenantFilesByType(ctx, tenantID)
+		if err != nil {
+			return nil, database.MapError("dashboard.files", err)
+		}
+		summary := &FilesSummary{Files: files.Files, Bytes: files.Bytes, ByType: []FileTypeShare{}}
+		for _, row := range types {
+			summary.ByType = append(summary.ByType, FileTypeShare{Type: row.Type, Files: row.Files, Bytes: row.Bytes})
+		}
+		out.Files = summary
 	}
 	if show.Branches {
 		count, err := s.queries.DashboardTenantBranches(ctx, tenantID)

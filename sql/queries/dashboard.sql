@@ -47,6 +47,13 @@ SELECT count(*)::bigint AS files, COALESCE(sum(size), 0)::bigint AS bytes
 FROM files
 WHERE tenant_id = @tenant_id::bigint;
 
+-- name: DashboardTenantFilesByType :many
+SELECT type, count(*)::bigint AS files, COALESCE(sum(size), 0)::bigint AS bytes
+FROM files
+WHERE tenant_id = @tenant_id::bigint
+GROUP BY type
+ORDER BY sum(size) DESC NULLS LAST, type;
+
 -- name: DashboardTenantBranches :one
 SELECT count(*)::bigint FROM branches WHERE tenant_id = @tenant_id::bigint AND deleted_at IS NULL;
 

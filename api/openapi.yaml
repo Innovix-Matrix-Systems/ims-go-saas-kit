@@ -8082,10 +8082,20 @@ components:
         files:
           type: object
           nullable: true
-          required: [files, bytes]
+          required: [files, bytes, by_type]
           properties:
             files: {type: integer, format: int64}
             bytes: {type: integer, format: int64}
+            by_type:
+              type: array
+              description: Per file type, largest first.
+              items:
+                type: object
+                required: [type, files, bytes]
+                properties:
+                  type: {type: string, enum: [image, video, document, other]}
+                  files: {type: integer, format: int64}
+                  bytes: {type: integer, format: int64}
         branches: {type: integer, format: int64, nullable: true}
         roles: {type: integer, format: int64, nullable: true}
 

@@ -64,10 +64,19 @@ type RankedActor struct {
 	Count int64  `json:"count"`
 }
 
-// FilesSummary is the organization's stored files.
+// FilesSummary is the organization's stored files, in all and per type
+// (largest first).
 type FilesSummary struct {
-	Files int64 `json:"files"`
-	Bytes int64 `json:"bytes"`
+	Files  int64           `json:"files"`
+	Bytes  int64           `json:"bytes"`
+	ByType []FileTypeShare `json:"by_type"`
+}
+
+// FileTypeShare is one file type's count and size.
+type FileTypeShare struct {
+	Type  string `json:"type"`
+	Files int64  `json:"files"`
+	Bytes int64  `json:"bytes"`
 }
 
 // PlatformDashboard is the staff home page. Sections the caller may not see

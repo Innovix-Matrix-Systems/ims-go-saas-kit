@@ -396,6 +396,40 @@ func (q *Queries) DashboardTenantFiles(ctx context.Context, tenantID int64) (Das
 	return i, err
 }
 
+const dashboardTenantFilesByType = `-- name: DashboardTenantFilesByType :many
+SELECT type, count(*)::bigint AS files, COALESCE(sum(size), 0)::bigint AS bytes
+FROM files
+WHERE tenant_id = $1::bigint
+GROUP BY type
+ORDER BY sum(size) DESC NULLS LAST, type
+`
+
+type DashboardTenantFilesByTypeRow struct {
+	Type  string `json:"type"`
+	Files int64  `json:"files"`
+	Bytes int64  `json:"bytes"`
+}
+
+func (q *Queries) DashboardTenantFilesByType(ctx context.Context, tenantID int64) ([]DashboardTenantFilesByTypeRow, error) {
+	rows, err := q.db.Query(ctx, dashboardTenantFilesByType, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DashboardTenantFilesByTypeRow{}
+	for rows.Next() {
+		var i DashboardTenantFilesByTypeRow
+		if err := rows.Scan(&i.Type, &i.Files, &i.Bytes); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const dashboardTenantMembers = `-- name: DashboardTenantMembers :one
 
 SELECT
