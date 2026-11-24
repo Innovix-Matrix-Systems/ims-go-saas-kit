@@ -4,9 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Invitations. An admin creates a user inactive and invites
@@ -34,7 +36,9 @@ func (r *Recovery) WithInvitationAudit(audit InvitationAudit) *Recovery {
 
 // SendInvitation mails an invitation link to a user; a newer invitation
 // replaces the previous link. inviter is the name shown in the mail.
-func (r *Recovery) SendInvitation(ctx context.Context, userID int64, inviter string) error {
+func (r *Recovery) SendInvitation(ctx context.Context, userID int64, inviter string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.send_invitation", attribute.Int64("user.id", userID))
+	defer end(&err)
 	user, err := r.users.FindByID(ctx, userID)
 	if err != nil {
 		return err
@@ -66,7 +70,9 @@ func (r *Recovery) SendInvitation(ctx context.Context, userID int64, inviter str
 // account becomes active and its address verified. The link works once, and
 // only while the invitation is pending, so an old link cannot bring back a
 // user an admin deactivated after they joined.
-func (r *Recovery) AcceptInvitation(ctx context.Context, email, token, password string) error {
+func (r *Recovery) AcceptInvitation(ctx context.Context, email, token, password string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.accept_invitation")
+	defer end(&err)
 	invalid := apperr.Validation(map[string][]string{"token": {"This invitation link is invalid or has expired."}})
 	if err := ValidateNewPassword(password); err != nil {
 		return err

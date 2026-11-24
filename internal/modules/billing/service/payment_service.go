@@ -4,8 +4,11 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // PaymentService manages payment records.
@@ -49,7 +52,13 @@ func (s *PaymentService) FindByGatewayRef(ctx context.Context, gatewayRef string
 
 // RecordManual registers a completed manual payment (cash/bank transfer).
 // Callers are responsible for activating the subscription.
-func (s *PaymentService) RecordManual(ctx context.Context, tenantID, subscriptionID int64, method string, amount int64, notes string, actorID int64) (*domain.Payment, error) {
+func (s *PaymentService) RecordManual(ctx context.Context, tenantID, subscriptionID int64, method string, amount int64, notes string, actorID int64) (_ *domain.Payment, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.record_manual_payment",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("subscription.id", subscriptionID),
+		attribute.String("payment.method", method),
+	)
+	defer end(&err)
 	if !domain.IsManualMethod(method) {
 		return nil, apperr.Validation(map[string][]string{
 			"payment_method": {"Only cash and bank transfer payments can be recorded manually."},

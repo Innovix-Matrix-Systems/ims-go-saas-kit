@@ -7,10 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Channels an announcement can also be delivered through.
@@ -117,8 +120,10 @@ func (s *Service) normalize(input Input) (Input, error) {
 }
 
 // Create adds an announcement and its audience.
-func (s *Service) Create(ctx context.Context, actorID int64, input Input) (*Announcement, error) {
-	input, err := s.normalize(input)
+func (s *Service) Create(ctx context.Context, actorID int64, input Input) (_ *Announcement, err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.create")
+	defer end(&err)
+	input, err = s.normalize(input)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +143,10 @@ func (s *Service) Create(ctx context.Context, actorID int64, input Input) (*Anno
 }
 
 // Update replaces an announcement's content, window and audience.
-func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (*Announcement, error) {
-	input, err := s.normalize(input)
+func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (_ *Announcement, err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.update", attribute.Int64("announcement.id", id))
+	defer end(&err)
+	input, err = s.normalize(input)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +166,9 @@ func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (*
 }
 
 // Delete removes an announcement with its audience and counts.
-func (s *Service) Delete(ctx context.Context, id int64) error {
+func (s *Service) Delete(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.delete", attribute.Int64("announcement.id", id))
+	defer end(&err)
 	current, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return err
@@ -233,7 +242,13 @@ func (s *Service) Live(ctx context.Context, tenantID, userID int64) ([]Announcem
 
 // Track records that a member viewed, clicked or dismissed a live
 // announcement their organization is in the audience of (once per person).
-func (s *Service) Track(ctx context.Context, tenantID, userID, id int64, eventType string) error {
+func (s *Service) Track(ctx context.Context, tenantID, userID, id int64, eventType string) (err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.track",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("announcement.id", id),
+		attribute.String("announcement.event", eventType),
+	)
+	defer end(&err)
 	live, err := s.repo.GetLive(ctx, tenantID, id)
 	if err != nil {
 		return err
@@ -247,7 +262,9 @@ func (s *Service) Track(ctx context.Context, tenantID, userID, id int64, eventTy
 // DeliverDue sends live announcements with channels that have not gone out
 // yet, once each: the claim is taken before sending, so a crash part-way
 // leaves it sent to fewer organizations rather than twice to some.
-func (s *Service) DeliverDue(ctx context.Context) (int, error) {
+func (s *Service) DeliverDue(ctx context.Context) (_ int, err error) {
+	ctx, end := tracing.Begin(ctx, "announcements.deliver_due")
+	defer end(&err)
 	if s.notify == nil {
 		return 0, nil
 	}

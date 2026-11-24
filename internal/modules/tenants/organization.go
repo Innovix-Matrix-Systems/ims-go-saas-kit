@@ -4,9 +4,12 @@ import (
 	"context"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -68,7 +71,11 @@ func (s *Service) Organization(ctx context.Context, scope tenancy.Scope) (*Tenan
 
 // UpdateOrganization changes the organization's name and contact details.
 // Its code, slug, domain and status stay with platform staff.
-func (s *Service) UpdateOrganization(ctx context.Context, scope tenancy.Scope, actorID int64, input OrganizationUpdate) (*Tenant, *Owner, error) {
+func (s *Service) UpdateOrganization(ctx context.Context, scope tenancy.Scope, actorID int64, input OrganizationUpdate) (_ *Tenant, _ *Owner, err error) {
+	ctx, end := tracing.Begin(ctx, "tenants.update_organization",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+	)
+	defer end(&err)
 	current, _, err := s.Organization(ctx, scope)
 	if err != nil {
 		return nil, nil, err
@@ -97,13 +104,23 @@ func (s *Service) UpdateOrganization(ctx context.Context, scope tenancy.Scope, a
 }
 
 // SetOwner records a tenant's owner (sign-up, staff-created organizations).
-func (s *Service) SetOwner(ctx context.Context, tenantID, userID int64) error {
+func (s *Service) SetOwner(ctx context.Context, tenantID, userID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "tenants.set_owner",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("user.id", userID),
+	)
+	defer end(&err)
 	return s.repo.SetOwner(ctx, tenantID, userID)
 }
 
 // TransferOwnership hands the organization to another active member who
 // can manage it. Only the current owner may do it, with their password.
-func (s *Service) TransferOwnership(ctx context.Context, scope tenancy.Scope, actorID, newOwnerID int64, password string) (*Tenant, *Owner, error) {
+func (s *Service) TransferOwnership(ctx context.Context, scope tenancy.Scope, actorID, newOwnerID int64, password string) (_ *Tenant, _ *Owner, err error) {
+	ctx, end := tracing.Begin(ctx, "tenants.transfer_ownership",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", newOwnerID),
+	)
+	defer end(&err)
 	if s.ownership == nil {
 		return nil, nil, apperr.New(apperr.OperationNotAllowed, "Ownership transfer is not available.")
 	}

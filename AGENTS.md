@@ -112,7 +112,7 @@ internal/
                 pagination, middleware, ClientIP(ctx)/UserAgent(ctx)
     storage/    Disk interface (Put/Get/Delete/URL/TemporaryURL/Public) + local and S3 drivers
     telemetry/  dashboard capture (requests, SQL, cache, queue, logs) + Redactor
-    tracing/    OpenTelemetry: OTLP setup, HTTP/SQL/job/outbound spans, trace ids in logs; Start/Fail
+    tracing/    OpenTelemetry: OTLP setup, HTTP/SQL/job/outbound spans, trace ids in logs; Begin/Annotate
     maintenance/ `ims down`/`up`: state row, cached Checker, Guard middleware (503 MAINTENANCE_MODE)
     delivery/   the one way to reach a person: templates (txt/html, locale variants), mail/sms/push
                 channels, delivery.send job, deliveries log (no bodies, masked addresses)
@@ -299,10 +299,12 @@ changes, signed per Standard Webhooks, retried by the job itself (`retrySchedule
 client. `webhook.manage` + plan `api.access`.
 
 **Tracing** — `internal/platform/tracing` (OpenTelemetry, on with `OTEL_EXPORTER_OTLP_ENDPOINT`)
-already spans every request, query, job and outbound call. Add a span only around a step worth
-seeing on its own: `ctx, span := tracing.Start(ctx, "invoices.issue", attribute.Int64("tenant.id",
-id)); defer span.End()`, `return nil, tracing.Fail(ctx, err)` on failure, and pass `ctx` on (see
-branches and billing). Ids and enums as attributes, never personal data. Metrics stay Prometheus.
+already spans every request, query, job, outbound call (S3 included) and Redis command. **Every
+exported service write opens a span**: a named `err` result, then
+`ctx, end := tracing.Begin(ctx, "<module>.<operation>", attribute.Int64("tenant.id", ...))` and
+`defer end(&err)`; `tracing.Annotate` adds ids found part way. Reads and per-request checks open
+none. Ids and counts as attributes, never personal data. `TestServiceWritesOpenASpan` fails on a
+write without a span (or list it in `unspannedOperations` with the reason). Metrics stay Prometheus.
 
 **Duplicate requests** — writes behind sign-in pass `internal/platform/dedupe` (guard + optional
 `Idempotency-Key`); handlers need nothing. Name a route in `dedupeOptions` (`internal/app/routes.go`)

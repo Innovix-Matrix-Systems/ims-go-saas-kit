@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // ApprovalService implements the manual payment review workflow.
@@ -38,7 +40,12 @@ func (s *ApprovalService) WithActivity(recorder *activity.Recorder) *ApprovalSer
 // (a wrong transfer reference, a change of mind): the pending payment and its
 // pending subscription are cancelled and the approval request is closed as
 // rejected with a note, so staff no longer see it waiting.
-func (s *ApprovalService) Withdraw(ctx context.Context, tenantID, paymentID, actorID int64) error {
+func (s *ApprovalService) Withdraw(ctx context.Context, tenantID, paymentID, actorID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "billing.withdraw_payment",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("payment.id", paymentID),
+	)
+	defer end(&err)
 	payment, err := s.payments.Get(ctx, paymentID)
 	if err != nil {
 		return err
@@ -125,7 +132,9 @@ func (s *ApprovalService) List(ctx context.Context, status string, limit, offset
 }
 
 // Approve activates the subscription and completes the payment atomically.
-func (s *ApprovalService) Approve(ctx context.Context, id, reviewerID int64, note *string) (*domain.Approval, error) {
+func (s *ApprovalService) Approve(ctx context.Context, id, reviewerID int64, note *string) (_ *domain.Approval, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.approve_payment", attribute.Int64("approval.id", id))
+	defer end(&err)
 	approval, err := s.approvals.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -184,7 +193,9 @@ func (s *ApprovalService) Approve(ctx context.Context, id, reviewerID int64, not
 }
 
 // Reject cancels the subscription and fails the payment atomically.
-func (s *ApprovalService) Reject(ctx context.Context, id, reviewerID int64, note *string) (*domain.Approval, error) {
+func (s *ApprovalService) Reject(ctx context.Context, id, reviewerID int64, note *string) (_ *domain.Approval, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.reject_payment", attribute.Int64("approval.id", id))
+	defer end(&err)
 	approval, err := s.approvals.Get(ctx, id)
 	if err != nil {
 		return nil, err

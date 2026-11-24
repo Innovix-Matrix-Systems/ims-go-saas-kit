@@ -19,7 +19,10 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // SMTPDriver delivers mail through an SMTP server (plain, STARTTLS or TLS).
@@ -35,8 +38,10 @@ func NewSMTPDriver(cfg config.Mail) *SMTPDriver {
 // Name implements Driver.
 func (d *SMTPDriver) Name() string { return "smtp" }
 
-// Send implements Driver.
-func (d *SMTPDriver) Send(ctx context.Context, message Message) error {
+// Send implements Driver. The span names the server, never the addresses.
+func (d *SMTPDriver) Send(ctx context.Context, message Message) (err error) {
+	ctx, end := tracing.Begin(ctx, "mail.smtp_send", attribute.String("server.address", d.cfg.Host))
+	defer end(&err)
 	if err := ctx.Err(); err != nil {
 		return err
 	}

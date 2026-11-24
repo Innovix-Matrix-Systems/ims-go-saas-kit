@@ -16,7 +16,10 @@ func TestContract(t *testing.T) {
 		t.Skip("REDIS_TEST_ADDR is not set; skipping redis contract test")
 	}
 
-	store := New(Options{Addr: addr, DB: 15, Prefix: "contract-"})
+	store, err := New(Options{Addr: addr, DB: 15, Prefix: "contract-"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(func() { _ = store.Close() })
 
 	cachetest.RunContract(t, func(t *testing.T) cache.Store {

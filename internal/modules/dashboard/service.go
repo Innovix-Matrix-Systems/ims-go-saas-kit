@@ -8,6 +8,10 @@ import (
 	"context"
 	"sort"
 	"time"
+
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Allowed period lengths, in days.
@@ -76,7 +80,12 @@ type TenantSections struct {
 }
 
 // Tenant builds an organization's dashboard.
-func (s *Service) Tenant(ctx context.Context, tenantID int64, w Window, show TenantSections) (*TenantDashboard, error) {
+func (s *Service) Tenant(ctx context.Context, tenantID int64, w Window, show TenantSections) (_ *TenantDashboard, err error) {
+	ctx, end := tracing.Begin(ctx, "dashboard.tenant",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int("dashboard.days", w.Days),
+	)
+	defer end(&err)
 	tz := w.Location.String()
 	out := &TenantDashboard{Period: w.period()}
 	if show.Members {
@@ -138,7 +147,9 @@ type PlatformSections struct {
 }
 
 // Platform builds the platform dashboard for staff.
-func (s *Service) Platform(ctx context.Context, w Window, show PlatformSections) (*PlatformDashboard, error) {
+func (s *Service) Platform(ctx context.Context, w Window, show PlatformSections) (_ *PlatformDashboard, err error) {
+	ctx, end := tracing.Begin(ctx, "dashboard.platform", attribute.Int("dashboard.days", w.Days))
+	defer end(&err)
 	tz := w.Location.String()
 	out := &PlatformDashboard{Period: w.period()}
 	if show.Organizations {

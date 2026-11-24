@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/xuri/excelize/v2"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
@@ -21,6 +22,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -101,7 +103,9 @@ type jobPayload struct {
 
 // Start records the export job and queues it. A staff export (System,
 // outside any organization) belongs to no organization.
-func (e *Exporter) Start(ctx context.Context, scope tenancy.Scope, actorID int64, filters Filters) (*dataprocessing.Job, error) {
+func (e *Exporter) Start(ctx context.Context, scope tenancy.Scope, actorID int64, filters Filters) (_ *dataprocessing.Job, err error) {
+	ctx, end := tracing.Begin(ctx, "activity.start_export", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	// Fail early on a bad organization filter rather than in the worker.
 	if _, err := e.feed.Feed(ctx, scope, activity.Reader{System: filters.System}, toFeedFilter(filters, "", 1)); err != nil {
 		return nil, err
@@ -130,7 +134,9 @@ func toFeedFilter(filters Filters, cursor string, perPage int) activity.Filter {
 }
 
 // Process writes every matching entry into an xlsx file and attaches it.
-func (e *Exporter) Process(ctx context.Context, jobRowID int64) error {
+func (e *Exporter) Process(ctx context.Context, jobRowID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "activity.process_export", attribute.Int64("job.id", jobRowID))
+	defer end(&err)
 	job, err := e.processing.Get(ctx, tenancy.Scope{Internal: true}, jobRowID)
 	if err != nil {
 		return err

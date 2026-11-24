@@ -8,7 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -199,7 +202,9 @@ func (s *Service) Facets(ctx context.Context, scope tenancy.Scope, reader Reader
 }
 
 // Purge deletes activity older than the retention window.
-func (s *Service) Purge(ctx context.Context, days int) (int64, error) {
+func (s *Service) Purge(ctx context.Context, days int) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "activity.purge", attribute.Int("retention.days", days))
+	defer end(&err)
 	return s.repo.Purge(ctx, days)
 }
 

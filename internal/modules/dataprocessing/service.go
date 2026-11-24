@@ -7,11 +7,13 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -51,7 +53,12 @@ func (s *Service) WithLogger(logger *slog.Logger) *Service {
 
 // Create registers a new tracked job in the effective scope. The returned job
 // carries the generated public job_id (UUID) used by the API routes.
-func (s *Service) Create(ctx context.Context, scope tenancy.Scope, jobType string, entityType *string, totalItems int32, filters []byte, userID int64) (*Job, error) {
+func (s *Service) Create(ctx context.Context, scope tenancy.Scope, jobType string, entityType *string, totalItems int32, filters []byte, userID int64) (_ *Job, err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.create",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.String("job.type", jobType),
+	)
+	defer end(&err)
 	if jobType != TypeImport && jobType != TypeExport && jobType != TypePrivacyExport {
 		return nil, apperr.Newf(apperr.InvalidInput, "Processing job type %q is not supported.", jobType)
 	}
@@ -161,7 +168,11 @@ type Download struct {
 
 // OpenDownload resolves the artifact of a completed job; jobs without an
 // existing file are reported as not found.
-func (s *Service) OpenDownload(ctx context.Context, scope tenancy.Scope, jobID string) (*Download, error) {
+func (s *Service) OpenDownload(ctx context.Context, scope tenancy.Scope, jobID string) (_ *Download, err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.open_download",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+	)
+	defer end(&err)
 	job, err := s.GetByJobID(ctx, scope, jobID)
 	if err != nil {
 		return nil, err
@@ -237,20 +248,26 @@ func (s *Service) diskCandidates(jobDisk *string) []string {
 }
 
 // MarkProcessing marks a job as running.
-func (s *Service) MarkProcessing(ctx context.Context, id int64) error {
-	_, err := s.repo.UpdateStatus(ctx, id, StatusProcessing, nil)
+func (s *Service) MarkProcessing(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.mark_processing", attribute.Int64("job.id", id))
+	defer end(&err)
+	_, err = s.repo.UpdateStatus(ctx, id, StatusProcessing, nil)
 	return err
 }
 
 // MarkCompleted finishes a job successfully.
-func (s *Service) MarkCompleted(ctx context.Context, id int64) error {
-	_, err := s.repo.UpdateStatus(ctx, id, StatusCompleted, nil)
+func (s *Service) MarkCompleted(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.mark_completed", attribute.Int64("job.id", id))
+	defer end(&err)
+	_, err = s.repo.UpdateStatus(ctx, id, StatusCompleted, nil)
 	return err
 }
 
 // MarkFailed finishes a job with an error message.
-func (s *Service) MarkFailed(ctx context.Context, id int64, message string) error {
-	_, err := s.repo.UpdateStatus(ctx, id, StatusFailed, &message)
+func (s *Service) MarkFailed(ctx context.Context, id int64, message string) (err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.mark_failed", attribute.Int64("job.id", id))
+	defer end(&err)
+	_, err = s.repo.UpdateStatus(ctx, id, StatusFailed, &message)
 	return err
 }
 
@@ -264,7 +281,12 @@ func (s *Service) UpdateProgress(ctx context.Context, id int64, total, processed
 }
 
 // AttachFile records the generated export/import file.
-func (s *Service) AttachFile(ctx context.Context, id int64, file FileInput) error {
+func (s *Service) AttachFile(ctx context.Context, id int64, file FileInput) (err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.attach_file",
+		attribute.Int64("job.id", id),
+		attribute.Int64("file.size", file.Size),
+	)
+	defer end(&err)
 	if err := s.repo.UpdateFile(ctx, id, file); err != nil {
 		return err
 	}
@@ -273,7 +295,9 @@ func (s *Service) AttachFile(ctx context.Context, id int64, file FileInput) erro
 
 // CleanupCompleted deletes finished jobs older than the retention window
 // (files included) and reports how many rows were removed.
-func (s *Service) CleanupCompleted(ctx context.Context, retentionDays int) (int64, error) {
+func (s *Service) CleanupCompleted(ctx context.Context, retentionDays int) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.cleanup_completed", attribute.Int("retention.days", retentionDays))
+	defer end(&err)
 	var deleted int64
 	for {
 		jobs, err := s.repo.ListExpired(ctx, retentionDays, cleanupPageSize)
@@ -301,7 +325,12 @@ func (s *Service) CleanupCompleted(ctx context.Context, retentionDays int) (int6
 
 // CleanupType deletes finished jobs of one type older than maxAgeHours, with
 // their files (privacy exports expire after privacy.export_ttl_hours).
-func (s *Service) CleanupType(ctx context.Context, jobType string, maxAgeHours int) (int64, error) {
+func (s *Service) CleanupType(ctx context.Context, jobType string, maxAgeHours int) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.cleanup_type",
+		attribute.String("job.type", jobType),
+		attribute.Int("max_age.hours", maxAgeHours),
+	)
+	defer end(&err)
 	var deleted int64
 	for {
 		jobs, err := s.repo.ListExpiredOfType(ctx, jobType, maxAgeHours, cleanupPageSize)

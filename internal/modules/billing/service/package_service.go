@@ -3,10 +3,13 @@ package service
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // PackageService manages billing plans and their feature definitions.
@@ -70,7 +73,9 @@ func (s *PackageService) Get(ctx context.Context, id int64) (*domain.Package, er
 }
 
 // Create adds a package and its features.
-func (s *PackageService) Create(ctx context.Context, input domain.PackageInput, features []domain.FeatureInput) (*domain.Package, error) {
+func (s *PackageService) Create(ctx context.Context, input domain.PackageInput, features []domain.FeatureInput) (_ *domain.Package, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.create_package")
+	defer end(&err)
 	validated, err := validateFeatures(features)
 	if err != nil {
 		return nil, err
@@ -94,7 +99,9 @@ func (s *PackageService) Create(ctx context.Context, input domain.PackageInput, 
 }
 
 // Update modifies a package; features are replaced only when supplied.
-func (s *PackageService) Update(ctx context.Context, id int64, input domain.PackageInput, features []domain.FeatureInput) (*domain.Package, error) {
+func (s *PackageService) Update(ctx context.Context, id int64, input domain.PackageInput, features []domain.FeatureInput) (_ *domain.Package, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.update_package", attribute.Int64("package.id", id))
+	defer end(&err)
 	validated, err := validateFeatures(features)
 	if err != nil {
 		return nil, err
@@ -115,7 +122,9 @@ func (s *PackageService) Update(ctx context.Context, id int64, input domain.Pack
 }
 
 // Delete removes a package; subscriptions referencing it block deletion (409).
-func (s *PackageService) Delete(ctx context.Context, id int64) error {
+func (s *PackageService) Delete(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "billing.delete_package", attribute.Int64("package.id", id))
+	defer end(&err)
 	return s.packages.Delete(ctx, id)
 }
 

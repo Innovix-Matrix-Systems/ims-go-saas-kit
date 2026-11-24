@@ -24,12 +24,15 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Activity actions written by this module.
@@ -144,7 +147,9 @@ type Approval struct {
 }
 
 // Approve stores the grant and returns a one-time authorization code.
-func (s *Service) Approve(ctx context.Context, a Approval) (string, error) {
+func (s *Service) Approve(ctx context.Context, a Approval) (_ string, err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.approve")
+	defer end(&err)
 	code, err := randomToken()
 	if err != nil {
 		return "", apperr.Wrap(apperr.InternalServerError, "generate authorization code", err)
@@ -216,7 +221,9 @@ func (e *Error) Error() string { return e.Code + ": " + e.Description }
 func oauthErr(code, description string) *Error { return &Error{Code: code, Description: description} }
 
 // Token handles a token request by grant type.
-func (s *Service) Token(ctx context.Context, req TokenRequest) (*TokenResponse, error) {
+func (s *Service) Token(ctx context.Context, req TokenRequest) (_ *TokenResponse, err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.token", attribute.String("oauth.grant_type", req.GrantType))
+	defer end(&err)
 	switch req.GrantType {
 	case "authorization_code":
 		return s.Exchange(ctx, req)
@@ -248,7 +255,9 @@ func (s *Service) AuthenticateClient(ctx context.Context, clientID, secret strin
 
 // Exchange redeems an authorization code. A code presented a second time
 // revokes the grant it made (OAuth 2.1 §4.1.3).
-func (s *Service) Exchange(ctx context.Context, req TokenRequest) (*TokenResponse, error) {
+func (s *Service) Exchange(ctx context.Context, req TokenRequest) (_ *TokenResponse, err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.exchange_code")
+	defer end(&err)
 	if req.Code == "" || req.CodeVerifier == "" {
 		return nil, oauthErr("invalid_request", "code and code_verifier are required.")
 	}
@@ -287,7 +296,9 @@ func (s *Service) Exchange(ctx context.Context, req TokenRequest) (*TokenRespons
 
 // Refresh rotates a refresh token. A rotated token presented again is reuse:
 // the grant is revoked, so a stolen copy stops working for both parties.
-func (s *Service) Refresh(ctx context.Context, req TokenRequest) (*TokenResponse, error) {
+func (s *Service) Refresh(ctx context.Context, req TokenRequest) (_ *TokenResponse, err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.refresh")
+	defer end(&err)
 	if req.RefreshToken == "" {
 		return nil, oauthErr("invalid_request", "refresh_token is required.")
 	}
@@ -370,6 +381,8 @@ func (s *Service) issue(ctx context.Context, grant *Grant) (*TokenResponse, erro
 // Revoke is RFC 7009: an access token is deleted; a refresh token revokes
 // its whole grant. Unknown tokens and other clients' tokens are ignored.
 func (s *Service) Revoke(ctx context.Context, client *Client, token string) {
+	ctx, end := tracing.Begin(ctx, "oauth.revoke")
+	defer end(nil)
 	token = strings.TrimSpace(token)
 	if token == "" {
 		return
@@ -428,7 +441,12 @@ func (s *Service) Connections(ctx context.Context, userID int64) ([]Grant, error
 }
 
 // Disconnect revokes one of the user's grants.
-func (s *Service) Disconnect(ctx context.Context, userID, grantID int64) error {
+func (s *Service) Disconnect(ctx context.Context, userID, grantID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "oauth.disconnect",
+		attribute.Int64("user.id", userID),
+		attribute.Int64("grant.id", grantID),
+	)
+	defer end(&err)
 	grant, err := s.repo.GetGrant(ctx, grantID)
 	if err != nil && !apperr.Is(err, apperr.ResourceNotFound) {
 		return err

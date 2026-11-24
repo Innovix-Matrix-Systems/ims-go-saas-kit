@@ -10,11 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // AccountWriter is what account recovery needs to change on a user
@@ -60,7 +62,9 @@ type recoveryTicket struct {
 
 // SendPasswordResetLink mails a reset link when the e-mail belongs to an
 // active account. It returns nil for unknown e-mails too (no enumeration).
-func (r *Recovery) SendPasswordResetLink(ctx context.Context, email string) error {
+func (r *Recovery) SendPasswordResetLink(ctx context.Context, email string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.send_password_reset")
+	defer end(&err)
 	user, ok := r.findActive(ctx, email)
 	if !ok || !r.firstInWindow(ctx, "pwreset:sent:"+normalizeEmail(email)) {
 		return nil
@@ -74,7 +78,9 @@ func (r *Recovery) SendPasswordResetLink(ctx context.Context, email string) erro
 
 // ResetPassword sets a new password with a valid reset token and signs the
 // user out everywhere.
-func (r *Recovery) ResetPassword(ctx context.Context, email, token, password string) error {
+func (r *Recovery) ResetPassword(ctx context.Context, email, token, password string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.reset_password")
+	defer end(&err)
 	// Check the new password before using the link up.
 	if err := ValidateNewPassword(password); err != nil {
 		return err
@@ -97,7 +103,9 @@ func (r *Recovery) ResetPassword(ctx context.Context, email, token, password str
 
 // SendVerificationLink mails an e-mail verification link to an unverified
 // account (silently does nothing otherwise).
-func (r *Recovery) SendVerificationLink(ctx context.Context, email string) error {
+func (r *Recovery) SendVerificationLink(ctx context.Context, email string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.send_verification")
+	defer end(&err)
 	user, err := r.users.FindByEmail(ctx, strings.TrimSpace(email))
 	if err != nil || user.EmailVerified || !r.firstInWindow(ctx, "emailverify:sent:"+normalizeEmail(email)) {
 		return nil
@@ -107,7 +115,9 @@ func (r *Recovery) SendVerificationLink(ctx context.Context, email string) error
 
 // SendVerificationTo mails a verification link to a known user (used when an
 // admin creates an unverified account).
-func (r *Recovery) SendVerificationTo(ctx context.Context, userID int64) error {
+func (r *Recovery) SendVerificationTo(ctx context.Context, userID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.send_verification", attribute.Int64("user.id", userID))
+	defer end(&err)
 	user, err := r.users.FindByID(ctx, userID)
 	if err != nil || user.EmailVerified {
 		return err
@@ -116,7 +126,9 @@ func (r *Recovery) SendVerificationTo(ctx context.Context, userID int64) error {
 }
 
 // VerifyEmail marks the token's account as verified.
-func (r *Recovery) VerifyEmail(ctx context.Context, token string) error {
+func (r *Recovery) VerifyEmail(ctx context.Context, token string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.verify_email")
+	defer end(&err)
 	ticket, err := r.redeem(ctx, "emailverify", token)
 	if err != nil {
 		return apperr.Validation(map[string][]string{"token": {"This verification link is invalid or has expired."}})

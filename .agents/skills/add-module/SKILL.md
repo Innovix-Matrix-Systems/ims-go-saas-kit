@@ -36,7 +36,10 @@ decimal bool date datetime json`; `?` = optional.
 5. **service.go** — business rules, tenancy from the `tenancy.Scope` argument, stamping
    tenant/actor, transactions (`TxManager.WithTx`; plan limits: `QuotaFor` before `WithTenantLock`, then only
    `q`-bound queries inside the lock), and
-   `s.activity.Record(ctx, activity.Entry{...})` after changes tenant admins should see.
+   `s.activity.Record(ctx, activity.Entry{...})` after changes tenant admins should see. Every
+   exported write opens a span: name the `err` result, then
+   `ctx, end := tracing.Begin(ctx, "<module>.<operation>", attribute.Int64("tenant.id", tenantID))`
+   and `defer end(&err)` (ids and counts only; `TestServiceWritesOpenASpan` checks it).
    **No permission checks here** — those are on the route. Optional collaborators are
    `WithX(...)` options so unit tests can leave them out.
 6. **request.go** — request structs with `validate:` tags; response DTOs + `NewXResponse`.

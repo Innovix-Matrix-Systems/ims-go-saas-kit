@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
@@ -16,6 +18,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	contracts "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
@@ -115,7 +118,9 @@ type exportPayload struct {
 // (privacy.deletion_grace_days). The guards run now, so a refusal is
 // immediate. Every session and MCP connection is signed out; the account can
 // still sign in to cancel. Asking twice returns the scheduled request.
-func (s *Service) RequestDeletion(ctx context.Context, userID int64) (*Request, error) {
+func (s *Service) RequestDeletion(ctx context.Context, userID int64) (_ *Request, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.request_deletion", attribute.Int64("user.id", userID))
+	defer end(&err)
 	subject, err := s.erasable(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -126,7 +131,13 @@ func (s *Service) RequestDeletion(ctx context.Context, userID int64) (*Request, 
 // ScheduleErasure is the admin twin of RequestDeletion: the same grace period
 // and mail, asked by someone else. immediate skips the grace period. scope
 // must reach the user's tenant (internal scopes reach every tenant).
-func (s *Service) ScheduleErasure(ctx context.Context, scope tenancy.Scope, actorID, userID int64, immediate bool) (*Request, error) {
+func (s *Service) ScheduleErasure(ctx context.Context, scope tenancy.Scope, actorID, userID int64, immediate bool) (_ *Request, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.schedule_erasure",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", userID),
+		attribute.Bool("privacy.immediate", immediate),
+	)
+	defer end(&err)
 	if actorID == userID {
 		return nil, apperr.New(apperr.Forbidden, "Use your own account's deletion request to delete yourself.")
 	}
@@ -171,7 +182,9 @@ func (s *Service) schedule(ctx context.Context, subject contracts.Subject, sourc
 
 // CancelDeletion cancels the caller's own scheduled erasure. One an admin
 // scheduled is the admin's to cancel (CancelErasure).
-func (s *Service) CancelDeletion(ctx context.Context, userID int64) (*Request, error) {
+func (s *Service) CancelDeletion(ctx context.Context, userID int64) (_ *Request, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.cancel_deletion", attribute.Int64("user.id", userID))
+	defer end(&err)
 	open, err := s.repo.OpenErasure(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -187,7 +200,12 @@ func (s *Service) CancelDeletion(ctx context.Context, userID int64) (*Request, e
 
 // CancelErasure is the admin twin of CancelDeletion: it cancels any
 // scheduled erasure of a user the scope reaches.
-func (s *Service) CancelErasure(ctx context.Context, scope tenancy.Scope, actorID, userID int64) (*Request, error) {
+func (s *Service) CancelErasure(ctx context.Context, scope tenancy.Scope, actorID, userID int64) (_ *Request, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.cancel_erasure",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("user.id", userID),
+	)
+	defer end(&err)
 	if err := s.mustReach(ctx, scope, userID); err != nil {
 		return nil, err
 	}
@@ -236,6 +254,8 @@ func (s *Service) Deletion(ctx context.Context, userID int64) (*Request, error) 
 // not retried: an operator reruns it with `ims privacy:erase`. One cancelled
 // at the last moment is skipped.
 func (s *Service) EraseDue(ctx context.Context) (erased int, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.erase_due")
+	defer end(&err)
 	due, err := s.repo.DueErasures(ctx, staleProcessingAfter, batchSize)
 	if err != nil {
 		return 0, err
@@ -260,6 +280,8 @@ func (s *Service) EraseDue(ctx context.Context) (erased int, err error) {
 // EraseSoftDeleted erases users deleted longer than
 // privacy.erase_soft_deleted_after_days ago (0, the default, turns it off).
 func (s *Service) EraseSoftDeleted(ctx context.Context) (erased int, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.erase_soft_deleted")
+	defer end(&err)
 	days := s.intSetting(ctx, tenancy.Scope{}, SettingEraseSoftDeletedAge, 0)
 	if days < 1 {
 		return 0, nil
@@ -305,7 +327,9 @@ func (s *Service) recordRetentionRefusal(ctx context.Context, userID int64, caus
 // StartExport queues an export archive for the user. The job belongs to
 // whoever asked (the user, or the admin) and only they can download it.
 // Self-service exports are limited to one a day.
-func (s *Service) StartExport(ctx context.Context, scope tenancy.Scope, input ExportInput) (*dataprocessing.Job, error) {
+func (s *Service) StartExport(ctx context.Context, scope tenancy.Scope, input ExportInput) (_ *dataprocessing.Job, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.start_export", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	if s.processing == nil || s.queue == nil {
 		return nil, apperr.New(apperr.ServiceUnavailable, "Personal-data exports are not available.")
 	}
@@ -368,7 +392,9 @@ func (s *Service) StartExport(ctx context.Context, scope tenancy.Scope, input Ex
 // ProcessExport builds the archive for a queued export, stores it on the
 // processing disk, attaches it to the job and mails the link to whoever
 // asked.
-func (s *Service) ProcessExport(ctx context.Context, requestID int64) error {
+func (s *Service) ProcessExport(ctx context.Context, requestID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.process_export", attribute.Int64("privacy.request_id", requestID))
+	defer end(&err)
 	request, err := s.repo.Get(ctx, requestID)
 	if err != nil {
 		return err
@@ -461,7 +487,9 @@ func (s *Service) ProcessExport(ctx context.Context, requestID int64) error {
 
 // ExpireExports deletes export archives older than privacy.export_ttl_hours
 // (the privacy.expire-exports task).
-func (s *Service) ExpireExports(ctx context.Context) (int64, error) {
+func (s *Service) ExpireExports(ctx context.Context) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.expire_exports")
+	defer end(&err)
 	if s.processing == nil {
 		return 0, nil
 	}
@@ -480,7 +508,9 @@ func (s *Service) ErasedSince(ctx context.Context, since time.Time) ([]int64, er
 // Replay erases again users a backup restore brought back. Users that are
 // still erased or no longer exist are skipped; guards do not apply (the
 // erasure was already decided). It returns how many were erased again.
-func (s *Service) Replay(ctx context.Context, userIDs []int64) (int, error) {
+func (s *Service) Replay(ctx context.Context, userIDs []int64) (_ int, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.replay", attribute.Int("users", len(userIDs)))
+	defer end(&err)
 	replayed := 0
 	for _, id := range userIDs {
 		subject, erasedAt, err := s.repo.Subject(ctx, id)

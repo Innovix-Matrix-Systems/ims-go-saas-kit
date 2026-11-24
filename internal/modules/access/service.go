@@ -5,11 +5,14 @@ import (
 	"sort"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // RoleService implements role business rules.
@@ -43,7 +46,9 @@ func (s *RoleService) Get(ctx context.Context, tenantID, id int64) (*Role, error
 }
 
 // Create adds a tenant role.
-func (s *RoleService) Create(ctx context.Context, tenantID, actorID int64, name string, description *string) (*Role, error) {
+func (s *RoleService) Create(ctx context.Context, tenantID, actorID int64, name string, description *string) (_ *Role, err error) {
+	ctx, end := tracing.Begin(ctx, "access.create_role", attribute.Int64("tenant.id", tenantID))
+	defer end(&err)
 	if isReservedRoleName(name) {
 		return nil, apperr.Validation(map[string][]string{"name": {"The name has already been taken."}})
 	}
@@ -70,7 +75,9 @@ func (s *RoleService) Create(ctx context.Context, tenantID, actorID int64, name 
 }
 
 // CreateInternal adds a role from the internal (super-admin) surface.
-func (s *RoleService) CreateInternal(ctx context.Context, tenantID *int64, actorID int64, name string, description *string, isSystem bool) (*Role, error) {
+func (s *RoleService) CreateInternal(ctx context.Context, tenantID *int64, actorID int64, name string, description *string, isSystem bool) (_ *Role, err error) {
+	ctx, end := tracing.Begin(ctx, "access.create_internal_role", attribute.Bool("role.system", isSystem))
+	defer end(&err)
 	if tenantID != nil {
 		if _, err := s.roles.GetByName(ctx, *tenantID, name); err == nil {
 			return nil, apperr.Validation(map[string][]string{"name": {"The name has already been taken."}})
@@ -95,7 +102,9 @@ func (s *RoleService) CreateInternal(ctx context.Context, tenantID *int64, actor
 // marks an existing role hidden, and syncs authz.DeveloperPermissions onto it
 // (dashboard access only, not data administration).
 // It is idempotent and mirrors the seeder's Super-Admin permission sync.
-func (s *RoleService) EnsureDeveloperRole(ctx context.Context, actorID int64) (*Role, int64, error) {
+func (s *RoleService) EnsureDeveloperRole(ctx context.Context, actorID int64) (_ *Role, _ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "access.ensure_developer_role")
+	defer end(&err)
 	role, err := s.roles.GetSystemByName(ctx, authz.DeveloperRole)
 	if err != nil {
 		if !apperr.Is(err, apperr.ResourceNotFound) {
@@ -150,7 +159,12 @@ func (s *RoleService) EnsureDeveloperRole(ctx context.Context, actorID int64) (*
 }
 
 // Update modifies a tenant role; system roles are protected.
-func (s *RoleService) Update(ctx context.Context, tenantID, id, actorID int64, name string, description *string) (*Role, error) {
+func (s *RoleService) Update(ctx context.Context, tenantID, id, actorID int64, name string, description *string) (_ *Role, err error) {
+	ctx, end := tracing.Begin(ctx, "access.update_role",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("role.id", id),
+	)
+	defer end(&err)
 	role, err := s.roles.Get(ctx, tenantID, id)
 	if err != nil {
 		return nil, err
@@ -177,7 +191,9 @@ func (s *RoleService) Update(ctx context.Context, tenantID, id, actorID int64, n
 }
 
 // UpdateInternal modifies any role, including system roles.
-func (s *RoleService) UpdateInternal(ctx context.Context, id, actorID int64, name string, description *string) (*Role, error) {
+func (s *RoleService) UpdateInternal(ctx context.Context, id, actorID int64, name string, description *string) (_ *Role, err error) {
+	ctx, end := tracing.Begin(ctx, "access.update_internal_role", attribute.Int64("role.id", id))
+	defer end(&err)
 	if _, err := s.roles.GetByID(ctx, id); err != nil {
 		return nil, err
 	}
@@ -190,7 +206,12 @@ func (s *RoleService) UpdateInternal(ctx context.Context, id, actorID int64, nam
 }
 
 // Delete removes a tenant role; system roles are protected.
-func (s *RoleService) Delete(ctx context.Context, tenantID, id int64) error {
+func (s *RoleService) Delete(ctx context.Context, tenantID, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "access.delete_role",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("role.id", id),
+	)
+	defer end(&err)
 	role, err := s.roles.Get(ctx, tenantID, id)
 	if err != nil {
 		return err
@@ -213,7 +234,9 @@ func (s *RoleService) Delete(ctx context.Context, tenantID, id int64) error {
 }
 
 // DeleteInternal removes any role, including system roles.
-func (s *RoleService) DeleteInternal(ctx context.Context, id int64) error {
+func (s *RoleService) DeleteInternal(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "access.delete_internal_role", attribute.Int64("role.id", id))
+	defer end(&err)
 	if _, err := s.roles.GetByID(ctx, id); err != nil {
 		return err
 	}
@@ -228,7 +251,13 @@ func (s *RoleService) DeleteInternal(ctx context.Context, id int64) error {
 // are stripped for tenant roles, and the actor may only add permissions they
 // hold themselves (Super-Admins excepted), so editing a role never grants
 // more than its editor has.
-func (s *RoleService) AssignPermissions(ctx context.Context, tenantID, actorID, roleID int64, permissionIDs []int64) error {
+func (s *RoleService) AssignPermissions(ctx context.Context, tenantID, actorID, roleID int64, permissionIDs []int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "access.assign_permissions",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("role.id", roleID),
+		attribute.Int("permissions", len(permissionIDs)),
+	)
+	defer end(&err)
 	role, err := s.roles.Get(ctx, tenantID, roleID)
 	if err != nil {
 		return err
@@ -335,7 +364,12 @@ func (s *RoleService) Permissions(ctx context.Context, roleID int64) ([]Permissi
 }
 
 // AssignPermissionsInternal replaces permissions including system ones.
-func (s *RoleService) AssignPermissionsInternal(ctx context.Context, roleID int64, permissionIDs []int64) error {
+func (s *RoleService) AssignPermissionsInternal(ctx context.Context, roleID int64, permissionIDs []int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "access.assign_internal_permissions",
+		attribute.Int64("role.id", roleID),
+		attribute.Int("permissions", len(permissionIDs)),
+	)
+	defer end(&err)
 	if _, err := s.roles.GetByID(ctx, roleID); err != nil {
 		return err
 	}
@@ -396,7 +430,9 @@ func (s *RoleService) replacePermissions(ctx context.Context, roleID int64, perm
 // role is defined with (authz.AdminTenantPermissions), so a permission added
 // to the catalog reaches tenants created before it. It only adds grants; a
 // permission removed from the catalog disappears through permission:sync.
-func (s *RoleService) SyncTenantAdminRoles(ctx context.Context) (int64, error) {
+func (s *RoleService) SyncTenantAdminRoles(ctx context.Context) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "access.sync_tenant_admin_roles")
+	defer end(&err)
 	names := make([]string, 0, 64)
 	for _, permission := range authz.AdminTenantPermissions() {
 		names = append(names, permission.Name)
@@ -404,7 +440,9 @@ func (s *RoleService) SyncTenantAdminRoles(ctx context.Context) (int64, error) {
 	return s.roles.GrantToTenantRoles(ctx, authz.AdminRole, names)
 }
 
-func (s *RoleService) CreateDefaultRolesForTenant(ctx context.Context, tenantID int64) error {
+func (s *RoleService) CreateDefaultRolesForTenant(ctx context.Context, tenantID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "access.create_default_roles", attribute.Int64("tenant.id", tenantID))
+	defer end(&err)
 	if existing, err := s.roles.GetByName(ctx, tenantID, authz.AdminRole); err == nil && existing != nil {
 		return nil
 	} else if err != nil && !apperr.Is(err, apperr.ResourceNotFound) {
@@ -463,7 +501,9 @@ func (s *PermissionService) ForUser(ctx context.Context, userID int64) ([]Permis
 }
 
 // Create adds a custom permission.
-func (s *PermissionService) Create(ctx context.Context, name, group string, description *string) (*Permission, error) {
+func (s *PermissionService) Create(ctx context.Context, name, group string, description *string) (_ *Permission, err error) {
+	ctx, end := tracing.Begin(ctx, "access.create_permission")
+	defer end(&err)
 	existing, err := s.perms.GetByNames(ctx, []string{name})
 	if err != nil {
 		return nil, err
@@ -475,7 +515,9 @@ func (s *PermissionService) Create(ctx context.Context, name, group string, desc
 }
 
 // Delete removes a custom permission; system permissions are protected.
-func (s *PermissionService) Delete(ctx context.Context, id int64) error {
+func (s *PermissionService) Delete(ctx context.Context, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "access.delete_permission", attribute.Int64("permission.id", id))
+	defer end(&err)
 	permission, err := s.perms.Get(ctx, id)
 	if err != nil {
 		return err
@@ -489,7 +531,9 @@ func (s *PermissionService) Delete(ctx context.Context, id int64) error {
 
 // SyncCatalog upserts the application permission catalog and removes system
 // permissions that were retired from it.
-func (s *PermissionService) SyncCatalog(ctx context.Context) (int64, error) {
+func (s *PermissionService) SyncCatalog(ctx context.Context) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "access.sync_catalog")
+	defer end(&err)
 	affected, err := s.perms.Upsert(ctx, authz.Catalog)
 	if err != nil {
 		return 0, err

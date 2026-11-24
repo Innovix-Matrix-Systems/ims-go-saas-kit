@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/xuri/excelize/v2"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
@@ -26,6 +27,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -69,7 +71,9 @@ func NewExchangeService(users *Service, repo Repository, roles access.RoleReposi
 }
 
 // StartImport stores the uploaded spreadsheet and queues the import job.
-func (s *ExchangeService) StartImport(ctx context.Context, scope tenancy.Scope, actorID int64, header *multipart.FileHeader) (*dataprocessing.Job, error) {
+func (s *ExchangeService) StartImport(ctx context.Context, scope tenancy.Scope, actorID int64, header *multipart.FileHeader) (_ *dataprocessing.Job, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.start_import", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	extension, err := validateImportHeader(header)
 	if err != nil {
 		return nil, err
@@ -113,7 +117,9 @@ func (s *ExchangeService) StartImport(ctx context.Context, scope tenancy.Scope, 
 }
 
 // StartExport snapshots the filters and queues the export job.
-func (s *ExchangeService) StartExport(ctx context.Context, scope tenancy.Scope, actorID int64, filter ExportRequest) (*dataprocessing.Job, error) {
+func (s *ExchangeService) StartExport(ctx context.Context, scope tenancy.Scope, actorID int64, filter ExportRequest) (_ *dataprocessing.Job, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.start_export", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	applyScopeToExportFilter(&filter, scope)
 	encoded, err := json.Marshal(filter)
 	if err != nil {
@@ -140,7 +146,9 @@ func (s *ExchangeService) ImportTemplate() string {
 
 // ProcessImport executes the import job: parse the stored spreadsheet, create
 // users row by row, and record per-row errors.
-func (s *ExchangeService) ProcessImport(ctx context.Context, jobRowID int64) error {
+func (s *ExchangeService) ProcessImport(ctx context.Context, jobRowID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "identity.process_import", attribute.Int64("job.id", jobRowID))
+	defer end(&err)
 	job, err := s.processing.Get(ctx, tenancy.Scope{Internal: true}, jobRowID)
 	if err != nil {
 		return err
@@ -241,7 +249,9 @@ func (s *ExchangeService) importRows(ctx context.Context, scope tenancy.Scope, a
 }
 
 // ImportUsers runs an import synchronously from an uploaded spreadsheet.
-func (s *ExchangeService) ImportUsers(ctx context.Context, scope tenancy.Scope, actorID int64, header *multipart.FileHeader) (ImportResult, error) {
+func (s *ExchangeService) ImportUsers(ctx context.Context, scope tenancy.Scope, actorID int64, header *multipart.FileHeader) (_ ImportResult, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.import_users", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	extension, err := validateImportHeader(header)
 	if err != nil {
 		return ImportResult{}, err
@@ -259,14 +269,18 @@ func (s *ExchangeService) ImportUsers(ctx context.Context, scope tenancy.Scope, 
 }
 
 // ExportUsers runs an export synchronously and returns the xlsx bytes.
-func (s *ExchangeService) ExportUsers(ctx context.Context, scope tenancy.Scope, filter ExportRequest) ([]byte, error) {
+func (s *ExchangeService) ExportUsers(ctx context.Context, scope tenancy.Scope, filter ExportRequest) (_ []byte, err error) {
+	ctx, end := tracing.Begin(ctx, "identity.export_users", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	applyScopeToExportFilter(&filter, scope)
 	return s.buildUserExport(ctx, filter, nil)
 }
 
 // ProcessExport executes the export job: stream the filtered users into an
 // xlsx artifact and attach it to the job.
-func (s *ExchangeService) ProcessExport(ctx context.Context, jobRowID int64) error {
+func (s *ExchangeService) ProcessExport(ctx context.Context, jobRowID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "identity.process_export", attribute.Int64("job.id", jobRowID))
+	defer end(&err)
 	job, err := s.processing.Get(ctx, tenancy.Scope{Internal: true}, jobRowID)
 	if err != nil {
 		return err

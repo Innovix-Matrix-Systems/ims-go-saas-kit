@@ -122,7 +122,12 @@ func (s *SubscriptionService) GetForTenant(ctx context.Context, tenantID, subscr
 }
 
 // StartTrial starts a trial subscription when the package offers one.
-func (s *SubscriptionService) StartTrial(ctx context.Context, tenantID, packageID int64) (*domain.Subscription, error) {
+func (s *SubscriptionService) StartTrial(ctx context.Context, tenantID, packageID int64) (_ *domain.Subscription, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.start_trial",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("package.id", packageID),
+	)
+	defer end(&err)
 	pkg, err := s.packages.Get(ctx, packageID)
 	if err != nil {
 		return nil, err
@@ -150,7 +155,13 @@ func (s *SubscriptionService) StartTrial(ctx context.Context, tenantID, packageI
 // (for manual methods) creates the staff approval request. It is idempotent
 // per tenant + package + method: while a checkout is still pending, a retry
 // or double click returns that checkout instead of charging again (H11).
-func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (*domain.Subscription, *domain.Payment, error) {
+func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (_ *domain.Subscription, _ *domain.Payment, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.subscribe",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("package.id", packageID),
+		attribute.String("payment.method", method),
+	)
+	defer end(&err)
 	// A free plan has nothing to pay or approve: it starts at once, the way
 	// staff assign a plan (no payment is recorded).
 	if pkg, err := s.packages.Get(ctx, packageID); err != nil {
@@ -161,13 +172,6 @@ func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID
 		}
 		return s.Assign(ctx, AssignInput{TenantID: tenantID, PackageID: packageID, ActorID: actorID})
 	}
-	// An example span with a child around the gateway charge.
-	ctx, span := tracing.Start(ctx, "billing.subscribe",
-		attribute.Int64("tenant.id", tenantID),
-		attribute.Int64("package.id", packageID),
-		attribute.String("payment.method", method),
-	)
-	defer span.End()
 	var (
 		subscription *domain.Subscription
 		payment      *domain.Payment
@@ -178,7 +182,6 @@ func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID
 		subscription, payment, created, err = scoped.subscribe(ctx, tenantID, packageID, method, paymentData, actorID)
 		return err
 	}
-	var err error
 	if s.tx == nil {
 		err = run(s)
 	} else {
@@ -190,9 +193,9 @@ func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID
 		})
 	}
 	if err != nil {
-		return nil, nil, tracing.Fail(ctx, err)
+		return nil, nil, err
 	}
-	span.SetAttributes(attribute.Int64("subscription.id", subscription.ID), attribute.Bool("subscription.created", created))
+	tracing.Annotate(ctx, attribute.Int64("subscription.id", subscription.ID), attribute.Bool("subscription.created", created))
 	if created {
 		s.record(ctx, "subscription.created", subscription, map[string]any{
 			"package_id": packageID, "method": method, "status": subscription.Status,
@@ -254,9 +257,7 @@ func (s *SubscriptionService) subscribe(ctx context.Context, tenantID, packageID
 		return nil, nil, false, err
 	}
 
-	chargeCtx, charge := tracing.Start(ctx, "billing.charge", attribute.String("payment.method", method))
-	payment, err := s.orchestrator.Charge(chargeCtx, tenantID, &subscription.ID, method, pkg.Price, paymentData, &actorID)
-	charge.End()
+	payment, err := s.orchestrator.Charge(ctx, tenantID, &subscription.ID, method, pkg.Price, paymentData, &actorID)
 	if err != nil {
 		reason := "Payment initiation failed."
 		_, _ = s.subscriptions.UpdateStatus(ctx, subscription.ID, domain.StatusCancelled, &now, &reason)
@@ -284,7 +285,9 @@ func (s *SubscriptionService) subscribe(ctx context.Context, tenantID, packageID
 }
 
 // Activate marks a subscription active (renewals, callbacks, approvals).
-func (s *SubscriptionService) Activate(ctx context.Context, subscriptionID int64) (*domain.Subscription, error) {
+func (s *SubscriptionService) Activate(ctx context.Context, subscriptionID int64) (_ *domain.Subscription, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.activate_subscription", attribute.Int64("subscription.id", subscriptionID))
+	defer end(&err)
 	subscription, err := s.subscriptions.Get(ctx, subscriptionID)
 	if err != nil {
 		return nil, err
@@ -316,7 +319,9 @@ func (s *SubscriptionService) Activate(ctx context.Context, subscriptionID int64
 // Cancel ends a subscription immediately: the guard only honours active and
 // trial subscriptions, so access stops now (M14 decision). To stop renewal
 // but keep access until expiry, simply do not renew.
-func (s *SubscriptionService) Cancel(ctx context.Context, subscriptionID int64, reason *string) (*domain.Subscription, error) {
+func (s *SubscriptionService) Cancel(ctx context.Context, subscriptionID int64, reason *string) (_ *domain.Subscription, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.cancel_subscription", attribute.Int64("subscription.id", subscriptionID))
+	defer end(&err)
 	subscription, err := s.subscriptions.Get(ctx, subscriptionID)
 	if err != nil {
 		return nil, err
@@ -339,7 +344,9 @@ func (s *SubscriptionService) Cancel(ctx context.Context, subscriptionID int64, 
 
 // ApplyOverrides merges per-tenant feature overrides (super-admin only). A
 // null value removes that override, so the feature falls back to the plan.
-func (s *SubscriptionService) ApplyOverrides(ctx context.Context, subscriptionID int64, overrides map[string]any) (*domain.Subscription, error) {
+func (s *SubscriptionService) ApplyOverrides(ctx context.Context, subscriptionID int64, overrides map[string]any) (_ *domain.Subscription, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.apply_overrides", attribute.Int64("subscription.id", subscriptionID))
+	defer end(&err)
 	subscription, err := s.subscriptions.Get(ctx, subscriptionID)
 	if err != nil {
 		return nil, err
@@ -379,7 +386,12 @@ func (s *SubscriptionService) ApplyOverrides(ctx context.Context, subscriptionID
 // HandleGatewayCallback finalizes a gateway payment and activates its
 // subscription on success. Completed or refunded payments are returned
 // unchanged so repeated callbacks are idempotent.
-func (s *SubscriptionService) HandleGatewayCallback(ctx context.Context, paymentID int64, method string, payload map[string]any) (*domain.Payment, error) {
+func (s *SubscriptionService) HandleGatewayCallback(ctx context.Context, paymentID int64, method string, payload map[string]any) (_ *domain.Payment, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.payment_callback",
+		attribute.Int64("payment.id", paymentID),
+		attribute.String("payment.method", method),
+	)
+	defer end(&err)
 	if domain.IsManualMethod(method) {
 		return nil, apperr.New(apperr.InvalidInput, "Manual payment methods do not accept callbacks.")
 	}
@@ -466,7 +478,9 @@ func (s *SubscriptionService) List(ctx context.Context, status string, limit, of
 }
 
 // ExpireOverdue marks overdue subscriptions as expired.
-func (s *SubscriptionService) ExpireOverdue(ctx context.Context) (int64, error) {
+func (s *SubscriptionService) ExpireOverdue(ctx context.Context) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.expire_overdue")
+	defer end(&err)
 	return s.subscriptions.ExpireOverdue(ctx)
 }
 
@@ -474,7 +488,9 @@ func (s *SubscriptionService) ExpireOverdue(ctx context.Context) (int64, error) 
 // than grace ago and that has no current, trial, pending or past-due
 // subscription (BILLING_SUSPEND_ON_EXPIRY). keepTenantID (the default tenant)
 // is never suspended. Each suspension is a tenant.suspended system row.
-func (s *SubscriptionService) SuspendLapsedTenants(ctx context.Context, grace time.Duration, keepTenantID int64) ([]domain.LapsedTenant, error) {
+func (s *SubscriptionService) SuspendLapsedTenants(ctx context.Context, grace time.Duration, keepTenantID int64) (_ []domain.LapsedTenant, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.suspend_lapsed_tenants")
+	defer end(&err)
 	lapsed, err := s.subscriptions.SuspendLapsedTenants(ctx, s.now().Add(-grace), keepTenantID)
 	if err != nil {
 		return nil, err
@@ -504,7 +520,9 @@ func (s *SubscriptionService) WithNotifier(notifier Notifier) *SubscriptionServi
 
 // SendRenewalReminders creates in-app reminders for subscriptions expiring
 // within the configured day windows (logs when no notifier is attached).
-func (s *SubscriptionService) SendRenewalReminders(ctx context.Context, logger *slog.Logger, days []int) (int, error) {
+func (s *SubscriptionService) SendRenewalReminders(ctx context.Context, logger *slog.Logger, days []int) (_ int, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.send_renewal_reminders")
+	defer end(&err)
 	if len(days) == 0 {
 		days = []int{7, 3, 1}
 	}

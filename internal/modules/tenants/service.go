@@ -7,12 +7,15 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -69,7 +72,9 @@ func (s *Service) Get(ctx context.Context, id int64) (*Tenant, error) {
 }
 
 // Create adds a tenant and provisions its default branch and roles.
-func (s *Service) Create(ctx context.Context, actorID int64, input CreateInput) (*Tenant, error) {
+func (s *Service) Create(ctx context.Context, actorID int64, input CreateInput) (_ *Tenant, err error) {
+	ctx, end := tracing.Begin(ctx, "tenants.create")
+	defer end(&err)
 	input.Code = generateCode(input.Name, actorID)
 	input.ActorID = &actorID
 
@@ -89,7 +94,9 @@ func (s *Service) Create(ctx context.Context, actorID int64, input CreateInput) 
 // Update modifies a tenant. Setting is_active to false suspends it: its users
 // are refused from their next request (authentication reads the tenant's
 // state on every request), and setting it back reactivates it.
-func (s *Service) Update(ctx context.Context, actorID, id int64, input UpdateInput) (*Tenant, error) {
+func (s *Service) Update(ctx context.Context, actorID, id int64, input UpdateInput) (_ *Tenant, err error) {
+	ctx, end := tracing.Begin(ctx, "tenants.update", attribute.Int64("tenant.id", id))
+	defer end(&err)
 	current, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -123,7 +130,9 @@ func (s *Service) recordSuspension(ctx context.Context, actorID int64, tenant *T
 // Delete soft-deletes a tenant and its branches in one transaction; the seeded
 // default tenant is protected. Cached tenant-existence is invalidated so
 // impersonation against the deleted tenant fails immediately.
-func (s *Service) Delete(ctx context.Context, actorID, id int64) error {
+func (s *Service) Delete(ctx context.Context, actorID, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "tenants.delete", attribute.Int64("tenant.id", id))
+	defer end(&err)
 	if id == s.cfg.DefaultTenantID {
 		return apperr.New(apperr.OperationNotAllowed, "The default tenant cannot be deleted.")
 	}

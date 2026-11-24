@@ -117,20 +117,20 @@ type CreateParams struct {
 }
 
 // Create adds a branch to the effective tenant.
-func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateParams) (*Branch, error) {
+func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateParams) (_ *Branch, err error) {
 	tenantID := scope.EffectiveTenantID()
+	// The request's trace shows this step and the queries under it; a no-op
+	// while tracing is off.
+	ctx, end := tracing.Begin(ctx, "branches.create", attribute.Int64("tenant.id", tenantID))
+	defer end(&err)
 	if tenantID == 0 {
 		return nil, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
 	}
-	// An example span: the request's trace shows this step and
-	// the queries under it. A no-op while tracing is off.
-	ctx, span := tracing.Start(ctx, "branches.create", attribute.Int64("tenant.id", tenantID))
-	defer span.End()
 	if err := s.validateManager(ctx, tenantID, input.ManagerID); err != nil {
 		return nil, err
 	}
 	var branch *Branch
-	err := s.withBranchQuota(ctx, tenantID, func(repo Repository) error {
+	err = s.withBranchQuota(ctx, tenantID, func(repo Repository) error {
 		created, err := repo.Create(ctx, CreateInput{
 			TenantID:    tenantID,
 			Name:        input.Name,
@@ -145,9 +145,9 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 		return err
 	})
 	if err != nil {
-		return nil, tracing.Fail(ctx, err)
+		return nil, err
 	}
-	span.SetAttributes(attribute.Int64("branch.id", branch.ID))
+	tracing.Annotate(ctx, attribute.Int64("branch.id", branch.ID))
 	s.activity.Record(ctx, activity.Entry{
 		TenantID: tenantID, ActorID: actorID, Action: "branch.created",
 		Subject: "branch", SubjectID: branch.ID, Changes: input.changes(),
@@ -194,14 +194,16 @@ func (s *Service) withBranchQuota(ctx context.Context, tenantID int64, create fu
 }
 
 // Update modifies a branch inside the effective tenant.
-func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input CreateParams) (*Branch, error) {
+func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input CreateParams) (_ *Branch, err error) {
 	tenantID := scope.EffectiveTenantID()
+	ctx, end := tracing.Begin(ctx, "branches.update",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("branch.id", id),
+	)
+	defer end(&err)
 	if tenantID == 0 {
 		return nil, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
 	}
-	ctx, span := tracing.Start(ctx, "branches.update",
-		attribute.Int64("tenant.id", tenantID), attribute.Int64("branch.id", id))
-	defer span.End()
 	if err := s.validateManager(ctx, tenantID, input.ManagerID); err != nil {
 		return nil, err
 	}
@@ -217,7 +219,7 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 		ActorID:     &actorID,
 	})
 	if err != nil {
-		return nil, tracing.Fail(ctx, err)
+		return nil, err
 	}
 	tenancy.InvalidateBranchCheck(ctx, s.cache, tenantID, id)
 	s.activity.Record(ctx, activity.Entry{
@@ -230,7 +232,12 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 // Delete soft-deletes a branch, protecting the configured default branch, an
 // organization's last branch and a branch its members belong to. Members who
 // had switched into it go back to their own branch.
-func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) error {
+func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "branches.delete",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("branch.id", id),
+	)
+	defer end(&err)
 	tenantID := scope.EffectiveTenantID()
 	if tenantID == 0 {
 		return apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
@@ -264,7 +271,9 @@ func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id i
 // CreateDefaultForTenant provisions a default branch for a new tenant using an
 // auto-assigned id (the fixed DEFAULT_BRANCH_ID is reserved for the seeded
 // default tenant).
-func (s *Service) CreateDefaultForTenant(ctx context.Context, tenantID int64) error {
+func (s *Service) CreateDefaultForTenant(ctx context.Context, tenantID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "branches.create_default", attribute.Int64("tenant.id", tenantID))
+	defer end(&err)
 	branch, err := s.repo.Create(ctx, CreateInput{
 		TenantID: tenantID,
 		Name:     s.cfg.DefaultBranchName,
@@ -277,7 +286,9 @@ func (s *Service) CreateDefaultForTenant(ctx context.Context, tenantID int64) er
 }
 
 // DeleteForTenant soft-deletes every branch of a tenant.
-func (s *Service) DeleteForTenant(ctx context.Context, tenantID int64) error {
+func (s *Service) DeleteForTenant(ctx context.Context, tenantID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "branches.delete_for_tenant", attribute.Int64("tenant.id", tenantID))
+	defer end(&err)
 	return s.repo.SoftDeleteForTenant(ctx, tenantID)
 }
 

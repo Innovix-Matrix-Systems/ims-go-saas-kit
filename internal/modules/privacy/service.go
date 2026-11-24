@@ -22,6 +22,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	contracts "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
 )
 
@@ -80,7 +81,9 @@ type EraseInput struct {
 // (the tombstone last), the ledger row, then the stored objects, sessions and
 // permission cache. A failed run leaves the ledger row "failed" and the data
 // untouched; running it again is safe.
-func (s *Service) Erase(ctx context.Context, input EraseInput) (*Request, error) {
+func (s *Service) Erase(ctx context.Context, input EraseInput) (_ *Request, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.erase")
+	defer end(&err)
 	subject, erasedAt, err := s.repo.Subject(ctx, input.UserID)
 	if err != nil {
 		return nil, err
@@ -237,7 +240,9 @@ type ExportInput struct {
 
 // Export writes the user's personal data to out as a zip: one folder per
 // contributor and a manifest.json. It never contains secrets.
-func (s *Service) Export(ctx context.Context, input ExportInput, out io.Writer) (*Manifest, error) {
+func (s *Service) Export(ctx context.Context, input ExportInput, out io.Writer) (_ *Manifest, err error) {
+	ctx, end := tracing.Begin(ctx, "privacy.export")
+	defer end(&err)
 	subject, erasedAt, err := s.repo.Subject(ctx, input.UserID)
 	if err != nil {
 		return nil, err

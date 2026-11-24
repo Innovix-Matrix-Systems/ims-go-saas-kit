@@ -3,9 +3,11 @@ package authn
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Account returns the signed-in user's record (for account changes such as
@@ -25,7 +27,9 @@ func (s *Service) ConfirmPasswordOnly(ctx context.Context, userID int64, passwor
 // account change (turning two-factor on or off, new recovery codes). Wrong
 // answers count against the account's sign-in throttle, so it cannot be
 // used to guess the password faster than signing in.
-func (s *Service) ConfirmPassword(ctx context.Context, userID int64, password string) (*UserRecord, error) {
+func (s *Service) ConfirmPassword(ctx context.Context, userID int64, password string) (_ *UserRecord, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.confirm_password", attribute.Int64("user.id", userID))
+	defer end(&err)
 	record, err := s.users.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err

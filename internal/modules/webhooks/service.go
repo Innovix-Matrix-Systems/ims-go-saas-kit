@@ -15,11 +15,14 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/crypto"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -115,7 +118,9 @@ type UpdateInput struct {
 
 // Create adds an endpoint for the scope's tenant and returns it with its
 // signing secret, shown this once.
-func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateInput) (*Endpoint, string, error) {
+func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateInput) (_ *Endpoint, _ string, err error) {
+	ctx, end := tracing.Begin(ctx, "webhooks.create", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	tenantID := scope.EffectiveTenantID()
 	if tenantID == 0 {
 		return nil, "", apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")
@@ -152,7 +157,12 @@ func (s *Service) Get(ctx context.Context, scope tenancy.Scope, id int64) (*Endp
 }
 
 // Update changes an endpoint; turning it back on resets its failure count.
-func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateInput) (*Endpoint, error) {
+func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateInput) (_ *Endpoint, err error) {
+	ctx, end := tracing.Begin(ctx, "webhooks.update",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("webhook.id", id),
+	)
+	defer end(&err)
 	current, err := s.repo.GetEndpoint(ctx, scope.Filter(), id)
 	if err != nil {
 		return nil, err
@@ -182,7 +192,12 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 }
 
 // Delete removes an endpoint and its delivery log.
-func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) error {
+func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "webhooks.delete",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("webhook.id", id),
+	)
+	defer end(&err)
 	endpoint, err := s.repo.GetEndpoint(ctx, scope.Filter(), id)
 	if err != nil {
 		return err
@@ -197,7 +212,12 @@ func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, actorID, id i
 // RotateSecret gives an endpoint a new signing secret, returned this once.
 // The previous one keeps signing (a second signature) for a day, so the
 // receiver can switch without dropping events.
-func (s *Service) RotateSecret(ctx context.Context, scope tenancy.Scope, actorID, id int64) (*Endpoint, string, error) {
+func (s *Service) RotateSecret(ctx context.Context, scope tenancy.Scope, actorID, id int64) (_ *Endpoint, _ string, err error) {
+	ctx, end := tracing.Begin(ctx, "webhooks.rotate_secret",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("webhook.id", id),
+	)
+	defer end(&err)
 	secret, sealed, err := s.newSealedSecret()
 	if err != nil {
 		return nil, "", err
@@ -214,7 +234,12 @@ func (s *Service) RotateSecret(ctx context.Context, scope tenancy.Scope, actorID
 
 // Test sends a webhook.test event to an endpoint now and returns the
 // delivery with the endpoint's answer (no retries).
-func (s *Service) Test(ctx context.Context, scope tenancy.Scope, id int64) (*Delivery, error) {
+func (s *Service) Test(ctx context.Context, scope tenancy.Scope, id int64) (_ *Delivery, err error) {
+	ctx, end := tracing.Begin(ctx, "webhooks.test",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("webhook.id", id),
+	)
+	defer end(&err)
 	endpoint, err := s.repo.GetEndpoint(ctx, scope.Filter(), id)
 	if err != nil {
 		return nil, err
@@ -240,7 +265,12 @@ func (s *Service) Deliveries(ctx context.Context, scope tenancy.Scope, endpointI
 
 // Redeliver sends a delivery again now (same event id, so the receiver can
 // tell it is the same event) and returns the outcome.
-func (s *Service) Redeliver(ctx context.Context, scope tenancy.Scope, deliveryID int64) (*Delivery, error) {
+func (s *Service) Redeliver(ctx context.Context, scope tenancy.Scope, deliveryID int64) (_ *Delivery, err error) {
+	ctx, end := tracing.Begin(ctx, "webhooks.redeliver",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("delivery.id", deliveryID),
+	)
+	defer end(&err)
 	delivery, err := s.repo.GetDelivery(ctx, scope.Filter(), deliveryID)
 	if err != nil {
 		return nil, err
@@ -311,7 +341,9 @@ func (s *Service) RegisterJob(registry *queue.Registry) error {
 }
 
 // Prune deletes delivery logs older than WEBHOOK_RETENTION_DAYS.
-func (s *Service) Prune(ctx context.Context) (int64, error) {
+func (s *Service) Prune(ctx context.Context) (_ int64, err error) {
+	ctx, end := tracing.Begin(ctx, "webhooks.prune")
+	defer end(&err)
 	if s.cfg.RetentionDays <= 0 {
 		return 0, nil
 	}

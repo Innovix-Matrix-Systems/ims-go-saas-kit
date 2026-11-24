@@ -5,8 +5,11 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -42,7 +45,9 @@ func rerunFor(job *Job) (Rerun, bool) {
 
 // Retry runs a failed job again with the same input (filters, uploaded
 // file): it is reset to pending and queued anew.
-func (s *Service) Retry(ctx context.Context, job *Job) (*Job, error) {
+func (s *Service) Retry(ctx context.Context, job *Job) (_ *Job, err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.retry", attribute.Int64("job.id", job.ID))
+	defer end(&err)
 	if job.Status != StatusFailed {
 		return nil, apperr.New(apperr.InvalidState, "Only a failed job can be retried.")
 	}
@@ -65,12 +70,14 @@ func (s *Service) Retry(ctx context.Context, job *Job) (*Job, error) {
 
 // Remove deletes a finished job and its file. A job that is still waiting or
 // running is refused: its worker would write into nothing.
-func (s *Service) Remove(ctx context.Context, job *Job) error {
+func (s *Service) Remove(ctx context.Context, job *Job) (err error) {
+	ctx, end := tracing.Begin(ctx, "dataprocessing.remove", attribute.Int64("job.id", job.ID))
+	defer end(&err)
 	if job.Status == StatusPending || job.Status == StatusProcessing {
 		return apperr.New(apperr.InvalidState, "A job that is still running cannot be removed.")
 	}
 	s.removeJobFile(ctx, ExpiredJob{ID: job.ID, FileDisk: job.FileDisk, FilePath: job.FilePath})
-	_, err := s.repo.DeleteByIDs(ctx, []int64{job.ID})
+	_, err = s.repo.DeleteByIDs(ctx, []int64{job.ID})
 	return err
 }
 

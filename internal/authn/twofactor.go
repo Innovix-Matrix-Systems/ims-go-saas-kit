@@ -14,11 +14,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/crypto"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Two-factor authentication. A user has one method:
@@ -143,7 +145,9 @@ func (t *TwoFactor) Method(ctx context.Context, userID int64) (string, error) {
 
 // Begin starts an enrolment (replacing an unconfirmed one). Confirm finishes
 // it with a code.
-func (t *TwoFactor) Begin(ctx context.Context, user *UserRecord, method string) (*TwoFactorSetup, error) {
+func (t *TwoFactor) Begin(ctx context.Context, user *UserRecord, method string) (_ *TwoFactorSetup, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.begin_two_factor", attribute.String("two_factor.method", method))
+	defer end(&err)
 	if method != TwoFactorTOTP && method != TwoFactorEmail {
 		return nil, apperr.Validation(map[string][]string{"method": {"The method must be totp or email."}})
 	}
@@ -164,7 +168,7 @@ func (t *TwoFactor) Begin(ctx context.Context, user *UserRecord, method string) 
 		sealed = &value
 		setup.Secret, setup.OTPAuthURL = secret, totpURL(t.issuer, user.Email, secret)
 	}
-	_, err := t.queries.StartTwoFactor(ctx, dbgen.StartTwoFactorParams{UserID: user.ID, Method: method, Secret: sealed})
+	_, err = t.queries.StartTwoFactor(ctx, dbgen.StartTwoFactorParams{UserID: user.ID, Method: method, Secret: sealed})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, apperr.New(apperr.InvalidState, "Two-factor authentication is already on. Turn it off first to change the method.")
 	}
@@ -181,7 +185,9 @@ func (t *TwoFactor) Begin(ctx context.Context, user *UserRecord, method string) 
 
 // Confirm finishes an enrolment with a code from the app (totp) or the mail
 // (email) and returns the recovery codes, shown once.
-func (t *TwoFactor) Confirm(ctx context.Context, user *UserRecord, code string) ([]string, error) {
+func (t *TwoFactor) Confirm(ctx context.Context, user *UserRecord, code string) (_ []string, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.confirm_two_factor")
+	defer end(&err)
 	row, found, err := t.get(ctx, user.ID)
 	if err != nil {
 		return nil, err
@@ -219,7 +225,9 @@ func (t *TwoFactor) Confirm(ctx context.Context, user *UserRecord, code string) 
 
 // RegenerateRecoveryCodes replaces the recovery codes (the old ones stop
 // working) and returns the new ones, shown once.
-func (t *TwoFactor) RegenerateRecoveryCodes(ctx context.Context, user *UserRecord) ([]string, error) {
+func (t *TwoFactor) RegenerateRecoveryCodes(ctx context.Context, user *UserRecord) (_ []string, err error) {
+	ctx, end := tracing.Begin(ctx, "authn.regenerate_recovery_codes")
+	defer end(&err)
 	codes, hashed, err := newRecoveryCodes()
 	if err != nil {
 		return nil, err
@@ -237,7 +245,9 @@ func (t *TwoFactor) RegenerateRecoveryCodes(ctx context.Context, user *UserRecor
 
 // Disable turns two-factor off. reset is true when an administrator did it
 // (the security mail says so).
-func (t *TwoFactor) Disable(ctx context.Context, user *UserRecord, reset bool) error {
+func (t *TwoFactor) Disable(ctx context.Context, user *UserRecord, reset bool) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.disable_two_factor", attribute.Bool("two_factor.reset", reset))
+	defer end(&err)
 	method, err := t.Method(ctx, user.ID)
 	if err != nil {
 		return err
@@ -262,7 +272,9 @@ func (t *TwoFactor) Disable(ctx context.Context, user *UserRecord, reset bool) e
 
 // Verify checks a sign-in's second factor: a code from the app (totp), the
 // code mailed at sign-in (email), or a recovery code (either method).
-func (t *TwoFactor) Verify(ctx context.Context, user *UserRecord, code string) error {
+func (t *TwoFactor) Verify(ctx context.Context, user *UserRecord, code string) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.verify_two_factor")
+	defer end(&err)
 	row, found, err := t.get(ctx, user.ID)
 	if err != nil {
 		return err
@@ -280,8 +292,10 @@ func (t *TwoFactor) Verify(ctx context.Context, user *UserRecord, code string) e
 }
 
 // SendSignInCode mails the sign-in code of an email-method user.
-func (t *TwoFactor) SendSignInCode(ctx context.Context, user *UserRecord) error {
-	_, err := t.otp.Send(ctx, user)
+func (t *TwoFactor) SendSignInCode(ctx context.Context, user *UserRecord) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.send_two_factor_code")
+	defer end(&err)
+	_, err = t.otp.Send(ctx, user)
 	return err
 }
 

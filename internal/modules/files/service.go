@@ -15,11 +15,13 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 )
 
 // Size limits (uploads 100 MB, avatars 5 MB).
@@ -89,7 +91,12 @@ func NewService(repo Repository, disks *storage.Registry, fileDisk string, tx *d
 // Create stores a standalone library file. tenantID stamps the effective
 // tenant (0 for an internal upload — the row stays global and is only
 // reachable through the internal file routes).
-func (s *Service) Create(ctx context.Context, actorID int64, tenantID int64, header *multipart.FileHeader) (*File, error) {
+func (s *Service) Create(ctx context.Context, actorID int64, tenantID int64, header *multipart.FileHeader) (_ *File, err error) {
+	ctx, end := tracing.Begin(ctx, "files.create",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("file.size", header.Size),
+	)
+	defer end(&err)
 	if s.storage != nil && tenantID != 0 {
 		used, err := s.repo.UsedBytes(ctx, tenantID)
 		if err != nil {
@@ -126,18 +133,25 @@ func (s *Service) Create(ctx context.Context, actorID int64, tenantID int64, hea
 // the new file is stored first, old rows are swapped in one transaction, and
 // the superseded disk files are removed afterwards. tenantID stamps the
 // target user's tenant (0 keeps the row global).
-func (s *Service) UpdateAvatar(ctx context.Context, actorID, userID int64, tenantID int64, header *multipart.FileHeader) error {
+func (s *Service) UpdateAvatar(ctx context.Context, actorID, userID int64, tenantID int64, header *multipart.FileHeader) (err error) {
+	ctx, end := tracing.Begin(ctx, "files.update_avatar",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("user.id", userID),
+	)
+	defer end(&err)
 	if userID < 1 {
 		return apperr.New(apperr.InvalidInput, "The provided identifier is invalid.")
 	}
-	_, err := s.replaceSingle(ctx, actorID, OwnerUser, userID, CollectionProfile, tenantID, header, "The profile file was replaced concurrently; please retry.")
+	_, err = s.replaceSingle(ctx, actorID, OwnerUser, userID, CollectionProfile, tenantID, header, "The profile file was replaced concurrently; please retry.")
 	return err
 }
 
 // UpdateLogo replaces the organization's logo: an image on the public disk
 // (e-mails link to it), attached to the tenant, so it is listed with the
 // organization's files and counts against its storage.
-func (s *Service) UpdateLogo(ctx context.Context, actorID, tenantID int64, header *multipart.FileHeader) (*File, error) {
+func (s *Service) UpdateLogo(ctx context.Context, actorID, tenantID int64, header *multipart.FileHeader) (_ *File, err error) {
+	ctx, end := tracing.Begin(ctx, "files.update_logo", attribute.Int64("tenant.id", tenantID))
+	defer end(&err)
 	if tenantID < 1 {
 		return nil, apperr.New(apperr.Forbidden, "Only an organization has a logo.")
 	}
@@ -240,7 +254,12 @@ func (s *Service) List(ctx context.Context, filter ListFilter) ([]File, int64, e
 // owner simply loses the attachment). The delete is tenant-scoped: tenantless
 // callers (allTenants) may delete any file; tenant-bound callers only their
 // own tenant's.
-func (s *Service) Delete(ctx context.Context, id int64, allTenants bool, tenantID int64) error {
+func (s *Service) Delete(ctx context.Context, id int64, allTenants bool, tenantID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "files.delete",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int64("file.id", id),
+	)
+	defer end(&err)
 	file, err := s.repo.GetInTenant(ctx, id, allTenants, tenantID)
 	if err != nil {
 		return err
@@ -255,7 +274,9 @@ func (s *Service) Delete(ctx context.Context, id int64, allTenants bool, tenantI
 	return nil
 }
 
-func (s *Service) Open(ctx context.Context, id int64) (io.ReadCloser, *File, error) {
+func (s *Service) Open(ctx context.Context, id int64) (_ io.ReadCloser, _ *File, err error) {
+	ctx, end := tracing.Begin(ctx, "files.open", attribute.Int64("file.id", id))
+	defer end(&err)
 	file, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return nil, nil, err

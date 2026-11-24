@@ -6,10 +6,13 @@ import (
 	"log/slog"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
 )
 
@@ -40,7 +43,9 @@ func NewService(repo Repository, store cache.Store, engine queue.Engine, setting
 
 // Create validates and persists a notification plus its targets, then
 // dispatches the fan-out job.
-func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateInput) (*Notification, []Target, error) {
+func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64, input CreateInput) (_ *Notification, _ []Target, err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.create", attribute.Int64("tenant.id", scope.EffectiveTenantID()))
+	defer end(&err)
 	if _, ok := Events[input.EventType]; !ok {
 		return nil, nil, apperr.Validation(map[string][]string{
 			"event_type": {"The selected event type is invalid."},
@@ -76,7 +81,12 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 
 // Update replaces a notification's content and targets (tenant immutable) and
 // delta-fans-out to newly addressed users.
-func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateInput) (*Notification, []Target, error) {
+func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id int64, input UpdateInput) (_ *Notification, _ []Target, err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.update",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("notification.id", id),
+	)
+	defer end(&err)
 	existing, err := s.scopedGet(ctx, scope, id)
 	if err != nil {
 		return nil, nil, err
@@ -108,7 +118,12 @@ func (s *Service) Update(ctx context.Context, scope tenancy.Scope, actorID, id i
 
 // Delete removes a notification and enqueues unread-counter repairs for its
 // audience.
-func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, id int64) error {
+func (s *Service) Delete(ctx context.Context, scope tenancy.Scope, id int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.delete",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+		attribute.Int64("notification.id", id),
+	)
+	defer end(&err)
 	existing, err := s.scopedGet(ctx, scope, id)
 	if err != nil {
 		return err
@@ -156,7 +171,9 @@ func (s *Service) Targets(ctx context.Context, notificationID int64) ([]Target, 
 
 // MarkRead records a read for the user (404 when the notification does not
 // address them) and repairs the cached unread counter.
-func (s *Service) MarkRead(ctx context.Context, scope tenancy.Scope, userID, notificationID int64) error {
+func (s *Service) MarkRead(ctx context.Context, scope tenancy.Scope, userID, notificationID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.mark_read", attribute.Int64("notification.id", notificationID))
+	defer end(&err)
 	visibility, err := s.visibility(ctx, scope, userID)
 	if err != nil {
 		return err
@@ -180,7 +197,11 @@ func (s *Service) MarkRead(ctx context.Context, scope tenancy.Scope, userID, not
 }
 
 // MarkAllRead enqueues the bulk read job for the user.
-func (s *Service) MarkAllRead(ctx context.Context, scope tenancy.Scope, userID int64) error {
+func (s *Service) MarkAllRead(ctx context.Context, scope tenancy.Scope, userID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.mark_all_read",
+		attribute.Int64("tenant.id", scope.EffectiveTenantID()),
+	)
+	defer end(&err)
 	if _, err := s.visibility(ctx, scope, userID); err != nil {
 		return err
 	}
@@ -289,7 +310,9 @@ func (s *Service) Feed(ctx context.Context, scope tenancy.Scope, userID int64, f
 // ProcessFanOut executes the fan-out job: resolve target users, insert
 // idempotent deliveries in chunks and increment counters only for newly
 // inserted rows (retry-safe).
-func (s *Service) ProcessFanOut(ctx context.Context, notificationID int64) error {
+func (s *Service) ProcessFanOut(ctx context.Context, notificationID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.fan_out", attribute.Int64("notification.id", notificationID))
+	defer end(&err)
 	notification, err := s.repo.Get(ctx, notificationID)
 	if err != nil {
 		if apperr.Is(err, apperr.ResourceNotFound) {
@@ -330,7 +353,13 @@ func (s *Service) ProcessFanOut(ctx context.Context, notificationID int64) error
 // user as read, then sets the read-all marker and resets the counter.
 // branchID and allBranches name the branch notices the feed showed (both
 // empty: the user's own branch).
-func (s *Service) ProcessMarkAllRead(ctx context.Context, userID, branchID int64, allBranches bool) error {
+func (s *Service) ProcessMarkAllRead(ctx context.Context, userID, branchID int64, allBranches bool) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.process_mark_all_read",
+		attribute.Int64("user.id", userID),
+		attribute.Int64("branch.id", branchID),
+		attribute.Bool("all_branches", allBranches),
+	)
+	defer end(&err)
 	visibility, err := s.jobVisibility(ctx, userID, branchID, allBranches)
 	if err != nil {
 		return err
@@ -346,7 +375,12 @@ func (s *Service) ProcessMarkAllRead(ctx context.Context, userID, branchID int64
 
 // ProcessCounterDecrement repairs unread counters after a notification is
 // deleted (chunked payloads; missing keys are simply skipped).
-func (s *Service) ProcessCounterDecrement(ctx context.Context, tenantID int64, userIDs []int64) error {
+func (s *Service) ProcessCounterDecrement(ctx context.Context, tenantID int64, userIDs []int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "notifications.decrement_counters",
+		attribute.Int64("tenant.id", tenantID),
+		attribute.Int("users", len(userIDs)),
+	)
+	defer end(&err)
 	for _, userID := range userIDs {
 		s.decrementUnread(ctx, tenantID, userID)
 	}
