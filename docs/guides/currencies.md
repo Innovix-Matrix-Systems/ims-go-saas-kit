@@ -39,7 +39,11 @@ Guards that keep stored amounts meaningful:
 - A currency's **decimals are locked once it has payments**: going from 2 to 0 would make every
   stored amount a hundred times bigger.
 - The default can't be disabled or deleted; a currency with payments can't be deleted (disable it).
+- The decimal mark and the thousands separator must differ, or `1,234` could be read two ways.
 - bKash and Nagad settle in taka, so they refuse a payment while the default isn't BDT.
+
+Every change (added, updated, default changed, deleted) is recorded in the system audit log
+(**Console → Audit log**).
 
 ## How amounts are written
 

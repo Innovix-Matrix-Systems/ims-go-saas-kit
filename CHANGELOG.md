@@ -31,7 +31,8 @@ built in; staff add and edit currencies under Console → Currencies. See
 ### Added
 
 - **Console → Currencies:** every currency with a live example; add one, change its symbol,
-  position, decimals and separators with a preview, enable or disable it, make it the default.
+  position, decimals and separators with a preview, enable or disable it, make it the default
+  (from its row or its drawer). Every change is recorded in the system audit log.
 - `internal/platform/money` and `web/app/src/money.ts`: one formatter per side, the same output
   for the same row, digits in the reader's language (`৳১,২৩৪.৫০`), compact form for charts.
 - `MoneyInput`: the currency's symbol on its side and its decimals; a typo is refused, never
