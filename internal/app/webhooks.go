@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/notifications"
@@ -39,13 +38,11 @@ func (n webhookNotices) EndpointDisabled(ctx context.Context, endpoint webhooks.
 	if endpoint.CreatedBy != nil {
 		target = notifications.TargetInput{Type: notifications.TargetUser, ID: endpoint.CreatedBy}
 	}
-	body := fmt.Sprintf("%s stopped receiving events after its deliveries kept failing. Fix the receiver, then turn the endpoint back on.", endpoint.URL)
 	_, _, err := n.notifications.Create(ctx, tenancy.Scope{Internal: true}, 0, notifications.CreateInput{
 		TenantID:  &tenantID,
 		EventType: eventWebhookDisabled,
 		Priority:  notifications.PriorityWarning,
-		Title:     "A webhook endpoint was disabled",
-		Body:      &body,
+		Message:   &notifications.Message{Key: "notices.webhook_disabled", Params: map[string]any{"URL": endpoint.URL}},
 		Targets:   []notifications.TargetInput{target},
 		Channels:  []string{string(delivery.Mail)},
 	})

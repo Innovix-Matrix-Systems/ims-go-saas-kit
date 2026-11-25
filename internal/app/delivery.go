@@ -2,16 +2,22 @@ package app
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"regexp"
 	"strconv"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing"
 	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 	billingservice "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/notifications"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/onboarding"
+	privacymodule "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/privacy"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/crypto"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
@@ -32,7 +38,11 @@ func newDelivery(cfg *config.Config, repo delivery.Repository, engine queue.Engi
 	if err != nil {
 		return nil, err
 	}
-	return delivery.NewService(delivery.NewRegistry(), repo, engine, logger).
+	templates, err := newTemplateRegistry()
+	if err != nil {
+		return nil, err
+	}
+	return delivery.NewService(templates, repo, engine, logger).
 		WithSender(delivery.Mail, delivery.MailSender{Driver: mailDriver}).
 		WithSender(delivery.SMS, delivery.SMSSender{Driver: smsDriver}).
 		WithSender(delivery.Push, delivery.LogPushSender{Logger: logger, Debug: cfg.IsDebug()}).
@@ -40,6 +50,34 @@ func newDelivery(cfg *config.Config, repo delivery.Repository, engine queue.Engi
 		WithAttachments(storageOpener{disks: disks}, int64(cfg.Mail.MaxAttachmentMB)<<20).
 		WithEncrypter(encrypter).
 		WithFallbackLocale(cfg.App.FallbackLocale), nil
+}
+
+//go:embed all:templates
+var appTemplatesFS embed.FS
+
+// newTemplateRegistry registers every module's delivery templates. The
+// platform brings the mail layout only; a module that contacts people adds
+// its templates here. A later folder with the same name replaces an earlier
+// one, so a project changes a kit template by registering its own last.
+func newTemplateRegistry() (*delivery.Registry, error) {
+	appTemplates, err := fs.Sub(appTemplatesFS, "templates")
+	if err != nil {
+		return nil, err
+	}
+	registry := delivery.NewRegistry()
+	for _, templates := range []fs.FS{
+		authn.Templates(),
+		onboarding.Templates(),
+		notifications.Templates(),
+		billing.Templates(),
+		privacymodule.Templates(),
+		appTemplates, // new-sign-in
+	} {
+		if err := registry.Register(templates); err != nil {
+			return nil, err
+		}
+	}
+	return registry, nil
 }
 
 // settingsBrand reads the e-mail brand from the branding.* settings. A

@@ -1,0 +1,7 @@
+{
+    "notifications.renewal_reminder.title": {
+        "one": "আপনার সাবস্ক্রিপশন {{.Count}} দিনের মধ্যে নবায়ন হবে",
+        "other": "আপনার সাবস্ক্রিপশন {{.Count}} দিনের মধ্যে নবায়ন হবে"
+    },
+    "notifications.renewal_reminder.body": "সাবস্ক্রিপশনের মেয়াদ শেষ হবে {{.Date}}।"
+}

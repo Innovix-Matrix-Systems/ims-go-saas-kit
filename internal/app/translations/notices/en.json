@@ -1,0 +1,19 @@
+{
+    "notices.payment_to_review.title": "Payment to review: {{.Organization}}",
+    "notices.payment_to_review.body": "{{.Organization}} paid {{.Amount}} for the {{.Plan}} plan by {{.Method}}. Check the transfer and approve or reject it.",
+    "notices.payment_submitted.title": "Payment submitted for confirmation",
+    "notices.payment_submitted.body": "Your payment of {{.Amount}} for the {{.Plan}} plan was submitted. We will let you know as soon as it is confirmed.",
+    "notices.payment_received.title": "Payment received",
+    "notices.payment_received.body": "We received {{.Amount}}. Your {{.Plan}} plan is active. The receipt is on its way by e-mail.",
+    "notices.payment_rejected.title": "Payment not confirmed",
+    "notices.payment_rejected.body": "Your payment of {{.Amount}} for the {{.Plan}} plan could not be confirmed.",
+    "notices.payment_rejected_with_reason.title": "Payment not confirmed",
+    "notices.payment_rejected_with_reason.body": "Your payment of {{.Amount}} for the {{.Plan}} plan could not be confirmed. Reason: {{.Reason}}",
+    "notices.webhook_disabled.title": "A webhook endpoint was disabled",
+    "notices.webhook_disabled.body": "{{.URL}} stopped receiving events after its deliveries kept failing. Fix the receiver, then turn the endpoint back on.",
+    "notices.method.bkash": "bKash",
+    "notices.method.nagad": "Nagad",
+    "notices.method.cash": "cash",
+    "notices.method.bank_transfer": "bank transfer",
+    "notices.method.bkash._context": "Payment method names, used inside a sentence (\"… by bank transfer\"). bKash and Nagad are brand names: keep them as they are."
+}

@@ -277,10 +277,12 @@ WHERE expires_at IS NOT NULL AND expires_at < now() - interval '7 days';
 
 -- name: ListNotificationRecipients :many
 -- Who a notification is delivered to outside the feed: addresses only when
--- verified (an unverified address may not be theirs).
+-- verified (an unverified address may not be theirs), and the language they
+-- chose ('' = the default).
 SELECT id, tenant_id, name,
        CASE WHEN email_verified_at IS NOT NULL THEN email ELSE '' END::text AS email,
-       CASE WHEN phone_verified_at IS NOT NULL THEN coalesce(phone, '') ELSE '' END::text AS phone
+       CASE WHEN phone_verified_at IS NOT NULL THEN coalesce(phone, '') ELSE '' END::text AS phone,
+       coalesce(locale, '')::text AS locale
 FROM users
 WHERE id = ANY(@ids::bigint[]) AND deleted_at IS NULL AND is_active = 1;
 

@@ -1,0 +1,16 @@
+{
+    "common.duration.days": {
+        "one": "{{.Count}} day",
+        "other": "{{.Count}} days"
+    },
+    "common.duration.hours": {
+        "one": "{{.Count}} hour",
+        "other": "{{.Count}} hours"
+    },
+    "common.duration.minutes": {
+        "one": "{{.Count}} minute",
+        "other": "{{.Count}} minutes"
+    },
+    "common.duration.separator": " ",
+    "common.duration.separator._context": "Joins the parts of a duration: \"1 hour 30 minutes\". Usually a space; some languages use a comma or a word for \"and\"."
+}

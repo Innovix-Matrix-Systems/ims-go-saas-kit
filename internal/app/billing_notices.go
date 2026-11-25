@@ -91,25 +91,25 @@ func (b *billingNotices) PaymentSubmitted(ctx context.Context, notice billingser
 
 	staff := b.recipients(ctx, 0, "payment_approval.review", nil)
 	if len(staff) > 0 {
-		body := fmt.Sprintf("%s paid %s for the %s plan by %s. Check the transfer and approve or reject it.",
-			invoice.TenantName, amount, invoice.PackageName, billingWords(invoice.PaymentMethod))
 		b.notify(ctx, nil, staff, notifications.CreateInput{
 			EventType: eventPaymentToReview,
 			Priority:  notifications.PriorityWarning,
-			Title:     "Payment to review: " + invoice.TenantName,
-			Body:      &body,
-			Channels:  []string{string(delivery.Mail)},
+			Message: &notifications.Message{Key: "notices.payment_to_review", Params: map[string]any{
+				"Organization": invoice.TenantName, "Amount": amount, "Plan": invoice.PackageName,
+				"Method": notifications.Term(paymentMethodKey(invoice.PaymentMethod)),
+			}},
+			Channels: []string{string(delivery.Mail)},
 		}, notice, "/console/approvals")
 	}
 
 	members := b.recipients(ctx, notice.TenantID, authz.PermBillingManage, notice.SubmittedBy)
-	body := fmt.Sprintf("Your payment of %s for the %s plan was submitted. We will let you know as soon as it is confirmed.", amount, invoice.PackageName)
 	b.notify(ctx, &notice.TenantID, members, notifications.CreateInput{
 		EventType: eventPaymentPending,
 		Priority:  notifications.PriorityInfo,
-		Title:     "Payment submitted for confirmation",
-		Body:      &body,
-		Channels:  []string{string(delivery.Mail)},
+		Message: &notifications.Message{Key: "notices.payment_submitted", Params: map[string]any{
+			"Amount": amount, "Plan": invoice.PackageName,
+		}},
+		Channels: []string{string(delivery.Mail)},
 	}, notice, "/org/billing")
 	b.publish(ctx, notice.TenantID)
 }
@@ -122,12 +122,12 @@ func (b *billingNotices) PaymentReceived(ctx context.Context, notice billingserv
 	}
 	amount := billingservice.FormatMoney(invoice.Amount, invoice.Currency)
 	members := b.recipients(ctx, notice.TenantID, authz.PermBillingManage, notice.SubmittedBy)
-	body := fmt.Sprintf("We received %s. Your %s plan is active. The receipt is on its way by e-mail.", amount, invoice.PackageName)
 	b.notify(ctx, &notice.TenantID, members, notifications.CreateInput{
 		EventType: eventPaymentReceived,
 		Priority:  notifications.PriorityInfo,
-		Title:     "Payment received",
-		Body:      &body,
+		Message: &notifications.Message{Key: "notices.payment_received", Params: map[string]any{
+			"Amount": amount, "Plan": invoice.PackageName,
+		}},
 	}, notice, "/org/billing")
 	b.sendReceipts(ctx, invoice, members, notice)
 	b.publish(ctx, notice.TenantID)
@@ -139,16 +139,18 @@ func (b *billingNotices) PaymentRejected(ctx context.Context, notice billingserv
 	if !ok {
 		return
 	}
-	body := fmt.Sprintf("Your payment of %s for the %s plan could not be confirmed.", billingservice.FormatMoney(invoice.Amount, invoice.Currency), invoice.PackageName)
+	message := notifications.Message{Key: "notices.payment_rejected", Params: map[string]any{
+		"Amount": billingservice.FormatMoney(invoice.Amount, invoice.Currency), "Plan": invoice.PackageName,
+	}}
 	if notice.Note != nil && strings.TrimSpace(*notice.Note) != "" {
-		body += " Reason: " + strings.TrimSpace(*notice.Note)
+		message.Key = "notices.payment_rejected_with_reason"
+		message.Params["Reason"] = strings.TrimSpace(*notice.Note)
 	}
 	members := b.recipients(ctx, notice.TenantID, authz.PermBillingManage, notice.SubmittedBy)
 	b.notify(ctx, &notice.TenantID, members, notifications.CreateInput{
 		EventType: eventPaymentRejected,
 		Priority:  notifications.PriorityWarning,
-		Title:     "Payment not confirmed",
-		Body:      &body,
+		Message:   &message,
 		Channels:  []string{string(delivery.Mail)},
 	}, notice, "/org/billing")
 	b.publish(ctx, notice.TenantID)
@@ -267,4 +269,6 @@ func (b *billingNotices) publish(ctx context.Context, tenantID int64) {
 	}
 }
 
-func billingWords(value string) string { return strings.ReplaceAll(value, "_", " ") }
+// paymentMethodKey is the catalog key of a payment method's name
+// (notices.method.bank_transfer).
+func paymentMethodKey(method string) string { return "notices.method." + method }

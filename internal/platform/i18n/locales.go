@@ -8,8 +8,6 @@ package i18n
 
 import (
 	"context"
-	"embed"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"slices"
@@ -21,27 +19,27 @@ import (
 	"golang.org/x/text/language"
 )
 
-//go:embed locales/*.json
-var catalogFS embed.FS
-
-// Translator resolves message IDs against the embedded catalogs of its
+// Translator resolves message IDs against the registered bundles of its
 // languages.
 type Translator struct {
 	bundle     *goi18n.Bundle
+	catalog    *catalog
 	languages  []Language
 	supported  []string
 	localizers sync.Map // locale -> *goi18n.Localizer (one per locale, M26)
 }
 
-// Load builds the translator for the built-in languages.
+// Load builds the translator for the built-in languages and the platform
+// bundle only (tests and tools; the application registers every module's
+// bundle, internal/app/i18n.go).
 func Load() (*Translator, error) {
-	return New(Builtin())
+	return New(Builtin(), Platform())
 }
 
-// New builds a translator for languages (the reference language first). It
-// becomes the process default, used by T outside a request. Every language
-// is supported until Support narrows the list.
-func New(languages []Language) (*Translator, error) {
+// New builds a translator for languages (the reference language first) from
+// bundles, in order (see Bundle). Every language is supported until Support
+// narrows the list; SetDefault makes it the process translator.
+func New(languages []Language, bundles ...Bundle) (*Translator, error) {
 	if len(languages) == 0 || languages[0].Code != Reference {
 		return nil, fmt.Errorf("i18n: the language list must start with the reference language %q", Reference)
 	}
@@ -57,16 +55,23 @@ func New(languages []Language) (*Translator, error) {
 		seen[lang.Code] = true
 		codes = append(codes, lang.Code)
 	}
-	bundle := goi18n.NewBundle(language.English)
-	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
-	for _, code := range codes {
-		if _, err := bundle.LoadMessageFileFS(catalogFS, "locales/"+code+".json"); err != nil {
-			return nil, fmt.Errorf("i18n: load %s catalog: %w", code, err)
+	merged := newCatalog()
+	for _, b := range bundles {
+		if err := merged.register(b, codes); err != nil {
+			return nil, err
 		}
 	}
-	t := &Translator{bundle: bundle, languages: slices.Clone(languages), supported: codes}
-	setDefault(t)
-	return t, nil
+	bundle := goi18n.NewBundle(language.English)
+	for _, code := range codes {
+		messages := make([]*goi18n.Message, 0, len(merged.messages[code]))
+		for _, m := range merged.messages[code] {
+			messages = append(messages, m.msg)
+		}
+		if err := bundle.AddMessages(language.Make(code), messages...); err != nil {
+			return nil, fmt.Errorf("i18n: %s messages: %w", code, err)
+		}
+	}
+	return &Translator{bundle: bundle, catalog: merged, languages: slices.Clone(languages), supported: codes}, nil
 }
 
 // Support narrows the languages offered to clients (APP_SUPPORTED_LOCALES).
@@ -177,17 +182,45 @@ func T(ctx context.Context, key string, params map[string]any) string {
 	if localizer == nil {
 		localizer = fallbackLocalizer()
 	}
+	return localize(localizer, key, params)
+}
+
+// Tr translates a message ID for a language code, outside a request (an
+// e-mail for its recipient, a notification for its reader). An unknown code
+// is the reference language.
+func Tr(code, key string, params map[string]any) string {
+	return localize(Default().Localizer(Locale(LanguageFor(code).Code)), key, params)
+}
+
+// Count is the params for a plural message: {{.Count}} is the number
+// formatted for the language, and it selects the plural form.
+func Count(code string, n int64, params map[string]any) map[string]any {
+	out := map[string]any{"Count": LanguageFor(code).FormatNumber(n), PluralCountParam: n}
+	for k, v := range params {
+		out[k] = v
+	}
+	return out
+}
+
+func localize(localizer *goi18n.Localizer, key string, params map[string]any) string {
 	config := &goi18n.LocalizeConfig{MessageID: key, TemplateData: params}
 	if params != nil {
 		if count, ok := params[PluralCountParam]; ok {
 			config.PluralCount = count
 		}
 	}
-	message, err := localizer.Localize(config)
-	if err != nil {
-		return ""
+	text, err := localizer.Localize(config)
+	if err == nil {
+		return text
 	}
-	return message
+	// A translation that lacks a plural form the number needs: the reference
+	// text rather than nothing (the coverage check reports the gap).
+	if fallback := fallbackLocalizer(); fallback != localizer {
+		if text, err := fallback.Localize(config); err == nil {
+			return text
+		}
+	}
+	return ""
 }
 
 // TOr translates a message ID and falls back to a literal when missing.
@@ -198,15 +231,18 @@ func TOr(ctx context.Context, key, fallback string, params map[string]any) strin
 	return fallback
 }
 
-// defaultTranslator is the last translator built (the application builds one
-// at start). T uses it outside a request, and the package functions below
-// read its languages.
+// defaultTranslator is the process translator (the application sets it at
+// start). T uses it outside a request, and the package functions below read
+// its languages.
 var defaultTranslator atomic.Pointer[Translator]
 
-func setDefault(t *Translator) { defaultTranslator.Store(t) }
+// SetDefault makes t the process translator: what T uses outside a request,
+// Tr, IsSupported (the locale validation) and LanguageFor.
+func SetDefault(t *Translator) { defaultTranslator.Store(t) }
 
-// Default returns the process translator, building the built-in one when the
-// application has not built its own (tests, tools).
+// Default returns the process translator, building the built-in one (the
+// platform bundle only) when the application has not set its own (tests,
+// tools).
 func Default() *Translator {
 	if t := defaultTranslator.Load(); t != nil {
 		return t
@@ -215,7 +251,8 @@ func Default() *Translator {
 	if err != nil {
 		panic("i18n: embedded catalogs failed to load: " + err.Error())
 	}
-	return t
+	defaultTranslator.CompareAndSwap(nil, t)
+	return defaultTranslator.Load()
 }
 
 // IsSupported reports whether code is a language the application offers

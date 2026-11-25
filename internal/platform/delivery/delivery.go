@@ -42,8 +42,8 @@ const (
 )
 
 // Recipient is the person a message goes to. Missing addresses skip their
-// channel. Locale picks the template variant ("bn" → mail.bn.txt); empty
-// uses the request's locale, then the fallback locale.
+// channel. Locale (a language code) picks the template variant
+// (mail.<code>.txt); empty uses the request's language, then the fallback.
 type Recipient struct {
 	UserID   int64  `json:"user_id,omitempty"`
 	TenantID int64  `json:"tenant_id,omitempty"`

@@ -143,7 +143,7 @@ func (s *Service) deliver(ctx context.Context, notification Notification, userID
 		message := delivery.Message{
 			To:       recipient,
 			Template: TemplateNotification,
-			Data:     s.messageData(notification, recipient.UserID, event.Mandatory),
+			Data:     s.messageData(notification, recipient, event.Mandatory),
 			Channels: channels,
 		}
 		if link, _ := message.Data["unsubscribe"].(string); link != "" {
@@ -158,12 +158,15 @@ func (s *Service) deliver(ctx context.Context, notification Notification, userID
 	}
 }
 
-// messageData is what the notification template sees: title, body, the
+// messageData is what the notification template sees: title, body (in the
+// recipient's language when the notification carries a message key), the
 // action URL from the notification's data ("url") and the unsubscribe link.
-func (s *Service) messageData(notification Notification, userID int64, mandatory bool) map[string]any {
-	data := map[string]any{"title": notification.Title, "body": "", "url": "", "unsubscribe": ""}
-	if notification.Body != nil {
-		data["body"] = *notification.Body
+func (s *Service) messageData(notification Notification, recipient delivery.Recipient, mandatory bool) map[string]any {
+	userID := recipient.UserID
+	title, body := localize(recipient.Locale, notification.Data, notification.Title, notification.Body)
+	data := map[string]any{"title": title, "body": "", "url": "", "unsubscribe": ""}
+	if body != nil {
+		data["body"] = *body
 	}
 	var extra map[string]any
 	if json.Unmarshal(notification.Data, &extra) == nil {

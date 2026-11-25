@@ -32,19 +32,18 @@ func (s *Service) NotifyRenewalReminder(ctx context.Context, tenantID, subscript
 		return err
 	}
 	groupKey := fmt.Sprintf("billing.renewal.%d", subscriptionID)
-	title := fmt.Sprintf("Subscription renews in %d day(s)", daysLeft)
-	body := fmt.Sprintf("The subscription expires on %s.", expiresAt.Format("2006-01-02 15:04:05"))
 
 	_, _, err = s.Create(ctx, tenancy.Scope{Internal: true}, 0, CreateInput{
 		TenantID:  &tenant,
 		EventType: EventRenewalReminder,
 		Priority:  PriorityWarning,
-		Title:     title,
-		Body:      &body,
-		Data:      data,
-		GroupKey:  &groupKey,
-		Targets:   []TargetInput{{Type: TargetTenant}},
-		Channels:  []string{string(delivery.Mail)},
+		Message: &Message{Key: "notifications.renewal_reminder", Params: map[string]any{
+			"Count": daysLeft, "Date": expiresAt.Format("2006-01-02 15:04"),
+		}},
+		Data:     data,
+		GroupKey: &groupKey,
+		Targets:  []TargetInput{{Type: TargetTenant}},
+		Channels: []string{string(delivery.Mail)},
 	})
 	return err
 }

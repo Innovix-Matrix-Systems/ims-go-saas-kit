@@ -41,6 +41,8 @@ To add your own command, see [CLI commands](../guides/cli-commands.md).
 | [`gen module`](#gen-module) | Scaffold a CRUD module from a declarative field spec |
 | [`gen openapi`](#gen-openapi) | Refresh the generated regions of api/openapi.yaml |
 | [`health:check`](#healthcheck) | Run application health checks |
+| [`i18n:coverage`](#i18ncoverage) | Show how complete each language is (API messages and e-mail templates) |
+| [`i18n:missing`](#i18nmissing) | List the API keys and templates a language lacks, with the English text |
 | [`key:generate`](#keygenerate) | Generate the application encryption key (APP_KEY) |
 | [`maintenance:status`](#maintenancestatus) | Show whether the application is in maintenance mode |
 | [`migrate`](#migrate) | Apply all pending database migrations |
@@ -363,6 +365,34 @@ Run application health checks.
 ```bash
 ims health:check
 ```
+
+### i18n:coverage
+
+For every registered language: the API catalog keys it has, lacks or has extra, keys whose placeholders or plural forms differ from English, and e-mail/SMS templates without its variant. Exits with an error when anything is incomplete. The client app has the same check: `npm run i18n:check` in web/app.
+
+```bash
+ims i18n:coverage
+```
+
+### i18n:missing
+
+Print every API catalog key the language doesn't have yet, with its namespace, owning module, English text (each plural form) and the translator note (a "<key>._context" entry), plus the e-mail/SMS template files without its variant. --json prints the same for tools (the translate skill works from it).
+
+```bash
+ims i18n:missing [flags]
+```
+
+Examples:
+
+```bash
+ims i18n:missing --locale de
+ims i18n:missing --locale ar --json > missing-ar.json
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--json` | — | print JSON for tools |
+| `--locale` | — | language code to check (required) |
 
 ### key:generate
 

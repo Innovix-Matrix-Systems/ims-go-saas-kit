@@ -11,6 +11,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/pubsub"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
@@ -64,6 +65,12 @@ func (s *Service) Create(ctx context.Context, scope tenancy.Scope, actorID int64
 		return nil, nil, err
 	}
 	input.Channels = channels
+	if input.Message != nil {
+		if input.Data, err = WithMessage(input.Data, *input.Message); err != nil {
+			return nil, nil, apperr.Wrap(apperr.InternalServerError, "The notification data is not a JSON object.", err)
+		}
+		input.Title, input.Body = localize(i18n.Reference, input.Data, input.Title, input.Body)
+	}
 	tenantID := resolvedTenant(scope, input.TenantID)
 	if err := s.validateTargets(ctx, scope, tenantID, input.Targets); err != nil {
 		return nil, nil, err

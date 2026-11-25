@@ -1,0 +1,15 @@
+{
+    "common.duration.days": {
+        "one": "{{.Count}} দিন",
+        "other": "{{.Count}} দিন"
+    },
+    "common.duration.hours": {
+        "one": "{{.Count}} ঘণ্টা",
+        "other": "{{.Count}} ঘণ্টা"
+    },
+    "common.duration.minutes": {
+        "one": "{{.Count}} মিনিট",
+        "other": "{{.Count}} মিনিট"
+    },
+    "common.duration.separator": " "
+}

@@ -131,14 +131,16 @@ func NewResponse(notification Notification, targets []Target) Response {
 	}
 }
 
-// NewFeedResponse maps a feed row to its public representation.
-func NewFeedResponse(item FeedItem) FeedItemResponse {
+// NewFeedResponse maps a feed row to its public representation, the title and
+// body in the reader's language when the notification carries a message key.
+func NewFeedResponse(item FeedItem, locale string) FeedItemResponse {
+	title, body := localize(locale, item.Data, item.Title, item.Body)
 	return FeedItemResponse{
 		ID:        item.ID,
 		EventType: item.EventType,
 		Priority:  item.Priority,
-		Title:     item.Title,
-		Body:      item.Body,
+		Title:     title,
+		Body:      body,
 		Data:      dataAny(item.Data),
 		GroupKey:  item.GroupKey,
 		CreatedAt: item.CreatedAt,
