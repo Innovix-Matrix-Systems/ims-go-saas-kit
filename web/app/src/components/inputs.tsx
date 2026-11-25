@@ -10,6 +10,7 @@ import React, {
   type ReactNode,
 } from 'react'
 import { intlLocale, useLocale, useT } from '../i18n'
+import type { Currency } from '../money'
 import { Icon, useEscape } from './ui'
 
 /* Dashboard form controls that follow the theme everywhere (native
@@ -453,5 +454,52 @@ export function TimePicker({
         </div>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * An amount in a currency: the currency's symbol on its side, its decimals, typed as text (the
+ * currency's decimal mark or "."). The value stays a string; convert it with toMinor from
+ * ../money when submitting, so a typo is an error, never a rounded number. Numbers are left to
+ * right in every language.
+ */
+export function MoneyInput({
+  value,
+  onChange,
+  currency,
+  id,
+  disabled,
+  required,
+  placeholder,
+  ariaLabel,
+}: {
+  value: string
+  onChange: (value: string) => void
+  currency: Currency
+  id?: string
+  disabled?: boolean
+  required?: boolean
+  placeholder?: string
+  ariaLabel?: string
+}) {
+  const symbol = <span className="money-input-symbol" aria-hidden="true">{currency.symbol}</span>
+  return (
+    <span className={`money-input ${disabled ? 'is-disabled' : ''}`} dir="ltr">
+      {currency.symbol_first ? symbol : null}
+      <input
+        id={id}
+        className="input"
+        type="text"
+        inputMode={currency.precision > 0 ? 'decimal' : 'numeric'}
+        autoComplete="off"
+        disabled={disabled}
+        required={required}
+        placeholder={placeholder ?? (currency.precision > 0 ? `0${currency.decimal_mark}${'0'.repeat(currency.precision)}` : '0')}
+        aria-label={ariaLabel ? `${ariaLabel} (${currency.code})` : currency.code}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      {currency.symbol_first ? null : symbol}
+    </span>
   )
 }

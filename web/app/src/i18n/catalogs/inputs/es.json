@@ -11,5 +11,6 @@
   "inputs.today": "Hoy",
   "inputs.clear": "Borrar",
   "inputs.hour": "Hora",
-  "inputs.minute": "Min"
+  "inputs.minute": "Min",
+  "inputs.amountInvalid": "Introduzca un importe como {example}."
 }

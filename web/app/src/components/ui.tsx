@@ -47,6 +47,7 @@ export type IconName =
   | 'list'
   | 'download'
   | 'backup'
+  | 'coins'
   | 'mail'
   | 'calendar'
   | 'tenants'
@@ -128,6 +129,7 @@ const paths: Record<IconName, ReactNode> = {
   list: <><path d="M8 6h13M8 12h13M8 18h13" /><circle cx="4" cy="6" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="18" r="1" /></>,
   download: <><path d="M12 3v12M7 10l5 5 5-5" /><path d="M5 20h14" /></>,
   mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3.5 6.5 8.5 6.5 8.5-6.5" /></>,
+  coins: <><ellipse cx="9" cy="7" rx="6" ry="3" /><path d="M3 7v4c0 1.7 2.7 3 6 3s6-1.3 6-3V7" /><path d="M3 11v4c0 1.7 2.7 3 6 3 1 0 1.9-.1 2.7-.3" /><ellipse cx="17" cy="15" rx="4.5" ry="2.5" /><path d="M12.5 15v3c0 1.4 2 2.5 4.5 2.5s4.5-1.1 4.5-2.5v-3" /></>,
   backup: <><ellipse cx="12" cy="5" rx="7" ry="3" /><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5" /><path d="M5 11v6c0 1.7 3.1 3 7 3" /><path d="M17 16v6M14.5 19.5 17 22l2.5-2.5" /></>,
 }
 

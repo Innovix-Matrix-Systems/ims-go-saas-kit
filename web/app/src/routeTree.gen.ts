@@ -29,6 +29,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppConsoleActivityRouteImport } from './routes/_app.console.activity'
 import { Route as AppConsoleAnnouncementsRouteImport } from './routes/_app.console.announcements'
 import { Route as AppConsoleApprovalsRouteImport } from './routes/_app.console.approvals'
+import { Route as AppConsoleCurrenciesRouteImport } from './routes/_app.console.currencies'
 import { Route as AppConsoleFlagsRouteImport } from './routes/_app.console.flags'
 import { Route as AppConsoleOrganizationsRouteImport } from './routes/_app.console.organizations'
 import { Route as AppConsolePlansRouteImport } from './routes/_app.console.plans'
@@ -147,6 +148,11 @@ const AppConsoleAnnouncementsRoute = AppConsoleAnnouncementsRouteImport.update({
 const AppConsoleApprovalsRoute = AppConsoleApprovalsRouteImport.update({
   id: '/console/approvals',
   path: '/console/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleCurrenciesRoute = AppConsoleCurrenciesRouteImport.update({
+  id: '/console/currencies',
+  path: '/console/currencies',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConsoleFlagsRoute = AppConsoleFlagsRouteImport.update({
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/console/activity': typeof AppConsoleActivityRoute
   '/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/console/approvals': typeof AppConsoleApprovalsRoute
+  '/console/currencies': typeof AppConsoleCurrenciesRoute
   '/console/flags': typeof AppConsoleFlagsRoute
   '/console/organizations': typeof AppConsoleOrganizationsRoute
   '/console/plans': typeof AppConsolePlansRoute
@@ -312,6 +319,7 @@ export interface FileRoutesByTo {
   '/console/activity': typeof AppConsoleActivityRoute
   '/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/console/approvals': typeof AppConsoleApprovalsRoute
+  '/console/currencies': typeof AppConsoleCurrenciesRoute
   '/console/flags': typeof AppConsoleFlagsRoute
   '/console/organizations': typeof AppConsoleOrganizationsRoute
   '/console/plans': typeof AppConsolePlansRoute
@@ -355,6 +363,7 @@ export interface FileRoutesById {
   '/_app/console/activity': typeof AppConsoleActivityRoute
   '/_app/console/announcements': typeof AppConsoleAnnouncementsRoute
   '/_app/console/approvals': typeof AppConsoleApprovalsRoute
+  '/_app/console/currencies': typeof AppConsoleCurrenciesRoute
   '/_app/console/flags': typeof AppConsoleFlagsRoute
   '/_app/console/organizations': typeof AppConsoleOrganizationsRoute
   '/_app/console/plans': typeof AppConsolePlansRoute
@@ -398,6 +407,7 @@ export interface FileRouteTypes {
     | '/console/activity'
     | '/console/announcements'
     | '/console/approvals'
+    | '/console/currencies'
     | '/console/flags'
     | '/console/organizations'
     | '/console/plans'
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/console/activity'
     | '/console/announcements'
     | '/console/approvals'
+    | '/console/currencies'
     | '/console/flags'
     | '/console/organizations'
     | '/console/plans'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/_app/console/activity'
     | '/_app/console/announcements'
     | '/_app/console/approvals'
+    | '/_app/console/currencies'
     | '/_app/console/flags'
     | '/_app/console/organizations'
     | '/_app/console/plans'
@@ -659,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConsoleApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/console/currencies': {
+      id: '/_app/console/currencies'
+      path: '/console/currencies'
+      fullPath: '/console/currencies'
+      preLoaderRoute: typeof AppConsoleCurrenciesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/console/flags': {
       id: '/_app/console/flags'
       path: '/console/flags'
@@ -832,6 +851,7 @@ interface AppRouteChildren {
   AppConsoleActivityRoute: typeof AppConsoleActivityRoute
   AppConsoleAnnouncementsRoute: typeof AppConsoleAnnouncementsRoute
   AppConsoleApprovalsRoute: typeof AppConsoleApprovalsRoute
+  AppConsoleCurrenciesRoute: typeof AppConsoleCurrenciesRoute
   AppConsoleFlagsRoute: typeof AppConsoleFlagsRoute
   AppConsoleOrganizationsRoute: typeof AppConsoleOrganizationsRoute
   AppConsolePlansRoute: typeof AppConsolePlansRoute
@@ -859,6 +879,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppConsoleActivityRoute: AppConsoleActivityRoute,
   AppConsoleAnnouncementsRoute: AppConsoleAnnouncementsRoute,
   AppConsoleApprovalsRoute: AppConsoleApprovalsRoute,
+  AppConsoleCurrenciesRoute: AppConsoleCurrenciesRoute,
   AppConsoleFlagsRoute: AppConsoleFlagsRoute,
   AppConsoleOrganizationsRoute: AppConsoleOrganizationsRoute,
   AppConsolePlansRoute: AppConsolePlansRoute,

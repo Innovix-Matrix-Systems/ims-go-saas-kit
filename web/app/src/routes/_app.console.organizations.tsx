@@ -3,10 +3,11 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, ApiError, type Schemas, type User } from '../api/client'
 import { can, useSession } from '../auth/session'
-import { featureName, formatMB, useMoney, usePrice, type Package, type SubscriptionStatus } from '../components/billing'
+import { featureName, formatMB, useDefaultCurrency, useMoney, usePrice, type Package, type SubscriptionStatus } from '../components/billing'
 import { useStartActing, type Tenant } from '../components/console'
 import { Field, useApiErrors } from '../components/form'
-import { Select } from '../components/inputs'
+import { MoneyInput, Select } from '../components/inputs'
+import { fromMinor, toMinor } from '../money'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, Modal, PageHeader, Spinner } from '../components/ui'
@@ -378,8 +379,10 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
 function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; currentId?: number; onClose: () => void; onDone: () => void }) {
   const t = useT()
   const money = useMoney()
+  const currency = useDefaultCurrency()
   const { push } = useToast()
   const errors = useApiErrors()
+  const [amountError, setAmountError] = useState<string>()
   const packages = useQuery({ queryKey: ['console', 'packages'], queryFn: () => api<Package[]>('/packages', { asStaff: true }) })
   const [packageId, setPackageId] = useState(currentId ? String(currentId) : '')
   const [record, setRecord] = useState(false)
@@ -390,13 +393,19 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    setBusy(true)
     errors.clear()
+    setAmountError(undefined)
+    const minor = amount.trim() ? toMinor(amount, currency) : null
+    if (record && amount.trim() && minor === null) {
+      setAmountError(t('inputs.amountInvalid', { example: fromMinor(150000, currency) }))
+      return
+    }
+    setBusy(true)
     try {
       const body: Record<string, unknown> = { package_id: Number(packageId) }
       if (record) {
         body.payment_method = method
-        if (amount.trim()) body.amount = Math.round(Number(amount) * 100)
+        if (minor !== null) body.amount = minor
       }
       await api(`/billing/internal/tenants/${tenant.id}/subscription`, { method: 'POST', asStaff: true, idempotent: true, body })
       push(t('form.saved'), 'success')
@@ -441,15 +450,13 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
                 ]}
               />
             </Field>
-            <Field label={t('console.amount')} error={errors.field('amount')}>
-              <input
-                className="input"
-                type="number"
-                min="1"
-                step="0.01"
-                placeholder={chosen ? String(chosen.price / 100) : ''}
+            <Field label={t('console.amount')} error={amountError ?? errors.field('amount')}>
+              <MoneyInput
+                currency={currency}
+                ariaLabel={t('console.amount')}
+                placeholder={chosen ? fromMinor(chosen.price, currency) : undefined}
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={setAmount}
               />
             </Field>
           </div>

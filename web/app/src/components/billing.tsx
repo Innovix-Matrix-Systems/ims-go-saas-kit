@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { api, type Schemas } from '../api/client'
-import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { useLocale, useT, type MessageKey } from '../i18n'
+import { currenciesQuery, findCurrency, formatMoney, type Currency } from '../money'
 import { Field, useApiErrors } from './form'
 import { Badge, Icon, Spinner } from './ui'
 
@@ -11,11 +12,20 @@ export type SubscriptionStatus = Schemas['SubscriptionStatusEnvelope']['data']
 export const publicPackagesQuery = { queryKey: ['public-packages'], queryFn: () => api<Package[]>('/public/packages', { token: null }) }
 export const subscriptionStatusQuery = { queryKey: ['subscription-status'], queryFn: () => api<SubscriptionStatus>('/billing/subscription/status') }
 
-/** Formats minor units (paisa) as money in the app's language. */
+/**
+ * Writes minor units the way their currency says, in the app's language's digits. Without a code
+ * it is the default currency (plan prices); a payment passes its own.
+ */
 export function useMoney() {
   const locale = useLocale()
-  return (minor: number, currency = 'BDT') =>
-    new Intl.NumberFormat(intlLocale(locale), { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 2 }).format(minor / 100)
+  const { data } = useQuery(currenciesQuery)
+  return (minor: number, code?: string | null, options?: { compact?: boolean }) => formatMoney(minor, findCurrency(data, code), locale, options)
+}
+
+/** The currency of plan prices and new payments. */
+export function useDefaultCurrency(): Currency {
+  const { data } = useQuery(currenciesQuery)
+  return findCurrency(data)
 }
 
 const cycleLabels: Record<Package['billing_cycle'], MessageKey> = {
@@ -24,7 +34,7 @@ const cycleLabels: Record<Package['billing_cycle'], MessageKey> = {
   one_time: 'onboarding.oneTime',
 }
 
-/** "৳300.00 / month", or "Free". */
+/** "$300.00 / month", or "Free". */
 export function usePrice() {
   const t = useT()
   const money = useMoney()

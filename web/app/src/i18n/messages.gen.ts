@@ -451,6 +451,38 @@ export interface MessageVars {
   'copy.copied': never
   'copy.copy': never
   'copy.unavailable': never
+  'currencies.after': never
+  'currencies.apostrophe': never
+  'currencies.before': never
+  'currencies.code': never
+  'currencies.codeHint': never
+  'currencies.colCurrency': never
+  'currencies.colDecimals': never
+  'currencies.colExample': never
+  'currencies.colStatus': never
+  'currencies.decimalMark': never
+  'currencies.decimals': never
+  'currencies.decimalsLocked': never
+  'currencies.default': never
+  'currencies.defaultHint': never
+  'currencies.delete': never
+  'currencies.deleteConfirm': 'code'
+  'currencies.disabled': never
+  'currencies.enabled': never
+  'currencies.inUse': never
+  'currencies.makeDefault': never
+  'currencies.name': never
+  'currencies.new': never
+  'currencies.noConversion': never
+  'currencies.noSeparator': never
+  'currencies.none': never
+  'currencies.position': never
+  'currencies.preview': never
+  'currencies.space': never
+  'currencies.subtitle': never
+  'currencies.symbol': never
+  'currencies.thousands': never
+  'currencies.title': never
   'dashboard.active': never
   'dashboard.activeMembers': 'count'
   'dashboard.activity': never
@@ -593,6 +625,7 @@ export interface MessageVars {
   'home.roles': never
   'home.staffSubtitle': never
   'home.subtitle': never
+  'inputs.amountInvalid': 'example'
   'inputs.chooseDate': never
   'inputs.clear': never
   'inputs.clearDate': never
