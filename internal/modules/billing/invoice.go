@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/money"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
@@ -61,14 +63,6 @@ func (h *Handler) invoicePDF(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
-func invoiceMoney(minor int64, currency string) string {
-	symbol := currency + " "
-	if strings.EqualFold(currency, "BDT") {
-		symbol = "৳"
-	}
-	return fmt.Sprintf("%s%d.%02d", symbol, minor/100, minor%100)
-}
-
 func invoiceDate(at *time.Time) string {
 	if at == nil {
 		return "—"
@@ -77,7 +71,8 @@ func invoiceDate(at *time.Time) string {
 }
 
 var invoiceTemplate = template.Must(template.New("invoice").Funcs(template.FuncMap{
-	"money": invoiceMoney,
+	// The HTML invoice is English; amounts use the currency's symbol.
+	"money": func(amount money.Amount) string { return amount.Format(i18n.LanguageFor(i18n.Reference)) },
 	"date":  invoiceDate,
 	"day":   func(at time.Time) string { return at.Format("2 January 2006") },
 	"words": func(value string) string { return strings.ReplaceAll(value, "_", " ") },
@@ -142,9 +137,9 @@ const invoiceHTML = `<!doctype html>
       <tr>
         <td>{{if .PackageName}}{{.PackageName}} plan{{else}}Subscription{{end}}{{if .BillingCycle}} <span class="muted">({{words .BillingCycle}})</span>{{end}}</td>
         <td>{{date .PeriodStart}} – {{date .PeriodEnd}}</td>
-        <td class="right">{{money .Amount .Currency}}</td>
+        <td class="right">{{money .Money}}</td>
       </tr>
-      <tr class="total"><td colspan="2">Total</td><td class="right">{{money .Amount .Currency}}</td></tr>
+      <tr class="total"><td colspan="2">Total</td><td class="right">{{money .Money}}</td></tr>
     </tbody>
   </table>
   <footer class="muted">{{if paid .Status}}Thank you for your payment.{{else}}This invoice is not paid yet. It becomes a receipt once the payment is confirmed.{{end}}</footer>

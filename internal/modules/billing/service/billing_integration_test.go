@@ -58,7 +58,7 @@ func newBillingHarness(t *testing.T) *billingHarness {
 	approvalsRepo := domain.NewApprovalRepository(queries)
 	tx := database.NewTxManager(&database.Conn{Name: "primary", Pool: pool})
 
-	orchestrator := billing.NewOrchestrator(paymentsRepo, "BDT").
+	orchestrator := billing.NewOrchestrator(paymentsRepo, domain.FixedCurrency("BDT")).
 		Register(domain.MethodCash, billing.CashDriver{}).
 		Register(domain.MethodBankTransfer, billing.BankTransferDriver{}).
 		Register(domain.MethodBkash, billing.NewBkashDriver(serviceTestBkashConfig(), store))
@@ -67,7 +67,7 @@ func newBillingHarness(t *testing.T) *billingHarness {
 		tenantID:      tenant.ID,
 		packages:      service.NewPackageService(packagesRepo).WithTx(tx),
 		subscriptions: service.NewSubscriptionService(subsRepo, packagesRepo, paymentsRepo, approvalsRepo, orchestrator).WithTx(tx),
-		payments:      service.NewPaymentService(paymentsRepo, "BDT"),
+		payments:      service.NewPaymentService(paymentsRepo, domain.FixedCurrency("BDT")),
 		approvals:     service.NewApprovalService(approvalsRepo, paymentsRepo, subsRepo, tx),
 		guard:         service.NewGuard(subsRepo, packagesRepo),
 		subsRepo:      subsRepo,

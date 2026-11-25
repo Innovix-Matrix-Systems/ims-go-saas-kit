@@ -87,7 +87,7 @@ func TestBillingIntegrity(t *testing.T) {
 	paymentsRepo := domain.NewPaymentRepository(queries)
 	approvalsRepo := domain.NewApprovalRepository(queries)
 	tx := database.NewTxManager(&database.Conn{Name: "primary", Pool: pool})
-	orchestrator := billing.NewOrchestrator(paymentsRepo, "BDT").
+	orchestrator := billing.NewOrchestrator(paymentsRepo, domain.FixedCurrency("BDT")).
 		Register(domain.MethodCash, billing.CashDriver{}).
 		Register(domain.MethodBkash, billing.NewBkashDriver(cfg, store))
 	packages := service.NewPackageService(packagesRepo).WithTx(tx)

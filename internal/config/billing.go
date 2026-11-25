@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-// Billing currency and payment gateways (BILLING_*, BKASH_*, NAGAD_*, BANK_*).
+// Billing and payment gateways (BILLING_*, BKASH_*, NAGAD_*, BANK_*). The
+// currency is data, not configuration: the currencies table (staff console).
 
-// Billing holds currency and payment gateway settings.
+// Billing holds subscription and payment gateway settings.
 type Billing struct {
-	Currency string
 	// SuspendOnExpiry suspends a tenant (is_active false) once its
 	// subscription has been expired for SuspendGrace with nothing current or
 	// pending. Off by default: suspending customers is a business decision.
@@ -60,7 +60,6 @@ func (c *Config) loadBilling() error {
 		return fmt.Errorf("BILLING_SUSPEND_GRACE_DAYS must be zero or more, got %d", graceDays)
 	}
 	c.Billing = Billing{
-		Currency:        getString("BILLING_CURRENCY", "BDT"),
 		SuspendOnExpiry: suspend,
 		SuspendGrace:    time.Duration(graceDays) * 24 * time.Hour,
 		Bkash: Bkash{

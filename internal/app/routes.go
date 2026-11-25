@@ -111,6 +111,7 @@ func (d *Dependencies) Router() http.Handler {
 		d.System.RegisterRoutes(r)
 		d.Auth.RegisterPublicRoutes(r)
 		d.Billing.RegisterPublicRoutes(r)
+		d.Currencies.RegisterPublicRoutes(r)
 		d.Notifications.RegisterPublicRoutes(r)
 		d.Onboarding.RegisterPublicRoutes(r)
 
@@ -187,6 +188,7 @@ func (d *Dependencies) Router() http.Handler {
 					d.Privacy.RegisterRoutesExempt(r)
 					d.Roles.RegisterRoutesExempt(r)
 					d.Billing.RegisterRoutesExempt(r)
+					d.Currencies.RegisterRoutesExempt(r)
 					d.Notifications.RegisterRoutesExempt(r)
 					d.ActivityExport.RegisterInternalRoutes(r)
 					d.Processing.RegisterInternalRoutes(r)

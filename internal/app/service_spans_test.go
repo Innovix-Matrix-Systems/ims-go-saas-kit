@@ -113,6 +113,11 @@ var unspannedOperations = map[string]string{
 	"service.UsageService.For":               "a read: the plan usage figures",
 	"tenants.Service.Organization":           "a read: the caller's organization",
 	"tenants.Service.Presentation":           "a read: the organization's branding and language settings",
+	"currencies.Service.Enabled":             "a read: the cached currency list",
+	"currencies.Service.Default":             "a read: the cached default currency",
+	"currencies.Service.DefaultCode":         "a read: the cached default currency",
+	"currencies.Service.Format":              "a read: how a currency is written, from the cache",
+	"domain.FixedCurrency.DefaultCode":       "returns a constant (tests, tools)",
 }
 
 // TestServiceWritesOpenASpan keeps tracing complete: every exported write of

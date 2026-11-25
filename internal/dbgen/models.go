@@ -100,6 +100,23 @@ type Cache struct {
 	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Currency struct {
+	ID                 int64              `json:"id"`
+	Code               string             `json:"code"`
+	Name               string             `json:"name"`
+	Symbol             string             `json:"symbol"`
+	SymbolFirst        bool               `json:"symbol_first"`
+	Precision          int16              `json:"precision"`
+	DecimalMark        string             `json:"decimal_mark"`
+	ThousandsSeparator string             `json:"thousands_separator"`
+	IsEnabled          bool               `json:"is_enabled"`
+	IsDefault          bool               `json:"is_default"`
+	CreatedBy          *int64             `json:"created_by"`
+	UpdatedBy          *int64             `json:"updated_by"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+}
+
 type DataProcessingJob struct {
 	ID             int64              `json:"id"`
 	TenantID       *int64             `json:"tenant_id"`

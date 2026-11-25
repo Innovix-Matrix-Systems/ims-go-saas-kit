@@ -13,14 +13,15 @@ import (
 
 // PaymentService manages payment records.
 type PaymentService struct {
-	payments domain.PaymentRepository
-	currency string
-	now      func() time.Time
+	payments   domain.PaymentRepository
+	currencies domain.CurrencySource
+	now        func() time.Time
 }
 
-// NewPaymentService creates the payment service.
-func NewPaymentService(payments domain.PaymentRepository, currency string) *PaymentService {
-	return &PaymentService{payments: payments, currency: currency, now: time.Now}
+// NewPaymentService creates the payment service; payments are recorded in
+// the currencies' default.
+func NewPaymentService(payments domain.PaymentRepository, currencies domain.CurrencySource) *PaymentService {
+	return &PaymentService{payments: payments, currencies: currencies, now: time.Now}
 }
 
 // ListForTenant returns the tenant's payments.
@@ -70,6 +71,10 @@ func (s *PaymentService) RecordManual(ctx context.Context, tenantID, subscriptio
 		})
 	}
 
+	currency, err := s.currencies.DefaultCode(ctx)
+	if err != nil {
+		return nil, err
+	}
 	invoice, err := domain.GenerateInvoiceNumber(s.now())
 	if err != nil {
 		return nil, err
@@ -80,7 +85,7 @@ func (s *PaymentService) RecordManual(ctx context.Context, tenantID, subscriptio
 		PaymentMethod:  method,
 		Status:         domain.PaymentCompleted,
 		Amount:         amount,
-		Currency:       s.currency,
+		Currency:       currency,
 		InvoiceNumber:  invoice,
 		CreatedBy:      &actorID,
 	})

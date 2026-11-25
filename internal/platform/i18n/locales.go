@@ -251,6 +251,16 @@ func localize(localizer *goi18n.Localizer, key string, params map[string]any) st
 	if err == nil {
 		return text
 	}
+	// A message without plural forms that shares its params with one that
+	// has them (a notice's plural title and plain body): the count only
+	// picks a form where there are forms.
+	if config.PluralCount != nil {
+		plain := *config
+		plain.PluralCount = nil
+		if text, err := localizer.Localize(&plain); err == nil {
+			return text
+		}
+	}
 	// A translation that lacks a plural form the number needs: the reference
 	// text rather than nothing (the coverage check reports the gap).
 	if fallback := fallbackLocalizer(); fallback != localizer {

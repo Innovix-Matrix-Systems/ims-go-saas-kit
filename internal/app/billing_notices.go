@@ -15,6 +15,7 @@ import (
 	billingservice "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/notifications"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/pubsub"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/storage"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
@@ -87,7 +88,7 @@ func (b *billingNotices) PaymentSubmitted(ctx context.Context, notice billingser
 	if !ok {
 		return
 	}
-	amount := billingservice.FormatMoney(invoice.Amount, invoice.Currency)
+	amount := notifications.Money(invoice.Money)
 
 	staff := b.recipients(ctx, 0, "payment_approval.review", nil)
 	if len(staff) > 0 {
@@ -120,7 +121,7 @@ func (b *billingNotices) PaymentReceived(ctx context.Context, notice billingserv
 	if !ok {
 		return
 	}
-	amount := billingservice.FormatMoney(invoice.Amount, invoice.Currency)
+	amount := notifications.Money(invoice.Money)
 	members := b.recipients(ctx, notice.TenantID, authz.PermBillingManage, notice.SubmittedBy)
 	b.notify(ctx, &notice.TenantID, members, notifications.CreateInput{
 		EventType: eventPaymentReceived,
@@ -140,7 +141,7 @@ func (b *billingNotices) PaymentRejected(ctx context.Context, notice billingserv
 		return
 	}
 	message := notifications.Message{Key: "notices.payment_rejected", Params: map[string]any{
-		"Amount": billingservice.FormatMoney(invoice.Amount, invoice.Currency), "Plan": invoice.PackageName,
+		"Amount": notifications.Money(invoice.Money), "Plan": invoice.PackageName,
 	}}
 	if notice.Note != nil && strings.TrimSpace(*notice.Note) != "" {
 		message.Key = "notices.payment_rejected_with_reason"
@@ -240,11 +241,14 @@ func (b *billingNotices) sendReceipts(ctx context.Context, invoice *billingdomai
 		if user.Locale != nil {
 			locale = *user.Locale
 		}
+		to := delivery.Recipient{UserID: user.ID, TenantID: notice.TenantID, Name: user.Name, Email: user.Email, Locale: locale}
+		// The amount in the recipient's digits, like the rest of the mail.
+		amount := invoice.Money.Format(i18n.LanguageFor(b.delivery.LocaleFor(ctx, to)))
 		err := b.delivery.Send(ctx, delivery.Message{
-			To:       delivery.Recipient{UserID: user.ID, TenantID: notice.TenantID, Name: user.Name, Email: user.Email, Locale: locale},
+			To:       to,
 			Template: "payment-receipt",
 			Data: map[string]any{
-				"amount": billingservice.FormatMoney(invoice.Amount, invoice.Currency), "organization": invoice.TenantName,
+				"amount": amount, "organization": invoice.TenantName,
 				"plan": invoice.PackageName, "invoice": invoice.Number, "paid_on": paidOn,
 				"url": b.appURL + "/org/billing",
 			},

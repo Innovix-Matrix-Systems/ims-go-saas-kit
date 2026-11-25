@@ -117,7 +117,7 @@ func TestTenantInvoice(t *testing.T) {
 	res := app.As(admin).Get(path).Status(t, http.StatusOK)
 	body := res.Body.String()
 	if !strings.Contains(res.Header().Get("Content-Type"), "text/html") || !strings.Contains(body, created.Payment.InvoiceNumber) ||
-		!strings.Contains(body, "Pro Invoice") || !strings.Contains(body, "৳450.50") || !strings.Contains(body, "Not paid") {
+		!strings.Contains(body, "Pro Invoice") || !strings.Contains(body, "$450.50") || !strings.Contains(body, "Not paid") {
 		t.Fatalf("invoice is missing its details:\n%s", body)
 	}
 	other := app.User(t, testkit.InTenant(app.Tenant(t, "Not Theirs")))

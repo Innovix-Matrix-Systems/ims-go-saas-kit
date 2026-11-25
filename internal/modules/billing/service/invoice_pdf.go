@@ -134,7 +134,7 @@ func RenderInvoicePDF(invoice *domain.Invoice) ([]byte, error) {
 	if invoice.BillingCycle != "" {
 		description += " (" + invoiceWords(invoice.BillingCycle) + ")"
 	}
-	amount := FormatMoney(invoice.Amount, invoice.Currency)
+	amount := invoice.Money.Code() // the standard fonts can't draw every symbol
 	pdf.SetFont("Helvetica", "", 10)
 	ink()
 	pdf.CellFormat(columns[0], 10, text(description), "B", 0, "L", false, 0, "")
@@ -158,24 +158,6 @@ func RenderInvoicePDF(invoice *domain.Invoice) ([]byte, error) {
 		return nil, fmt.Errorf("billing: render invoice pdf: %w", err)
 	}
 	return out.Bytes(), nil
-}
-
-// FormatMoney formats minor units with the currency code ("BDT 1,500.00"),
-// as invoices, receipts and payment notices show amounts.
-func FormatMoney(minor int64, currency string) string {
-	sign := ""
-	if minor < 0 {
-		sign, minor = "-", -minor
-	}
-	whole := fmt.Sprintf("%d", minor/100)
-	var grouped strings.Builder
-	for i, digit := range whole {
-		if i > 0 && (len(whole)-i)%3 == 0 {
-			grouped.WriteByte(',')
-		}
-		grouped.WriteRune(digit)
-	}
-	return fmt.Sprintf("%s %s%s.%02d", strings.ToUpper(currency), sign, grouped.String(), minor%100)
 }
 
 func invoiceDay(at time.Time) string { return at.Format("2 January 2006") }

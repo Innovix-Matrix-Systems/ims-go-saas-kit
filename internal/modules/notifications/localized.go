@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/money"
 )
 
 // A notification the system writes (a payment notice, a renewal reminder) is
@@ -17,8 +18,10 @@ import (
 // catalogs, in the feed for the request's language and in the e-mail for the
 // recipient's. A param written as {"t": "<key>", "or": "<text>"} is
 // translated first (a word such as the payment method), and is <text> when
-// the catalogs have no such key. The stored title and body are the reference
-// text, kept for exports and as the fallback.
+// the catalogs have no such key. A param written as {"money": {...}} is an
+// amount with its currency's format, written in the reader's digits. The
+// stored title and body are the reference text, kept for exports and as the
+// fallback.
 
 // I18nDataKey is the data entry that holds a notification's message key.
 const I18nDataKey = "i18n"
@@ -34,6 +37,13 @@ type Message struct {
 // project added without naming it in every language).
 func Term(key, fallback string) map[string]string {
 	return map[string]string{"t": key, "or": fallback}
+}
+
+// Money is a param that is an amount: {"money": {"minor": …, "currency":
+// {…}}}. The currency's format is kept with it, so the notice reads the same
+// after the currency is edited; only the digits follow the reader.
+func Money(amount money.Amount) map[string]money.Amount {
+	return map[string]money.Amount{"money": amount}
 }
 
 // WithMessage adds the message to a notification's data (a JSON object, or
@@ -63,6 +73,22 @@ func messageOf(data []byte) (Message, bool) {
 	return *fields.I18n, true
 }
 
+// moneyOf reads a Money param back from the stored JSON.
+func moneyOf(raw any) (money.Amount, bool) {
+	if raw == nil {
+		return money.Amount{}, false
+	}
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return money.Amount{}, false
+	}
+	var amount money.Amount
+	if json.Unmarshal(encoded, &amount) != nil || amount.Currency.Code == "" {
+		return money.Amount{}, false
+	}
+	return amount, true
+}
+
 // localize renders a notification's title and body in a language; without
 // a message (a notification someone typed) they stay as stored.
 func localize(code string, data []byte, title string, body *string) (string, *string) {
@@ -79,6 +105,8 @@ func localize(code string, data []byte, title string, body *string) (string, *st
 					text, _ = term["or"].(string)
 				}
 				value = text
+			} else if amount, ok := moneyOf(term["money"]); ok {
+				value = amount.Format(i18n.LanguageFor(code))
 			}
 		}
 		params[name] = value

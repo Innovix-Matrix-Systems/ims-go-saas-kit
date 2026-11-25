@@ -96,6 +96,12 @@ const (
 	// The caller's own organization (tenant-resolved routes).
 	PermOrganizationUpdate = "organization.update"
 
+	// Currencies: how amounts are written and which is the default (staff).
+	PermCurrencyViewAll = "currency.view.all"
+	PermCurrencyCreate  = "currency.create"
+	PermCurrencyUpdate  = "currency.update"
+	PermCurrencyDelete  = "currency.delete"
+
 	PermTenantViewAll = "tenant.view.all"
 	PermTenantView    = "tenant.view"
 	PermTenantCreate  = "tenant.create"
@@ -201,6 +207,12 @@ var Catalog = []Permission{
 	{Name: "package.create", Group: "package", IsSystem: true, Description: "Can create new packages"},
 	{Name: "package.update", Group: "package", IsSystem: true, Description: "Can modify existing packages"},
 	{Name: "package.delete", Group: "package", IsSystem: true, Description: "Can delete packages"},
+
+	// ── currency ──────────────────────────────────────────
+	{Name: PermCurrencyViewAll, Group: "currency", IsSystem: true, Description: "Can view all currencies"},
+	{Name: PermCurrencyCreate, Group: "currency", IsSystem: true, Description: "Can add currencies"},
+	{Name: PermCurrencyUpdate, Group: "currency", IsSystem: true, Description: "Can change how a currency is written and choose the default currency"},
+	{Name: PermCurrencyDelete, Group: "currency", IsSystem: true, Description: "Can delete currencies no payment uses"},
 
 	// ── subscription ──────────────────────────────────────
 	{Name: "subscription.view.all", Group: "subscription", IsSystem: true, Description: "Can view all subscriptions"},
