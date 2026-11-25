@@ -191,7 +191,8 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		WithTx(platform.Tx).
 		WithActivity(platform.Activity)
 	tenantService := tenants.NewService(tenantRepo, branchService, roleService, platform.Tx, store, cfg.Tenancy).
-		WithActivity(platform.Activity)
+		WithActivity(platform.Activity).
+		WithSettings(platform.Settings)
 
 	authenticator := platform.Authenticator
 	throttle := authn.NewThrottle(store, cfg.Auth.LoginMaxAttempts, cfg.Auth.LoginDecay)
@@ -257,7 +258,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			WithSessions(platform.Sessions),
 		Users:       identity.NewHandler(userService, platform.Files, platform.Exchange, checker, kit),
 		Privacy:     privacy.NewHandler(platform.Privacy, authService, checker, kit),
-		Tenants:     tenants.NewHandler(tenantService, checker, kit).WithSettings(platform.Settings),
+		Tenants:     tenants.NewHandler(tenantService, checker, kit),
 		Branches:    branches.NewHandler(branchService, checker, kit),
 		Activity:    activity.NewHandler(activity.NewService(activity.NewRepository(queries)), checker, kit),
 		Roles:       access.NewRoleHandler(roleService, checker, tenantLookup, kit),
@@ -303,15 +304,16 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 					return nil
 				}
 				return deps.routes
-			}).WithTranslations(translator, platform.Delivery.Templates()),
-			Queries:     queries,
-			Maintenance: platform.Maintenance,
-			Deliveries:  platform.Delivery,
-			Health:      healthHandler,
-			Pools:       platform.DB,
-			Scheduler:   platform.ScheduleRunner,
-			Commands:    dev.NewCommandService(queries, logger, devCommands(platform, permissionService, healthRegistry)...),
-			Kit:         kit,
+			}),
+			Translations: translator,
+			Queries:      queries,
+			Maintenance:  platform.Maintenance,
+			Deliveries:   platform.Delivery,
+			Health:       healthHandler,
+			Pools:        platform.DB,
+			Scheduler:    platform.ScheduleRunner,
+			Commands:     dev.NewCommandService(queries, logger, devCommands(platform, permissionService, healthRegistry)...),
+			Kit:          kit,
 		}),
 		DevUI:        devUI,
 		AppUI:        appUI,

@@ -8942,7 +8942,12 @@ components:
         priority: {type: string, enum: [INFO, WARNING, CRITICAL]}
         title: {type: string}
         body: {type: string, nullable: true}
-        data: {}
+        data:
+          description: >-
+            Free-form JSON. A notification the system writes carries its message key under
+            `i18n` (`{"i18n": {"key": "notices.payment_received", "params": {...}}}`); `title`
+            and `body` are then the English text, and each reader's feed renders the key in
+            their language.
         group_key: {type: string, nullable: true}
         created_by: {type: integer, format: int64, nullable: true}
         updated_by: {type: integer, format: int64, nullable: true}
@@ -9130,7 +9135,11 @@ components:
         priority: {type: string, enum: [INFO, WARNING, CRITICAL]}
         title: {type: string}
         body: {type: string, nullable: true}
-        data: {}
+        data:
+          description: >-
+            Free-form JSON. When it has an `i18n` entry (`{"key": "...", "params": {...}}`, a
+            notification the system wrote), `title` and `body` are already rendered from that
+            key in the request's language.
         group_key: {type: string, nullable: true}
         created_at: {type: string, format: date-time}
         is_read: {type: boolean}

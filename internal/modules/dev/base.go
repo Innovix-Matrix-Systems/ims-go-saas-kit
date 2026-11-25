@@ -17,6 +17,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/maintenance"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/scheduler"
@@ -63,6 +64,9 @@ type Deps struct {
 	Maintenance *maintenance.Service
 	// Deliveries is the delivery system (Deliveries panel).
 	Deliveries *delivery.Service
+	// Translations is the application's translator (Inspector → Translations);
+	// the template coverage comes from Deliveries.
+	Translations *i18n.Translator
 	// Health is the cached health report (Overview).
 	Health HealthSource
 	// Pools reads the database connection pools (Inspector → System). The

@@ -211,15 +211,17 @@ Rules of the layering (enforced by review and `route_permissions_integration_tes
 | Group | Middleware | Use for |
 |---|---|---|
 | Public | none | login/OTP, social login, password reset, e-mail verify, public packages, gateway callbacks, `/api/health`, `/up` |
-| Authenticated (no tenancy) | `auth` | logout, the caller's own sessions, two-factor, account deletion and data export (tenantless accounts must reach them) |
-| Authenticated + tenant-resolved | `auth` → `tenant.resolve` | tenant-scoped resources (users, branches, roles, files, settings, flags, activity, billing status) |
-| Authenticated + tenant-exempt | `auth` → `tenant.exempt` (+ `tenant.internal`) | global management (tenants, permissions, internal users/roles/files, packages, approvals) |
+| Authenticated (no tenancy) | `auth` → `account-locale` → `dedupe` | logout, the caller's own sessions, two-factor, account deletion and data export (tenantless accounts must reach them) |
+| Authenticated + tenant-resolved | `auth` → `account-locale` → `dedupe` → `tenant.resolve` | tenant-scoped resources (users, branches, roles, files, settings, flags, activity, billing status) |
+| Authenticated + tenant-exempt | `auth` → `account-locale` → `dedupe` → `tenant.exempt` (+ `tenant.internal`) | global management (tenants, permissions, internal users/roles/files, packages, approvals) |
 | Dashboard `/dev/api` | `dev.enabled` → `auth` → `tenant.exempt` → `can:dev.view` | dashboard JSON API; mutations add `can:dev.manage` |
 | MCP `/mcp`, `/oauth/*`, `/.well-known/oauth-*` | `mcp.enabled` → (for `/mcp`) MCP bearer token → scope check | the MCP connector; tools dispatch into `/api/v1` |
 
 Global middleware (outermost first): `request-id → public-origin (non-local) → real-ip →
 tracing (with an OTLP endpoint) → security-headers → cors → access-log → recover → telescope → metrics → maintenance → timeout →
-throttle → locale`. The live table, with each route's permission: `ims route:list` (`--json` for
+throttle → locale`. `locale` answers in the Accept-Language language; for a signed-in request without
+a matching one, `account-locale` (right after `auth`, `internal/app/locale.go`) switches to the
+account's language, then the organization's. `dedupe` runs only when enabled. The live table, with each route's permission: `ims route:list` (`--json` for
 tools; `--path`, `--method`, `--middleware`) or the dashboard's Inspector → Routes.
 
 ## Cross-cutting patterns (memorize these)

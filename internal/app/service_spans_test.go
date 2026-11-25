@@ -112,6 +112,7 @@ var unspannedOperations = map[string]string{
 	"service.InvoiceService.For":             "a read: one invoice",
 	"service.UsageService.For":               "a read: the plan usage figures",
 	"tenants.Service.Organization":           "a read: the caller's organization",
+	"tenants.Service.Presentation":           "a read: the organization's branding and language settings",
 }
 
 // TestServiceWritesOpenASpan keeps tracing complete: every exported write of

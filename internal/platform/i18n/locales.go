@@ -22,11 +22,13 @@ import (
 // Translator resolves message IDs against the registered bundles of its
 // languages.
 type Translator struct {
-	bundle     *goi18n.Bundle
-	catalog    *catalog
-	languages  []Language
-	supported  []string
-	localizers sync.Map // locale -> *goi18n.Localizer (one per locale, M26)
+	bundle    *goi18n.Bundle
+	catalog   *catalog
+	languages []Language
+	supported []string
+	// defaultCode is APP_LOCALE (Support); see DefaultCode.
+	defaultCode string
+	localizers  sync.Map // locale -> *goi18n.Localizer (one per locale, M26)
 }
 
 // Load builds the translator for the built-in languages and the platform
@@ -93,7 +95,17 @@ func (t *Translator) Support(codes []string, defaultCode string) error {
 		return fmt.Errorf("APP_LOCALE %q must be one of the supported languages (%s)", defaultCode, strings.Join(supported, ", "))
 	}
 	t.supported = supported
+	t.defaultCode = strings.ToLower(defaultCode)
 	return nil
+}
+
+// DefaultCode is the language for requests that match nothing (APP_LOCALE,
+// set by Support); the reference language until then.
+func (t *Translator) DefaultCode() string {
+	if t.defaultCode == "" {
+		return Reference
+	}
+	return t.defaultCode
 }
 
 // Languages returns every registered language, the reference first.
@@ -160,7 +172,7 @@ func (t *Translator) Middleware(defaultCode string) func(http.Handler) http.Hand
 			matched := ParseLocale(header, t.supported, "")
 			locale := Locale(matched)
 			if matched == "" {
-				locale = Locale(ParseLocale("", t.supported, defaultCode))
+				locale = Locale(defaultCode)
 			}
 			ctx := WithLocale(r.Context(), locale)
 			ctx = context.WithValue(ctx, localizerKey, t.Localizer(locale))
@@ -264,6 +276,14 @@ var defaultTranslator atomic.Pointer[Translator]
 
 // SetDefault makes t the process translator: what T uses outside a request,
 // Tr, IsSupported (the locale validation) and LanguageFor.
+//
+// It is a process default like slog.Default, set once at start-up
+// (internal/app.newTranslator) and read by code that has no request and no
+// dependency to carry it: template functions, the validator, notification
+// rendering, setting choices. Code that is wired (middleware, the delivery
+// LocaleSource, the languages endpoint, the developer dashboard) takes the
+// *Translator explicitly instead. Tests that need other languages build their
+// own translator and call SetDefault.
 func SetDefault(t *Translator) { defaultTranslator.Store(t) }
 
 // Default returns the process translator, building the built-in one (the

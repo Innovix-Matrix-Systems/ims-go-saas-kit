@@ -1,9 +1,7 @@
 package tenants
 
 import (
-	"context"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -57,54 +55,8 @@ type OrganizationResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// SettingReader reads a tenant's effective settings (the settings service).
-type SettingReader interface {
-	Get(ctx context.Context, scope tenancy.Scope, name string) (any, error)
-}
-
-// WithSettings adds the branding to organization responses.
-func (h *Handler) WithSettings(settings SettingReader) *Handler {
-	h.settings = settings
-	return h
-}
-
-// branding reads the organization's logo and colour; unset or unreadable
-// values are null.
-func (h *Handler) branding(ctx context.Context, tenantID int64) BrandingResponse {
-	out := BrandingResponse{}
-	if h.settings == nil {
-		return out
-	}
-	scope := tenancy.Scope{TenantID: tenantID}
-	text := func(name string) *string {
-		value, err := h.settings.Get(ctx, scope, name)
-		if err != nil {
-			return nil
-		}
-		if s, ok := value.(string); ok && strings.TrimSpace(s) != "" {
-			trimmed := strings.TrimSpace(s)
-			return &trimmed
-		}
-		return nil
-	}
-	out.LogoURL = text("branding.logo_url")
-	out.Color = text("branding.color")
-	return out
-}
-
-// language reads the organization's default language (nil when unset).
-func (h *Handler) language(ctx context.Context, tenantID int64) *string {
-	if h.settings == nil {
-		return nil
-	}
-	value, err := h.settings.Get(ctx, tenancy.Scope{TenantID: tenantID}, "general.default_locale")
-	if err != nil {
-		return nil
-	}
-	if code, ok := value.(string); ok && code != "" {
-		return &code
-	}
-	return nil
+func newBrandingResponse(p Presentation) BrandingResponse {
+	return BrandingResponse{LogoURL: p.LogoURL, Color: p.Color}
 }
 
 func newOrganizationResponse(tenant Tenant, owner *Owner, callerID int64) OrganizationResponse {
@@ -167,7 +119,8 @@ func (h *Handler) transferOwnership(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) respondOrganization(w http.ResponseWriter, r *http.Request, tenant Tenant, owner *Owner) {
 	out := newOrganizationResponse(tenant, owner, authn.UserID(r))
-	out.Branding = h.branding(r.Context(), tenant.ID)
-	out.Language = h.language(r.Context(), tenant.ID)
+	presentation := h.service.Presentation(r.Context(), tenant.ID)
+	out.Branding = newBrandingResponse(presentation)
+	out.Language = presentation.Language
 	h.Data(w, r, http.StatusOK, out)
 }

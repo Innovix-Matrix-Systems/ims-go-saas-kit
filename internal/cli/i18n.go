@@ -58,7 +58,7 @@ func newI18nCoverageCommand(state *State) *cobra.Command {
 			for _, report := range reports {
 				fmt.Fprintf(table, "%s (%s)\t%d/%d\t%d\t%d\t%d\t%d\t%s\n", report.Language.Code, report.Language.English,
 					report.Translated, report.Total, len(report.Missing), len(report.Extra), len(report.Problems),
-					gapsByCode[report.Language.Code], yesNo(report.Language.Reviewed))
+					gapsByCode[report.Language.Code], reviewState(report.Language.Reviewed))
 				if !report.Complete() || gapsByCode[report.Language.Code] > 0 {
 					incomplete++
 				}
@@ -185,8 +185,10 @@ func nonNil[T any](items []T) []T {
 	return items
 }
 
-func yesNo(value bool) string {
-	if value {
+// reviewState is the "reviewed" column: a language is beta until a person
+// has reviewed its translation.
+func reviewState(reviewed bool) string {
+	if reviewed {
 		return "yes"
 	}
 	return "beta"

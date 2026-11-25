@@ -54,6 +54,40 @@ func TestInspectorAndCommandsPanels(t *testing.T) {
 		}
 	}
 
+	// Inspector → Translations reads the application's translator and
+	// delivery templates: every language, complete, with its templates.
+	var translations struct {
+		Default   string `json:"default"`
+		Languages []struct {
+			Code         string   `json:"code"`
+			Total        int      `json:"total"`
+			Translated   int      `json:"translated"`
+			Missing      []string `json:"missing"`
+			TemplateGaps []any    `json:"template_gaps"`
+		} `json:"languages"`
+		Namespaces []struct {
+			Name  string `json:"name"`
+			Owner string `json:"owner"`
+		} `json:"namespaces"`
+		Templates []string `json:"templates"`
+	}
+	super.Get("/dev/api/inspector/translations").Status(t, http.StatusOK).Data(t, &translations)
+	if translations.Default == "" || len(translations.Languages) < 2 || len(translations.Templates) == 0 {
+		t.Fatalf("translations report is empty: %+v", translations)
+	}
+	owners := map[string]string{}
+	for _, ns := range translations.Namespaces {
+		owners[ns.Name] = ns.Owner
+	}
+	if owners["notifications"] != "notifications" || owners["validation"] == "" {
+		t.Fatalf("namespaces and owners not reported: %v", owners)
+	}
+	for _, lang := range translations.Languages {
+		if lang.Total == 0 || lang.Translated != lang.Total || len(lang.Missing) > 0 || len(lang.TemplateGaps) > 0 {
+			t.Errorf("%s: %d/%d translated, missing %v, template gaps %v", lang.Code, lang.Translated, lang.Total, lang.Missing, lang.TemplateGaps)
+		}
+	}
+
 	var access struct {
 		DeclaredNotStored []string `json:"declared_not_stored"`
 	}

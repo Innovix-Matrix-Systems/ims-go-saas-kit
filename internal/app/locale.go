@@ -35,9 +35,10 @@ const defaultLocaleSetting = "general.default_locale"
 // accountLocales finds a person's language from their account and their
 // organization: the delivery system's LocaleSource.
 type accountLocales struct {
-	users    *dbgen.Queries
-	settings *settings.Service
-	logger   *slog.Logger
+	translator *i18n.Translator
+	users      *dbgen.Queries
+	settings   *settings.Service
+	logger     *slog.Logger
 }
 
 // Locale implements delivery.LocaleSource.
@@ -47,7 +48,7 @@ func (a accountLocales) Locale(ctx context.Context, to delivery.Recipient) strin
 		user, err := a.users.GetUser(ctx, dbgen.GetUserParams{ID: to.UserID, AllTenants: true})
 		switch {
 		case err == nil:
-			if user.Locale != nil && i18n.IsSupported(*user.Locale) {
+			if user.Locale != nil && a.translator.IsSupported(*user.Locale) {
 				return *user.Locale
 			}
 			if tenantID == 0 && user.TenantID != nil {
@@ -57,12 +58,12 @@ func (a accountLocales) Locale(ctx context.Context, to delivery.Recipient) strin
 			a.logger.WarnContext(ctx, "delivery: recipient language unreadable", "user_id", to.UserID, "error", err)
 		}
 	}
-	return organizationLocale(ctx, a.settings, tenantID)
+	return organizationLocale(ctx, a.translator, a.settings, tenantID)
 }
 
 // organizationLocale is a tenant's default language ("" when not set or no
 // longer offered).
-func organizationLocale(ctx context.Context, service *settings.Service, tenantID int64) string {
+func organizationLocale(ctx context.Context, translator *i18n.Translator, service *settings.Service, tenantID int64) string {
 	if service == nil {
 		return ""
 	}
@@ -71,7 +72,7 @@ func organizationLocale(ctx context.Context, service *settings.Service, tenantID
 		return ""
 	}
 	code, _ := value.(string)
-	if !i18n.IsSupported(code) {
+	if !translator.IsSupported(code) {
 		return ""
 	}
 	return code
@@ -95,7 +96,7 @@ func accountLocale(translator *i18n.Translator, service *settings.Service) func(
 			}
 			code := identity.Locale
 			if !translator.IsSupported(code) {
-				code = organizationLocale(ctx, service, identity.TenantID)
+				code = organizationLocale(ctx, translator, service, identity.TenantID)
 			}
 			if code != "" {
 				r = r.WithContext(translator.Use(ctx, code))

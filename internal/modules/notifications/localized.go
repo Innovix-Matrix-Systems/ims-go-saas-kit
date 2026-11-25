@@ -15,8 +15,9 @@ import (
 //
 // and is rendered for each reader: <key>.title and <key>.body from the
 // catalogs, in the feed for the request's language and in the e-mail for the
-// recipient's. A param written as {"t": "<key>"} is translated first (a word
-// such as the payment method). The stored title and body are the reference
+// recipient's. A param written as {"t": "<key>", "or": "<text>"} is
+// translated first (a word such as the payment method), and is <text> when
+// the catalogs have no such key. The stored title and body are the reference
 // text, kept for exports and as the fallback.
 
 // I18nDataKey is the data entry that holds a notification's message key.
@@ -28,8 +29,12 @@ type Message struct {
 	Params map[string]any `json:"params,omitempty"`
 }
 
-// Term is a param that is itself translated: {"t": "<key>"}.
-func Term(key string) map[string]string { return map[string]string{"t": key} }
+// Term is a param that is itself translated: {"t": "<key>", "or": fallback}.
+// The fallback is shown when no catalog has the key (a payment method a
+// project added without naming it in every language).
+func Term(key, fallback string) map[string]string {
+	return map[string]string{"t": key, "or": fallback}
+}
 
 // WithMessage adds the message to a notification's data (a JSON object, or
 // nil) and returns the new data.
@@ -69,7 +74,11 @@ func localize(code string, data []byte, title string, body *string) (string, *st
 	for name, value := range message.Params {
 		if term, ok := value.(map[string]any); ok {
 			if key, _ := term["t"].(string); key != "" {
-				value = i18n.Tr(code, key, nil)
+				text := i18n.Tr(code, key, nil)
+				if text == "" {
+					text, _ = term["or"].(string)
+				}
+				value = text
 			}
 		}
 		params[name] = value

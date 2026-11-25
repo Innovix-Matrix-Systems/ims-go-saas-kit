@@ -69,7 +69,10 @@ func translationBundles() []i18n.Bundle {
 A key belongs to its namespace (`oauth.signin_title` lives in `oauth/`) and a namespace to one
 module: registering a key outside your namespaces, or a namespace someone else owns, stops the start.
 Placeholders are go-i18n template fields (`{{.Attribute}}`), and handlers and services translate with
-`i18n.T(ctx, key, params)`; jobs and e-mails with `i18n.Tr(code, key, params)`.
+`i18n.T(ctx, key, params)`; jobs and e-mails with `i18n.Tr(code, key, params)`. `Tr` and the
+`locale` validation rule read the process translator, which the application sets once at start-up
+(`i18n.SetDefault`), like `slog.Default`; wired code (middleware, the delivery `LocaleSource`, the
+languages endpoint) is handed the `*i18n.Translator` instead.
 
 **E-mails.** A template folder lives with the code that sends it (`internal/authn/templates/`,
 `internal/modules/billing/templates/`, …) and has a variant per language next to each file:

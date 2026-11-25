@@ -1,8 +1,6 @@
 package dev
 
 import (
-	"net/http"
-
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 )
@@ -33,20 +31,29 @@ type TranslationsReport struct {
 	Templates  []string              `json:"templates"`
 }
 
-// WithTranslations gives the inspector the application's translator and
-// delivery templates (Inspector → Translations).
-func (s *InspectorService) WithTranslations(translator *i18n.Translator, templates *delivery.Registry) *InspectorService {
-	s.translator, s.templates = translator, templates
+// TranslationService reports translation coverage (Inspector → Translations)
+// from the translator and delivery templates the application runs with.
+type TranslationService struct {
+	translator *i18n.Translator
+	templates  *delivery.Registry
+}
+
+func newTranslationService(deps Deps) *TranslationService {
+	s := &TranslationService{translator: deps.Translations}
+	if deps.Deliveries != nil {
+		s.templates = deps.Deliveries.Templates()
+	}
 	return s
 }
 
-// Translations reports how complete each language is. It reads the same
+// Report says how complete each language is. It reads the same
 // registry the application translates with, so it is never out of date.
-func (s *InspectorService) Translations() (*TranslationsReport, error) {
-	report := &TranslationsReport{Default: s.cfg.App.Locale, Languages: []TranslationLanguage{}, Namespaces: []i18n.Namespace{}, Templates: []string{}}
+func (s *TranslationService) Report() (*TranslationsReport, error) {
+	report := &TranslationsReport{Languages: []TranslationLanguage{}, Namespaces: []i18n.Namespace{}, Templates: []string{}}
 	if s.translator == nil {
 		return report, nil
 	}
+	report.Default = s.translator.DefaultCode()
 	report.Namespaces = s.translator.Namespaces()
 	var gaps []delivery.TemplateCoverage
 	if s.templates != nil {
@@ -84,13 +91,4 @@ func (s *InspectorService) Translations() (*TranslationsReport, error) {
 		report.Languages = append(report.Languages, row)
 	}
 	return report, nil
-}
-
-func (h *Handler) inspectorTranslations(w http.ResponseWriter, r *http.Request) {
-	report, err := h.inspector.Translations()
-	if err != nil {
-		h.Error(w, r, err)
-		return
-	}
-	h.Data(w, r, http.StatusOK, report)
 }

@@ -136,3 +136,12 @@ func (h *Handler) runCommand(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Data(w, r, status, run)
 }
+
+func (h *Handler) inspectorTranslations(w http.ResponseWriter, r *http.Request) {
+	report, err := h.translations.Report()
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.Data(w, r, http.StatusOK, report)
+}

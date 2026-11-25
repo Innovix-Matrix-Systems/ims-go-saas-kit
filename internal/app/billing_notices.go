@@ -96,7 +96,7 @@ func (b *billingNotices) PaymentSubmitted(ctx context.Context, notice billingser
 			Priority:  notifications.PriorityWarning,
 			Message: &notifications.Message{Key: "notices.payment_to_review", Params: map[string]any{
 				"Organization": invoice.TenantName, "Amount": amount, "Plan": invoice.PackageName,
-				"Method": notifications.Term(paymentMethodKey(invoice.PaymentMethod)),
+				"Method": notifications.Term(paymentMethodKey(invoice.PaymentMethod), invoice.PaymentMethod),
 			}},
 			Channels: []string{string(delivery.Mail)},
 		}, notice, "/console/approvals")

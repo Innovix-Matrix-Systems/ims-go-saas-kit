@@ -23,8 +23,6 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 	webdev "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/web/dev"
 )
 
@@ -32,11 +30,9 @@ import (
 // permissions, effective configuration (secrets masked) and dependencies —
 // the Laravel `route:list` / `about` / `config:show` views in one place.
 type InspectorService struct {
-	queries    *dbgen.Queries
-	cfg        *config.Config
-	routes     func() chi.Routes
-	translator *i18n.Translator
-	templates  *delivery.Registry
+	queries *dbgen.Queries
+	cfg     *config.Config
+	routes  func() chi.Routes
 }
 
 // NewInspectorService creates the inspector. routes is called lazily because
