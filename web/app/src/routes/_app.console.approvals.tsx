@@ -3,8 +3,10 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useState } from 'react'
 import { api, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
-import { useMoney } from '../components/billing'
+import { ChangeLines, useDefaultCurrency, useMoney } from '../components/billing'
 import { Field } from '../components/form'
+import { MoneyInput } from '../components/inputs'
+import { fromMinor, toMinor } from '../money'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, EmptyState, Modal, PageHeader, Spinner } from '../components/ui'
@@ -96,7 +98,13 @@ function ApprovalsPage() {
                         <span className="small muted mono">{approval.details?.invoice_number}</span>
                       </span>
                     </td>
-                    <td className="small">{approval.details?.package_name || '—'}</td>
+                    <td className="small">
+                      {approval.details?.package_name || '—'}
+                      {approval.details?.kind && approval.details.kind !== 'new' ? (
+                        <div className="small muted">{t(`billing.kind.${approval.details.kind}` as MessageKey)}</div>
+                      ) : null}
+                      {approval.status === 'pending' && approval.details?.quote_stale ? <Badge tone="warn">{t('console.quoteStale')}</Badge> : null}
+                    </td>
                     <td className="end">{approval.details ? money(approval.details.amount, approval.details.currency) : '—'}</td>
                     <td className="mono small">
                       {reference(approval)}
@@ -148,14 +156,26 @@ function ReviewDialog({ approval, decision, onClose }: { approval: Approval; dec
   const money = useMoney()
   const client = useQueryClient()
   const { push } = useToast()
+  const currency = useDefaultCurrency()
   const [note, setNote] = useState('')
+  const [received, setReceived] = useState('')
+  const [receivedError, setReceivedError] = useState<string>()
   const [busy, setBusy] = useState(false)
-  const name = approval.details?.tenant_name || `#${approval.tenant_id}`
-  const amount = approval.details ? money(approval.details.amount, approval.details.currency) : ''
+  const details = approval.details
+  const name = details?.tenant_name || `#${approval.tenant_id}`
+  const amount = details ? money(details.amount, details.currency) : ''
   const submit = async () => {
+    setReceivedError(undefined)
+    const minor = received.trim() ? toMinor(received, currency) : null
+    if (received.trim() && minor === null) {
+      setReceivedError(t('inputs.amountInvalid', { example: fromMinor(150000, currency) }))
+      return
+    }
     setBusy(true)
     try {
-      await api(`/billing/internal/payment-approvals/${approval.id}/${decision}`, { method: 'POST', asStaff: true, body: { note: note.trim() || null } })
+      const body: Record<string, unknown> = { note: note.trim() || null }
+      if (decision === 'approve' && minor !== null) body.received_amount = minor
+      await api(`/billing/internal/payment-approvals/${approval.id}/${decision}`, { method: 'POST', asStaff: true, body })
       await client.invalidateQueries({ queryKey: ['console', 'approvals'] })
       push(t('form.saved'), 'success')
       onClose()
@@ -171,12 +191,31 @@ function ReviewDialog({ approval, decision, onClose }: { approval: Approval; dec
       title={decision === 'approve' ? t('console.approve') : t('console.reject')}
       description={
         decision === 'approve'
-          ? t('console.approveConfirm', { amount, name, plan: approval.details?.package_name ?? '' })
+          ? details?.kind === 'renew'
+            ? t('console.approveRenewConfirm', { amount, name, plan: details.package_name })
+            : t('console.approveConfirm', { amount, name, plan: details?.package_name ?? '' })
           : t('console.rejectConfirm', { amount, name })
       }
       onClose={onClose}
     >
       <div className="stack">
+        {details && details.lines.length > 1 ? (
+          <ChangeLines lines={details.lines} total={details.amount} currency={details.currency} totalLabel={t('console.colAmount')} />
+        ) : null}
+        {decision === 'approve' && details?.quote_stale ? (
+          <div className="banner">
+            <span className="status-dot warn" />
+            <span className="fill">{t('console.quoteStaleHint')}</span>
+          </div>
+        ) : null}
+        {decision === 'approve' && (details?.overrides_dropped ?? 0) > 0 ? (
+          <p className="small muted">{t('console.overridesDropped', { count: details!.overrides_dropped })}</p>
+        ) : null}
+        {decision === 'approve' && details ? (
+          <Field label={t('console.received')} hint={t('console.receivedHint', { amount })} error={receivedError}>
+            <MoneyInput currency={currency} ariaLabel={t('console.received')} placeholder={fromMinor(details.amount, currency)} value={received} onChange={setReceived} />
+          </Field>
+        ) : null}
         <Field label={t('console.note')}>
           <textarea className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>

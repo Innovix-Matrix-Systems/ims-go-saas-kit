@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { api, type Schemas } from '../api/client'
-import { useLocale, useT, type MessageKey } from '../i18n'
+import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { currenciesQuery, findCurrency, formatMoney, type Currency } from '../money'
 import { Field, useApiErrors } from './form'
 import { Badge, Icon, Spinner } from './ui'
@@ -103,7 +103,7 @@ export function usePaymentInstructions() {
  * Pays for a plan by bank transfer: shows where to send the money and takes
  * the transfer reference. The plan starts once staff confirm the payment.
  */
-export function BankTransferForm({ pkg, onSubmitted }: { pkg: Package; onSubmitted: () => void }) {
+export function BankTransferForm({ pkg, amount, onSubmitted }: { pkg: Package; amount?: number; onSubmitted: () => void }) {
   const t = useT()
   const money = useMoney()
   const errors = useApiErrors()
@@ -131,7 +131,7 @@ export function BankTransferForm({ pkg, onSubmitted }: { pkg: Package; onSubmitt
 
   return (
     <form onSubmit={submit} className="stack">
-      <p className="small muted">{t('onboarding.payBody', { amount: money(pkg.price) })}</p>
+      <p className="small muted">{t('onboarding.payBody', { amount: money(amount ?? pkg.price) })}</p>
       {instructions.data ? (
         <div className="pay-instructions">
           <div className="field-label">{t('billing.payTo')}</div>
@@ -198,6 +198,151 @@ export function PricingCard({ pkg, current, chosen, action }: { pkg: Package; cu
         </button>
       ) : null}
       {action ? <div className="plan-foot">{action}</div> : null}
+    </div>
+  )
+}
+
+export type Change = Schemas['Change']
+type InvoiceLine = Schemas['InvoiceLine']
+
+/** A date the way the reader writes it ("25 Dec 2026"). */
+export function useShortDate() {
+  const locale = useLocale()
+  return (value?: string | null) => (value ? new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium' }).format(new Date(value)) : '—')
+}
+
+/** One invoice line in words: the plan, unused days credited, account credit. */
+export function useLineText() {
+  const t = useT()
+  return (line: InvoiceLine) => {
+    switch (line.type) {
+      case 'unused_time':
+        return t('billing.line.unused', { name: line.package_name ?? '', count: line.days ?? 0 })
+      case 'account_credit':
+        return t('billing.line.credit')
+      default:
+        return line.package_name ?? ''
+    }
+  }
+}
+
+/** The lines of a quote or an invoice, with the total. */
+export function ChangeLines({ lines, total, currency, totalLabel }: { lines: InvoiceLine[]; total: number; currency?: string; totalLabel: string }) {
+  const money = useMoney()
+  const lineText = useLineText()
+  return (
+    <dl className="change-lines">
+      {lines.map((line, index) => (
+        <div key={index} className={`change-line ${line.amount < 0 ? 'credit' : ''}`}>
+          <dt>{lineText(line)}</dt>
+          <dd>{money(line.amount, currency)}</dd>
+        </div>
+      ))}
+      <div className="change-line total">
+        <dt>{totalLabel}</dt>
+        <dd>{money(total, currency)}</dd>
+      </div>
+    </dl>
+  )
+}
+
+/**
+ * Moving to another plan (or renewing): asks the API what it costs and when
+ * it starts, says so, and takes the payment when there is one. Upgrades start
+ * when paid with the unused days credited; downgrades and renewals start when
+ * the current period ends.
+ */
+export function PlanChange({ pkg, onDone }: { pkg: Package; onDone: (change: Change) => void }) {
+  const t = useT()
+  const money = useMoney()
+  const date = useShortDate()
+  const errors = useApiErrors()
+  const [busy, setBusy] = useState(false)
+  const preview = useQuery({
+    queryKey: ['billing', 'change-preview', pkg.id],
+    queryFn: () => api<Change>('/billing/change-preview', { query: { package_id: pkg.id } }),
+    staleTime: 0,
+    gcTime: 0,
+  })
+
+  if (preview.isLoading) {
+    return (
+      <div className="flex">
+        <Spinner /> <span className="muted">{t('billing.change.pricing')}</span>
+      </div>
+    )
+  }
+  if (preview.error || !preview.data) {
+    return (
+      <div className="error-box" role="alert">
+        <Icon name="alert" />
+        <span className="error-box-text">{preview.error instanceof Error ? preview.error.message : t('billing.change.failed')}</span>
+      </div>
+    )
+  }
+  const change = preview.data
+  const current = change.current_package?.name ?? ''
+  const currentEnd = date(change.current_period_end)
+
+  // Nothing to pay now, or the account credit pays it: one confirm button.
+  const confirm = async () => {
+    setBusy(true)
+    errors.clear()
+    try {
+      await api('/billing/subscribe', { method: 'POST', idempotent: true, body: { package_id: pkg.id } })
+      onDone(change)
+    } catch (cause) {
+      errors.setError(cause instanceof Error ? cause : new Error(String(cause)))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  let summary: string
+  if (change.kind === 'downgrade') {
+    summary =
+      change.due_at_renewal > 0
+        ? t('billing.change.downgrade', { current, date: currentEnd, name: pkg.name, amount: money(change.due_at_renewal) })
+        : t('billing.change.downgradeFree', { current, date: currentEnd, name: pkg.name })
+  } else if (change.effective === 'period_end') {
+    summary = t('billing.change.startsAt', { name: pkg.name, date: date(change.period_start) })
+  } else if (!change.requires_payment) {
+    summary = t('billing.change.freeNow', { name: pkg.name })
+  } else if (change.amount_due === 0) {
+    summary = t('billing.change.covered', { name: pkg.name })
+  } else {
+    summary = t('billing.change.startsNow', { name: pkg.name })
+  }
+
+  return (
+    <div className="stack">
+      <p>{summary}</p>
+      {change.requires_payment ? <ChangeLines lines={change.lines} total={change.amount_due} currency={change.currency} totalLabel={t('billing.change.total')} /> : null}
+      {change.surplus > 0 ? <p className="small muted">{t('billing.change.surplus', { amount: money(change.surplus, change.currency) })}</p> : null}
+      {change.over_limits.length > 0 ? (
+        <div className="banner">
+          <span className="status-dot warn" />
+          <span className="fill">
+            {t('billing.change.overLimits', {
+              name: pkg.name,
+              items: change.over_limits.map((item) => `${featureName(t, item.feature_key)} ${item.used}/${item.limit}`).join(', '),
+            })}
+          </span>
+        </div>
+      ) : null}
+      {(change.overrides_dropped ?? 0) > 0 ? <p className="small muted">{t('billing.change.overrides', { name: pkg.name })}</p> : null}
+      {change.requires_payment && change.amount_due > 0 ? (
+        <BankTransferForm pkg={pkg} amount={change.amount_due} onSubmitted={() => onDone(change)} />
+      ) : (
+        <>
+          {errors.box}
+          <div>
+            <button type="button" className="btn primary" disabled={busy} onClick={() => void confirm()}>
+              {busy ? <Spinner /> : <Icon name="check" />} {change.kind === 'downgrade' ? t('billing.change.confirmLater') : t('billing.change.confirm')}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

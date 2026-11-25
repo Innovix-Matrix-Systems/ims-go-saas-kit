@@ -163,6 +163,12 @@ func (b *billingNotices) PaymentWithdrawn(ctx context.Context, notice billingser
 	b.publish(ctx, notice.TenantID)
 }
 
+// BillingChanged implements billingservice.PaymentNotifier: open billing
+// and approval screens refresh.
+func (b *billingNotices) BillingChanged(ctx context.Context, tenantID int64) {
+	b.publish(ctx, tenantID)
+}
+
 func (b *billingNotices) invoice(ctx context.Context, notice billingservice.PaymentNotice) (*billingdomain.Invoice, bool) {
 	invoice, err := b.invoices.For(ctx, notice.TenantID, notice.PaymentID)
 	if err != nil {

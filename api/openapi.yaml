@@ -3770,6 +3770,106 @@ paths:
         "403": *forbidden
         "404": *notFound
 
+  /api/v1/billing/change-preview:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Billing]
+      summary: Price a plan change before paying
+      description: >-
+        What moving to the package costs and when it takes effect, without changing anything. An
+        upgrade (or a longer billing cycle) starts when paid and credits the unused days of the
+        current plan (whole days, rounded up; based on what was actually paid). A downgrade waits
+        for the end of the period and is paid at the renewal; a renewal of the same plan starts when
+        the current period ends. Account credit is used before any money. `over_limits` lists the
+        new plan's limits the organization already exceeds (downgrades).
+      operationId: billingChangePreview
+      parameters:
+        - name: package_id
+          in: query
+          required: true
+          schema: {type: integer, format: int64, minimum: 1}
+      responses:
+        "200":
+          description: The priced change.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ChangeEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+        "422": *validationFailed
+
+  /api/v1/billing/subscription/cancel:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    post:
+      tags: [Billing]
+      summary: Stop the renewal (keep the plan until it ends)
+      description: >-
+        Sets `cancel_at_period_end`: the plan stays in force until `expires_at`, renewal reminders
+        stop, and a period already paid in advance becomes account credit. Undo with
+        `POST /billing/subscription/keep`.
+      operationId: billingCancelAtPeriodEnd
+      responses:
+        "200":
+          description: The current subscription.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SubscriptionEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "409": *conflict
+
+  /api/v1/billing/subscription/keep:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    post:
+      tags: [Billing]
+      summary: Keep the current plan (undo a cancellation or a chosen downgrade)
+      description: >-
+        Clears `cancel_at_period_end` and `next_package_id`; a free plan scheduled to follow is
+        withdrawn. 409 when the next period is already paid for (support can change it).
+      operationId: billingKeepPlan
+      responses:
+        "200":
+          description: The current subscription.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SubscriptionEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "409": *conflict
+
+  /api/v1/billing/credits:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - {$ref: "#/components/parameters/ActingUser"}
+    get:
+      tags: [Billing]
+      summary: The organization's account credit
+      description: The balance (default currency) and its entries, newest first. Credit pays future checkouts first.
+      operationId: billingCredits
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Balance and entries.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CreditsEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+
   /api/v1/billing/subscribe:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -3780,8 +3880,14 @@ paths:
       tags: [Billing]
       summary: Subscribe the resolved tenant to a package
       description: >-
-        Idempotent per tenant + package + payment method: while a checkout is still pending, calling
-        again returns that same subscription and payment instead of charging twice.
+        Moves the organization to the package with the rules of `GET /billing/change-preview`
+        (the quote is frozen on the payment). Idempotent per tenant + package + payment method: while
+        a checkout is still pending, calling again returns that same subscription and payment
+        instead of charging twice. Only one checkout can wait at a time: another plan or method
+        answers 409 with `meta.reason` `CHECKOUT_PENDING` and the waiting `payment_id`. A downgrade
+        records `next_package_id` and returns the current subscription with no payment; a free plan
+        starts now or is scheduled; when account credit covers the amount, no payment method is
+        needed and the plan starts at once (payment method `credit`, amount 0).
       operationId: billingSubscribe
       requestBody:
         required: true
@@ -3796,6 +3902,7 @@ paths:
               schema: {$ref: "#/components/schemas/SubscribeEnvelope"}
         "401": *unauthorized
         "403": *forbidden
+        "409": *conflict
         "422": *validationFailed
         "503": *serviceUnavailable
 
@@ -3898,11 +4005,13 @@ paths:
       tags: [Billing]
       summary: Assign a plan to a tenant (system)
       description: >-
-        Ends the tenant's current subscription and starts an active one on the package, in one
-        transaction. With `payment_method` (cash or bank transfer) a completed payment is recorded
-        for `amount`, which defaults to the package price; without it the plan is assigned free of
-        charge. Hidden (inactive) packages can be assigned. Overrides start empty on the new
-        subscription.
+        `mode: replace` (default) ends the tenant's current subscription and starts an active one
+        on the package, in one transaction. With `payment_method` (cash or bank transfer) a
+        completed payment is recorded for `amount`, which defaults to the package price; without it
+        the plan is assigned free of charge. `mode: change` applies the organization's own rules
+        (unused-time credit, account credit, downgrades and renewals at the end of the period) and
+        records the payment as received; `amount` defaults to the amount due. Hidden (inactive)
+        packages can be assigned. Overrides start empty on the new subscription.
       operationId: assignTenantPlan
       parameters:
         - name: tenant_id
@@ -3964,6 +4073,82 @@ paths:
         "403": *forbidden
         "422": *validationFailed
 
+  /api/v1/billing/internal/payments/{id}/refund:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+    post:
+      tags: [Billing]
+      summary: Refund a payment (system)
+      description: >-
+        Gives back up to what is left of a completed payment. `to: credit` adds it to the
+        organization's account credit; `to: original` refunds through the gateway (bKash) or records
+        that staff paid cash or bank money back by hand. The payment becomes `refunded` when fully
+        refunded. `end_subscription` also ends the plan it bought, at once.
+      operationId: refundPayment
+      parameters:
+        - $ref: "#/components/parameters/PathID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/RefundRequest"}
+      responses:
+        "200":
+          description: The payment.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/PaymentEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+        "422": *validationFailed
+        "503": *serviceUnavailable
+
+  /api/v1/billing/internal/tenants/{tenant_id}/credits:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+      - name: tenant_id
+        in: path
+        required: true
+        schema: {type: integer, format: int64, minimum: 1}
+    get:
+      tags: [Billing]
+      summary: An organization's account credit (system)
+      operationId: tenantCredits
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Balance and entries.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CreditsEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+    post:
+      tags: [Billing]
+      summary: Add or take back account credit (system)
+      description: A positive amount adds credit (goodwill, a correction); a negative one takes it back, never below zero.
+      operationId: adjustTenantCredit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CreditAdjustRequest"}
+      responses:
+        "201":
+          description: The entry.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CreditEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
   /api/v1/billing/internal/payment-approvals:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -3992,6 +4177,11 @@ paths:
     post:
       tags: [Billing]
       summary: Approve a manual payment (activates the subscription)
+      description: >-
+        Completes the payment: an upgrade or new plan starts now with a fresh period, a renewal
+        waits for the current period to end. `received_amount` above the invoice adds the
+        difference to the organization's account credit; below it is refused (reject, or ask for
+        the rest).
       operationId: approvePayment
       parameters:
         - $ref: "#/components/parameters/PathID"
@@ -8628,12 +8818,15 @@ components:
 
     Subscription:
       type: object
-      required: [id, tenant_id, package_id, status, created_at, updated_at]
+      required: [id, tenant_id, package_id, status, cancel_at_period_end, created_at, updated_at]
       properties:
         id: {type: integer, format: int64}
         tenant_id: {type: integer, format: int64}
         package_id: {type: integer, format: int64}
-        status: {type: string, enum: [trial, pending, active, past_due, cancelled, expired]}
+        status:
+          type: string
+          enum: [trial, pending, scheduled, active, past_due, cancelled, expired]
+          description: "`scheduled` waits for the current period to end (a renewal paid early, or a free plan)."
         starts_at: {type: string, format: date-time, nullable: true}
         trial_ends_at: {type: string, format: date-time, nullable: true}
         expires_at: {type: string, format: date-time, nullable: true}
@@ -8642,6 +8835,8 @@ components:
         overrides:
           type: object
           additionalProperties: true
+        next_package_id: {type: integer, format: int64, nullable: true, description: The plan chosen for the renewal (a downgrade).}
+        cancel_at_period_end: {type: boolean, description: "The organization will not renew; the plan runs until it expires."}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
 
@@ -8667,11 +8862,24 @@ components:
       properties:
         data:
           type: object
-          required: [active]
+          required: [active, credit_balance, currency]
           properties:
             subscription: {$ref: "#/components/schemas/Subscription"}
             package: {$ref: "#/components/schemas/Package"}
             active: {type: boolean}
+            scheduled:
+              allOf: [{$ref: "#/components/schemas/Subscription"}]
+              nullable: true
+              description: The period arranged to follow the current one.
+            scheduled_package:
+              allOf: [{$ref: "#/components/schemas/Package"}]
+              nullable: true
+            next_package:
+              allOf: [{$ref: "#/components/schemas/Package"}]
+              nullable: true
+              description: The plan chosen for the renewal (a downgrade).
+            credit_balance: {type: integer, format: int64, description: Account credit in minor units.}
+            currency: {type: string}
 
     AnnouncementRequest:
       type: object
@@ -8930,6 +9138,119 @@ components:
               name: {type: string}
               organizations: {type: integer, format: int64}
 
+    InvoiceLine:
+      type: object
+      required: [type, amount]
+      properties:
+        type: {type: string, enum: [plan, unused_time, account_credit]}
+        package_id: {type: integer, format: int64}
+        package_name: {type: string}
+        billing_cycle: {type: string}
+        period_start: {type: string, format: date-time}
+        period_end: {type: string, format: date-time}
+        days: {type: integer, description: Unused days credited (unused_time).}
+        amount: {type: integer, format: int64, description: "Minor units; credits are negative."}
+
+    Change:
+      type: object
+      required: [kind, effective, package, currency, price, credit, unused_days, period_days, balance_applied, amount_due, surplus, due_at_renewal, requires_payment, period_start, period_end, lines, over_limits, overrides_dropped]
+      properties:
+        kind: {type: string, enum: [new, renew, upgrade, downgrade]}
+        effective: {type: string, enum: [now, period_end]}
+        package: {$ref: "#/components/schemas/Package"}
+        current_package:
+          allOf: [{$ref: "#/components/schemas/Package"}]
+          nullable: true
+        currency: {type: string}
+        price: {type: integer, format: int64}
+        credit: {type: integer, format: int64, description: Value of the current plan's unused days.}
+        unused_days: {type: integer}
+        period_days: {type: integer}
+        balance_applied: {type: integer, format: int64, description: Account credit used.}
+        amount_due: {type: integer, format: int64, description: What is paid now.}
+        surplus: {type: integer, format: int64, description: "Unused-time credit beyond the price; becomes account credit."}
+        due_at_renewal: {type: integer, format: int64, description: What a downgrade costs at the renewal.}
+        requires_payment: {type: boolean}
+        period_start: {type: string, format: date-time}
+        period_end: {type: string, format: date-time}
+        current_period_end: {type: string, format: date-time, nullable: true}
+        lines:
+          type: array
+          items: {$ref: "#/components/schemas/InvoiceLine"}
+        over_limits:
+          type: array
+          items:
+            type: object
+            required: [feature_key, description, limit, used]
+            properties:
+              feature_key: {type: string}
+              description: {type: string}
+              limit: {type: integer, format: int64}
+              used: {type: integer, format: int64}
+        overrides_dropped: {type: integer}
+
+    ChangeEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: {$ref: "#/components/schemas/Change"}
+
+    Credit:
+      type: object
+      required: [id, amount, currency, reason, created_at]
+      properties:
+        id: {type: integer, format: int64}
+        amount: {type: integer, format: int64, description: "Minor units; positive adds, negative uses."}
+        currency: {type: string}
+        reason: {type: string}
+        payment_id: {type: integer, format: int64, nullable: true}
+        subscription_id: {type: integer, format: int64, nullable: true}
+        created_at: {type: string, format: date-time}
+
+    CreditEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: {$ref: "#/components/schemas/Credit"}
+
+    CreditsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [balance, currency, entries, total]
+          properties:
+            balance: {type: integer, format: int64}
+            currency: {type: string}
+            total: {type: integer, format: int64}
+            entries:
+              type: array
+              items: {$ref: "#/components/schemas/Credit"}
+
+    CreditAdjustRequest:
+      type: object
+      required: [amount, reason]
+      properties:
+        amount: {type: integer, format: int64, description: "Minor units, not zero: positive adds, negative takes back."}
+        reason: {type: string, minLength: 3, maxLength: 500}
+      example:
+        amount: 50000
+        reason: Goodwill for the outage
+
+    RefundRequest:
+      type: object
+      required: [amount, reason, to]
+      properties:
+        amount: {type: integer, format: int64, minimum: 1}
+        reason: {type: string, minLength: 3, maxLength: 500}
+        to: {type: string, enum: [credit, original]}
+        end_subscription: {type: boolean, default: false}
+      example:
+        amount: 50000
+        reason: Charged twice
+        to: original
+
     BillingUsage:
       type: object
       required: [limits, storage_bytes]
@@ -8951,7 +9272,7 @@ components:
       required: [package_id]
       properties:
         package_id: {type: integer, format: int64}
-        payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer], description: "Required for a paid package. A free package starts at once, with no payment."}
+        payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer], description: "Required when there is something to pay now (see `GET /billing/change-preview`)."}
         payment_data:
           type: object
           additionalProperties: true
@@ -8972,7 +9293,11 @@ components:
             payment:
               allOf: [{$ref: "#/components/schemas/Payment"}]
               nullable: true
-              description: Null for a free package, which starts at once.
+              description: Null when nothing is paid now (a free package, a downgrade).
+            change:
+              allOf: [{$ref: "#/components/schemas/Change"}]
+              nullable: true
+              description: The priced change (null when an existing checkout is returned).
 
     AssignPlanRequest:
       type: object
@@ -8983,8 +9308,9 @@ components:
         amount:
           type: integer
           format: int64
-          minimum: 1
-          description: Defaults to the package price. Requires payment_method.
+          minimum: 0
+          description: Defaults to the package price (replace) or the amount due (change). Requires payment_method.
+        mode: {type: string, enum: [replace, change], default: replace}
       example:
         package_id: 2
         payment_method: cash
@@ -9005,14 +9331,22 @@ components:
 
     Payment:
       type: object
-      required: [id, tenant_id, payment_method, status, amount, currency, invoice_number, created_at, updated_at]
+      required: [id, tenant_id, payment_method, status, amount, currency, invoice_number, created_at, updated_at, kind, lines, gross, balance_applied, refunded_amount]
       properties:
         id: {type: integer, format: int64}
         tenant_id: {type: integer, format: int64}
         subscription_id: {type: integer, format: int64, nullable: true}
-        payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer]}
-        status: {type: string, enum: [pending, processing, completed, failed, cancelled, awaiting_approval]}
-        amount: {type: integer, format: int64, description: Minor units (paisa).}
+        payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer, credit], description: "`credit`: account credit covered it (amount 0)."}
+        status: {type: string, enum: [pending, processing, completed, failed, cancelled, refunded, awaiting_approval]}
+        amount: {type: integer, format: int64, description: "What was paid in money, minor units (paisa)."}
+        kind: {type: string, enum: [new, renew, upgrade, downgrade, staff]}
+        lines:
+          type: array
+          items: {$ref: "#/components/schemas/InvoiceLine"}
+        gross: {type: integer, format: int64, description: "The value bought (the plan price before credits)."}
+        balance_applied: {type: integer, format: int64, description: Account credit used.}
+        refunded_amount: {type: integer, format: int64}
+        replaces_subscription_id: {type: integer, format: int64, nullable: true}
         currency: {type: string, example: BDT}
         gateway_ref: {type: string, nullable: true}
         gateway_status: {type: string, nullable: true}
@@ -9060,6 +9394,12 @@ components:
       type: object
       properties:
         note: {type: string, maxLength: 500, nullable: true}
+        received_amount:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+          description: Approve only. What was actually received; more than the invoice becomes account credit, less is refused.
       example:
         note: verified the bank slip
 
@@ -9084,13 +9424,19 @@ components:
         details:
           type: object
           description: In lists only. Who pays, how much and for which plan.
-          required: [tenant_name, package_name, amount, currency, invoice_number]
+          required: [tenant_name, package_name, amount, currency, invoice_number, kind, lines, quote_stale, overrides_dropped]
           properties:
             tenant_name: {type: string}
             package_name: {type: string}
             amount: {type: integer, format: int64, description: Minor units (paisa).}
             currency: {type: string}
             invoice_number: {type: string}
+            kind: {type: string, enum: [new, renew, upgrade, downgrade, staff]}
+            lines:
+              type: array
+              items: {$ref: "#/components/schemas/InvoiceLine"}
+            quote_stale: {type: boolean, description: "The plan credited at checkout is no longer the one in force; the amount may be wrong."}
+            overrides_dropped: {type: integer, description: Per-organization overrides that approving removes.}
 
     ApprovalEnvelope:
       type: object

@@ -6,6 +6,50 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-11-25
+
+**Plan changes that never charge twice.** Changing plan used to charge the full price of the new
+plan and throw away what was left of the old one; a downgrade or a free plan ended the paid period
+at once; renewing early lost the remaining days; and two checkouts for different plans could both
+be approved. Now every change is priced first and works the way Stripe, Paddle and Claude do. See
+[Billing → Changing plans](docs/guides/billing.md#changing-plans).
+
+- **Upgrades** (a plan that costs more per day, or monthly → yearly) start when paid, for a fresh
+  period, and cost the new price minus the **unused days** of what was actually paid for the
+  current plan.
+- **Downgrades** wait for the end of the period and are paid at the renewal; nothing is refunded. A
+  **free plan** chosen on a paid one starts when the period ends.
+- **Renewals** paid early start when the current period ends (status `scheduled`) and keep the
+  plan's overrides. **Renew** shows in the last half of the period; **Don't renew** stops the
+  renewal (a period paid in advance becomes credit) and **Keep my plan** undoes it.
+- **Account credit**: unused value, overpayments and refunds to credit pay the next checkout first;
+  when credit covers it all, the plan starts at once.
+- **One checkout at a time**: another one answers 409 `CHECKOUT_PENDING` until the first is
+  withdrawn or decided.
+- **Staff**: approvals show the invoice lines, the amount actually received (extra becomes credit)
+  and a "price out of date" warning; organizations' drawer shows the credit (adjust it) and payments
+  with **Refund** (to credit, or money back through bKash or by hand); **Change plan** can follow the
+  organization's rules. Invoices list their lines and any refund.
+- A paid plan now starts when the payment is confirmed, not when it was submitted, so days spent
+  waiting for approval are not lost.
+- **Staff dashboard revenue** leads with the default currency (it used to be whichever currency had
+  the most payments, so a tie could show another one) and lists the other currencies' totals beside
+  it, each in its own currency.
+
+**Upgrading from 0.2.5:** run `ims migrate` (migration 00045) and `ims permission:sync`. Things to
+check:
+
+- **API:** new `GET /billing/change-preview`, `POST /billing/subscription/cancel|keep`,
+  `GET /billing/credits`, staff `POST /billing/internal/payments/{id}/refund` and
+  `GET|POST /billing/internal/tenants/{id}/credits` (new system permission `payment.refund`).
+  `POST /billing/subscribe` returns a `change`; a downgrade returns the current subscription and no
+  payment. Payments have `kind`, `lines`, `gross`, `balance_applied`, `refunded_amount`;
+  subscriptions have `next_package_id`, `cancel_at_period_end` and the status `scheduled`.
+- **Scheduler:** `billing.expire-subscriptions` runs hourly and also starts scheduled plans
+  (`SubscriptionService.ProcessPeriodEnds`).
+- **Go:** `SubscriptionRepository.Activate` takes the start of the period; `AssignInput.Mode`
+  (`replace`, the default, or `change`); `ApprovalService.ApproveReceived`.
+
 ## [0.2.5] - 2026-11-25
 
 **Currencies as data, Akaunting style.** A currency is how amounts are written (symbol, where it
@@ -476,7 +520,8 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.5...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.6...HEAD
+[0.2.6]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.3...v0.2.5
 [0.2.3]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.0...v0.2.3
 [0.2.0]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.8...v0.2.0

@@ -80,15 +80,15 @@ Recurring work is **one list** in `internal/app/schedule.go` — Laravel's `Kern
 ```go title="internal/app/schedule.go"
 {
 	ID:          "billing.expire-subscriptions",
-	Spec:        "0 */6 * * *",          // cron, in SCHEDULE_TIMEZONE
-	Description: "Marks overdue subscriptions as expired.",
+	Spec:        "0 * * * *",            // cron, in SCHEDULE_TIMEZONE
+	Description: "Marks overdue subscriptions as expired and starts scheduled ones.",
 	Timeout:     10 * time.Minute,
 	Run: func(ctx context.Context) error {
-		expired, err := p.BillingSubs.ExpireOverdue(ctx)
+		expired, started, err := p.BillingSubs.ProcessPeriodEnds(ctx)
 		if err != nil {
 			return err
 		}
-		logger.Info("subscriptions expired", "count", expired)
+		logger.Info("subscriptions expired", "count", expired, "scheduled_started", started)
 		return nil
 	},
 },

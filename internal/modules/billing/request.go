@@ -79,7 +79,24 @@ type OverridesRequest struct {
 type AssignPlanRequest struct {
 	PackageID     int64  `json:"package_id" validate:"required,gt=0"`
 	PaymentMethod string `json:"payment_method" validate:"omitempty,oneof=cash bank_transfer"`
-	Amount        *int64 `json:"amount" validate:"omitempty,gt=0"`
+	Amount        *int64 `json:"amount" validate:"omitempty,gte=0"`
+	// Mode: replace (default) ends the current plan now with no credit;
+	// change applies the customer's rules (credit, end-of-period changes).
+	Mode string `json:"mode" validate:"omitempty,oneof=replace change"`
+}
+
+// RefundRequest gives money back for a payment (staff).
+type RefundRequest struct {
+	Amount          int64  `json:"amount" validate:"required,gt=0"`
+	Reason          string `json:"reason" validate:"required,min=3,max=500"`
+	To              string `json:"to" validate:"required,oneof=credit original"`
+	EndSubscription bool   `json:"end_subscription"`
+}
+
+// CreditAdjustRequest adds (or takes back, negative) account credit (staff).
+type CreditAdjustRequest struct {
+	Amount int64  `json:"amount" validate:"required,ne=0"`
+	Reason string `json:"reason" validate:"required,min=3,max=500"`
 }
 
 // RecordPaymentRequest records a manual payment.
@@ -94,6 +111,9 @@ type RecordPaymentRequest struct {
 // ReviewRequest approves or rejects an approval request.
 type ReviewRequest struct {
 	Note *string `json:"note" validate:"omitempty,max=500"`
+	// ReceivedAmount is what staff actually received (approve only): more
+	// than the invoice becomes account credit; less is refused.
+	ReceivedAmount *int64 `json:"received_amount" validate:"omitempty,gte=0"`
 }
 
 // FeatureResponse is the public feature representation.
@@ -155,6 +175,8 @@ type SubscriptionResponse struct {
 	CancelledAt        *time.Time     `json:"cancelled_at"`
 	CancellationReason *string        `json:"cancellation_reason"`
 	Overrides          map[string]any `json:"overrides"`
+	NextPackageID      *int64         `json:"next_package_id"`
+	CancelAtPeriodEnd  bool           `json:"cancel_at_period_end"`
 	CreatedAt          time.Time      `json:"created_at"`
 	UpdatedAt          time.Time      `json:"updated_at"`
 }
@@ -172,6 +194,8 @@ func NewSubscriptionResponse(subscription domain.Subscription) SubscriptionRespo
 		CancelledAt:        subscription.CancelledAt,
 		CancellationReason: subscription.CancellationReason,
 		Overrides:          subscription.Overrides,
+		NextPackageID:      subscription.NextPackageID,
+		CancelAtPeriodEnd:  subscription.CancelAtPeriodEnd,
 		CreatedAt:          subscription.CreatedAt,
 		UpdatedAt:          subscription.UpdatedAt,
 	}
@@ -182,6 +206,14 @@ type StatusResponse struct {
 	Subscription *SubscriptionResponse `json:"subscription"`
 	Package      *PackageResponse      `json:"package"`
 	Active       bool                  `json:"active"`
+	// Scheduled is the period arranged to follow the current one.
+	Scheduled        *SubscriptionResponse `json:"scheduled"`
+	ScheduledPackage *PackageResponse      `json:"scheduled_package"`
+	// NextPackage is the plan chosen for the renewal (a downgrade).
+	NextPackage *PackageResponse `json:"next_package"`
+	// CreditBalance is the account credit in Currency (minor units).
+	CreditBalance int64  `json:"credit_balance"`
+	Currency      string `json:"currency"`
 }
 
 // PaymentResponse is the public payment representation.
@@ -200,25 +232,61 @@ type PaymentResponse struct {
 	PaidAt          *time.Time     `json:"paid_at"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
+	// Kind: new, renew, upgrade, downgrade or staff.
+	Kind                   string                `json:"kind"`
+	Lines                  []InvoiceLineResponse `json:"lines"`
+	Gross                  int64                 `json:"gross"`
+	BalanceApplied         int64                 `json:"balance_applied"`
+	RefundedAmount         int64                 `json:"refunded_amount"`
+	ReplacesSubscriptionID *int64                `json:"replaces_subscription_id"`
+}
+
+// InvoiceLineResponse is one invoice line: the plan bought (plan), the credit
+// for the unused time of the plan replaced (unused_time) or account credit
+// used (account_credit). Amounts are minor units; credits are negative.
+type InvoiceLineResponse struct {
+	Type         string     `json:"type"`
+	PackageID    int64      `json:"package_id,omitempty"`
+	PackageName  string     `json:"package_name,omitempty"`
+	BillingCycle string     `json:"billing_cycle,omitempty"`
+	PeriodStart  *time.Time `json:"period_start,omitempty"`
+	PeriodEnd    *time.Time `json:"period_end,omitempty"`
+	Days         int        `json:"days,omitempty"`
+	Amount       int64      `json:"amount"`
+}
+
+// NewInvoiceLines maps invoice lines (never nil).
+func NewInvoiceLines(lines []domain.InvoiceLine) []InvoiceLineResponse {
+	out := make([]InvoiceLineResponse, 0, len(lines))
+	for _, line := range lines {
+		out = append(out, InvoiceLineResponse(line))
+	}
+	return out
 }
 
 // NewPaymentResponse maps a payment to its public representation.
 func NewPaymentResponse(payment domain.Payment) PaymentResponse {
 	return PaymentResponse{
-		ID:              payment.ID,
-		TenantID:        payment.TenantID,
-		SubscriptionID:  payment.SubscriptionID,
-		PaymentMethod:   payment.PaymentMethod,
-		Status:          payment.Status,
-		Amount:          payment.Amount,
-		Currency:        payment.Currency,
-		GatewayRef:      payment.GatewayRef,
-		GatewayStatus:   payment.GatewayStatus,
-		GatewayResponse: payment.GatewayResponse,
-		InvoiceNumber:   payment.InvoiceNumber,
-		PaidAt:          payment.PaidAt,
-		CreatedAt:       payment.CreatedAt,
-		UpdatedAt:       payment.UpdatedAt,
+		ID:                     payment.ID,
+		TenantID:               payment.TenantID,
+		SubscriptionID:         payment.SubscriptionID,
+		PaymentMethod:          payment.PaymentMethod,
+		Status:                 payment.Status,
+		Amount:                 payment.Amount,
+		Currency:               payment.Currency,
+		GatewayRef:             payment.GatewayRef,
+		GatewayStatus:          payment.GatewayStatus,
+		GatewayResponse:        payment.GatewayResponse,
+		InvoiceNumber:          payment.InvoiceNumber,
+		PaidAt:                 payment.PaidAt,
+		CreatedAt:              payment.CreatedAt,
+		UpdatedAt:              payment.UpdatedAt,
+		Kind:                   payment.Kind,
+		Lines:                  NewInvoiceLines(payment.Lines),
+		Gross:                  payment.Gross,
+		BalanceApplied:         payment.BalanceApplied,
+		RefundedAmount:         payment.RefundedAmount,
+		ReplacesSubscriptionID: payment.ReplacesSubscriptionID,
 	}
 }
 
@@ -242,11 +310,18 @@ type ApprovalResponse struct {
 
 // ApprovalDetailResponse is the payer, plan, amount and invoice of an approval.
 type ApprovalDetailResponse struct {
-	TenantName    string `json:"tenant_name"`
-	PackageName   string `json:"package_name"`
-	Amount        int64  `json:"amount"`
-	Currency      string `json:"currency"`
-	InvoiceNumber string `json:"invoice_number"`
+	TenantName    string                `json:"tenant_name"`
+	PackageName   string                `json:"package_name"`
+	Amount        int64                 `json:"amount"`
+	Currency      string                `json:"currency"`
+	InvoiceNumber string                `json:"invoice_number"`
+	Kind          string                `json:"kind"`
+	Lines         []InvoiceLineResponse `json:"lines"`
+	// QuoteStale: the plan credited at checkout is no longer the one in
+	// force, so the amount may be wrong.
+	QuoteStale bool `json:"quote_stale"`
+	// OverridesDropped is how many per-tenant overrides approving removes.
+	OverridesDropped int `json:"overrides_dropped"`
 }
 
 // NewApprovalResponse maps an approval to its public representation.

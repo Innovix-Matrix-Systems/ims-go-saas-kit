@@ -224,6 +224,7 @@ var Catalog = []Permission{
 	{Name: "payment.view.all", Group: "payment", IsSystem: true, Description: "Can view all payments"},
 	{Name: "payment.view", Group: "payment", IsSystem: true, Description: "Can view payment details"},
 	{Name: "payment.record", Group: "payment", IsSystem: true, Description: "Can record manual payments (cash/bank transfer)"},
+	{Name: "payment.refund", Group: "payment", IsSystem: true, Description: "Can refund payments and adjust an organization's account credit"},
 
 	// ── payment_approval ──────────────────────────────────
 	{Name: "payment_approval.view.all", Group: "payment_approval", IsSystem: true, Description: "Can view all manual payment approval requests"},

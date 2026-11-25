@@ -134,12 +134,13 @@ const invoiceHTML = `<!doctype html>
   <table>
     <thead><tr><th>DESCRIPTION</th><th>PERIOD</th><th class="right">AMOUNT</th></tr></thead>
     <tbody>
-      <tr>
-        <td>{{if .PackageName}}{{.PackageName}} plan{{else}}Subscription{{end}}{{if .BillingCycle}} <span class="muted">({{words .BillingCycle}})</span>{{end}}</td>
-        <td>{{date .PeriodStart}} – {{date .PeriodEnd}}</td>
+      {{range .Rows}}<tr>
+        <td>{{.Description}}</td>
+        <td>{{if .PeriodStart}}{{date .PeriodStart}} – {{date .PeriodEnd}}{{end}}</td>
         <td class="right">{{money .Money}}</td>
       </tr>
-      <tr class="total"><td colspan="2">Total</td><td class="right">{{money .Money}}</td></tr>
+      {{end}}<tr class="total"><td colspan="2">Total</td><td class="right">{{money .Money}}</td></tr>
+      {{if .RefundedAmount}}<tr><td colspan="2">Refunded</td><td class="right">-{{money .Refunded}}</td></tr>{{end}}
     </tbody>
   </table>
   <footer class="muted">{{if paid .Status}}Thank you for your payment.{{else}}This invoice is not paid yet. It becomes a receipt once the payment is confirmed.{{end}}</footer>

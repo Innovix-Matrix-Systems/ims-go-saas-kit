@@ -101,7 +101,19 @@ func (h *Handler) status(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
-	response := StatusResponse{Active: status.Active}
+	response := StatusResponse{Active: status.Active, CreditBalance: status.CreditBalance, Currency: status.Currency}
+	if status.Scheduled != nil {
+		scheduled := NewSubscriptionResponse(*status.Scheduled)
+		response.Scheduled = &scheduled
+	}
+	if status.ScheduledPackage != nil {
+		pkg := NewPackageResponse(*status.ScheduledPackage)
+		response.ScheduledPackage = &pkg
+	}
+	if status.NextPackage != nil {
+		pkg := NewPackageResponse(*status.NextPackage)
+		response.NextPackage = &pkg
+	}
 	if status.Subscription != nil {
 		subscription := NewSubscriptionResponse(*status.Subscription)
 		response.Subscription = &subscription
@@ -135,14 +147,17 @@ func (h *Handler) subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	scope := tenancy.From(r)
-	subscription, payment, err := h.subscriptions.Subscribe(r.Context(), scope.EffectiveTenantID(), req.PackageID, req.PaymentMethod, req.PaymentData, authn.UserID(r))
+	result, err := h.subscriptions.Checkout(r.Context(), scope.EffectiveTenantID(), req.PackageID, req.PaymentMethod, req.PaymentData, authn.UserID(r))
 	if err != nil {
 		h.Error(w, r, err)
 		return
 	}
-	out := map[string]any{"subscription": NewSubscriptionResponse(*subscription), "payment": nil}
-	if payment != nil {
-		out["payment"] = NewPaymentResponse(*payment)
+	out := map[string]any{"subscription": NewSubscriptionResponse(*result.Subscription), "payment": nil, "change": nil}
+	if result.Payment != nil {
+		out["payment"] = NewPaymentResponse(*result.Payment)
+	}
+	if result.Change != nil {
+		out["change"] = NewChangeResponse(result.Change)
 	}
 	h.Data(w, r, http.StatusCreated, out)
 }
@@ -326,6 +341,7 @@ func (h *Handler) assignPlan(w http.ResponseWriter, r *http.Request) {
 		ActorID:       authn.UserID(r),
 		PaymentMethod: req.PaymentMethod,
 		Amount:        req.Amount,
+		Mode:          req.Mode,
 	})
 	if err != nil {
 		h.Error(w, r, err)
@@ -403,7 +419,9 @@ func (h *Handler) listApprovals(w http.ResponseWriter, r *http.Request) {
 		response := NewApprovalResponse(item)
 		if detail, ok := details[item.ID]; ok {
 			response.Details = &ApprovalDetailResponse{TenantName: detail.TenantName, PackageName: detail.PackageName,
-				Amount: detail.Amount, Currency: detail.Currency, InvoiceNumber: detail.InvoiceNumber}
+				Amount: detail.Amount, Currency: detail.Currency, InvoiceNumber: detail.InvoiceNumber,
+				Kind: detail.Kind, Lines: NewInvoiceLines(detail.Lines), QuoteStale: detail.QuoteStale,
+				OverridesDropped: detail.OverridesDropped}
 		}
 		data = append(data, response)
 	}
@@ -420,7 +438,7 @@ func (h *Handler) approve(w http.ResponseWriter, r *http.Request) {
 	if !h.Bind(w, r, &req) {
 		return
 	}
-	approval, err := h.approvals.Approve(r.Context(), id, authn.UserID(r), req.Note)
+	approval, err := h.approvals.ApproveReceived(r.Context(), id, authn.UserID(r), req.Note, req.ReceivedAmount)
 	if err != nil {
 		h.Error(w, r, err)
 		return

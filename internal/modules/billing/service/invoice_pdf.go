@@ -127,22 +127,30 @@ func RenderInvoicePDF(invoice *domain.Invoice) ([]byte, error) {
 		pdf.CellFormat(columns[i], 8, heading, "B", 0, align, false, 0, "")
 	}
 	pdf.Ln(-1)
-	description := "Subscription"
-	if invoice.PackageName != "" {
-		description = invoice.PackageName + " plan"
+	rows := invoice.Rows
+	if len(rows) == 0 {
+		rows = invoiceRowsFallback(invoice)
 	}
-	if invoice.BillingCycle != "" {
-		description += " (" + invoiceWords(invoice.BillingCycle) + ")"
-	}
-	amount := invoice.Money.Code() // the standard fonts can't draw every symbol
 	pdf.SetFont("Helvetica", "", 10)
 	ink()
-	pdf.CellFormat(columns[0], 10, text(description), "B", 0, "L", false, 0, "")
-	pdf.CellFormat(columns[1], 10, shortDate(invoice.PeriodStart)+" - "+shortDate(invoice.PeriodEnd), "B", 0, "L", false, 0, "")
-	pdf.CellFormat(columns[2], 10, amount, "B", 1, "R", false, 0, "")
+	for _, row := range rows {
+		period := ""
+		if row.PeriodStart != nil {
+			period = shortDate(row.PeriodStart) + " - " + shortDate(row.PeriodEnd)
+		}
+		pdf.CellFormat(columns[0], 10, text(row.Description), "B", 0, "L", false, 0, "")
+		pdf.CellFormat(columns[1], 10, period, "B", 0, "L", false, 0, "")
+		// The standard fonts can't draw every symbol: amounts use the code.
+		pdf.CellFormat(columns[2], 10, row.Money.Code(), "B", 1, "R", false, 0, "")
+	}
 	pdf.SetFont("Helvetica", "B", 12)
 	pdf.CellFormat(columns[0]+columns[1], 11, "Total", "", 0, "L", false, 0, "")
-	pdf.CellFormat(columns[2], 11, amount, "", 1, "R", false, 0, "")
+	pdf.CellFormat(columns[2], 11, invoice.Money.Code(), "", 1, "R", false, 0, "")
+	if invoice.RefundedAmount > 0 {
+		pdf.SetFont("Helvetica", "", 10)
+		pdf.CellFormat(columns[0]+columns[1], 9, "Refunded", "", 0, "L", false, 0, "")
+		pdf.CellFormat(columns[2], 9, "-"+invoice.Refunded.Code(), "", 1, "R", false, 0, "")
+	}
 
 	pdf.Ln(8)
 	pdf.SetFont("Helvetica", "", 9)
@@ -178,3 +186,16 @@ func shortDate(at *time.Time) string {
 }
 
 func invoiceWords(value string) string { return strings.ReplaceAll(value, "_", " ") }
+
+// invoiceRowsFallback prints one plan row for an invoice built without the
+// invoice service (tests).
+func invoiceRowsFallback(invoice *domain.Invoice) []domain.InvoiceRow {
+	description := "Subscription"
+	if invoice.PackageName != "" {
+		description = invoice.PackageName + " plan"
+	}
+	if invoice.BillingCycle != "" {
+		description += " (" + invoiceWords(invoice.BillingCycle) + ")"
+	}
+	return []domain.InvoiceRow{{Description: description, PeriodStart: invoice.PeriodStart, PeriodEnd: invoice.PeriodEnd, Money: invoice.Money}}
+}

@@ -22,6 +22,17 @@ type PaymentNotifier interface {
 	PaymentReceived(ctx context.Context, notice PaymentNotice)
 	PaymentRejected(ctx context.Context, notice PaymentNotice)
 	PaymentWithdrawn(ctx context.Context, notice PaymentNotice)
+	// BillingChanged refreshes the organization's billing screens after a
+	// change with no payment notice (a downgrade, a stopped renewal, account
+	// credit, a refund).
+	BillingChanged(ctx context.Context, tenantID int64)
+}
+
+// changed tells open billing screens to refresh (no-op without a notifier).
+func (s *SubscriptionService) changed(ctx context.Context, tenantID int64) {
+	if s.payNotices != nil {
+		s.payNotices.BillingChanged(ctx, tenantID)
+	}
 }
 
 // WithPaymentNotifier tells people when a checkout is submitted and when a

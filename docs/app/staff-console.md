@@ -44,10 +44,17 @@ A banner stays at the top while either is on, with a button to stop. See
 
 ## Payments and plans
 
-Organizations pick a plan on their Billing page. Free plans start at once; paid plans start when
-the payment is confirmed. bKash payments confirm automatically; bank transfers and cash arrive in
-**Payment approvals**, where staff approve or reject them with a note. See
-[Billing](../guides/billing.md).
+Organizations pick a plan on their Billing page and see its price first: an upgrade starts when the
+payment is confirmed with their unused days credited, a cheaper plan or a renewal starts when the
+current period ends. bKash payments confirm automatically; bank transfers and cash arrive in
+**Payment approvals**, where staff see the invoice lines, approve (optionally with the amount
+actually received: any extra becomes account credit) or reject them with a note. A **Price out of
+date** badge means the plan the price was based on changed since the organization paid.
+
+In an organization's drawer staff see its **account credit** (and adjust it), its payments with a
+**Refund** action (to account credit, or money back), and **Change plan**, which can follow the
+organization's own rules (credit for unused days, cheaper plans at the end of the period) or
+replace the plan at once. See [Billing](../guides/billing.md#changing-plans).
 
 Prices are typed in the default currency, which staff choose under **Currencies** together with how
 each currency is written. Changing the default changes the symbol, never the amounts. See

@@ -47,9 +47,11 @@ RETURNING *;
 DELETE FROM package_features WHERE package_id = @package_id;
 
 -- name: GetActiveSubscriptionForTenant :one
+-- The plan in force: active or trial, or a scheduled one whose turn has come
+-- (the expiry task makes it active; until then it already counts).
 SELECT * FROM subscriptions
 WHERE tenant_id = @tenant_id
-  AND status IN ('active', 'trial')
+  AND (status IN ('active', 'trial') OR (status = 'scheduled' AND starts_at <= now()))
   AND expires_at > now()
 ORDER BY id DESC
 LIMIT 1;
@@ -90,15 +92,61 @@ RETURNING *;
 -- name: ActivateSubscription :one
 UPDATE subscriptions
 SET status              = 'active',
-    starts_at           = COALESCE(starts_at, now()),
+    starts_at           = COALESCE(sqlc.narg('starts_at')::timestamptz, starts_at, now()),
     expires_at          = @expires_at,
     cancelled_at        = NULL,
     cancellation_reason = NULL,
     updated_at          = now()
 -- A cancelled subscription is final: a stale or replayed callback must not
 -- bring it back (M8).
-WHERE id = @id AND status IN ('pending', 'trial', 'active', 'expired')
+WHERE id = @id AND status IN ('pending', 'scheduled', 'trial', 'active', 'expired')
 RETURNING *;
+
+-- name: ScheduleSubscription :one
+-- A paid renewal (or a free plan) waits for the current period to end.
+UPDATE subscriptions
+SET status     = 'scheduled',
+    starts_at  = @starts_at,
+    expires_at = @expires_at,
+    overrides  = @overrides,
+    updated_at = now()
+WHERE id = @id AND status = 'pending'
+RETURNING *;
+
+-- name: GetScheduledSubscriptionForTenant :one
+SELECT * FROM subscriptions WHERE tenant_id = @tenant_id AND status = 'scheduled' LIMIT 1;
+
+-- name: CancelScheduledSubscriptions :many
+UPDATE subscriptions
+SET status              = 'cancelled',
+    cancelled_at        = now(),
+    cancellation_reason = @reason,
+    updated_at          = now()
+WHERE tenant_id = @tenant_id AND status = 'scheduled'
+RETURNING *;
+
+-- name: SetSubscriptionPlanEnd :one
+-- What happens when the period ends: renew onto another plan
+-- (next_package_id) or not at all (cancel_at_period_end).
+UPDATE subscriptions
+SET next_package_id      = sqlc.narg('next_package_id'),
+    cancel_at_period_end = @cancel_at_period_end,
+    updated_at           = now()
+WHERE id = @id
+RETURNING *;
+
+-- name: ActivateDueScheduledSubscriptions :execrows
+-- Run after ExpireSubscriptions: a scheduled plan whose turn has come starts.
+UPDATE subscriptions
+SET status     = 'active',
+    updated_at = now()
+WHERE status = 'scheduled'
+  AND starts_at <= now()
+  AND (sqlc.narg('tenant_id')::bigint IS NULL OR tenant_id = sqlc.narg('tenant_id')::bigint)
+  AND NOT EXISTS (
+    SELECT 1 FROM subscriptions a
+    WHERE a.tenant_id = subscriptions.tenant_id AND a.status IN ('active', 'trial') AND a.expires_at > now()
+  );
 
 -- name: SetSubscriptionOverrides :one
 UPDATE subscriptions
@@ -138,21 +186,80 @@ WHERE t.is_active
   )
   AND NOT EXISTS (
     SELECT 1 FROM subscriptions s
-    WHERE s.tenant_id = t.id AND s.status IN ('active', 'trial', 'pending', 'past_due')
+    WHERE s.tenant_id = t.id AND s.status IN ('active', 'trial', 'pending', 'scheduled', 'past_due')
   )
 RETURNING t.id, t.name, t.code;
 
 -- name: GetExpiringSubscriptions :many
-SELECT * FROM subscriptions
-WHERE status IN ('active', 'trial')
-  AND expires_at IS NOT NULL
-  AND expires_at <= @before
-ORDER BY expires_at;
+-- Subscriptions to remind about: not those the organization chose not to
+-- renew, nor those whose next period is already paid (scheduled).
+SELECT s.* FROM subscriptions s
+WHERE s.status IN ('active', 'trial')
+  AND s.expires_at IS NOT NULL
+  AND s.expires_at <= @before
+  AND NOT s.cancel_at_period_end
+  AND NOT EXISTS (SELECT 1 FROM subscriptions n WHERE n.tenant_id = s.tenant_id AND n.status = 'scheduled')
+ORDER BY s.expires_at;
 
 -- name: CreatePayment :one
-INSERT INTO payments (tenant_id, subscription_id, payment_method, status, amount, currency, invoice_number, created_by)
-VALUES (@tenant_id, @subscription_id, @payment_method, @status, @amount, @currency, @invoice_number, @created_by)
+INSERT INTO payments (tenant_id, subscription_id, payment_method, status, amount, currency, invoice_number, created_by,
+                      kind, lines, gross)
+VALUES (@tenant_id, @subscription_id, @payment_method, @status, @amount, @currency, @invoice_number, @created_by,
+        @kind, @lines, @gross)
 RETURNING *;
+
+-- name: SetPaymentQuote :one
+-- Freezes the checkout quote on the payment: why, the invoice lines, the
+-- value bought, the account credit reserved and the plan it replaces.
+UPDATE payments
+SET kind                     = @kind,
+    lines                    = @lines,
+    gross                    = @gross,
+    balance_applied          = @balance_applied,
+    replaces_subscription_id = sqlc.narg('replaces_subscription_id'),
+    updated_at               = now()
+WHERE id = @id
+RETURNING *;
+
+-- name: GetPendingPaymentForTenant :one
+-- Any checkout of the organization still waiting (one at a time).
+SELECT * FROM payments WHERE tenant_id = @tenant_id AND status = 'pending' ORDER BY id DESC LIMIT 1;
+
+-- name: SubscriptionPaidValue :one
+-- What the organization paid for a subscription's period: the value bought
+-- (gross) less what was given back.
+SELECT COALESCE(sum(gross - refunded_amount), 0)::bigint AS paid
+FROM payments
+WHERE subscription_id = @subscription_id AND status IN ('completed', 'refunded');
+
+-- name: RefundPayment :one
+UPDATE payments
+SET refunded_amount = refunded_amount + @refund::bigint,
+    status          = CASE WHEN refunded_amount + @refund::bigint >= amount THEN 'refunded' ELSE status END,
+    updated_at      = now()
+WHERE id = @id
+  AND status = 'completed'
+  AND refunded_amount + @refund::bigint <= amount
+RETURNING *;
+
+-- name: CreditBalance :one
+SELECT COALESCE(sum(amount), 0)::bigint AS balance
+FROM billing_credits
+WHERE tenant_id = @tenant_id AND currency = @currency;
+
+-- name: InsertCredit :one
+INSERT INTO billing_credits (tenant_id, amount, currency, reason, payment_id, subscription_id, created_by)
+VALUES (@tenant_id, @amount, @currency, @reason, @payment_id, @subscription_id, @created_by)
+RETURNING *;
+
+-- name: ListCreditsForTenant :many
+SELECT * FROM billing_credits
+WHERE tenant_id = @tenant_id
+ORDER BY id DESC
+LIMIT @page_limit OFFSET @page_offset;
+
+-- name: CountCreditsForTenant :one
+SELECT count(*) FROM billing_credits WHERE tenant_id = @tenant_id;
 
 -- name: GetPayment :one
 SELECT * FROM payments WHERE id = @id;
@@ -258,8 +365,8 @@ SELECT
 -- name: ApprovalDetailsByIDs :many
 -- What a reviewer needs beside each approval: who pays, how much, for which
 -- plan, and the invoice.
-SELECT a.id, COALESCE(t.name, '')::text AS tenant_name, p.amount, p.currency, p.invoice_number,
-       COALESCE(k.name, '')::text AS package_name
+SELECT a.id, a.tenant_id, COALESCE(t.name, '')::text AS tenant_name, p.amount, p.currency, p.invoice_number,
+       COALESCE(k.name, '')::text AS package_name, p.kind, p.lines, p.replaces_subscription_id
 FROM payment_approval_requests a
 JOIN payments p ON p.id = a.payment_id
 LEFT JOIN tenants t ON t.id = a.tenant_id
@@ -275,6 +382,7 @@ LIMIT 1;
 -- name: InvoiceForPayment :one
 -- Everything an invoice shows for one of a tenant's payments.
 SELECT p.id, p.invoice_number, p.status, p.payment_method, p.amount, p.currency, p.paid_at, p.created_at,
+       p.kind, p.lines, p.refunded_amount,
        COALESCE(p.gateway_ref, '')::text AS gateway_ref,
        t.name AS tenant_name, COALESCE(t.email, '')::text AS tenant_email, COALESCE(t.phone, '')::text AS tenant_phone,
        COALESCE(k.name, '')::text AS package_name, COALESCE(k.billing_cycle, '')::text AS billing_cycle,

@@ -24,7 +24,7 @@ on every call, so the sidebar is a convenience, never the security boundary.
 | Activity log | `/org/activity` | every recorded change, filterable by person, action and date, with export | `activity.view` |
 | Files | `/org/files` | uploads in a grid or list, with previews for images, video, audio and PDF | `file.view.all` |
 | Webhooks | `/org/webhooks` | endpoint subscriptions, the signing secret, a test event and recent deliveries | `webhook.manage` |
-| Billing | `/org/billing` | the current plan, usage against limits, plans to switch to, checkout and payments | `billing.view` |
+| Billing | `/org/billing` | the current plan and account credit, usage against limits, plans to switch to with the price of the change (unused days credited), renew or stop the renewal, checkout and payments | `billing.view` |
 | Org settings | `/org/settings` | preferences grouped by area (notifications, e-mail branding, security, privacy) and ownership transfer | — |
 | Account | `/settings/…` | profile and photo, password, two-factor, signed-in devices, notification preferences, connected AI apps, data export and account deletion | — |
 

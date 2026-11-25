@@ -78,6 +78,9 @@ func (s *ApprovalService) Withdraw(ctx context.Context, tenantID, paymentID, act
 			}
 			return err
 		}
+		if err := releaseCredit(ctx, domain.NewCreditRepository(q), payment, "withdrawn"); err != nil {
+			return err
+		}
 		if payment.SubscriptionID == nil {
 			return nil
 		}
@@ -111,6 +114,15 @@ type ApprovalDetail struct {
 	Amount        int64
 	Currency      string
 	InvoiceNumber string
+	// Kind and Lines are the checkout quote (domain.Change*, invoice lines).
+	Kind  string
+	Lines []domain.InvoiceLine
+	// QuoteStale: the plan whose unused time was credited is no longer the
+	// one in force (staff changed it, or it ended), so the amount may be
+	// wrong (P-16).
+	QuoteStale bool
+	// OverridesDropped is how many per-tenant overrides the change removes.
+	OverridesDropped int
 }
 
 // Details returns the payer, plan, amount and invoice for approvals by id.
@@ -124,9 +136,24 @@ func (s *ApprovalService) Details(ctx context.Context, ids []int64) (map[int64]A
 	if err != nil {
 		return nil, database.MapError("billing.approval_details", err)
 	}
+	subscriptions := domain.NewSubscriptionRepository(s.tx.Queries())
 	for _, row := range rows {
-		out[row.ID] = ApprovalDetail{TenantName: row.TenantName, PackageName: row.PackageName,
-			Amount: row.Amount, Currency: row.Currency, InvoiceNumber: row.InvoiceNumber}
+		detail := ApprovalDetail{TenantName: row.TenantName, PackageName: row.PackageName,
+			Amount: row.Amount, Currency: row.Currency, InvoiceNumber: row.InvoiceNumber,
+			Kind: row.Kind, Lines: domain.DecodeLines(row.Lines)}
+		{
+			current, found, err := subscriptions.GetActiveForTenant(ctx, row.TenantID)
+			if err != nil {
+				return nil, err
+			}
+			if row.ReplacesSubscriptionID != nil {
+				detail.QuoteStale = !found || current.ID != *row.ReplacesSubscriptionID
+			}
+			if found && row.Kind != domain.ChangeRenew {
+				detail.OverridesDropped = len(current.Overrides)
+			}
+		}
+		out[row.ID] = detail
 	}
 	return out, nil
 }
@@ -136,8 +163,16 @@ func (s *ApprovalService) List(ctx context.Context, status string, limit, offset
 	return s.approvals.List(ctx, status, limit, offset)
 }
 
-// Approve activates the subscription and completes the payment atomically.
-func (s *ApprovalService) Approve(ctx context.Context, id, reviewerID int64, note *string) (_ *domain.Approval, err error) {
+// Approve completes the payment and applies it to its subscription
+// atomically (the amount received is the invoice amount).
+func (s *ApprovalService) Approve(ctx context.Context, id, reviewerID int64, note *string) (*domain.Approval, error) {
+	return s.ApproveReceived(ctx, id, reviewerID, note, nil)
+}
+
+// ApproveReceived approves with the amount staff actually received: more
+// than the invoice becomes account credit; less is refused (reject it, or ask
+// for the rest first).
+func (s *ApprovalService) ApproveReceived(ctx context.Context, id, reviewerID int64, note *string, received *int64) (_ *domain.Approval, err error) {
 	ctx, end := tracing.Begin(ctx, "billing.approve_payment", attribute.Int64("approval.id", id))
 	defer end(&err)
 	approval, err := s.approvals.Get(ctx, id)
@@ -147,9 +182,22 @@ func (s *ApprovalService) Approve(ctx context.Context, id, reviewerID int64, not
 	if approval.Status != domain.ApprovalPending {
 		return nil, apperr.New(apperr.InvalidState, "This approval request has already been reviewed.")
 	}
+	payment, err := s.payments.Get(ctx, approval.PaymentID)
+	if err != nil {
+		return nil, err
+	}
+	var extra int64
+	if received != nil {
+		if *received < payment.Amount {
+			return nil, apperr.Validation(map[string][]string{"received_amount": {
+				"Less than the invoice amount was received. Reject the payment, or ask for the rest before approving.",
+			}})
+		}
+		extra = *received - payment.Amount
+	}
 
 	gatewayStatus := "approved by staff"
-	err = s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
+	err = s.tx.WithTenantLock(ctx, "billing.subscribe", approval.TenantID, func(q *dbgen.Queries) error {
 		if _, err := q.UpdatePaymentApproval(ctx, dbgen.UpdatePaymentApprovalParams{
 			ID:           approval.ID,
 			Status:       domain.ApprovalApproved,
@@ -162,30 +210,24 @@ func (s *ApprovalService) Approve(ctx context.Context, id, reviewerID int64, not
 			}
 			return err
 		}
-		if _, err := q.UpdatePaymentStatus(ctx, dbgen.UpdatePaymentStatusParams{
-			ID:            approval.PaymentID,
-			Status:        domain.PaymentCompleted,
-			RecordedBy:    &reviewerID,
-			GatewayStatus: &gatewayStatus,
-		}); err != nil {
-			return err
-		}
-		subscription, err := q.GetSubscription(ctx, approval.SubscriptionID)
+		st := storeFor(q)
+		completed, err := st.payments.UpdateStatus(ctx, approval.PaymentID, domain.PaymentCompleted, &reviewerID, &gatewayStatus)
 		if err != nil {
 			return err
 		}
-		if err := q.DeactivateActiveSubscriptions(ctx, subscription.TenantID); err != nil {
+		if _, err := fulfil(ctx, st, completed, time.Now()); err != nil {
 			return err
 		}
-		expires := subscription.ExpiresAt
-		if !expires.Valid {
-			expires = timestamptz(subscription.CreatedAt.Time.AddDate(0, 1, 0))
+		if extra > 0 {
+			if _, err := st.credits.Add(ctx, domain.CreditInput{
+				TenantID: completed.TenantID, Amount: extra, Currency: completed.Currency,
+				Reason:    "Paid more than invoice " + completed.InvoiceNumber + ".",
+				PaymentID: &completed.ID, SubscriptionID: completed.SubscriptionID, CreatedBy: &reviewerID,
+			}); err != nil {
+				return err
+			}
 		}
-		_, err = q.ActivateSubscription(ctx, dbgen.ActivateSubscriptionParams{
-			ID:        approval.SubscriptionID,
-			ExpiresAt: expires,
-		})
-		return err
+		return nil
 	})
 	if err != nil {
 		var appErr *apperr.Error
@@ -230,15 +272,20 @@ func (s *ApprovalService) Reject(ctx context.Context, id, reviewerID int64, note
 			}
 			return err
 		}
-		if _, err := q.UpdatePaymentStatus(ctx, dbgen.UpdatePaymentStatusParams{
+		failed, err := q.UpdatePaymentStatus(ctx, dbgen.UpdatePaymentStatusParams{
 			ID:            approval.PaymentID,
 			Status:        domain.PaymentFailed,
 			RecordedBy:    nil,
 			GatewayStatus: &gatewayStatus,
-		}); err != nil {
+		})
+		if err != nil {
 			return err
 		}
-		_, err := q.UpdateSubscriptionStatus(ctx, dbgen.UpdateSubscriptionStatusParams{
+		payment := domain.MapPayment(failed)
+		if err := releaseCredit(ctx, domain.NewCreditRepository(q), &payment, "rejected"); err != nil {
+			return err
+		}
+		_, err = q.UpdateSubscriptionStatus(ctx, dbgen.UpdateSubscriptionStatusParams{
 			ID:                 approval.SubscriptionID,
 			Status:             domain.StatusCancelled,
 			CancelledAt:        timestamptz(time.Now()),

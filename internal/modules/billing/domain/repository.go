@@ -33,7 +33,21 @@ type SubscriptionRepository interface {
 	List(ctx context.Context, status string, limit, offset int32) ([]Subscription, int64, error)
 	Create(ctx context.Context, input SubscriptionInput) (*Subscription, error)
 	UpdateStatus(ctx context.Context, id int64, status string, cancelledAt *time.Time, reason *string) (*Subscription, error)
-	Activate(ctx context.Context, id int64, expiresAt time.Time) (*Subscription, error)
+	// Activate makes a subscription active; a non-nil startsAt moves the
+	// start of its period (a plan starts when it is paid).
+	Activate(ctx context.Context, id int64, startsAt *time.Time, expiresAt time.Time) (*Subscription, error)
+	// Schedule makes a pending subscription wait for the current period to
+	// end (status scheduled) with its own period and overrides.
+	Schedule(ctx context.Context, id int64, startsAt, expiresAt time.Time, overrides []byte) (*Subscription, error)
+	GetScheduledForTenant(ctx context.Context, tenantID int64) (*Subscription, bool, error)
+	// CancelScheduled withdraws the tenant's scheduled subscription (if any).
+	CancelScheduled(ctx context.Context, tenantID int64, reason string) ([]Subscription, error)
+	// SetPlanEnd says what happens when the period ends: renew onto another
+	// plan (nextPackageID) or not at all (cancelAtPeriodEnd).
+	SetPlanEnd(ctx context.Context, id int64, nextPackageID *int64, cancelAtPeriodEnd bool) (*Subscription, error)
+	// ActivateDueScheduled starts scheduled subscriptions whose turn came
+	// (one tenant's, or every tenant's for nil).
+	ActivateDueScheduled(ctx context.Context, tenantID *int64) (int64, error)
 	SetOverrides(ctx context.Context, id int64, overrides []byte) (*Subscription, error)
 	DeactivateActive(ctx context.Context, tenantID int64) error
 	ExpireOverdue(ctx context.Context) (int64, error)
@@ -55,6 +69,43 @@ type PaymentRepository interface {
 	UpdateStatus(ctx context.Context, id int64, status string, recordedBy *int64, gatewayStatus *string) (*Payment, error)
 	ListForTenant(ctx context.Context, tenantID int64, limit, offset int32) ([]Payment, int64, error)
 	List(ctx context.Context, status string, limit, offset int32) ([]Payment, int64, error)
+	// PendingForTenant returns any checkout of the tenant still waiting.
+	PendingForTenant(ctx context.Context, tenantID int64) (*Payment, bool, error)
+	// PaidValue is the value paid for a subscription's period (gross less
+	// refunds of its completed payments).
+	PaidValue(ctx context.Context, subscriptionID int64) (int64, error)
+	// SetQuote freezes a checkout quote on a payment.
+	SetQuote(ctx context.Context, id int64, quote PaymentQuote) (*Payment, error)
+	// Refund adds to the refunded amount (completed payments only, never
+	// beyond the amount); the payment becomes refunded when fully given back.
+	Refund(ctx context.Context, id, amount int64) (*Payment, error)
+}
+
+// CreditRepository is the persistence contract for account credit.
+type CreditRepository interface {
+	Balance(ctx context.Context, tenantID int64, currency string) (int64, error)
+	Add(ctx context.Context, input CreditInput) (*Credit, error)
+	ListForTenant(ctx context.Context, tenantID int64, limit, offset int32) ([]Credit, int64, error)
+}
+
+// PaymentQuote is what a checkout froze on its payment.
+type PaymentQuote struct {
+	Kind                   string
+	Lines                  []InvoiceLine
+	Gross                  int64
+	BalanceApplied         int64
+	ReplacesSubscriptionID *int64
+}
+
+// CreditInput is one account credit entry (positive adds, negative uses).
+type CreditInput struct {
+	TenantID       int64
+	Amount         int64
+	Currency       string
+	Reason         string
+	PaymentID      *int64
+	SubscriptionID *int64
+	CreatedBy      *int64
 }
 
 // ApprovalRepository is the persistence contract for manual payment approvals.
@@ -103,6 +154,10 @@ type PaymentInput struct {
 	Currency       string
 	InvoiceNumber  string
 	CreatedBy      *int64
+	// Kind defaults to ChangeNew, Gross to Amount.
+	Kind  string
+	Lines []InvoiceLine
+	Gross *int64
 }
 
 // ApprovalInput carries approval creation input.
@@ -339,9 +394,10 @@ func (r *subscriptionRepository) UpdateStatus(ctx context.Context, id int64, sta
 	return &sub, nil
 }
 
-func (r *subscriptionRepository) Activate(ctx context.Context, id int64, expiresAt time.Time) (*Subscription, error) {
+func (r *subscriptionRepository) Activate(ctx context.Context, id int64, startsAt *time.Time, expiresAt time.Time) (*Subscription, error) {
 	row, err := r.queries.ActivateSubscription(ctx, dbgen.ActivateSubscriptionParams{
 		ID:        id,
+		StartsAt:  timestamptzPtr(startsAt),
 		ExpiresAt: timestamptz(expiresAt),
 	})
 	if err != nil {
@@ -352,6 +408,69 @@ func (r *subscriptionRepository) Activate(ctx context.Context, id int64, expires
 	}
 	sub := mapSubscription(row)
 	return &sub, nil
+}
+
+func (r *subscriptionRepository) Schedule(ctx context.Context, id int64, startsAt, expiresAt time.Time, overrides []byte) (*Subscription, error) {
+	if len(overrides) == 0 {
+		overrides = []byte("{}")
+	}
+	row, err := r.queries.ScheduleSubscription(ctx, dbgen.ScheduleSubscriptionParams{
+		ID: id, StartsAt: timestamptz(startsAt), ExpiresAt: timestamptz(expiresAt), Overrides: overrides,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperr.Newf(apperr.InvalidState, "Subscription '%d' is no longer waiting for payment.", id)
+		}
+		return nil, database.MapError("billing.schedule_subscription", err)
+	}
+	sub := mapSubscription(row)
+	return &sub, nil
+}
+
+func (r *subscriptionRepository) GetScheduledForTenant(ctx context.Context, tenantID int64) (*Subscription, bool, error) {
+	row, err := r.queries.GetScheduledSubscriptionForTenant(ctx, tenantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, database.MapError("billing.scheduled_subscription", err)
+	}
+	sub := mapSubscription(row)
+	return &sub, true, nil
+}
+
+func (r *subscriptionRepository) CancelScheduled(ctx context.Context, tenantID int64, reason string) ([]Subscription, error) {
+	rows, err := r.queries.CancelScheduledSubscriptions(ctx, dbgen.CancelScheduledSubscriptionsParams{TenantID: tenantID, Reason: &reason})
+	if err != nil {
+		return nil, database.MapError("billing.cancel_scheduled", err)
+	}
+	items := make([]Subscription, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, mapSubscription(row))
+	}
+	return items, nil
+}
+
+func (r *subscriptionRepository) SetPlanEnd(ctx context.Context, id int64, nextPackageID *int64, cancelAtPeriodEnd bool) (*Subscription, error) {
+	row, err := r.queries.SetSubscriptionPlanEnd(ctx, dbgen.SetSubscriptionPlanEndParams{
+		ID: id, NextPackageID: nextPackageID, CancelAtPeriodEnd: cancelAtPeriodEnd,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperr.Newf(apperr.ResourceNotFound, "Subscription with ID '%d' was not found.", id)
+		}
+		return nil, database.MapError("billing.set_plan_end", err)
+	}
+	sub := mapSubscription(row)
+	return &sub, nil
+}
+
+func (r *subscriptionRepository) ActivateDueScheduled(ctx context.Context, tenantID *int64) (int64, error) {
+	affected, err := r.queries.ActivateDueScheduledSubscriptions(ctx, tenantID)
+	if err != nil {
+		return 0, database.MapError("billing.activate_due_scheduled", err)
+	}
+	return affected, nil
 }
 
 func (r *subscriptionRepository) SetOverrides(ctx context.Context, id int64, overrides []byte) (*Subscription, error) {
@@ -423,6 +542,14 @@ func NewPaymentRepository(queries *dbgen.Queries) PaymentRepository {
 }
 
 func (r *paymentRepository) Create(ctx context.Context, input PaymentInput) (*Payment, error) {
+	kind := input.Kind
+	if kind == "" {
+		kind = ChangeNew
+	}
+	gross := input.Amount
+	if input.Gross != nil {
+		gross = *input.Gross
+	}
 	row, err := r.queries.CreatePayment(ctx, dbgen.CreatePaymentParams{
 		TenantID:       input.TenantID,
 		SubscriptionID: input.SubscriptionID,
@@ -432,6 +559,9 @@ func (r *paymentRepository) Create(ctx context.Context, input PaymentInput) (*Pa
 		Currency:       input.Currency,
 		InvoiceNumber:  input.InvoiceNumber,
 		CreatedBy:      input.CreatedBy,
+		Kind:           kind,
+		Lines:          EncodeLines(input.Lines),
+		Gross:          gross,
 	})
 	if err != nil {
 		return nil, database.MapError("billing.create_payment", err)
@@ -674,6 +804,7 @@ func (r *reportRepository) Invoice(ctx context.Context, tenantID, paymentID int6
 		Currency: row.Currency, Reference: row.GatewayRef, IssuedAt: row.CreatedAt.Time, TenantName: row.TenantName,
 		TenantEmail: row.TenantEmail, TenantPhone: row.TenantPhone, PackageName: row.PackageName, BillingCycle: row.BillingCycle,
 		PaidAt: timePtr(row.PaidAt), PeriodStart: timePtr(row.StartsAt), PeriodEnd: timePtr(row.ExpiresAt),
+		Lines: DecodeLines(row.Lines), RefundedAmount: row.RefundedAmount,
 	}, nil
 }
 
@@ -683,4 +814,102 @@ func (r *reportRepository) Usage(ctx context.Context, tenantID int64) (TenantUsa
 		return TenantUsage{}, database.MapError("billing.usage", err)
 	}
 	return TenantUsage{Users: row.Users, Branches: row.Branches, StorageBytes: row.StorageBytes}, nil
+}
+
+func (r *paymentRepository) PendingForTenant(ctx context.Context, tenantID int64) (*Payment, bool, error) {
+	row, err := r.queries.GetPendingPaymentForTenant(ctx, tenantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, database.MapError("billing.pending_payment", err)
+	}
+	payment := mapPayment(row)
+	return &payment, true, nil
+}
+
+func (r *paymentRepository) PaidValue(ctx context.Context, subscriptionID int64) (int64, error) {
+	paid, err := r.queries.SubscriptionPaidValue(ctx, &subscriptionID)
+	if err != nil {
+		return 0, database.MapError("billing.paid_value", err)
+	}
+	return max(paid, 0), nil
+}
+
+func (r *paymentRepository) SetQuote(ctx context.Context, id int64, quote PaymentQuote) (*Payment, error) {
+	kind := quote.Kind
+	if kind == "" {
+		kind = ChangeNew
+	}
+	row, err := r.queries.SetPaymentQuote(ctx, dbgen.SetPaymentQuoteParams{
+		ID: id, Kind: kind, Lines: EncodeLines(quote.Lines), Gross: quote.Gross,
+		BalanceApplied: quote.BalanceApplied, ReplacesSubscriptionID: quote.ReplacesSubscriptionID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperr.Newf(apperr.ResourceNotFound, "Payment with ID '%d' was not found.", id)
+		}
+		return nil, database.MapError("billing.set_payment_quote", err)
+	}
+	payment := mapPayment(row)
+	return &payment, nil
+}
+
+func (r *paymentRepository) Refund(ctx context.Context, id, amount int64) (*Payment, error) {
+	row, err := r.queries.RefundPayment(ctx, dbgen.RefundPaymentParams{ID: id, Refund: amount})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperr.New(apperr.InvalidState, "Only a completed payment can be refunded, and never for more than was paid.")
+		}
+		return nil, database.MapError("billing.refund_payment", err)
+	}
+	payment := mapPayment(row)
+	return &payment, nil
+}
+
+// ── Account credit ─────────────────────────────────────────────────────────
+
+type creditRepository struct {
+	queries *dbgen.Queries
+}
+
+// NewCreditRepository creates the sqlc-backed account credit repository.
+func NewCreditRepository(queries *dbgen.Queries) CreditRepository {
+	return &creditRepository{queries: queries}
+}
+
+func (r *creditRepository) Balance(ctx context.Context, tenantID int64, currency string) (int64, error) {
+	balance, err := r.queries.CreditBalance(ctx, dbgen.CreditBalanceParams{TenantID: tenantID, Currency: currency})
+	if err != nil {
+		return 0, database.MapError("billing.credit_balance", err)
+	}
+	return balance, nil
+}
+
+func (r *creditRepository) Add(ctx context.Context, input CreditInput) (*Credit, error) {
+	row, err := r.queries.InsertCredit(ctx, dbgen.InsertCreditParams{
+		TenantID: input.TenantID, Amount: input.Amount, Currency: input.Currency, Reason: input.Reason,
+		PaymentID: input.PaymentID, SubscriptionID: input.SubscriptionID, CreatedBy: input.CreatedBy,
+	})
+	if err != nil {
+		return nil, database.MapError("billing.add_credit", err)
+	}
+	credit := mapCredit(row)
+	return &credit, nil
+}
+
+func (r *creditRepository) ListForTenant(ctx context.Context, tenantID int64, limit, offset int32) ([]Credit, int64, error) {
+	rows, err := r.queries.ListCreditsForTenant(ctx, dbgen.ListCreditsForTenantParams{TenantID: tenantID, PageLimit: limit, PageOffset: offset})
+	if err != nil {
+		return nil, 0, database.MapError("billing.list_credits", err)
+	}
+	total, err := r.queries.CountCreditsForTenant(ctx, tenantID)
+	if err != nil {
+		return nil, 0, database.MapError("billing.count_credits", err)
+	}
+	items := make([]Credit, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, mapCredit(row))
+	}
+	return items, total, nil
 }

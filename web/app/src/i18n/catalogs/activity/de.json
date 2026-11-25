@@ -125,5 +125,10 @@
   "activity.subject.user": "Benutzer",
   "activity.subject.webhook": "Webhook",
   "activity.subject.file": "Datei",
-  "activity.subject.system": "System"
+  "activity.subject.system": "System",
+  "activity.label.subscription.downgrade_scheduled": "Downgrade zur Verlängerung gewählt",
+  "activity.label.subscription.cancel_scheduled": "Verlängerung beendet",
+  "activity.label.subscription.plan_kept": "Tarif behalten",
+  "activity.label.billing.credit_adjusted": "Guthaben angepasst",
+  "activity.label.billing.payment_refunded": "Zahlung erstattet"
 }

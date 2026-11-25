@@ -129,5 +129,10 @@
   "activity.subject.user": "مستخدم",
   "activity.subject.webhook": "Webhook",
   "activity.subject.file": "ملف",
-  "activity.subject.system": "النظام"
+  "activity.subject.system": "النظام",
+  "activity.label.subscription.downgrade_scheduled": "اختيار تخفيض عند التجديد",
+  "activity.label.subscription.cancel_scheduled": "إيقاف التجديد",
+  "activity.label.subscription.plan_kept": "الإبقاء على الخطة",
+  "activity.label.billing.credit_adjusted": "تعديل رصيد الحساب",
+  "activity.label.billing.payment_refunded": "استرداد دفعة"
 }

@@ -26,7 +26,7 @@ To add your own command, see [CLI commands](../guides/cli-commands.md).
 | [`backup:list`](#backuplist) | List recent backup runs |
 | [`backup:monitor`](#backupmonitor) | Check backup freshness and storage usage |
 | [`backup:run`](#backuprun) | Create a database backup archive |
-| [`billing:expire-subscriptions`](#billingexpire-subscriptions) | Mark overdue subscriptions as expired |
+| [`billing:expire-subscriptions`](#billingexpire-subscriptions) | Mark overdue subscriptions as expired and start scheduled ones |
 | [`billing:send-renewal-reminders`](#billingsend-renewal-reminders) | Log renewal reminders for subscriptions expiring within 7/3/1 days |
 | [`cache:clear`](#cacheclear) | Clear the configured cache store |
 | [`config:show`](#configshow) | Print the effective configuration |
@@ -137,7 +137,7 @@ ims backup:run [flags]
 
 ### billing:expire-subscriptions
 
-Mark overdue subscriptions as expired.
+Mark overdue subscriptions as expired and start scheduled ones.
 
 ```bash
 ims billing:expire-subscriptions

@@ -126,5 +126,10 @@
   "activity.subject.webhook": "Webhook",
   "activity.subject.file": "File",
   "activity.subject.system": "System",
-  "activity.label._context": "activity.label.<action> names an activity-log action; activity.subject.<type> what it changed. Short, like a log entry (\"Member added\"). An action without a key is shown from its code."
+  "activity.label._context": "activity.label.<action> names an activity-log action; activity.subject.<type> what it changed. Short, like a log entry (\"Member added\"). An action without a key is shown from its code.",
+  "activity.label.subscription.downgrade_scheduled": "Downgrade chosen for the renewal",
+  "activity.label.subscription.cancel_scheduled": "Renewal stopped",
+  "activity.label.subscription.plan_kept": "Plan kept",
+  "activity.label.billing.credit_adjusted": "Account credit adjusted",
+  "activity.label.billing.payment_refunded": "Payment refunded"
 }

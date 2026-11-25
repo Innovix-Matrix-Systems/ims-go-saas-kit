@@ -270,7 +270,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			return err
 		}),
 		Notifications: notifications.NewHandler(platform.Notifications, checker, kit),
-		Dashboard:     dashboard.NewHandler(dashboard.NewService(dashboard.NewRepository(queries)), checker, kit),
+		Dashboard:     dashboard.NewHandler(dashboard.NewService(dashboard.NewRepository(queries)).WithCurrencies(platform.Currencies), checker, kit),
 		Announcements: announcements.NewHandler(platform.Announcements, checker, kit),
 		Webhooks:      webhooks.NewHandler(platform.Webhooks, checker, kit),
 		Processing:    dataprocessing.NewHandler(platform.Processing, platform.Settings, checker, kit),
