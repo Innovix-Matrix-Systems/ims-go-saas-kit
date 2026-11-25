@@ -125,5 +125,10 @@
   "activity.subject.user": "ব্যবহারকারী",
   "activity.subject.webhook": "ওয়েবহুক",
   "activity.subject.file": "ফাইল",
-  "activity.subject.system": "সিস্টেম"
+  "activity.subject.system": "সিস্টেম",
+  "activity.label.subscription.downgrade_scheduled": "নবায়নের জন্য ডাউনগ্রেড বেছে নেওয়া হয়েছে",
+  "activity.label.subscription.cancel_scheduled": "নবায়ন বন্ধ",
+  "activity.label.subscription.plan_kept": "প্ল্যান রাখা হয়েছে",
+  "activity.label.billing.credit_adjusted": "অ্যাকাউন্ট ক্রেডিট সমন্বয়",
+  "activity.label.billing.payment_refunded": "পেমেন্ট ফেরত"
 }

@@ -3652,6 +3652,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/billing/change-preview": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Price a plan change before paying
+         * @description What moving to the package costs and when it takes effect, without changing anything. An upgrade (or a longer billing cycle) starts when paid and credits the unused days of the current plan (whole days, rounded up; based on what was actually paid). A downgrade waits for the end of the period and is paid at the renewal; a renewal of the same plan starts when the current period ends. Account credit is used before any money. `over_limits` lists the new plan's limits the organization already exceeds (downgrades).
+         */
+        get: operations["billingChangePreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/subscription/cancel": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop the renewal (keep the plan until it ends)
+         * @description Sets `cancel_at_period_end`: the plan stays in force until `expires_at`, renewal reminders stop, and a period already paid in advance becomes account credit. Undo with `POST /billing/subscription/keep`.
+         */
+        post: operations["billingCancelAtPeriodEnd"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/subscription/keep": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep the current plan (undo a cancellation or a chosen downgrade)
+         * @description Clears `cancel_at_period_end` and `next_package_id`; a free plan scheduled to follow is withdrawn. 409 when the next period is already paid for (support can change it).
+         */
+        post: operations["billingKeepPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/credits": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The organization's account credit
+         * @description The balance (default currency) and its entries, newest first. Credit pays future checkouts first.
+         */
+        get: operations["billingCredits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/billing/subscribe": {
         parameters: {
             query?: never;
@@ -3686,7 +3850,7 @@ export interface paths {
         put?: never;
         /**
          * Subscribe the resolved tenant to a package
-         * @description Idempotent per tenant + package + payment method: while a checkout is still pending, calling again returns that same subscription and payment instead of charging twice.
+         * @description Moves the organization to the package with the rules of `GET /billing/change-preview` (the quote is frozen on the payment). Idempotent per tenant + package + payment method: while a checkout is still pending, calling again returns that same subscription and payment instead of charging twice. Only one checkout can wait at a time: another plan or method answers 409 with `meta.reason` `CHECKOUT_PENDING` and the waiting `payment_id`. A downgrade records `next_package_id` and returns the current subscription with no payment; a free plan starts now or is scheduled; when account credit covers the amount, no payment method is needed and the plan starts at once (payment method `credit`, amount 0).
          */
         post: operations["billingSubscribe"];
         delete?: never;
@@ -3808,7 +3972,7 @@ export interface paths {
         put?: never;
         /**
          * Assign a plan to a tenant (system)
-         * @description Ends the tenant's current subscription and starts an active one on the package, in one transaction. With `payment_method` (cash or bank transfer) a completed payment is recorded for `amount`, which defaults to the package price; without it the plan is assigned free of charge. Hidden (inactive) packages can be assigned. Overrides start empty on the new subscription.
+         * @description `mode: replace` (default) ends the tenant's current subscription and starts an active one on the package, in one transaction. With `payment_method` (cash or bank transfer) a completed payment is recorded for `amount`, which defaults to the package price; without it the plan is assigned free of charge. `mode: change` applies the organization's own rules (unused-time credit, account credit, downgrades and renewals at the end of the period) and records the payment as received; `amount` defaults to the amount due. Hidden (inactive) packages can be assigned. Overrides start empty on the new subscription.
          */
         post: operations["assignTenantPlan"];
         delete?: never;
@@ -3841,6 +4005,73 @@ export interface paths {
         put?: never;
         /** Record a manual payment (cash/bank) */
         post: operations["recordPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/internal/payments/{id}/refund": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refund a payment (system)
+         * @description Gives back up to what is left of a completed payment. `to: credit` adds it to the organization's account credit; `to: original` refunds through the gateway (bKash) or records that staff paid cash or bank money back by hand. The payment becomes `refunded` when fully refunded. `end_subscription` also ends the plan it bought, at once.
+         */
+        post: operations["refundPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/internal/tenants/{tenant_id}/credits": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path: {
+                tenant_id: number;
+            };
+            cookie?: never;
+        };
+        /** An organization's account credit (system) */
+        get: operations["tenantCredits"];
+        put?: never;
+        /**
+         * Add or take back account credit (system)
+         * @description A positive amount adds credit (goodwill, a correction); a negative one takes it back, never below zero.
+         */
+        post: operations["adjustTenantCredit"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3897,7 +4128,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Approve a manual payment (activates the subscription) */
+        /**
+         * Approve a manual payment (activates the subscription)
+         * @description Completes the payment: an upgrade or new plan starts now with a fresh period, a renewal waits for the current period to end. `received_amount` above the invoice adds the difference to the organization's account credit; below it is refused (reject, or ask for the rest).
+         */
         post: operations["approvePayment"];
         delete?: never;
         options?: never;
@@ -7851,8 +8085,11 @@ export interface components {
             tenant_id: number;
             /** Format: int64 */
             package_id: number;
-            /** @enum {string} */
-            status: "trial" | "pending" | "active" | "past_due" | "cancelled" | "expired";
+            /**
+             * @description `scheduled` waits for the current period to end (a renewal paid early, or a free plan).
+             * @enum {string}
+             */
+            status: "trial" | "pending" | "scheduled" | "active" | "past_due" | "cancelled" | "expired";
             /** Format: date-time */
             starts_at?: string | null;
             /** Format: date-time */
@@ -7865,6 +8102,13 @@ export interface components {
             overrides?: {
                 [key: string]: unknown;
             };
+            /**
+             * Format: int64
+             * @description The plan chosen for the renewal (a downgrade).
+             */
+            next_package_id?: number | null;
+            /** @description The organization will not renew; the plan runs until it expires. */
+            cancel_at_period_end: boolean;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -7883,6 +8127,17 @@ export interface components {
                 subscription?: components["schemas"]["Subscription"];
                 package?: components["schemas"]["Package"];
                 active: boolean;
+                /** @description The period arranged to follow the current one. */
+                scheduled?: components["schemas"]["Subscription"] | null;
+                scheduled_package?: components["schemas"]["Package"] | null;
+                /** @description The plan chosen for the renewal (a downgrade). */
+                next_package?: components["schemas"]["Package"] | null;
+                /**
+                 * Format: int64
+                 * @description Account credit in minor units.
+                 */
+                credit_balance: number;
+                currency: string;
             };
         };
         AnnouncementRequest: {
@@ -8118,6 +8373,143 @@ export interface components {
                 organizations: number;
             }[] | null;
         };
+        InvoiceLine: {
+            /** @enum {string} */
+            type: "plan" | "unused_time" | "account_credit";
+            /** Format: int64 */
+            package_id?: number;
+            package_name?: string;
+            billing_cycle?: string;
+            /** Format: date-time */
+            period_start?: string;
+            /** Format: date-time */
+            period_end?: string;
+            /** @description Unused days credited (unused_time). */
+            days?: number;
+            /**
+             * Format: int64
+             * @description Minor units; credits are negative.
+             */
+            amount: number;
+        };
+        Change: {
+            /** @enum {string} */
+            kind: "new" | "renew" | "upgrade" | "downgrade";
+            /** @enum {string} */
+            effective: "now" | "period_end";
+            package: components["schemas"]["Package"];
+            current_package?: components["schemas"]["Package"] | null;
+            currency: string;
+            /** Format: int64 */
+            price: number;
+            /**
+             * Format: int64
+             * @description Value of the current plan's unused days.
+             */
+            credit: number;
+            unused_days: number;
+            period_days: number;
+            /**
+             * Format: int64
+             * @description Account credit used.
+             */
+            balance_applied: number;
+            /**
+             * Format: int64
+             * @description What is paid now.
+             */
+            amount_due: number;
+            /**
+             * Format: int64
+             * @description Unused-time credit beyond the price; becomes account credit.
+             */
+            surplus: number;
+            /**
+             * Format: int64
+             * @description What a downgrade costs at the renewal.
+             */
+            due_at_renewal: number;
+            requires_payment: boolean;
+            /** Format: date-time */
+            period_start: string;
+            /** Format: date-time */
+            period_end: string;
+            /** Format: date-time */
+            current_period_end?: string | null;
+            lines: components["schemas"]["InvoiceLine"][];
+            over_limits: {
+                feature_key: string;
+                description: string;
+                /** Format: int64 */
+                limit: number;
+                /** Format: int64 */
+                used: number;
+            }[];
+            overrides_dropped: number;
+        };
+        ChangeEnvelope: {
+            data: components["schemas"]["Change"];
+        };
+        Credit: {
+            /** Format: int64 */
+            id: number;
+            /**
+             * Format: int64
+             * @description Minor units; positive adds, negative uses.
+             */
+            amount: number;
+            currency: string;
+            reason: string;
+            /** Format: int64 */
+            payment_id?: number | null;
+            /** Format: int64 */
+            subscription_id?: number | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CreditEnvelope: {
+            data: components["schemas"]["Credit"];
+        };
+        CreditsEnvelope: {
+            data: {
+                /** Format: int64 */
+                balance: number;
+                currency: string;
+                /** Format: int64 */
+                total: number;
+                entries: components["schemas"]["Credit"][];
+            };
+        };
+        /**
+         * @example {
+         *       "amount": 50000,
+         *       "reason": "Goodwill for the outage"
+         *     }
+         */
+        CreditAdjustRequest: {
+            /**
+             * Format: int64
+             * @description Minor units, not zero: positive adds, negative takes back.
+             */
+            amount: number;
+            reason: string;
+        };
+        /**
+         * @example {
+         *       "amount": 50000,
+         *       "reason": "Charged twice",
+         *       "to": "original"
+         *     }
+         */
+        RefundRequest: {
+            /** Format: int64 */
+            amount: number;
+            reason: string;
+            /** @enum {string} */
+            to: "credit" | "original";
+            /** @default false */
+            end_subscription: boolean;
+        };
         BillingUsage: {
             limits: {
                 /** @example users.max */
@@ -8147,7 +8539,7 @@ export interface components {
             /** Format: int64 */
             package_id: number;
             /**
-             * @description Required for a paid package. A free package starts at once, with no payment.
+             * @description Required when there is something to pay now (see `GET /billing/change-preview`).
              * @enum {string}
              */
             payment_method?: "bkash" | "nagad" | "cash" | "bank_transfer";
@@ -8158,8 +8550,10 @@ export interface components {
         SubscribeEnvelope: {
             data: {
                 subscription: components["schemas"]["Subscription"];
-                /** @description Null for a free package, which starts at once. */
+                /** @description Null when nothing is paid now (a free package, a downgrade). */
                 payment: components["schemas"]["Payment"] | null;
+                /** @description The priced change (null when an existing checkout is returned). */
+                change?: components["schemas"]["Change"] | null;
             };
         };
         /**
@@ -8176,9 +8570,14 @@ export interface components {
             payment_method?: "cash" | "bank_transfer";
             /**
              * Format: int64
-             * @description Defaults to the package price. Requires payment_method.
+             * @description Defaults to the package price (replace) or the amount due (change). Requires payment_method.
              */
             amount?: number;
+            /**
+             * @default replace
+             * @enum {string}
+             */
+            mode: "replace" | "change";
         };
         AssignPlanEnvelope: {
             data: {
@@ -8193,15 +8592,35 @@ export interface components {
             tenant_id: number;
             /** Format: int64 */
             subscription_id?: number | null;
+            /**
+             * @description `credit`: account credit covered it (amount 0).
+             * @enum {string}
+             */
+            payment_method: "bkash" | "nagad" | "cash" | "bank_transfer" | "credit";
             /** @enum {string} */
-            payment_method: "bkash" | "nagad" | "cash" | "bank_transfer";
-            /** @enum {string} */
-            status: "pending" | "processing" | "completed" | "failed" | "cancelled" | "awaiting_approval";
+            status: "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded" | "awaiting_approval";
             /**
              * Format: int64
-             * @description Minor units (paisa).
+             * @description What was paid in money, minor units (paisa).
              */
             amount: number;
+            /** @enum {string} */
+            kind: "new" | "renew" | "upgrade" | "downgrade" | "staff";
+            lines: components["schemas"]["InvoiceLine"][];
+            /**
+             * Format: int64
+             * @description The value bought (the plan price before credits).
+             */
+            gross: number;
+            /**
+             * Format: int64
+             * @description Account credit used.
+             */
+            balance_applied: number;
+            /** Format: int64 */
+            refunded_amount: number;
+            /** Format: int64 */
+            replaces_subscription_id?: number | null;
             /** @example BDT */
             currency: string;
             gateway_ref?: string | null;
@@ -8252,6 +8671,11 @@ export interface components {
          */
         ReviewRequest: {
             note?: string | null;
+            /**
+             * Format: int64
+             * @description Approve only. What was actually received; more than the invoice becomes account credit, less is refused.
+             */
+            received_amount?: number | null;
         };
         Approval: {
             /** Format: int64 */
@@ -8289,6 +8713,13 @@ export interface components {
                 amount: number;
                 currency: string;
                 invoice_number: string;
+                /** @enum {string} */
+                kind: "new" | "renew" | "upgrade" | "downgrade" | "staff";
+                lines: components["schemas"]["InvoiceLine"][];
+                /** @description The plan credited at checkout is no longer the one in force; the amount may be wrong. */
+                quote_stale: boolean;
+                /** @description Per-organization overrides that approving removes. */
+                overrides_dropped: number;
             };
         };
         ApprovalEnvelope: {
@@ -19819,6 +20250,292 @@ export interface operations {
             };
         };
     };
+    billingChangePreview: {
+        parameters: {
+            query: {
+                package_id: number;
+            };
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The priced change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    billingCancelAtPeriodEnd: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current subscription. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    billingKeepPlan: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current subscription. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    billingCredits: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["Page"];
+                per_page?: components["parameters"]["PerPage"];
+            };
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+                /**
+                 * @description Act as this user for one request (needs `user.impersonate`): their roles,
+                 *     permissions, tenant and branch apply. Cannot be combined with the other acting
+                 *     headers (422). Refused with 403 `IMPERSONATION_FORBIDDEN` for yourself, inactive
+                 *     or platform accounts and users who can act as others. Account changes (profile,
+                 *     password, avatar, branch switch) are refused while acting. Every request is
+                 *     written to the system audit log.
+                 */
+                "X-Acting-User"?: components["parameters"]["ActingUser"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Balance and entries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditsEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     billingSubscribe: {
         parameters: {
             query?: never;
@@ -19875,6 +20592,15 @@ export interface operations {
             };
             /** @description Authenticated but not permitted, or tenant context missing. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -20286,6 +21012,218 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    refundPayment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path: {
+                id: components["parameters"]["PathID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundRequest"];
+            };
+        };
+        responses: {
+            /** @description The payment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflicting state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description A dependency or gateway is unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    tenantCredits: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["Page"];
+                per_page?: components["parameters"]["PerPage"];
+            };
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path: {
+                tenant_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Balance and entries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditsEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    adjustTenantCredit: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path: {
+                tenant_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreditAdjustRequest"];
+            };
+        };
+        responses: {
+            /** @description The entry. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditEnvelope"];
                 };
             };
             /** @description Missing, invalid or expired bearer token. */

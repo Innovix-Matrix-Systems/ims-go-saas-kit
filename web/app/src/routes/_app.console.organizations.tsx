@@ -196,12 +196,19 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
   const [confirm, setConfirm] = useState<'impersonate' | 'suspend' | null>(null)
   const [loginAs, setLoginAs] = useState<User | null>(null)
   const [assigning, setAssigning] = useState(false)
+  const [adjusting, setAdjusting] = useState(false)
+  const [refunding, setRefunding] = useState<Schemas['Payment'] | null>(null)
   const [busy, setBusy] = useState(false)
+  const money = useMoney()
   // Everything below reads this one organization as staff (X-Acting-Tenant for these calls only).
   const inTenant = { actingTenant: tenant.id }
   const organization = useQuery({ queryKey: ['console', 'tenant', tenant.id, 'org'], queryFn: () => api<Organization>('/organization', inTenant) })
   const status = useQuery({ queryKey: ['console', 'tenant', tenant.id, 'status'], queryFn: () => api<SubscriptionStatus>('/billing/subscription/status', inTenant) })
   const usage = useQuery({ queryKey: ['console', 'tenant', tenant.id, 'usage'], queryFn: () => api<Schemas['BillingUsage']>('/billing/usage', inTenant) })
+  const payments = useQuery({
+    queryKey: ['console', 'tenant', tenant.id, 'payments'],
+    queryFn: () => api<Schemas['Payment'][]>('/billing/payments', { ...inTenant, query: { per_page: 10 } }),
+  })
   const members = useQuery({
     queryKey: ['console', 'tenant', tenant.id, 'members'],
     queryFn: () => api<User[]>('/user', { ...inTenant, query: { per_page: 50, order_by: 'name', order_direction: 'asc' } }),
@@ -280,7 +287,22 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
             )}
           </dd>
           <dt>{t('billing.renews')}</dt>
-          <dd>{subscription?.expires_at ? date(subscription.expires_at) : '—'}</dd>
+          <dd>
+            {subscription?.expires_at ? date(subscription.expires_at) : '—'}
+            {subscription?.cancel_at_period_end ? <span className="small muted"> · {t('console.wontRenew')}</span> : null}
+            {status.data?.next_package ? <span className="small muted"> · {t('billing.fromDate', { date: date(subscription?.expires_at) })}: {status.data.next_package.name}</span> : null}
+          </dd>
+          <dt>{t('billing.credit')}</dt>
+          <dd>
+            <span className="flex wrap">
+              {money(status.data?.credit_balance ?? 0, status.data?.currency)}
+              {can(session, 'payment.refund') ? (
+                <Button size="sm" variant="ghost" onClick={() => setAdjusting(true)}>
+                  {t('console.adjustCredit')}
+                </Button>
+              ) : null}
+            </span>
+          </dd>
           <dt>{t('org.contactEmail')}</dt>
           <dd>{tenant.email || '—'}</dd>
           <dt>{t('console.colCreated')}</dt>
@@ -300,6 +322,35 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
             ))}
           </div>
         ) : null}
+
+        <Card title={t('billing.payments')} flush>
+          {!payments.data ? (
+            <ListSkeleton rows={2} />
+          ) : payments.data.length === 0 ? (
+            <EmptyState icon="list" title={t('billing.noPayments')} />
+          ) : (
+            <ul className="role-list">
+              {payments.data.map((payment) => (
+                <li key={payment.id} className="console-member">
+                  <span className="member-meta">
+                    <span className="member-name">
+                      {money(payment.amount, payment.currency)} <Badge tone={payment.status === 'completed' ? 'ok' : 'neutral'}>{t(`billing.payment.${payment.status}` as MessageKey)}</Badge>
+                    </span>
+                    <span className="small muted mono">
+                      {payment.invoice_number} · {t(`billing.method.${payment.payment_method}` as MessageKey)}
+                      {payment.refunded_amount ? ` · ${t('billing.refundedAmount', { amount: money(payment.refunded_amount, payment.currency) })}` : ''}
+                    </span>
+                  </span>
+                  {can(session, 'payment.refund') && payment.status === 'completed' && payment.amount > (payment.refunded_amount ?? 0) ? (
+                    <Button size="sm" onClick={() => setRefunding(payment)}>
+                      {t('console.refund')}
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
 
         <Card title={t('console.members')} flush>
           {!members.data ? (
@@ -361,6 +412,26 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
         }}
         onCancel={() => setLoginAs(null)}
       />
+      {adjusting ? (
+        <AdjustCredit
+          tenant={tenant}
+          onClose={() => setAdjusting(false)}
+          onDone={() => {
+            setAdjusting(false)
+            void client.invalidateQueries({ queryKey: ['console', 'tenant', tenant.id] })
+          }}
+        />
+      ) : null}
+      {refunding ? (
+        <RefundPayment
+          payment={refunding}
+          onClose={() => setRefunding(null)}
+          onDone={() => {
+            setRefunding(null)
+            void client.invalidateQueries({ queryKey: ['console', 'tenant', tenant.id] })
+          }}
+        />
+      ) : null}
       {assigning ? (
         <AssignPlan
           tenant={tenant}
@@ -386,6 +457,7 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
   const packages = useQuery({ queryKey: ['console', 'packages'], queryFn: () => api<Package[]>('/packages', { asStaff: true }) })
   const [packageId, setPackageId] = useState(currentId ? String(currentId) : '')
   const [record, setRecord] = useState(false)
+  const [rules, setRules] = useState(currentId != null)
   const [method, setMethod] = useState<'cash' | 'bank_transfer'>('bank_transfer')
   const [amount, setAmount] = useState('')
   const [busy, setBusy] = useState(false)
@@ -402,7 +474,7 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
     }
     setBusy(true)
     try {
-      const body: Record<string, unknown> = { package_id: Number(packageId) }
+      const body: Record<string, unknown> = { package_id: Number(packageId), mode: rules ? 'change' : 'replace' }
       if (record) {
         body.payment_method = method
         if (minor !== null) body.amount = minor
@@ -433,6 +505,10 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
             }))}
           />
         </Field>
+        <label className="check-row">
+          <input type="checkbox" checked={rules} onChange={(e) => setRules(e.target.checked)} />
+          {t('console.assignChange')}
+        </label>
         <label className="check-row">
           <input type="checkbox" checked={record} onChange={(e) => setRecord(e.target.checked)} />
           {t('console.recordPayment')}
@@ -468,6 +544,157 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
           </Button>
           <Button variant="primary" type="submit" disabled={busy || !packageId}>
             {busy ? <Spinner /> : <Icon name="check" />} {t('console.assignPlan')}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+/** Adds account credit to an organization, or takes it back (never below zero). */
+function AdjustCredit({ tenant, onClose, onDone }: { tenant: Tenant; onClose: () => void; onDone: () => void }) {
+  const t = useT()
+  const currency = useDefaultCurrency()
+  const { push } = useToast()
+  const errors = useApiErrors()
+  const [direction, setDirection] = useState<'add' | 'remove'>('add')
+  const [amount, setAmount] = useState('')
+  const [reason, setReason] = useState('')
+  const [amountError, setAmountError] = useState<string>()
+  const [busy, setBusy] = useState(false)
+  const submit = async (event: FormEvent) => {
+    event.preventDefault()
+    errors.clear()
+    setAmountError(undefined)
+    const minor = toMinor(amount, currency)
+    if (minor === null || minor === 0) {
+      setAmountError(t('inputs.amountInvalid', { example: fromMinor(50000, currency) }))
+      return
+    }
+    setBusy(true)
+    try {
+      await api(`/billing/internal/tenants/${tenant.id}/credits`, {
+        method: 'POST',
+        asStaff: true,
+        idempotent: true,
+        body: { amount: direction === 'add' ? minor : -minor, reason: reason.trim() },
+      })
+      push(t('form.saved'), 'success')
+      onDone()
+    } catch (cause) {
+      errors.setError(cause instanceof Error ? cause : new Error(String(cause)))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Modal open title={`${t('console.adjustCredit')} · ${tenant.name}`} description={t('console.adjustCreditHint')} onClose={onClose}>
+      <form onSubmit={submit} className="stack">
+        <div className="form-grid-2">
+          <Field label={t('console.creditAction')}>
+            <Select
+              value={direction}
+              ariaLabel={t('console.creditAction')}
+              onChange={setDirection}
+              options={[
+                { value: 'add', label: t('console.creditAdd') },
+                { value: 'remove', label: t('console.creditRemove') },
+              ]}
+            />
+          </Field>
+          <Field label={t('console.amount')} error={amountError ?? errors.field('amount')}>
+            <MoneyInput currency={currency} ariaLabel={t('console.amount')} value={amount} onChange={setAmount} required />
+          </Field>
+        </div>
+        <Field label={t('console.reason')} error={errors.field('reason')}>
+          <input className="input" required minLength={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+        </Field>
+        {errors.box}
+        <div className="modal-actions">
+          <Button variant="ghost" type="button" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button variant="primary" type="submit" disabled={busy || !amount.trim() || reason.trim().length < 3}>
+            {busy ? <Spinner /> : <Icon name="check" />} {t('console.adjustCredit')}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+/** Gives money back for a payment: as account credit, or the way it was paid. */
+function RefundPayment({ payment, onClose, onDone }: { payment: Schemas['Payment']; onClose: () => void; onDone: () => void }) {
+  const t = useT()
+  const money = useMoney()
+  const currency = useDefaultCurrency()
+  const { push } = useToast()
+  const errors = useApiErrors()
+  const left = payment.amount - (payment.refunded_amount ?? 0)
+  const [amount, setAmount] = useState('')
+  const [reason, setReason] = useState('')
+  const [to, setTo] = useState<'credit' | 'original'>('credit')
+  const [end, setEnd] = useState(false)
+  const [amountError, setAmountError] = useState<string>()
+  const [busy, setBusy] = useState(false)
+  const submit = async (event: FormEvent) => {
+    event.preventDefault()
+    errors.clear()
+    setAmountError(undefined)
+    const minor = amount.trim() ? toMinor(amount, currency) : left
+    if (minor === null || minor <= 0 || minor > left) {
+      setAmountError(t('console.refundLeft', { amount: money(left, payment.currency) }))
+      return
+    }
+    setBusy(true)
+    try {
+      await api(`/billing/internal/payments/${payment.id}/refund`, {
+        method: 'POST',
+        asStaff: true,
+        idempotent: true,
+        body: { amount: minor, reason: reason.trim(), to, end_subscription: end },
+      })
+      push(t('form.saved'), 'success')
+      onDone()
+    } catch (cause) {
+      errors.setError(cause instanceof Error ? cause : new Error(String(cause)))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Modal open title={t('console.refundTitle', { invoice: payment.invoice_number })} description={t('console.refundLeft', { amount: money(left, payment.currency) })} onClose={onClose}>
+      <form onSubmit={submit} className="stack">
+        <div className="form-grid-2">
+          <Field label={t('console.amount')} error={amountError ?? errors.field('amount')}>
+            <MoneyInput currency={currency} ariaLabel={t('console.amount')} placeholder={fromMinor(left, currency)} value={amount} onChange={setAmount} />
+          </Field>
+          <Field label={t('console.refundTo')}>
+            <Select
+              value={to}
+              ariaLabel={t('console.refundTo')}
+              onChange={setTo}
+              options={[
+                { value: 'credit', label: t('console.refundToCredit') },
+                { value: 'original', label: t('console.refundToOriginal') },
+              ]}
+            />
+          </Field>
+        </div>
+        <Field label={t('console.reason')} error={errors.field('reason')}>
+          <input className="input" required minLength={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+        </Field>
+        <label className="check-row">
+          <input type="checkbox" checked={end} onChange={(e) => setEnd(e.target.checked)} />
+          {t('console.refundEnd')}
+        </label>
+        {errors.box}
+        <div className="modal-actions">
+          <Button variant="ghost" type="button" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button variant="danger" type="submit" disabled={busy || reason.trim().length < 3}>
+            {busy ? <Spinner /> : null} {t('console.refund')}
           </Button>
         </div>
       </form>

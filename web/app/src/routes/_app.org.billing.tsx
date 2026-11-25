@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { api, apiBlob, saveBlob, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { formatBytes } from '../format'
-import { BankTransferForm, featureName, formatMB, publicPackagesQuery, subscriptionStatusQuery, useMoney, usePrice, type Package, PricingCard } from '../components/billing'
+import { featureName, formatMB, PlanChange, publicPackagesQuery, subscriptionStatusQuery, useMoney, usePrice, type Change, type Package, PricingCard } from '../components/billing'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Icon, Modal, PageHeader, type BadgeTone } from '../components/ui'
@@ -26,6 +26,7 @@ interface PaymentPage {
 const subscriptionTones: Record<Subscription['status'], BadgeTone> = {
   trial: 'info',
   pending: 'warn',
+  scheduled: 'info',
   active: 'ok',
   past_due: 'danger',
   cancelled: 'neutral',
@@ -38,7 +39,11 @@ const paymentTones: Record<Payment['status'], BadgeTone> = {
   completed: 'ok',
   failed: 'danger',
   cancelled: 'neutral',
+  refunded: 'neutral',
 }
+
+/** Renew is offered in the last half of the period, at most this many days before it ends. */
+const RENEW_WINDOW_DAYS = 30
 
 function useDate() {
   const locale = useLocale()
@@ -69,20 +74,26 @@ function BillingPage() {
           </div>
         ) : null}
         <div className="billing-top">
-          <PlanCard status={status.data} />
+          <PlanCard status={status.data} canManage={can(session, 'billing.manage')} waiting={waiting != null} />
           <UsageCard usage={usage.data} />
         </div>
-        <PlansCard currentId={status.data?.active ? status.data.package?.id : undefined} canManage={can(session, 'billing.manage')} />
+        <PlansCard status={status.data} canManage={can(session, 'billing.manage')} waiting={waiting != null} />
         <PaymentsCard />
       </div>
     </>
   )
 }
 
-function PlanCard({ status }: { status?: Schemas['SubscriptionStatusEnvelope']['data'] }) {
+function PlanCard({ status, canManage, waiting }: { status?: Schemas['SubscriptionStatusEnvelope']['data']; canManage: boolean; waiting: boolean }) {
   const t = useT()
   const price = usePrice()
   const date = useDate()
+  const money = useMoney()
+  const client = useQueryClient()
+  const { push } = useToast()
+  const [renewing, setRenewing] = useState<Package | null>(null)
+  const [stopping, setStopping] = useState(false)
+  const [busy, setBusy] = useState(false)
   if (!status) {
     return (
       <Card title={t('billing.currentPlan')}>
@@ -92,6 +103,45 @@ function PlanCard({ status }: { status?: Schemas['SubscriptionStatusEnvelope']['
   }
   const subscription = status.subscription
   const pkg = status.package
+  const live = status.active && subscription && pkg
+  const refresh = async () => {
+    await client.invalidateQueries({ queryKey: ['subscription-status'] })
+    await client.invalidateQueries({ queryKey: ['payments'] })
+    await client.invalidateQueries({ queryKey: ['billing'] })
+  }
+  const planEnd = async (action: 'cancel' | 'keep') => {
+    setBusy(true)
+    try {
+      await api(`/billing/subscription/${action}`, { method: 'POST' })
+      await refresh()
+      push(action === 'cancel' ? t('billing.cancelled') : t('billing.kept'), 'success')
+    } catch (cause) {
+      push(cause instanceof Error ? cause.message : String(cause), 'error')
+    } finally {
+      setBusy(false)
+      setStopping(false)
+    }
+  }
+
+  // Renew from RENEW_WINDOW_DAYS before the end, unless the next period is arranged or stopped.
+  const day = 86_400_000
+  const ends = subscription?.expires_at ? new Date(subscription.expires_at).getTime() : Infinity
+  const starts = subscription?.starts_at ? new Date(subscription.starts_at).getTime() : ends - 30 * day
+  const renewWindow = Math.min(RENEW_WINDOW_DAYS, (ends - starts) / day / 2)
+  const renewTo = status.next_package ?? pkg
+  const canRenew =
+    live &&
+    canManage &&
+    !waiting &&
+    renewTo &&
+    renewTo.price > 0 &&
+    pkg.billing_cycle !== 'one_time' &&
+    !status.scheduled &&
+    !subscription.cancel_at_period_end &&
+    (ends - Date.now()) / day <= renewWindow
+  const canStop = live && canManage && !subscription.cancel_at_period_end && subscription.status !== 'trial'
+  const arranged = live && (subscription.cancel_at_period_end || status.next_package || status.scheduled)
+
   return (
     <Card title={t('billing.currentPlan')}>
       {!pkg || !subscription ? (
@@ -114,9 +164,81 @@ function PlanCard({ status }: { status?: Schemas['SubscriptionStatusEnvelope']['
             ) : null}
             <dt>{t('billing.renews')}</dt>
             <dd>{subscription.expires_at ? date(subscription.expires_at) : t('billing.noEnd')}</dd>
+            {status.credit_balance > 0 ? (
+              <>
+                <dt>{t('billing.credit')}</dt>
+                <dd title={t('billing.creditHint')}>{money(status.credit_balance, status.currency)}</dd>
+              </>
+            ) : null}
           </dl>
+          {live && subscription.cancel_at_period_end ? (
+            <div className="plan-note">
+              <span className="status-dot warn" />
+              <span className="fill">{t('billing.endsOn', { date: date(subscription.expires_at) })}</span>
+            </div>
+          ) : null}
+          {live && status.next_package ? (
+            <div className="plan-note">
+              <span className="status-dot" />
+              <span className="fill">
+                {t('billing.movesTo', { name: status.next_package.name, date: date(subscription.expires_at), amount: money(status.next_package.price) })}
+              </span>
+            </div>
+          ) : null}
+          {live && status.scheduled && status.scheduled_package ? (
+            <div className="plan-note">
+              <span className="status-dot ok" />
+              <span className="fill">
+                {status.scheduled_package.price === 0
+                  ? t('billing.movesToFree', { name: status.scheduled_package.name, date: date(status.scheduled.starts_at) })
+                  : t('billing.nextPeriod', { name: status.scheduled_package.name, start: date(status.scheduled.starts_at), end: date(status.scheduled.expires_at) })}
+              </span>
+            </div>
+          ) : null}
+          {canManage && (canRenew || canStop || arranged) ? (
+            <div className="plan-actions">
+              {canRenew ? (
+                <Button size="sm" variant="primary" icon="refresh" onClick={() => setRenewing(renewTo)}>
+                  {t('billing.renew')}
+                </Button>
+              ) : null}
+              {arranged && (subscription.cancel_at_period_end || status.next_package || status.scheduled_package?.price === 0) ? (
+                <Button size="sm" disabled={busy} onClick={() => void planEnd('keep')}>
+                  {t('billing.keep')}
+                </Button>
+              ) : null}
+              {canStop ? (
+                <Button size="sm" variant="ghost" disabled={busy} onClick={() => setStopping(true)}>
+                  {t('billing.cancelRenewal')}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       )}
+      <ConfirmDialog
+        open={stopping}
+        title={t('billing.cancelTitle')}
+        description={pkg && subscription ? t('billing.cancelConfirm', { name: pkg.name, date: date(subscription.expires_at) }) : ''}
+        confirmLabel={t('billing.cancelRenewal')}
+        danger
+        busy={busy}
+        onConfirm={() => void planEnd('cancel')}
+        onCancel={() => setStopping(false)}
+      />
+      <Modal open={renewing != null} title={renewing ? t('billing.renewTitle', { name: renewing.name }) : ''} onClose={() => setRenewing(null)}>
+        {renewing ? (
+          <PlanChange
+            key={renewing.id}
+            pkg={renewing}
+            onDone={() => {
+              setRenewing(null)
+              push(t('onboarding.paymentPending'), 'success')
+              void refresh()
+            }}
+          />
+        ) : null}
+      </Modal>
     </Card>
   )
 }
@@ -161,29 +283,27 @@ function UsageCard({ usage }: { usage?: Usage }) {
   )
 }
 
-function PlansCard({ currentId, canManage }: { currentId?: number; canManage: boolean }) {
+function PlansCard({ status, canManage, waiting }: { status?: Schemas['SubscriptionStatusEnvelope']['data']; canManage: boolean; waiting: boolean }) {
   const t = useT()
   const client = useQueryClient()
   const { push } = useToast()
+  const date = useDate()
   const packages = useQuery(publicPackagesQuery)
-  const [checkout, setCheckout] = useState<Package | null>(null)
-  const [free, setFree] = useState<Package | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [chosen, setChosen] = useState<Package | null>(null)
+  const currentId = status?.active ? status.package?.id : undefined
+  const nextId = status?.active ? (status.next_package?.id ?? status.scheduled_package?.id) : undefined
 
-  // A free plan has nothing to pay: it starts as soon as it is chosen.
-  const switchToFree = async (pkg: Package) => {
-    setBusy(true)
-    try {
-      await api('/billing/subscribe', { method: 'POST', idempotent: true, body: { package_id: pkg.id } })
-      await client.invalidateQueries({ queryKey: ['subscription-status'] })
-      await client.invalidateQueries({ queryKey: ['billing', 'usage'] })
-      await client.invalidateQueries({ queryKey: ['payments'] })
-      push(t('billing.switched', { name: pkg.name }), 'success')
-    } catch (cause) {
-      push(cause instanceof Error ? cause.message : String(cause), 'error')
-    } finally {
-      setBusy(false)
-      setFree(null)
+  const done = (pkg: Package, change: Change) => {
+    setChosen(null)
+    void client.invalidateQueries({ queryKey: ['subscription-status'] })
+    void client.invalidateQueries({ queryKey: ['billing'] })
+    void client.invalidateQueries({ queryKey: ['payments'] })
+    if (change.kind === 'downgrade' || (change.effective === 'period_end' && !change.requires_payment)) {
+      push(t('billing.change.later', { name: pkg.name, date: date(change.period_start) }), 'success')
+    } else if (!change.requires_payment || change.amount_due === 0) {
+      push(change.effective === 'now' ? t('billing.switched', { name: pkg.name }) : t('billing.change.later', { name: pkg.name, date: date(change.period_start) }), 'success')
+    } else {
+      push(t('onboarding.paymentPending'), 'success')
     }
   }
 
@@ -200,6 +320,7 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
                 key={pkg.id}
                 pkg={pkg}
                 current={current}
+                chosen={pkg.id === nextId}
                 action={
                   canManage ? (
                     current ? (
@@ -207,8 +328,10 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
                         <Icon name="check" />
                         {t('billing.yourPlan')}
                       </span>
+                    ) : pkg.id === nextId ? (
+                      <span className="plan-current-note">{t('billing.fromDate', { date: date(status?.subscription?.expires_at) })}</span>
                     ) : (
-                      <Button variant="primary" onClick={() => (pkg.price === 0 ? setFree(pkg) : setCheckout(pkg))}>
+                      <Button variant="primary" disabled={waiting} title={waiting ? t('billing.waitingHint') : undefined} onClick={() => setChosen(pkg)}>
                         {t('billing.switch')}
                       </Button>
                     )
@@ -219,28 +342,8 @@ function PlansCard({ currentId, canManage }: { currentId?: number; canManage: bo
           })}
         </div>
       )}
-      <ConfirmDialog
-        open={free != null}
-        title={free ? t('billing.freeTitle', { name: free.name }) : ''}
-        description={free ? t('billing.freeConfirm', { name: free.name }) : ''}
-        confirmLabel={t('billing.switch')}
-        busy={busy}
-        onConfirm={() => free && void switchToFree(free)}
-        onCancel={() => setFree(null)}
-      />
-      <Modal open={checkout != null} title={checkout ? t('billing.checkoutTitle', { name: checkout.name }) : ''} onClose={() => setCheckout(null)}>
-        {checkout ? (
-          <BankTransferForm
-            key={checkout.id}
-            pkg={checkout}
-            onSubmitted={() => {
-              setCheckout(null)
-              push(t('onboarding.paymentPending'), 'success')
-              void client.invalidateQueries({ queryKey: ['payments'] })
-              void client.invalidateQueries({ queryKey: ['subscription-status'] })
-            }}
-          />
-        ) : null}
+      <Modal open={chosen != null} title={chosen ? t('billing.checkoutTitle', { name: chosen.name }) : ''} onClose={() => setChosen(null)}>
+        {chosen ? <PlanChange key={chosen.id} pkg={chosen} onDone={(change) => done(chosen, change)} /> : null}
       </Modal>
     </Card>
   )
@@ -335,7 +438,11 @@ function PaymentsCard() {
                   <td className="mono small">{payment.invoice_number}</td>
                   <td className="small muted">{date(payment.paid_at ?? payment.created_at)}</td>
                   <td className="small">{t(`billing.method.${payment.payment_method}` as MessageKey)}</td>
-                  <td className="end">{money(payment.amount, payment.currency)}</td>
+                  <td className="end">
+                    {money(payment.amount, payment.currency)}
+                    {payment.kind && payment.kind !== 'new' ? <div className="small muted">{t(`billing.kind.${payment.kind}` as MessageKey)}</div> : null}
+                    {payment.refunded_amount ? <div className="small muted">{t('billing.refundedAmount', { amount: money(payment.refunded_amount, payment.currency) })}</div> : null}
+                  </td>
                   <td>
                     <Badge tone={paymentTones[payment.status]}>{t(`billing.payment.${payment.status}` as MessageKey)}</Badge>
                   </td>

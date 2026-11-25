@@ -36,6 +36,8 @@ export interface MessageVars {
   'activity.label.announcement.updated': never
   'activity.label.auth.login': never
   'activity.label.auth.session_revoked': never
+  'activity.label.billing.credit_adjusted': never
+  'activity.label.billing.payment_refunded': never
   'activity.label.billing.payment_withdrawn': never
   'activity.label.branch.created': never
   'activity.label.branch.deleted': never
@@ -65,8 +67,11 @@ export interface MessageVars {
   'activity.label.setting.updated': never
   'activity.label.subscription.activated': never
   'activity.label.subscription.assigned': never
+  'activity.label.subscription.cancel_scheduled': never
   'activity.label.subscription.cancelled': never
   'activity.label.subscription.created': never
+  'activity.label.subscription.downgrade_scheduled': never
+  'activity.label.subscription.plan_kept': never
   'activity.label.tenant.onboarding_completed': never
   'activity.label.tenant.reactivated': never
   'activity.label.tenant.signed_up': never
@@ -229,13 +234,35 @@ export interface MessageVars {
   'auth.throttled': 'count'
   'auth.useAnotherAccount': never
   'auth.verify': never
+  'billing.cancelConfirm': 'date' | 'name'
+  'billing.cancelRenewal': never
+  'billing.cancelTitle': never
+  'billing.cancelled': never
+  'billing.change.confirm': never
+  'billing.change.confirmLater': never
+  'billing.change.covered': 'name'
+  'billing.change.downgrade': 'amount' | 'current' | 'date' | 'name'
+  'billing.change.downgradeFree': 'current' | 'date' | 'name'
+  'billing.change.failed': never
+  'billing.change.freeNow': 'name'
+  'billing.change.later': 'date' | 'name'
+  'billing.change.overLimits': 'items' | 'name'
+  'billing.change.overrides': 'name'
+  'billing.change.pricing': never
+  'billing.change.startsAt': 'date' | 'name'
+  'billing.change.startsNow': 'name'
+  'billing.change.surplus': 'amount'
+  'billing.change.total': never
   'billing.checkoutTitle': 'name'
   'billing.colAmount': never
   'billing.colDate': never
   'billing.colInvoice': never
   'billing.colMethod': never
   'billing.colStatus': never
+  'billing.credit': never
+  'billing.creditHint': never
   'billing.currentPlan': never
+  'billing.endsOn': 'date'
   'billing.feature.api': never
   'billing.feature.audit': never
   'billing.feature.branches': never
@@ -246,17 +273,29 @@ export interface MessageVars {
   'billing.feature.sms': never
   'billing.feature.storage': never
   'billing.feature.users': never
-  'billing.freeConfirm': 'name'
   'billing.freeHint': never
-  'billing.freeTitle': 'name'
+  'billing.fromDate': 'date'
   'billing.invoice': never
   'billing.invoiceHtml': never
   'billing.invoiceHtmlHint': never
+  'billing.keep': never
+  'billing.kept': never
+  'billing.kind.downgrade': never
+  'billing.kind.new': never
+  'billing.kind.renew': never
+  'billing.kind.staff': never
+  'billing.kind.upgrade': never
+  'billing.line.credit': never
+  'billing.line.unused': 'count' | 'name'
   'billing.manageHint': never
   'billing.method.bank_transfer': never
   'billing.method.bkash': never
   'billing.method.cash': never
+  'billing.method.credit': never
   'billing.method.nagad': never
+  'billing.movesTo': 'amount' | 'date' | 'name'
+  'billing.movesToFree': 'date' | 'name'
+  'billing.nextPeriod': 'end' | 'name' | 'start'
   'billing.noEnd': never
   'billing.noPayments': never
   'billing.noPlan': never
@@ -268,11 +307,15 @@ export interface MessageVars {
   'billing.payment.failed': never
   'billing.payment.pending': never
   'billing.payment.processing': never
+  'billing.payment.refunded': never
   'billing.payments': never
   'billing.pendingNotice': 'amount' | 'invoice'
   'billing.plans': never
   'billing.plansHint': never
   'billing.referenceHint': never
+  'billing.refundedAmount': 'amount'
+  'billing.renew': never
+  'billing.renewTitle': 'name'
   'billing.renews': never
   'billing.showFewer': never
   'billing.showMore': 'count'
@@ -282,6 +325,7 @@ export interface MessageVars {
   'billing.status.expired': never
   'billing.status.past_due': never
   'billing.status.pending': never
+  'billing.status.scheduled': never
   'billing.status.trial': never
   'billing.subtitle': never
   'billing.switch': never
@@ -291,6 +335,7 @@ export interface MessageVars {
   'billing.usage': never
   'billing.usedOf': 'limit' | 'used'
   'billing.usedUnlimited': 'used'
+  'billing.waitingHint': never
   'billing.withdraw': never
   'billing.withdrawConfirm': 'amount' | 'invoice'
   'billing.withdrawTitle': never
@@ -355,6 +400,8 @@ export interface MessageVars {
   'console.actedBy': 'name'
   'console.actingStaff': never
   'console.active': never
+  'console.adjustCredit': never
+  'console.adjustCreditHint': never
   'console.allActivity': never
   'console.allOrganizations': never
   'console.amount': never
@@ -365,7 +412,9 @@ export interface MessageVars {
   'console.approvalsSubtitle': never
   'console.approve': never
   'console.approveConfirm': 'amount' | 'name' | 'plan'
+  'console.approveRenewConfirm': 'amount' | 'name' | 'plan'
   'console.approved': never
+  'console.assignChange': never
   'console.assignHint': never
   'console.assignPlan': never
   'console.auditLog': never
@@ -383,6 +432,9 @@ export interface MessageVars {
   'console.colStatus': never
   'console.colSubmitted': never
   'console.colTitle': never
+  'console.creditAction': never
+  'console.creditAdd': never
+  'console.creditRemove': never
   'console.cycle': never
   'console.deletePlan': never
   'console.deletePlanConfirm': 'name'
@@ -415,6 +467,7 @@ export interface MessageVars {
   'console.orgSubtitle': never
   'console.organizations': never
   'console.overridable': never
+  'console.overridesDropped': 'count'
   'console.owner': never
   'console.pending': never
   'console.plan': never
@@ -423,8 +476,20 @@ export interface MessageVars {
   'console.plans': never
   'console.plansSubtitle': never
   'console.price': never
+  'console.quoteStale': never
+  'console.quoteStaleHint': never
   'console.reactivate': never
+  'console.reason': never
+  'console.received': never
+  'console.receivedHint': 'amount'
   'console.recordPayment': never
+  'console.refund': never
+  'console.refundEnd': never
+  'console.refundLeft': 'amount'
+  'console.refundTitle': 'invoice'
+  'console.refundTo': never
+  'console.refundToCredit': never
+  'console.refundToOriginal': never
   'console.reject': never
   'console.rejectConfirm': 'amount' | 'name'
   'console.rejected': never
@@ -452,6 +517,7 @@ export interface MessageVars {
   'console.trialDays': never
   'console.users': never
   'console.usersSubtitle': never
+  'console.wontRenew': never
   'console.yearly': never
   'copy.copied': never
   'copy.copy': never

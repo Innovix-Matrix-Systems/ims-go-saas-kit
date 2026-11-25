@@ -126,5 +126,10 @@
   "activity.subject.user": "Utilisateur",
   "activity.subject.webhook": "Webhook",
   "activity.subject.file": "Fichier",
-  "activity.subject.system": "Système"
+  "activity.subject.system": "Système",
+  "activity.label.subscription.downgrade_scheduled": "Offre inférieure choisie pour le renouvellement",
+  "activity.label.subscription.cancel_scheduled": "Renouvellement arrêté",
+  "activity.label.subscription.plan_kept": "Offre conservée",
+  "activity.label.billing.credit_adjusted": "Crédit du compte ajusté",
+  "activity.label.billing.payment_refunded": "Paiement remboursé"
 }

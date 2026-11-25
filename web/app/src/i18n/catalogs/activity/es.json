@@ -126,5 +126,10 @@
   "activity.subject.user": "Usuario",
   "activity.subject.webhook": "Webhook",
   "activity.subject.file": "Archivo",
-  "activity.subject.system": "Sistema"
+  "activity.subject.system": "Sistema",
+  "activity.label.subscription.downgrade_scheduled": "Reducción elegida para la renovación",
+  "activity.label.subscription.cancel_scheduled": "Renovación detenida",
+  "activity.label.subscription.plan_kept": "Plan mantenido",
+  "activity.label.billing.credit_adjusted": "Saldo a favor ajustado",
+  "activity.label.billing.payment_refunded": "Pago reembolsado"
 }
