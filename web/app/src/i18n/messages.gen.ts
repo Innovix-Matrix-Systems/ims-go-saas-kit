@@ -665,6 +665,8 @@ export interface MessageVars {
   'jobs.type.privacy_export': never
   'jobs.view': never
   'jobs.you': never
+  'language.beta': never
+  'language.choose': never
   'logo.hint': never
   'logo.link': never
   'logo.preview': never
@@ -815,7 +817,6 @@ export interface MessageVars {
   'palette.empty': never
   'palette.pages': never
   'palette.placeholder': never
-  'palette.switchLanguage': never
   'palette.toggleTheme': never
   'planBanner.cancelled': 'date' | 'plan'
   'planBanner.choose': never

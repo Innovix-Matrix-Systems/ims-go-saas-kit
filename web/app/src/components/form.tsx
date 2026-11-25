@@ -2,6 +2,7 @@ import { useState, type InputHTMLAttributes, type ReactNode } from 'react'
 import { ApiError } from '../api/client'
 import { useT } from '../i18n'
 import { AppearanceMenu } from './AppearanceMenu'
+import { LanguageMenu } from './LanguageMenu'
 import { ErrorBox, Icon } from './ui'
 
 /** The centred card used by every page reached without signing in. */
@@ -10,6 +11,7 @@ export function AuthCard({ title, subtitle, children, footer }: { title: string;
   return (
     <div className="login-wrap">
       <div className="login-top">
+        <LanguageMenu />
         <AppearanceMenu />
       </div>
       <div className="login-card">

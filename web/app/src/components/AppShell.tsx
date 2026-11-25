@@ -1,10 +1,11 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { useSession } from '../auth/session'
-import { useT } from '../i18n'
+import { isLocale, setLocale, useT } from '../i18n'
 import { ActingBanner } from './ActingBanner'
 import { AnnouncementBanner, PlanBanner } from './SystemBanners'
 import { AppearanceMenu } from './AppearanceMenu'
+import { LanguageMenu } from './LanguageMenu'
 import { BranchSwitcher } from './BranchSwitcher'
 import { JobsTray } from './JobsTray'
 import { PlanTray } from './PlanTray'
@@ -58,6 +59,13 @@ export function AppShell() {
   const pages = visiblePages(session)
   const current = pageFor(pathname)
   const orgName = useOrganizationName()
+
+  // The account's language follows it to every device and wins over this
+  // browser's pick; acting as someone else keeps your own.
+  const accountLocale = session?.acting ? null : session?.user.locale
+  useEffect(() => {
+    if (accountLocale && isLocale(accountLocale)) void setLocale(accountLocale)
+  }, [accountLocale])
 
   useEffect(() => {
     try {
@@ -214,6 +222,7 @@ export function AppShell() {
             <PlanTray />
             <JobsTray />
             <NotificationBell />
+            <LanguageMenu />
             <AppearanceMenu />
             <button
               type="button"

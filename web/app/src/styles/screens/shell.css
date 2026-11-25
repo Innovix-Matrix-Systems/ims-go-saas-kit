@@ -28,6 +28,15 @@
 .menu-item:hover, .menu-item:focus-visible { background: var(--surface-2); outline: none; }
 .menu-item svg { width: 15px; height: 15px; color: var(--text-2); flex: none; }
 
+/* ── Language menu (top bar and signed-out screens) ───── */
+.language { position: relative; }
+.language-trigger { display: flex; align-items: center; gap: 4px; width: auto; padding: 0 8px; }
+.language-code { font-size: var(--fs-sm); font-weight: var(--fw-semibold); line-height: 1; }
+.language-menu { min-width: 200px; padding: 4px; display: flex; flex-direction: column; }
+.language-name { flex: 1; }
+.language-beta { font-size: var(--fs-sm); color: var(--text-3); }
+.menu-item .language-check { color: var(--accent); }
+
 .sidebar-collapsed .brand { flex-direction: column; padding: 10px 8px; }
 .sidebar-collapsed :is(.workspace-text, .workspace-caret, .user-card .user-meta) { display: none; }
 .sidebar-collapsed .workspace-trigger, .sidebar-collapsed .user-card { justify-content: center; padding: 6px 0; }

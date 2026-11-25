@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { getLanguages, setLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { useT, type MessageKey } from '../i18n'
 import { accents, densities, setAppearance, themes, useAppearance, type Density, type ThemePreference } from './appearance'
 import { useDismiss } from './inputs'
 import { Icon, type IconName } from './ui'
@@ -16,10 +16,9 @@ const densityLabels: Record<Density, MessageKey> = {
 }
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 
-/** The top bar's theme, accent, density and language picker. */
+/** The top bar's theme, accent and density picker (the language has its own menu). */
 export function AppearanceMenu() {
   const appearance = useAppearance()
-  const locale = useLocale()
   const t = useT()
   const [open, setOpen] = useState(false)
   const close = useCallback(() => setOpen(false), [])
@@ -79,21 +78,6 @@ export function AppearanceMenu() {
                 onClick={() => setAppearance({ density })}
               >
                 {t(densityLabels[density])}
-              </button>
-            ))}
-          </div>
-          <div className="field-label">{t('common.language')}</div>
-          <div className="segmented">
-            {getLanguages().map((item) => (
-              <button
-                key={item.code}
-                type="button"
-                lang={item.code}
-                className={locale === item.code ? 'active' : ''}
-                aria-pressed={locale === item.code}
-                onClick={() => setLocale(item.code)}
-              >
-                {item.label}
               </button>
             ))}
           </div>

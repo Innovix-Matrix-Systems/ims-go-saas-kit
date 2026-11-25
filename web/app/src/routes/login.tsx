@@ -11,6 +11,7 @@ import {
   type SignInOutcome,
 } from '../auth/session'
 import { AppearanceMenu } from '../components/AppearanceMenu'
+import { LanguageMenu } from '../components/LanguageMenu'
 import { ErrorBox, Icon, Spinner } from '../components/ui'
 import { isLocale, setLocale, useT } from '../i18n'
 import { queryClient } from '../query'
@@ -95,6 +96,7 @@ function LoginPage() {
   return (
     <div className="login-wrap">
       <div className="login-top">
+        <LanguageMenu />
         <AppearanceMenu />
       </div>
       <div className="login-card">

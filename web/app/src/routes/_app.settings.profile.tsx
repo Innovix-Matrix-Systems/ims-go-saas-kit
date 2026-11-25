@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api, type User } from '../api/client'
-import { useSession } from '../auth/session'
+import { ownProfile, useSession } from '../auth/session'
 import { Field, PasswordInput, useApiErrors } from '../components/form'
 import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
@@ -26,6 +26,7 @@ function ProfilePage() {
 }
 
 function ProfileForm({ user }: { user: User }) {
+  const session = useSession()
   const t = useT()
   const queryClient = useQueryClient()
   const { push } = useToast()
@@ -42,8 +43,8 @@ function ProfileForm({ user }: { user: User }) {
     setBusy(true)
     errors.clear()
     try {
-      await api<User>('/user/profile/update', {
-        method: 'POST',
+      await api<User>(ownProfile(session).update.path, {
+        method: ownProfile(session).update.method,
         body: {
           // An empty string clears a field; the API keeps one it is not sent.
           first_name: firstName.trim(),

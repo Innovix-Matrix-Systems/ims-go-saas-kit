@@ -498,6 +498,7 @@ pre.json {
 .command-item[data-selected='true'] svg { color: var(--accent); }
 .command-item .truncate { flex: 1; min-width: 0; }
 .command-hint { margin-left: auto; font-family: var(--mono); font-size: var(--fs-sm); color: var(--text-3); white-space: nowrap; }
+.command-hint.language-hint { font-family: inherit; }
 .command-empty { padding: 26px 18px; text-align: center; color: var(--text-3); font-size: var(--fs-base); }
 .command-footer { display: flex; gap: 16px; padding: 8px 14px; border-top: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-3); }
 .command-footer kbd + kbd { margin-left: 2px; }

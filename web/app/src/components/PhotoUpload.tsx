@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { api, ApiError } from '../api/client'
-import { useSession } from '../auth/session'
+import { ownProfile, useSession } from '../auth/session'
 import { useT } from '../i18n'
 import { useToast } from './Toasts'
 import { Avatar, Button } from './ui'
@@ -25,7 +25,7 @@ export function usePhotoUpload() {
       const form = new FormData()
       form.append('id', String(session.user.id))
       form.append('avatar', file)
-      await api('/user/profile/update-avatar', { method: 'POST', body: form })
+      await api(ownProfile(session).avatar, { method: 'POST', body: form })
       await client.invalidateQueries({ queryKey: ['session'] })
       push(t('profilePage.photoSaved'), 'success')
     } catch (cause) {
