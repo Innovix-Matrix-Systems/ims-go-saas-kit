@@ -1,0 +1,27 @@
+{
+  "roles.subtitle": "ما يتيحه كل دور لأعضائه.",
+  "roles.create": "دور جديد",
+  "roles.createTitle": "دور جديد",
+  "roles.name": "الاسم",
+  "roles.description": "الوصف",
+  "roles.managed": "مُدار",
+  "roles.managedHint": "يملك دور المسؤول دائمًا كل صلاحيات المؤسسة. أنشئ دورًا آخر لوصول أضيق.",
+  "roles.permissions": "الصلاحيات",
+  "roles.permissionsHint": "يمكنك منح الصلاحيات التي تملكها أنت فقط.",
+  "roles.notGrantable": "لا تملك هذه الصلاحية، لذا لا يمكنك منحها.",
+  "roles.permissionCount": {
+    "zero": "لا صلاحيات",
+    "one": "صلاحية واحدة",
+    "two": "صلاحيتان",
+    "few": "{count} صلاحيات",
+    "many": "{count} صلاحية",
+    "other": "{count} صلاحية"
+  },
+  "roles.save": "حفظ الدور",
+  "roles.savePermissions": "حفظ الصلاحيات",
+  "roles.delete": "حذف الدور",
+  "roles.deleteConfirm": "حذف الدور {name}؟ يفقد الأعضاء الذين لديهم هذا الدور صلاحياته.",
+  "roles.empty": "لا توجد أدوار بعد.",
+  "roles.selectAll": "الكل",
+  "roles.selectNone": "لا شيء"
+}

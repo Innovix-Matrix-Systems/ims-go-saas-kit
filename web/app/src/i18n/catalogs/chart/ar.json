@@ -1,0 +1,11 @@
+{
+  "chart.summary": {
+    "zero": "{label}، قيمة لكل يوم لمدة {count} يوم",
+    "one": "{label}، قيمة لكل يوم لمدة يوم واحد",
+    "two": "{label}، قيمة لكل يوم لمدة يومين",
+    "few": "{label}، قيمة لكل يوم لمدة {count} أيام",
+    "many": "{label}، قيمة لكل يوم لمدة {count} يومًا",
+    "other": "{label}، قيمة لكل يوم لمدة {count} يوم"
+  },
+  "chart.other": "أخرى"
+}

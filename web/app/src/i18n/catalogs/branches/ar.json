@@ -1,0 +1,22 @@
+{
+  "branches.subtitle": "أماكن عمل مؤسستك. ينتمي الأعضاء إلى فرع واحد ويمكنهم التبديل إلى فروع أخرى.",
+  "branches.search": "البحث في الفروع",
+  "branches.create": "فرع جديد",
+  "branches.createTitle": "فرع جديد",
+  "branches.name": "الاسم",
+  "branches.address": "العنوان",
+  "branches.phone": "الهاتف",
+  "branches.email": "البريد الإلكتروني",
+  "branches.description": "الوصف",
+  "branches.manager": "المدير",
+  "branches.noManager": "بلا مدير",
+  "branches.current": "الحالي",
+  "branches.empty": "لا توجد فروع مطابقة.",
+  "branches.save": "حفظ الفرع",
+  "branches.delete": "حذف الفرع",
+  "branches.deleteConfirm": "حذف الفرع {name}؟ يجب نقل أعضائه إلى فرع آخر أولًا.",
+  "branches.all": "كل الفروع",
+  "branches.switchedAll": "أنت ترى الآن كل الفروع.",
+  "branches.switch": "تبديل الفرع",
+  "branches.switched": "أنت تعمل الآن في {name}."
+}

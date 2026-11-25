@@ -1,0 +1,11 @@
+{
+  "announcementBanner.more": {
+    "zero": "لا مزيد",
+    "one": "واحد آخر",
+    "two": "اثنان آخران",
+    "few": "{count} أخرى",
+    "many": "{count} أخرى",
+    "other": "{count} أخرى"
+  },
+  "announcementBanner.dismiss": "وضع علامة مقروء"
+}

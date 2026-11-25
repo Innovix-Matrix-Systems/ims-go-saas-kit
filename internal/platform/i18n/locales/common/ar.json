@@ -1,0 +1,27 @@
+{
+    "common.duration.days": {
+        "zero": "{{.Count}} يوم",
+        "one": "يوم واحد",
+        "two": "يومان",
+        "few": "{{.Count}} أيام",
+        "many": "{{.Count}} يومًا",
+        "other": "{{.Count}} يوم"
+    },
+    "common.duration.hours": {
+        "zero": "{{.Count}} ساعة",
+        "one": "ساعة واحدة",
+        "two": "ساعتان",
+        "few": "{{.Count}} ساعات",
+        "many": "{{.Count}} ساعة",
+        "other": "{{.Count}} ساعة"
+    },
+    "common.duration.minutes": {
+        "zero": "{{.Count}} دقيقة",
+        "one": "دقيقة واحدة",
+        "two": "دقيقتان",
+        "few": "{{.Count}} دقائق",
+        "many": "{{.Count}} دقيقة",
+        "other": "{{.Count}} دقيقة"
+    },
+    "common.duration.separator": " و"
+}

@@ -1,0 +1,19 @@
+{
+  "nav.group.workspace": "مساحة العمل",
+  "nav.group.account": "الحساب",
+  "nav.home": "الرئيسية",
+  "nav.profile": "ملفك الشخصي",
+  "nav.collapse": "طي",
+  "nav.expand": "توسيع الشريط الجانبي",
+  "nav.openMenu": "فتح القائمة",
+  "nav.searchOrJump": "ابحث أو انتقل إلى…",
+  "nav.shortcuts": "اختصارات لوحة المفاتيح",
+  "nav.group.organization": "المؤسسة",
+  "nav.group.console": "لوحة التحكم",
+  "nav.resize": "اسحب لتغيير حجم الشريط الجانبي",
+  "nav.orgSettings": "إعدادات المؤسسة",
+  "nav.jobs": "المهام",
+  "nav.breadcrumb": "أنت هنا",
+  "nav.organization": "المؤسسة",
+  "nav.account": "الحساب"
+}

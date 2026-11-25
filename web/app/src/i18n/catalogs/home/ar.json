@@ -1,0 +1,12 @@
+{
+  "home.greeting": "مرحبًا، {name}",
+  "home.subtitle": "إليك نظرة عامة على مؤسستك.",
+  "home.organization": "المؤسسة",
+  "home.branch": "الفرع النشط",
+  "home.roles": "أدوارك",
+  "home.permissions": "الصلاحيات",
+  "home.lastSignIn": "آخر تسجيل دخول",
+  "home.never": "أبدًا",
+  "home.staffSubtitle": "إليك ما يحدث على المنصة.",
+  "home.paymentsToReview": "مدفوعات للمراجعة"
+}

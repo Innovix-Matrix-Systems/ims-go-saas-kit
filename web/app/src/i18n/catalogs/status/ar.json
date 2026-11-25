@@ -1,0 +1,14 @@
+{
+  "status.suspendedTitle": "مؤسستك معلّقة",
+  "status.suspendedBody": "تم إيقاف الوصول إلى هذه المؤسسة مؤقتًا. تواصل مع المسؤول أو مع فريق الدعم لاستعادته.",
+  "status.maintenanceTitle": "سنعود قريبًا",
+  "status.maintenanceBody": "الخدمة قيد الصيانة. يرجى المحاولة مرة أخرى بعد بضع دقائق.",
+  "status.twoFactorTitle": "التحقق بخطوتين مطلوب",
+  "status.twoFactorBody": "تشترط مؤسستك التحقق بخطوتين. أعدّه للمتابعة.",
+  "status.errorTitle": "حدث خطأ ما",
+  "status.errorBody": "تعذر عرض هذه الصفحة. يمكنك إعادة المحاولة أو العودة إلى الصفحة الرئيسية.",
+  "status.reference": "المرجع: {id}",
+  "status.notFoundTitle": "الصفحة غير موجودة",
+  "status.notFoundBody": "الصفحة التي تبحث عنها غير موجودة أو نُقلت.",
+  "status.home": "الانتقال إلى الرئيسية"
+}

@@ -1,0 +1,11 @@
+{
+  "security.changePassword": "تغيير كلمة المرور",
+  "security.changePasswordHint": "يُسجَّل الخروج من الأجهزة الأخرى عند تغيير كلمة المرور.",
+  "security.passwordChanged": "تم تغيير كلمة المرور.",
+  "security.sessions": "الأجهزة المسجّلة الدخول",
+  "security.sessionsHint": "سجّل الخروج من أي جهاز لا تعرفه.",
+  "security.thisDevice": "هذا الجهاز",
+  "security.lastUsed": "آخر استخدام {when}",
+  "security.signOutDevice": "تسجيل الخروج",
+  "security.signOutOthers": "تسجيل الخروج من كل الأجهزة الأخرى"
+}

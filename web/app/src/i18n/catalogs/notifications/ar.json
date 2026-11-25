@@ -1,0 +1,21 @@
+{
+  "notifications.title": "الإشعارات",
+  "notifications.preferences": "ما نرسله إليك",
+  "notifications.mandatory": "يُرسل دائمًا",
+  "notifications.channel.mail": "البريد الإلكتروني",
+  "notifications.channel.sms": "رسالة نصية",
+  "notifications.channel.push": "إشعار فوري",
+  "notifications.empty": "لا توجد لديك إشعارات.",
+  "notifications.markAllRead": "وضع علامة مقروء على الكل",
+  "notifications.unreadLabel": {
+    "zero": "لا غير مقروء",
+    "one": "واحد غير مقروء",
+    "two": "اثنان غير مقروءين",
+    "few": "{count} غير مقروءة",
+    "many": "{count} غير مقروء",
+    "other": "{count} غير مقروء"
+  },
+  "notifications.unreadOnly": "غير المقروءة فقط",
+  "notifications.viewAll": "عرض كل الإشعارات",
+  "notifications.loadMore": "تحميل المزيد"
+}

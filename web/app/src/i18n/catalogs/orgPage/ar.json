@@ -1,0 +1,18 @@
+{
+  "orgPage.since": "منذ {date}",
+  "orgPage.edit": "تعديل التفاصيل",
+  "orgPage.editHint": "الاسم وطرق التواصل مع مؤسستك.",
+  "orgPage.about": "حول",
+  "orgPage.created": "تاريخ الإنشاء",
+  "orgPage.id": "معرّف المؤسسة",
+  "orgPage.people": "الأشخاص",
+  "orgPage.peopleCount": {
+    "zero": "لا أعضاء",
+    "one": "عضو واحد",
+    "two": "عضوان",
+    "few": "{count} أعضاء",
+    "many": "{count} عضوًا",
+    "other": "{count} عضو"
+  },
+  "orgPage.transferHint": "لتسليم المؤسسة إلى شخص آخر، انتقل إلى"
+}

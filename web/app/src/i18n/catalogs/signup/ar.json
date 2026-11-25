@@ -1,0 +1,12 @@
+{
+  "signup.title": "أنشئ مؤسستك",
+  "signup.subtitle": "أعدّ مؤسستك وحسابك الخاص. ستؤكد بريدك الإلكتروني في الخطوة التالية.",
+  "signup.name": "اسمك",
+  "signup.organization": "اسم المؤسسة",
+  "signup.phone": "الهاتف",
+  "signup.acceptTerms": "أوافق على شروط الخدمة وسياسة الخصوصية.",
+  "signup.submit": "إنشاء المؤسسة",
+  "signup.checkEmailTitle": "تحقق من بريدك الإلكتروني",
+  "signup.checkEmailBody": "أرسلنا رابطًا إلى {email}. افتحه لتأكيد عنوانك، ثم سجّل الدخول لإكمال إعداد مؤسستك.",
+  "signup.closed": "التسجيل مغلق. تواصل معنا لفتح مؤسسة."
+}

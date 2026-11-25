@@ -1,0 +1,15 @@
+{
+  "inputs.select": "اختر…",
+  "inputs.filter": "تصفية…",
+  "inputs.noMatches": "لا توجد نتائج",
+  "inputs.pickDate": "اختر تاريخًا",
+  "inputs.pickTime": "اختر وقتًا",
+  "inputs.clearDate": "مسح التاريخ",
+  "inputs.chooseDate": "اختر تاريخًا",
+  "inputs.previousMonth": "الشهر السابق",
+  "inputs.nextMonth": "الشهر التالي",
+  "inputs.today": "اليوم",
+  "inputs.clear": "مسح",
+  "inputs.hour": "ساعة",
+  "inputs.minute": "دقيقة"
+}

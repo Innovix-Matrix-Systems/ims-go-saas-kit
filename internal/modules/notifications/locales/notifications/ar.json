@@ -1,0 +1,11 @@
+{
+    "notifications.renewal_reminder.title": {
+        "zero": "يتجدد اشتراكك اليوم",
+        "one": "يتجدد اشتراكك خلال يوم واحد",
+        "two": "يتجدد اشتراكك خلال يومين",
+        "few": "يتجدد اشتراكك خلال {{.Count}} أيام",
+        "many": "يتجدد اشتراكك خلال {{.Count}} يومًا",
+        "other": "يتجدد اشتراكك خلال {{.Count}} يوم"
+    },
+    "notifications.renewal_reminder.body": "ينتهي الاشتراك في {{.Date}}."
+}
