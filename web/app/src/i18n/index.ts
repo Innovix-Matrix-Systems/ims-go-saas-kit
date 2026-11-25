@@ -111,6 +111,10 @@ async function activate(code: string): Promise<void> {
  */
 export async function startI18n(): Promise<void> {
   try {
+    // A plain fetch, not the API client: the client imports getLocale from here (it sends
+    // Accept-Language), and it must not run before the language is known. The server caches the
+    // answer for five minutes (Cache-Control), so a language added or switched off reaches open
+    // tabs on their next load after that.
     const response = await fetch('/api/v1/languages', { headers: { Accept: 'application/json' } })
     if (response.ok) {
       const body = (await response.json()) as { data: { default: string; languages: Language[] } }
@@ -145,10 +149,6 @@ export function getLocale(): string {
   return current
 }
 
-export function getLanguage(): Language {
-  return find(current) ?? languages[0]
-}
-
 /** The Intl tag for dates and numbers: the language's tag and digits. */
 export function intlLocale(locale: string = current): string {
   const language = find(locale)
@@ -166,15 +166,6 @@ export function setLocale(locale: string): Promise<void> {
   }
   if (language.code === current) return Promise.resolve()
   return activate(language.code)
-}
-
-/** Clears this browser's pick (signed in, the account's choice decides). */
-export function forgetLocale(): void {
-  try {
-    localStorage.removeItem(LOCALE_KEY)
-  } catch {
-    /* storage disabled */
-  }
 }
 
 const pluralRules = new Map<string, Intl.PluralRules>()

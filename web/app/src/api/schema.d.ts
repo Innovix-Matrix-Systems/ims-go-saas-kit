@@ -8150,6 +8150,7 @@ export interface components {
             priority: "INFO" | "WARNING" | "CRITICAL";
             title: string;
             body?: string | null;
+            /** @description Free-form JSON. A notification the system writes carries its message key under `i18n` (`{"i18n": {"key": "notices.payment_received", "params": {...}}}`); `title` and `body` are then the English text, and each reader's feed renders the key in their language. */
             data?: unknown;
             group_key?: string | null;
             /** Format: int64 */
@@ -8306,6 +8307,7 @@ export interface components {
             priority: "INFO" | "WARNING" | "CRITICAL";
             title: string;
             body?: string | null;
+            /** @description Free-form JSON. When it has an `i18n` entry (`{"key": "...", "params": {...}}`, a notification the system wrote), `title` and `body` are already rendered from that key in the request's language. */
             data?: unknown;
             group_key?: string | null;
             /** Format: date-time */
