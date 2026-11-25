@@ -190,7 +190,7 @@ func (r *repository) Get(ctx context.Context, tenantID, id int64) (*{{.Name}}, e
 	row, err := r.queries.Get{{.Name}}(ctx, dbgen.Get{{.Name}}Params{ID: id, TenantID: tenantID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apperr.Newf(apperr.ResourceNotFound, "{{.Name}} with ID '%d' was not found.", id)
+			return nil, apperr.Newf(apperr.ResourceNotFound, "{{.Name}} with ID '%d' was not found.", id).WithMessageKey("{{.NameLower}}.not_found", map[string]any{"ID": id})
 		}
 		return nil, database.MapError("{{.NameLower}}.get", err)
 	}
@@ -257,7 +257,7 @@ func (r *repository) Update(ctx context.Context, input UpdateInput) (*{{.Name}},
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, apperr.Newf(apperr.ResourceNotFound, "{{.Name}} with ID '%d' was not found.", input.ID)
+			return nil, apperr.Newf(apperr.ResourceNotFound, "{{.Name}} with ID '%d' was not found.", input.ID).WithMessageKey("{{.NameLower}}.not_found", map[string]any{"ID": input.ID})
 		}
 		return nil, database.MapError("{{.NameLower}}.update", err)
 	}
@@ -275,7 +275,7 @@ func (r *repository) Delete(ctx context.Context, tenantID, id int64, actorID *in
 		return database.MapError("{{.NameLower}}.delete", err)
 	}
 	if affected == 0 {
-		return apperr.Newf(apperr.ResourceNotFound, "{{.Name}} with ID '%d' was not found.", id)
+		return apperr.Newf(apperr.ResourceNotFound, "{{.Name}} with ID '%d' was not found.", id).WithMessageKey("{{.NameLower}}.not_found", map[string]any{"ID": id})
 	}
 	return nil
 }
@@ -611,5 +611,35 @@ func TestServiceCreateRequiresTenant(t *testing.T) {
 	if _, err := service.Create(context.Background(), tenancy.Scope{}, 7, CreateInput{}); err == nil {
 		t.Error("expected an error when no tenant context is present")
 	}
+}
+`
+
+const localesTmpl = `package {{.Pkg}}
+
+import (
+	"embed"
+	"io/fs"
+
+	"{{.ModulePath}}/internal/platform/i18n"
+)
+
+//go:embed all:locales
+var localesFS embed.FS
+
+// Translations is the module's text (locales/{{.NameLower}}/<code>.json),
+// registered in translationBundles (internal/app/i18n.go). Every language
+// needs every key: ` + "`ims i18n:missing --locale <code>`" + ` lists what to translate.
+func Translations() i18n.Bundle {
+	sub, err := fs.Sub(localesFS, "locales")
+	if err != nil {
+		panic(err) // embedded at build time
+	}
+	return i18n.Bundle{Owner: "{{.NameLower}}", Namespaces: []string{"{{.NameLower}}"}, FS: sub}
+}
+`
+
+const localeEnTmpl = `{
+    "{{.NameLower}}.not_found": "{{.Name}} with ID '{{"{{"}}.ID{{"}}"}}' was not found.",
+    "{{.NameLower}}.not_found._context": "The answer when a {{.NameLower}} does not exist (or belongs to another organization)."
 }
 `

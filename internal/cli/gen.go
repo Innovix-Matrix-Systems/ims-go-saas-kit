@@ -177,9 +177,11 @@ Next steps:
   1. Wire the handler in internal/app/wiring.go and mount it in internal/app/routes.go.
   2. Add permissions %q, %q, %q and %q to internal/authz/catalog.go,
      then run `+"`ims permission:sync`"+`.
-  3. Run `+"`make sqlc`"+` (if skipped) and `+"`go build ./...`"+`.
+  3. Register its text: add %s.Translations() to translationBundles in internal/app/i18n.go,
+     then translate locales/%s/en.json for every language (`+"`ims i18n:missing --locale <code>`"+`).
+  4. Run `+"`make sqlc`"+` (if skipped) and `+"`go build ./...`"+`.
 `, args.name,
-		args.name+".view", args.name+".create", args.name+".update", args.name+".delete")
+		args.name+".view", args.name+".create", args.name+".update", args.name+".delete", args.name, args.name)
 	return nil
 }
 

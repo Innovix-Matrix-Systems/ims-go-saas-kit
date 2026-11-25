@@ -113,6 +113,8 @@ func Generate(opts Options) ([]File, error) {
 		{path: "internal/modules/" + data.NameLower + "/handler.go", tmpl: handlerTmpl, format: true},
 		{path: "internal/modules/" + data.NameLower + "/routes.go", tmpl: routesTmpl, format: true},
 		{path: "internal/modules/" + data.NameLower + "/service_test.go", tmpl: serviceTestTmpl, format: true},
+		{path: "internal/modules/" + data.NameLower + "/locales.go", tmpl: localesTmpl, format: true},
+		{path: "internal/modules/" + data.NameLower + "/locales/" + data.NameLower + "/en.json", tmpl: localeEnTmpl},
 	}
 
 	files := make([]File, 0, len(specs))

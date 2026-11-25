@@ -1,0 +1,38 @@
+{
+  "language": "bn",
+  "style": [
+    "Address the reader with আপনি (formal), never তুমি.",
+    "Short, plain sentences; sentence-final punctuation is the দাঁড়ি (।).",
+    "Generated numbers use Bangla digits (the app formats them); keep digits inside codes, IDs and amounts as they come.",
+    "Common English loanwords people use at work stay transliterated (ই-মেইল, পাসওয়ার্ড, সেটিংস, ড্যাশবোর্ড)."
+  ],
+  "terms": {
+    "organization": "প্রতিষ্ঠান",
+    "member": "সদস্য",
+    "user": "ব্যবহারকারী",
+    "role": "ভূমিকা",
+    "permission": "অনুমতি",
+    "branch": "শাখা",
+    "plan": "প্ল্যান",
+    "subscription": "সাবস্ক্রিপশন",
+    "payment": "পেমেন্ট",
+    "invoice": "ইনভয়েস",
+    "billing": "বিলিং",
+    "settings": "সেটিংস",
+    "activity log": "কার্যকলাপের লগ",
+    "notification": "নোটিফিকেশন",
+    "announcement": "ঘোষণা",
+    "file": "ফাইল",
+    "webhook": "ওয়েবহুক",
+    "sign in": "সাইন ইন",
+    "sign out": "সাইন আউট",
+    "sign up": "সাইন আপ",
+    "two-factor": "টু-ফ্যাক্টর",
+    "recovery code": "রিকভারি কোড",
+    "e-mail": "ই-মেইল",
+    "password": "পাসওয়ার্ড",
+    "language": "ভাষা",
+    "staff": "স্টাফ"
+  },
+  "keep": ["IMS Go SaaS Kit", "bKash", "Nagad", "MCP", "Google", "GitHub", "API", "OAuth"]
+}

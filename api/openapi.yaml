@@ -5565,6 +5565,29 @@ paths:
         "403": *forbidden
         "404": *notFound
 
+  /dev/api/inspector/translations:
+    get:
+      tags: [Dev]
+      summary: How complete each language is
+      description: |
+        Every registered language with its API catalog coverage (missing, extra and mismatched keys),
+        its CLDR plural forms, the delivery templates without its variant and the keys the project's
+        overrides replace; plus the namespaces and the module that owns each. The client app's own
+        catalogs are checked by `npm run i18n:check` in web/app.
+      operationId: devInspectorTranslations
+      responses:
+        "200":
+          description: The translation report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/DevTranslationsReport"}
+        "401": *unauthorized
+        "403": *forbidden
+
   /dev/api/inspector/packages:
     get:
       tags: [Dev]
@@ -9657,6 +9680,60 @@ components:
         canceled: {type: integer, format: int64, description: "Waits that gave up (the request was canceled)."}
         avg_acquire_ms: {type: number, description: "Mean time to get a connection, waits included."}
         busy: {type: boolean, description: "active is at busy_share of max or more."}
+    DevTranslationsReport:
+      type: object
+      required: [default, languages, namespaces, templates]
+      properties:
+        default: {type: string, description: APP_LOCALE}
+        languages:
+          type: array
+          items:
+            type: object
+            required: [code, label, english, intl, dir, digits, reviewed, supported, total, translated, missing, extra, problems, plural_forms, template_gaps, overrides]
+            properties:
+              code: {type: string}
+              label: {type: string}
+              english: {type: string}
+              intl: {type: string}
+              dir: {type: string, enum: [ltr, rtl]}
+              digits: {type: string}
+              reviewed: {type: boolean}
+              supported: {type: boolean, description: Offered to clients (APP_SUPPORTED_LOCALES).}
+              total: {type: integer}
+              translated: {type: integer}
+              missing: {type: array, items: {type: string}}
+              extra: {type: array, items: {type: string}}
+              problems:
+                type: array
+                items:
+                  type: object
+                  required: [key, detail]
+                  properties:
+                    key: {type: string}
+                    detail: {type: string}
+              plural_forms: {type: array, items: {type: string}}
+              template_gaps:
+                type: array
+                items:
+                  type: object
+                  required: [template, language, missing, problems]
+                  properties:
+                    template: {type: string}
+                    language: {type: string}
+                    missing: {type: array, items: {type: string}}
+                    problems: {type: array, items: {type: string}}
+              overrides: {type: array, items: {type: string}, description: Keys the project's overrides replace in this language.}
+        namespaces:
+          type: array
+          items:
+            type: object
+            required: [name, owner, keys]
+            properties:
+              name: {type: string}
+              owner: {type: string}
+              keys: {type: integer}
+        templates: {type: array, items: {type: string}}
+
     DevPackagesReport:
       type: object
       required: [go_version, module, packages]

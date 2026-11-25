@@ -15,6 +15,7 @@ recipes live in
 | `db-change` | migrations, sqlc queries, `internal/dbgen` regeneration |
 | `dev-dashboard` | dashboard panels, `/dev/api` endpoints, dashboard commands |
 | `verify-changes` | finishing any task: the gates to run before reporting done |
+| `translate` | adding a language or filling translation gaps (API, app, e-mail templates) |
 
 ## What this repo is
 

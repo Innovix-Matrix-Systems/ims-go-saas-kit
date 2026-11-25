@@ -303,7 +303,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 					return nil
 				}
 				return deps.routes
-			}),
+			}).WithTranslations(translator, platform.Delivery.Templates()),
 			Queries:     queries,
 			Maintenance: platform.Maintenance,
 			Deliveries:  platform.Delivery,
