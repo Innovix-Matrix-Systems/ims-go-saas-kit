@@ -109,13 +109,13 @@ const companyMeta = await sharp(companyLogo).metadata()
 const card = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
   <defs>
     <radialGradient id="glow" cx="85%" cy="15%" r="70%">
-      <stop offset="0" stop-color="#ff5c1a" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#ff5c1a" stop-opacity="0"/>
+      <stop offset="0" stop-color="#00add8" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#00add8" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="1200" height="630" fill="#0b0b0d"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
-  <rect x="0" y="0" width="1200" height="6" fill="#ff5c1a"/>
+  <rect x="0" y="0" width="1200" height="6" fill="#00add8"/>
   <g font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif">
     <text x="80" y="250" font-size="76" font-weight="700" fill="#f5f5f7">IMS Go SaaS Kit</text>
     <text x="80" y="320" font-size="34" fill="#c2c2c8">One Go binary. Your whole SaaS.</text>
