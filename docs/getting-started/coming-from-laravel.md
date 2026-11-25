@@ -143,7 +143,7 @@ keyboard shortcut for every panel (`?` lists them).
 | **Overview** | whether anything needs you right now: health, migrations, queue, errors, backups and settings drift, and the last hour of traffic as a chart |
 | **Scheduler** | every scheduled task with its next run and a history of every run (what `schedule:list` prints, plus whether each run worked); run one now |
 | **Commands** | run allowlisted maintenance commands from the browser, with options, confirmation, background runs and output history: artisan, audited |
-| **Inspector** | system health and the **maintenance mode** toggle, every route with its middleware and permission (what `ims route:list` prints), roles vs the permission catalog, the effective config with secrets masked, dependencies |
+| **Inspector** | system health and the **maintenance mode** toggle, every route with its middleware and permission (what `ims route:list` prints), roles vs the permission catalog, the effective config with secrets masked, dependencies, how complete each language is |
 | **Audit log** | every dashboard action and sign-in, with IP and browser |
 | **Tenants** | every tenant with its plan and usage against limits |
 | **Sessions** | active tokens per user; revoke one, a user's, or everyone's |

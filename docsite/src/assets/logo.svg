@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="IMS">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="IMS Go SaaS Kit">
+  <!-- The kit's orange tile with the ring "o" of the Innovix Matrix System wordmark. -->
   <rect width="64" height="64" rx="14" fill="#ff5c1a"/>
-  <path d="M17 20l13 12-13 12" fill="none" stroke="#0b0b0d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M34 44h14" fill="none" stroke="#0b0b0d" stroke-width="6" stroke-linecap="round"/>
+  <path fill="#0b0b0d" fill-rule="evenodd" d="M32 12.5a19.5 19.5 0 1 1 0 39a19.5 19.5 0 1 1 0-39zM27.4 20.6a7.4 7.4 0 1 0 0 14.8a7.4 7.4 0 1 0 0-14.8z"/>
 </svg>

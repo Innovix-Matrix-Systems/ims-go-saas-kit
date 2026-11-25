@@ -43,7 +43,7 @@ its own origin.
 | API types | generated from `api/openapi.yaml` by openapi-typescript | `src/api/schema.d.ts` |
 | Tables, forms | TanStack Table and Form, plus the kit's own `Field`, `Select`, `DatePicker` | `src/components/` |
 | Charts | Recharts, coloured by theme tokens | `src/components/charts.tsx` |
-| Text | a typed catalog per language (English, Bangla) | `src/i18n/` |
+| Text | JSON catalogs per screen area and language, typed keys, plural forms; languages other than English load when chosen | `src/i18n/` |
 | Styles | plain CSS on design tokens; no CSS framework | `src/styles/` |
 
 React 19, TypeScript and Vite. There is no global state library: the server is the state, and

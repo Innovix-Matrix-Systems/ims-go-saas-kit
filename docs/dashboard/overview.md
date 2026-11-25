@@ -66,7 +66,7 @@ and the environment badge is red, so a change is never made on the wrong instanc
 
 | Panel | Does |
 | --- | --- |
-| **Inspector** | **System** (the [maintenance mode](../guides/maintenance-mode.md) toggle, health checks + runtime, and the database connection pools read live), **Routes** (every route with its middleware and permission; the same table as `ims route:list`), **Roles & permissions** (catalog vs database drift), **Config** (effective values, secrets masked), **Packages** (Go and npm dependencies) |
+| **Inspector** | **System** (the [maintenance mode](../guides/maintenance-mode.md) toggle, health checks + runtime, and the database connection pools read live), **Routes** (every route with its middleware and permission; the same table as `ims route:list`), **Roles & permissions** (catalog vs database drift), **Config** (effective values, secrets masked), **Packages** (Go and npm dependencies), **Translations** (each language's coverage of API keys, plural forms and e-mail templates, the namespaces and the module that owns each, overrides; see [Languages](../guides/languages.md#checks)) |
 | **Audit log** | every dashboard action and sign-in (including failures — never the password) with IP and browser; filter by action, person, status and date |
 
 ## Sandbox (local only)
