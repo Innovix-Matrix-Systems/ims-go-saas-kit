@@ -29,6 +29,11 @@
   "currencies.enabled": "Activée",
   "currencies.defaultHint": "La devise par défaut reste activée. Choisissez une autre devise par défaut pour désactiver celle-ci.",
   "currencies.makeDefault": "Définir par défaut",
+  "currencies.colActions": "Actions",
+  "currencies.nowDefault": "{code} est désormais la devise par défaut.",
+  "currencies.isDefault": "La devise par défaut : les prix des offres et les nouveaux paiements l'utilisent.",
+  "currencies.makeDefaultHint": "Définissez-la par défaut pour l'utiliser dans les prix des offres et les nouveaux paiements.",
+  "currencies.enableFirst": "Activez cette devise avant de la définir par défaut.",
   "currencies.delete": "Supprimer la devise",
   "currencies.deleteConfirm": "Supprimer {code} ? Aucun paiement ne l'utilise."
 }

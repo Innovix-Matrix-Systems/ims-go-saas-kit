@@ -675,3 +675,10 @@ pre.json {
   padding: 12px 14px; border: 1px dashed var(--border); border-radius: var(--radius-sm);
 }
 .currency-preview-value { font-size: var(--fs-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Currencies drawer: whether this currency is the default, with the action. */
+.currency-status {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+}
+.currency-status.is-default { justify-content: flex-start; }

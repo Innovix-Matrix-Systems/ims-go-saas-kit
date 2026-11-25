@@ -29,6 +29,11 @@
   "currencies.enabled": "Aktiviert",
   "currencies.defaultHint": "Die Standardwährung bleibt aktiviert. Machen Sie eine andere Währung zum Standard, um diese zu deaktivieren.",
   "currencies.makeDefault": "Als Standard festlegen",
+  "currencies.colActions": "Aktionen",
+  "currencies.nowDefault": "{code} ist jetzt die Standardwährung.",
+  "currencies.isDefault": "Die Standardwährung: Tarifpreise und neue Zahlungen verwenden sie.",
+  "currencies.makeDefaultHint": "Legen Sie sie als Standard fest, um sie für Tarifpreise und neue Zahlungen zu verwenden.",
+  "currencies.enableFirst": "Aktivieren Sie diese Währung, bevor Sie sie als Standard festlegen.",
   "currencies.delete": "Währung löschen",
   "currencies.deleteConfirm": "{code} löschen? Keine Zahlung verwendet sie."
 }

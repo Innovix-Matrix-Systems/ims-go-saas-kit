@@ -22,12 +22,38 @@ const listQuery = { queryKey: ['console', 'currencies'], queryFn: () => api<Curr
 /** 1,234.50 written the way the currency says. */
 const EXAMPLE = 123450
 
+/** Makes a currency the default; refreshes the staff list and the app's currencies. */
+function useMakeDefault() {
+  const t = useT()
+  const client = useQueryClient()
+  const { push } = useToast()
+  const [busy, setBusy] = useState<number | null>(null)
+  const run = async (currency: Currency) => {
+    setBusy(currency.id)
+    try {
+      await api(`/currencies/${currency.id}/default`, { method: 'POST', asStaff: true })
+      await client.invalidateQueries({ queryKey: listQuery.queryKey })
+      await client.invalidateQueries({ queryKey: currenciesQuery.queryKey })
+      push(t('currencies.nowDefault', { code: currency.code }), 'success')
+      return true
+    } catch (cause) {
+      push(cause instanceof Error ? cause.message : String(cause), 'error')
+      return false
+    } finally {
+      setBusy(null)
+    }
+  }
+  return { run, busy }
+}
+
 function CurrenciesPage() {
   const t = useT()
   const locale = useLocale()
   const session = useSession()
   const currencies = useQuery(listQuery)
+  const makeDefault = useMakeDefault()
   const [editing, setEditing] = useState<Currency | 'new' | null>(null)
+  const canUpdate = can(session, 'currency.update')
 
   return (
     <>
@@ -56,6 +82,9 @@ function CurrenciesPage() {
                   <th>{t('currencies.colExample')}</th>
                   <th>{t('currencies.colDecimals')}</th>
                   <th>{t('currencies.colStatus')}</th>
+                  <th className="end">
+                    <span className="sr-only">{t('currencies.colActions')}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -77,6 +106,21 @@ function CurrenciesPage() {
                         {currency.is_enabled ? null : <Badge tone="neutral">{t('currencies.disabled')}</Badge>}
                         {currency.in_use ? <Badge tone="neutral">{t('currencies.inUse')}</Badge> : null}
                       </span>
+                    </td>
+                    <td className="end nowrap">
+                      {canUpdate && !currency.is_default && currency.is_enabled ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={makeDefault.busy !== null}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            void makeDefault.run(currency)
+                          }}
+                        >
+                          {makeDefault.busy === currency.id ? <Spinner /> : null} {t('currencies.makeDefault')}
+                        </Button>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -111,6 +155,7 @@ function CurrencyDrawer({ currency, onClose }: { currency: Currency | null; onCl
   const [enabled, setEnabled] = useState(currency?.is_enabled ?? true)
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const makeDefault = useMakeDefault()
 
   const preview = {
     code: code || '—',
@@ -165,6 +210,30 @@ function CurrencyDrawer({ currency, onClose }: { currency: Currency | null; onCl
   return (
     <Drawer open title={currency ? `${currency.code} · ${currency.name}` : t('currencies.new')} onClose={onClose}>
       <form onSubmit={submit} className="stack">
+        {currency ? (
+          <div className={`currency-status ${currency.is_default ? 'is-default' : ''}`}>
+            {currency.is_default ? (
+              <>
+                <Badge tone="ok">{t('currencies.default')}</Badge>
+                <span className="small">{t('currencies.isDefault')}</span>
+              </>
+            ) : (
+              <>
+                <span className="small muted">{currency.is_enabled ? t('currencies.makeDefaultHint') : t('currencies.enableFirst')}</span>
+                {can(session, 'currency.update') && currency.is_enabled ? (
+                  <Button
+                    size="sm"
+                    type="button"
+                    disabled={makeDefault.busy !== null || busy}
+                    onClick={() => void makeDefault.run(currency).then((done) => done && onClose())}
+                  >
+                    {makeDefault.busy === currency.id ? <Spinner /> : <Icon name="check" />} {t('currencies.makeDefault')}
+                  </Button>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : null}
         <div className="form-grid-2">
           <Field label={t('currencies.code')} hint={currency ? undefined : t('currencies.codeHint')} error={errors.field('code')}>
             <input
@@ -255,11 +324,6 @@ function CurrencyDrawer({ currency, onClose }: { currency: Currency | null; onCl
             <Button variant="primary" type="submit" disabled={busy || name.trim().length === 0 || code.trim().length !== 3}>
               {busy ? <Spinner /> : <Icon name="check" />} {t('console.save')}
             </Button>
-            {currency && !currency.is_default && currency.is_enabled && can(session, 'currency.update') ? (
-              <Button type="button" disabled={busy} onClick={() => void run(() => api(`/currencies/${currency.id}/default`, { method: 'POST', asStaff: true }))}>
-                {t('currencies.makeDefault')}
-              </Button>
-            ) : null}
             <span className="spacer" />
             {currency && !currency.is_default && !currency.in_use && can(session, 'currency.delete') ? (
               <Button variant="danger" icon="trash" type="button" disabled={busy} onClick={() => setConfirmDelete(true)}>

@@ -456,6 +456,7 @@ export interface MessageVars {
   'currencies.before': never
   'currencies.code': never
   'currencies.codeHint': never
+  'currencies.colActions': never
   'currencies.colCurrency': never
   'currencies.colDecimals': never
   'currencies.colExample': never
@@ -468,14 +469,18 @@ export interface MessageVars {
   'currencies.delete': never
   'currencies.deleteConfirm': 'code'
   'currencies.disabled': never
+  'currencies.enableFirst': never
   'currencies.enabled': never
   'currencies.inUse': never
+  'currencies.isDefault': never
   'currencies.makeDefault': never
+  'currencies.makeDefaultHint': never
   'currencies.name': never
   'currencies.new': never
   'currencies.noConversion': never
   'currencies.noSeparator': never
   'currencies.none': never
+  'currencies.nowDefault': 'code'
   'currencies.position': never
   'currencies.preview': never
   'currencies.space': never

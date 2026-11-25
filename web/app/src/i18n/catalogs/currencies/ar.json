@@ -29,6 +29,11 @@
   "currencies.enabled": "مفعّلة",
   "currencies.defaultHint": "تبقى العملة الافتراضية مفعّلة. اجعل عملة أخرى افتراضية لتعطيل هذه.",
   "currencies.makeDefault": "جعلها افتراضية",
+  "currencies.colActions": "الإجراءات",
+  "currencies.nowDefault": "أصبحت {code} العملة الافتراضية.",
+  "currencies.isDefault": "العملة الافتراضية: تستخدمها أسعار الخطط والدفعات الجديدة.",
+  "currencies.makeDefaultHint": "اجعلها افتراضية لاستخدامها في أسعار الخطط والدفعات الجديدة.",
+  "currencies.enableFirst": "فعّل هذه العملة قبل جعلها افتراضية.",
   "currencies.delete": "حذف العملة",
   "currencies.deleteConfirm": "حذف {code}؟ لا تستخدمها أي دفعة."
 }

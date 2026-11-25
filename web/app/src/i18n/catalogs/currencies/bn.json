@@ -29,6 +29,11 @@
   "currencies.enabled": "চালু",
   "currencies.defaultHint": "ডিফল্ট মুদ্রা চালু থাকে। এটি বন্ধ করতে আগে অন্য একটি মুদ্রাকে ডিফল্ট করুন।",
   "currencies.makeDefault": "ডিফল্ট করুন",
+  "currencies.colActions": "কাজ",
+  "currencies.nowDefault": "{code} এখন ডিফল্ট মুদ্রা।",
+  "currencies.isDefault": "ডিফল্ট: প্ল্যানের দাম ও নতুন পেমেন্ট এটিতে হয়।",
+  "currencies.makeDefaultHint": "প্ল্যানের দাম ও নতুন পেমেন্টে ব্যবহার করতে এটিকে ডিফল্ট করুন।",
+  "currencies.enableFirst": "ডিফল্ট করার আগে এই মুদ্রাটি চালু করুন।",
   "currencies.delete": "মুদ্রা মুছুন",
   "currencies.deleteConfirm": "{code} মুছবেন? কোনো পেমেন্টে এটি ব্যবহার হয়নি।"
 }

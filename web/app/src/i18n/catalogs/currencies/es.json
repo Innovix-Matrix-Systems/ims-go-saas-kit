@@ -29,6 +29,11 @@
   "currencies.enabled": "Activada",
   "currencies.defaultHint": "La moneda predeterminada sigue activada. Haga predeterminada otra moneda para desactivar esta.",
   "currencies.makeDefault": "Hacer predeterminada",
+  "currencies.colActions": "Acciones",
+  "currencies.nowDefault": "{code} es ahora la moneda predeterminada.",
+  "currencies.isDefault": "La predeterminada: la usan los precios de los planes y los pagos nuevos.",
+  "currencies.makeDefaultHint": "Hágala predeterminada para usarla en los precios de los planes y los pagos nuevos.",
+  "currencies.enableFirst": "Active esta moneda antes de hacerla predeterminada.",
   "currencies.delete": "Eliminar moneda",
   "currencies.deleteConfirm": "¿Eliminar {code}? Ningún pago la usa."
 }

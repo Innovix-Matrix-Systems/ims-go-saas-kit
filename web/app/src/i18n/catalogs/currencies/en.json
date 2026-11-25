@@ -29,6 +29,11 @@
   "currencies.enabled": "Enabled",
   "currencies.defaultHint": "The default currency stays enabled. Make another currency the default to disable this one.",
   "currencies.makeDefault": "Make default",
+  "currencies.colActions": "Actions",
+  "currencies.nowDefault": "{code} is now the default currency.",
+  "currencies.isDefault": "The default: plan prices and new payments use it.",
+  "currencies.makeDefaultHint": "Make it the default to use it for plan prices and new payments.",
+  "currencies.enableFirst": "Enable this currency before making it the default.",
   "currencies.delete": "Delete currency",
   "currencies.deleteConfirm": "Delete {code}? It isn't used by any payment."
 }
