@@ -3,9 +3,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api } from '../api/client'
 import { can, useSession } from '../auth/session'
-import { featureName, useFeatureText, usePrice, type Package } from '../components/billing'
+import { featureName, useDefaultCurrency, useFeatureText, usePrice, type Package } from '../components/billing'
 import { Field, useApiErrors } from '../components/form'
-import { Select } from '../components/inputs'
+import { MoneyInput, Select } from '../components/inputs'
+import { fromMinor, toMinor } from '../money'
 import { pageSlice, Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Icon, PageHeader, Spinner } from '../components/ui'
@@ -127,7 +128,9 @@ function PlanDrawer({ pkg, catalog, onClose }: { pkg: Package | null; catalog: C
   const editable = pkg ? can(session, 'package.update') : can(session, 'package.create')
   const [name, setName] = useState(pkg?.name ?? '')
   const [description, setDescription] = useState(pkg?.description ?? '')
-  const [priceTaka, setPriceTaka] = useState(pkg ? String(pkg.price / 100) : '0')
+  const currency = useDefaultCurrency()
+  const [price, setPrice] = useState(pkg ? fromMinor(pkg.price, currency) : '')
+  const [priceError, setPriceError] = useState<string>()
   const [cycle, setCycle] = useState<Package['billing_cycle']>(pkg?.billing_cycle ?? 'monthly')
   const [trialDays, setTrialDays] = useState(String(pkg?.trial_days ?? 0))
   const [order, setOrder] = useState(String(pkg?.sort_order ?? 0))
@@ -152,12 +155,18 @@ function PlanDrawer({ pkg, catalog, onClose }: { pkg: Package | null; catalog: C
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    setBusy(true)
     errors.clear()
+    setPriceError(undefined)
+    const minor = price.trim() ? toMinor(price, currency) : 0
+    if (minor === null) {
+      setPriceError(t('inputs.amountInvalid', { example: fromMinor(150000, currency) }))
+      return
+    }
+    setBusy(true)
     const body = {
       name: name.trim(),
       description: description.trim() || null,
-      price: Math.round(Number(priceTaka || 0) * 100),
+      price: minor,
       billing_cycle: cycle,
       trial_days: Number(trialDays || 0),
       sort_order: Number(order || 0),
@@ -217,8 +226,8 @@ function PlanDrawer({ pkg, catalog, onClose }: { pkg: Package | null; catalog: C
           <input className="input" disabled={!editable} value={description} onChange={(e) => setDescription(e.target.value)} />
         </Field>
         <div className="form-grid-3">
-          <Field label={t('console.price')} error={errors.field('price')}>
-            <input className="input" type="number" min="0" step="0.01" disabled={!editable} value={priceTaka} onChange={(e) => setPriceTaka(e.target.value)} />
+          <Field label={t('console.price')} error={priceError ?? errors.field('price')}>
+            <MoneyInput currency={currency} ariaLabel={t('console.price')} disabled={!editable} value={price} onChange={setPrice} />
           </Field>
           <Field label={t('console.trialDays')} error={errors.field('trial_days')}>
             <input className="input" type="number" min="0" disabled={!editable} value={trialDays} onChange={(e) => setTrialDays(e.target.value)} />

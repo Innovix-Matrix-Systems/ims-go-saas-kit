@@ -6,6 +6,56 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-11-25
+
+**Currencies as data, Akaunting style.** A currency is how amounts are written (symbol, where it
+goes, decimals, separators), one row each, and one of them is the default. Amounts stay integers in
+minor units and are never converted: changing the currency changes the label. USD, BDT and EUR are
+built in; staff add and edit currencies under Console → Currencies. See
+[Money and currency](docs/guides/currencies.md).
+
+**Upgrading from 0.2.3:** run `ims migrate` (migrations 00043 and 00044). Things to check:
+
+- **`BILLING_CURRENCY` is gone.** The currency is data now. The migration makes the currency your
+  payments already use the default (BDT for existing installs), so prices keep reading the same; a
+  new install starts on USD. Remove the variable from your `.env`.
+- **API:** new `GET /api/v1/public/currencies` (no sign-in) and staff `/api/v1/currencies`
+  (`currency.*` system permissions; run `ims permission:sync`). Plan prices are in the default
+  currency; each payment keeps its own `currency`.
+- **Go:** `billing.NewOrchestrator`, `NewPaymentService` and `SubscriptionService.WithCurrencies`
+  take a `domain.CurrencySource` instead of a code (`domain.FixedCurrency("BDT")` in tests);
+  `service.FormatMoney` is gone, use `internal/platform/money`.
+- **App:** `useMoney()(minor, code?)` defaults to the default currency instead of `BDT`; type
+  amounts with `MoneyInput` and `toMinor` (`src/money.ts`).
+
+### Added
+
+- **Console → Currencies:** every currency with a live example; add one, change its symbol,
+  position, decimals and separators with a preview, enable or disable it, make it the default
+  (from its row or its drawer). Every change is recorded in the system audit log.
+- `internal/platform/money` and `web/app/src/money.ts`: one formatter per side, the same output
+  for the same row, digits in the reader's language (`৳১,২৩৪.৫০`), compact form for charts.
+- `MoneyInput`: the currency's symbol on its side and its decimals; a typo is refused, never
+  rounded.
+- `notifications.Money`: a notice's amount is written in each reader's digits.
+- A "Money and currency" guide, including how to store and show money in your own module.
+
+### Changed
+
+- Payments are recorded in the default currency; invoices (HTML and PDF), payment notices and the
+  receipt e-mail write amounts from the currency's row (the PDF keeps the code: its fonts can't
+  draw every symbol).
+- bKash and Nagad refuse a payment unless the default currency is BDT; bKash amounts are sent
+  without floating-point maths.
+- "Amount (৳)" and "Price (৳)" lost the symbol in every language: the input shows the default
+  currency's symbol.
+- `payments.currency` no longer defaults to `BDT` in the database; the application always sets it.
+
+### Fixed
+
+- A one-day renewal reminder's body was empty in the feed and e-mail (a plain message sharing its
+  params with a plural one).
+
 ## [0.2.3] - 2026-11-25
 
 **Six languages, right to left, and a language system that isn't tied to any language.** The kit
@@ -426,7 +476,8 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.5...HEAD
+[0.2.5]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.3...v0.2.5
 [0.2.3]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.0...v0.2.3
 [0.2.0]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.6...v0.1.8

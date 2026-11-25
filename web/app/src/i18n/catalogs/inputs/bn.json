@@ -11,5 +11,6 @@
   "inputs.today": "আজ",
   "inputs.clear": "মুছুন",
   "inputs.hour": "ঘণ্টা",
-  "inputs.minute": "মিনিট"
+  "inputs.minute": "মিনিট",
+  "inputs.amountInvalid": "{example}-এর মতো করে অঙ্ক লিখুন।"
 }

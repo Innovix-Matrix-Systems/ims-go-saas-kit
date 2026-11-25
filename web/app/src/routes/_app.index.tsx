@@ -182,8 +182,7 @@ function PlatformHome({ session }: { session: Session }) {
   const lead = data?.revenue?.currencies[0]
   const pending = data?.revenue?.pending ?? []
   const pendingCount = pending.reduce((sum, row) => sum + row.count, 0)
-  const moneyCompact = (currency: string) => (value: number) =>
-    new Intl.NumberFormat(intlLocale(locale), { style: 'currency', currency, currencyDisplay: 'narrowSymbol', notation: 'compact', maximumFractionDigits: 1 }).format(value / 100)
+  const moneyCompact = (currency: string) => (value: number) => money(value, currency, { compact: true })
 
   return (
     <>

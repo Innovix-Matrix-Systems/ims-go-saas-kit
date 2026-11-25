@@ -158,8 +158,7 @@ effective values with secrets masked.
 
 | Variable | Example | Notes |
 | --- | --- | --- |
-| `BILLING_CURRENCY` | `BDT` |  |
-| `BILLING_SUSPEND_ON_EXPIRY` | `false` | *Optional.* suspend tenants whose subscription expired (nothing current or pending) |
+| `BILLING_SUSPEND_ON_EXPIRY` | `false` | *Optional.* The currency is not configured here: staff choose it in the console (Currencies). suspend tenants whose subscription expired (nothing current or pending) |
 | `BILLING_SUSPEND_GRACE_DAYS` | `3` | *Optional.* days after expiry before the suspension |
 | `BKASH_BASE_URL` | `/ BKASH_APP_KEY= / BKASH_APP_SECRET= / BKASH_USERNAME= / BKASH_PASSWORD=` | *Optional.* |
 | `BKASH_CALLBACK_URL` | `https://api.example.com/api/v1/billing/bkash/callback` | *Optional.* |

@@ -656,3 +656,29 @@ pre.json {
 .skeleton-nav-item { display: flex; align-items: center; gap: 10px; padding: 0 10px; }
 .skeleton-page .page-header { margin-bottom: 20px; }
 @media (prefers-reduced-motion: reduce) { .skeleton, .skeleton-row { animation: none; } }
+
+/* MoneyInput: the currency symbol beside the number, always left to right. */
+.money-input { display: flex; align-items: stretch; }
+.money-input .input { flex: 1; min-width: 0; text-align: end; font-variant-numeric: tabular-nums; }
+.money-input-symbol {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 38px; padding-inline: 10px;
+  color: var(--text-1); border: 1px solid var(--border); background: var(--surface-2);
+  font-size: var(--fs-lg); line-height: 1;
+}
+.money-input-symbol:first-child { border-inline-end: 0; border-start-start-radius: var(--radius-sm); border-end-start-radius: var(--radius-sm); }
+.money-input-symbol:last-child { border-inline-start: 0; border-start-end-radius: var(--radius-sm); border-end-end-radius: var(--radius-sm); }
+.money-input-symbol:first-child + .input { border-start-start-radius: 0; border-end-start-radius: 0; }
+.money-input .input:has(+ .money-input-symbol) { border-start-end-radius: 0; border-end-end-radius: 0; }
+.money-input.is-disabled .money-input-symbol { opacity: .6; }
+.currency-preview {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border: 1px dashed var(--border); border-radius: var(--radius-sm);
+}
+.currency-preview-value { font-size: var(--fs-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Currencies drawer: whether this currency is the default, with the action. */
+.currency-status {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+}
+.currency-status.is-default { justify-content: flex-start; }

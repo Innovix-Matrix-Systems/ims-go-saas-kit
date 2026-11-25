@@ -1,5 +1,5 @@
 /* IMS Go SaaS Kit docs theme. Light paper and ink by default, a dark mode that
-   matches the dashboards, and the kit's orange as the one accent. Code and the
+   matches the dashboards, and Go's Gopher Blue as the one accent. Code and the
    "binary" panel stay dark in both themes. Starlight reads these properties;
    the --ims-* ones are ours (landing page components). */
 :root {
@@ -10,16 +10,16 @@
   --ims-terminal-line: #2c2c33;
   --ims-terminal-fg: #e9e9ee;
   --ims-terminal-dim: #8b8b96;
-  --ims-terminal-path: #ff8a55;
+  --ims-terminal-path: #5dc9e2;
   --ims-terminal-ok: #4cc27f;
 }
 
 /* Dark */
 :root,
 ::backdrop {
-  --sl-color-accent-low: #3a1a0b;
-  --sl-color-accent: #ff6a2b;
-  --sl-color-accent-high: #ffc3a6;
+  --sl-color-accent-low: #062f3a;
+  --sl-color-accent: #00add8;
+  --sl-color-accent-high: #a6ecfb;
   --sl-color-white: #f1f1f4;
   --sl-color-gray-1: #e1e1e6;
   --sl-color-gray-2: #c0c0c8;
@@ -28,8 +28,8 @@
   --sl-color-gray-5: #2a2a31;
   --sl-color-gray-6: #17171c;
   --sl-color-black: #0e0e11;
-  --ims-accent: #ff6a2b;
-  --ims-on-accent: #160700;
+  --ims-accent: #00add8;
+  --ims-on-accent: #001a21;
   --ims-surface: #17171c;
   --ims-line: #2a2a31;
 }
@@ -37,9 +37,9 @@
 /* Light (paper and ink) */
 :root[data-theme='light'],
 [data-theme='light'] ::backdrop {
-  --sl-color-accent-low: #fde8dc;
-  --sl-color-accent: #d24808;
-  --sl-color-accent-high: #7a2700;
+  --sl-color-accent-low: #dff6fb;
+  --sl-color-accent: #007d9c;
+  --sl-color-accent-high: #00495c;
   --sl-color-white: #17171b;
   --sl-color-gray-1: #26262c;
   --sl-color-gray-2: #3d3d45;
@@ -49,7 +49,7 @@
   --sl-color-gray-6: #eeede8;
   --sl-color-gray-7: #f6f6f3;
   --sl-color-black: #fbfbf9;
-  --ims-accent: #e8510f;
+  --ims-accent: #007d9c;
   --ims-on-accent: #ffffff;
   --ims-surface: #ffffff;
   --ims-line: #e2e1dc;
@@ -99,7 +99,7 @@ h1#_top {
   white-space: nowrap;
 }
 
-/* Primary buttons use the kit's orange, like the dashboards. */
+/* Primary buttons use the accent (Gopher Blue). */
 .sl-link-button.primary,
 .action.primary {
   background: var(--ims-accent);

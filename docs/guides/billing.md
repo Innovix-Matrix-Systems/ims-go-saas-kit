@@ -156,7 +156,8 @@ add users right away; it is never listed publicly and seeding again changes noth
 
 `GET /api/v1/public/packages` lists active packages for your pricing page (no auth). Staff manage
 packages with `/api/v1/packages` (`package.*`); updating a package **replaces** its feature set
-in one transaction. Money is in minor units of `BILLING_CURRENCY` (default `BDT`).
+in one transaction. Prices are integers in the minor units of the default currency, and each
+payment keeps the currency it was made in; see [Money and currency](currencies.md).
 
 ## In the app
 

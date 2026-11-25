@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/currencies"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/onboarding"
 	webapp "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/web/app"
 	webdev "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/web/dev"
@@ -88,6 +89,7 @@ type Dependencies struct {
 	Roles          *access.RoleHandler
 	Permissions    *access.PermissionHandler
 	Billing        *billing.Handler
+	Currencies     *currencies.Handler
 	Onboarding     *onboarding.Handler
 	Files          *files.Handler
 	Notifications  *notifications.Handler
@@ -330,6 +332,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			kit,
 		).WithUsage(billingservice.NewUsageService(platform.BillingGuard, billingdomain.NewReportRepository(queries))).
 			WithInvoices(platform.BillingInvoices),
+		Currencies: currencies.NewHandler(platform.Currencies, checker, kit),
 	}
 	deps.ActivityExport = activityexport.NewHandler(platform.ActivityExport, checker, kit)
 	deps.Onboarding = onboarding.NewHandler(

@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/money"
 )
 
 // Package is the domain representation of a billing plan.
@@ -223,17 +224,20 @@ type Invoice struct {
 	PaymentMethod string
 	Amount        int64
 	Currency      string
-	Reference     string
-	IssuedAt      time.Time
-	PaidAt        *time.Time
-	Issuer        string
-	TenantName    string
-	TenantEmail   string
-	TenantPhone   string
-	PackageName   string
-	BillingCycle  string
-	PeriodStart   *time.Time
-	PeriodEnd     *time.Time
+	// Money is Amount written the way its currency says (set by the
+	// invoice service).
+	Money        money.Amount
+	Reference    string
+	IssuedAt     time.Time
+	PaidAt       *time.Time
+	Issuer       string
+	TenantName   string
+	TenantEmail  string
+	TenantPhone  string
+	PackageName  string
+	BillingCycle string
+	PeriodStart  *time.Time
+	PeriodEnd    *time.Time
 }
 
 // TenantUsage is what a tenant holds of its plan's limits.

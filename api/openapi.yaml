@@ -15,7 +15,9 @@ info:
     - Every error is `application/problem+json` (RFC 9457) carrying `type`, `title`,
       `status`, `detail`, `error_code`, `timestamp`; `trace_id` (5xx), `errors` (422),
       `meta` (feature limits) and `retry_after` (429) appear when applicable.
-    - Timestamps are RFC 3339 UTC. Money is in minor units (paisa), currency `BDT`.
+    - Timestamps are RFC 3339 UTC. Money is an integer in the minor units of its `currency`
+      (cents, paisa); a plan price is in the default currency (`GET /api/v1/public/currencies`).
+      Amounts are never converted between currencies.
     - IDs are 64-bit integers.
 
     ## Tenancy & impersonation
@@ -52,6 +54,11 @@ tags:
     description: Home-page figures for an organization and for platform staff.
   - name: Billing
     description: Packages, subscriptions, payments and manual approvals.
+  - name: Currencies
+    description: |
+      How amounts are written: one row per currency with its symbol, position, decimals and
+      separators. One is the default, the currency of plan prices and new payments; changing it
+      relabels amounts, it never converts them.
   - name: Announcements
     description: Staff announcements to organizations, shown as banners, with views, clicks and dismissals.
   - name: Notifications
@@ -3503,6 +3510,111 @@ paths:
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
+
+  /api/v1/public/currencies:
+    get:
+      tags: [Currencies]
+      summary: The enabled currencies and the default
+      description: How clients write amounts. Not cached by browsers, so a change by staff shows at once.
+      operationId: listPublicCurrencies
+      security: []
+      responses:
+        "200":
+          description: The enabled currencies, the default first.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/PublicCurrenciesEnvelope"}
+
+  /api/v1/currencies:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+    get:
+      tags: [Currencies]
+      summary: List every currency (system)
+      operationId: listCurrencies
+      responses:
+        "200":
+          description: Every currency, the default first, with whether payments use it.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CurrencyArrayEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+    post:
+      tags: [Currencies]
+      summary: Add a currency (system)
+      operationId: createCurrency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CurrencyCreateRequest"}
+      responses:
+        "201":
+          description: The new currency (never the default).
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CurrencyEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "409": *conflict
+        "422": *validationFailed
+
+  /api/v1/currencies/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PathID"
+      - {$ref: "#/components/parameters/ActingTenant"}
+    patch:
+      tags: [Currencies]
+      summary: Change how a currency is written (system)
+      description: The decimals can't change while payments use the currency, and the default can't be disabled.
+      operationId: updateCurrency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CurrencyUpdateRequest"}
+      responses:
+        "200":
+          description: The updated currency.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CurrencyEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "422": *validationFailed
+    delete:
+      tags: [Currencies]
+      summary: Delete a currency (system)
+      description: Refused for the default currency and for one that payments use (disable it instead).
+      operationId: deleteCurrency
+      responses:
+        "204": {description: Deleted.}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "409": *conflict
+
+  /api/v1/currencies/{id}/default:
+    parameters:
+      - $ref: "#/components/parameters/PathID"
+      - {$ref: "#/components/parameters/ActingTenant"}
+    post:
+      tags: [Currencies]
+      summary: Make a currency the default (system)
+      description: Plan prices and new payments are read in it; amounts are not converted. The currency must be enabled.
+      operationId: setDefaultCurrency
+      responses:
+        "200":
+          description: The new default currency.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CurrencyEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+        "422": *validationFailed
 
   /api/v1/billing/{gateway}/callback:
     parameters:
@@ -8433,6 +8545,78 @@ components:
       required: [data]
       properties:
         data: {$ref: "#/components/schemas/Package"}
+
+    PublicCurrency:
+      type: object
+      required: [code, name, symbol, symbol_first, precision, decimal_mark, thousands_separator]
+      properties:
+        code: {type: string, example: BDT, description: ISO 4217 code}
+        name: {type: string, example: Bangladeshi Taka}
+        symbol: {type: string, example: "৳"}
+        symbol_first: {type: boolean, description: "The symbol before the number or after it (1.234,00 €)."}
+        precision: {type: integer, minimum: 0, maximum: 4, description: "Decimals; an amount in minor units is divided by 10^precision."}
+        decimal_mark: {type: string, example: "."}
+        thousands_separator: {type: string, example: ","}
+
+    PublicCurrenciesEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [default, currencies]
+          properties:
+            default: {type: string, example: USD, description: The currency of plan prices and new payments.}
+            currencies:
+              type: array
+              items: {$ref: "#/components/schemas/PublicCurrency"}
+
+    Currency:
+      allOf:
+        - {$ref: "#/components/schemas/PublicCurrency"}
+        - type: object
+          required: [id, is_enabled, is_default, in_use, created_at, updated_at]
+          properties:
+            id: {type: integer, format: int64}
+            is_enabled: {type: boolean}
+            is_default: {type: boolean}
+            in_use: {type: boolean, description: "Payments are recorded in this currency: its decimals are locked and it can't be deleted."}
+            created_at: {type: string, format: date-time}
+            updated_at: {type: string, format: date-time}
+
+    CurrencyEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: {$ref: "#/components/schemas/Currency"}
+
+    CurrencyArrayEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: {$ref: "#/components/schemas/Currency"}
+
+    CurrencyUpdateRequest:
+      type: object
+      required: [name, symbol, decimal_mark]
+      properties:
+        name: {type: string, maxLength: 100}
+        symbol: {type: string, maxLength: 10}
+        symbol_first: {type: boolean}
+        precision: {type: integer, minimum: 0, maximum: 4}
+        decimal_mark: {type: string, maxLength: 3}
+        thousands_separator: {type: string, maxLength: 3}
+        is_enabled: {type: boolean, description: Defaults to true.}
+
+    CurrencyCreateRequest:
+      allOf:
+        - type: object
+          required: [code]
+          properties:
+            code: {type: string, minLength: 3, maxLength: 3, pattern: "^[A-Z]{3}$"}
+        - {$ref: "#/components/schemas/CurrencyUpdateRequest"}
 
     PackageArrayEnvelope:
       type: object

@@ -11,5 +11,6 @@
   "inputs.today": "اليوم",
   "inputs.clear": "مسح",
   "inputs.hour": "ساعة",
-  "inputs.minute": "دقيقة"
+  "inputs.minute": "دقيقة",
+  "inputs.amountInvalid": "أدخل مبلغًا مثل {example}."
 }

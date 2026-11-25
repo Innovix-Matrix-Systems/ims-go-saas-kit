@@ -91,7 +91,7 @@ func TestPaymentNoticesReachApproversAndBillingManagers(t *testing.T) {
 		t.Fatalf("billing manager feed after approval = %q, want payment received", titles)
 	}
 	receipt := app.Queued(t, "payment-receipt")
-	if receipt["invoice"] != created.Payment.InvoiceNumber || receipt["amount"] != "BDT 1,500.00" {
+	if receipt["invoice"] != created.Payment.InvoiceNumber || receipt["amount"] != "$1,500.00" {
 		t.Fatalf("receipt data = %v", receipt)
 	}
 	var attached int

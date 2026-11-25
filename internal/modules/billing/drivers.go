@@ -15,6 +15,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/money"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
 )
 
@@ -29,6 +30,10 @@ type BkashDriver struct {
 	// each asking bKash for a new token (M18).
 	tokenMu sync.Mutex
 }
+
+// Currencies implements domain.CurrencyLimited: bKash settles in taka, and
+// amounts are sent in taka with two decimals (paisa minor units).
+func (d *BkashDriver) Currencies() []string { return []string{"BDT"} }
 
 // NewBkashDriver creates the bKash driver (token cached 55 minutes).
 func NewBkashDriver(cfg config.Bkash, store cache.Store) *BkashDriver {
@@ -45,7 +50,7 @@ func (d *BkashDriver) Initiate(ctx context.Context, payment *domain.Payment, dat
 	payload := map[string]any{
 		"mode":                  "0011",
 		"payerReference":        fmt.Sprintf("%d", payment.TenantID),
-		"amount":                fmt.Sprintf("%.2f", float64(payment.Amount)/100),
+		"amount":                money.Of(payment.Amount, money.Fallback(payment.Currency)).Decimal(),
 		"currency":              payment.Currency,
 		"intent":                "sale",
 		"merchantInvoiceNumber": payment.InvoiceNumber,
@@ -140,7 +145,7 @@ func (d *BkashDriver) Refund(ctx context.Context, payment *domain.Payment, amoun
 	}
 	response, err := d.post(ctx, "/tokenized/checkout/payment/refund", token, map[string]any{
 		"paymentID": reference,
-		"amount":    fmt.Sprintf("%.2f", float64(amount)/100),
+		"amount":    money.Of(amount, money.Fallback(payment.Currency)).Decimal(),
 		"reason":    "refund",
 	}, nil)
 	if err != nil {
@@ -320,6 +325,9 @@ func (BankTransferDriver) Refund(ctx context.Context, payment *domain.Payment, a
 
 // NagadDriver is a placeholder until the Nagad integration is implemented.
 type NagadDriver struct{}
+
+// Currencies implements domain.CurrencyLimited: Nagad settles in taka.
+func (NagadDriver) Currencies() []string { return []string{"BDT"} }
 
 // Initiate implements domain.PaymentDriver.
 func (NagadDriver) Initiate(ctx context.Context, payment *domain.Payment, data map[string]any) (domain.InitiateResult, error) {

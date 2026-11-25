@@ -24,9 +24,10 @@ type AssignInput struct {
 	Amount *int64
 }
 
-// WithCurrency sets the currency of payments recorded by Assign.
-func (s *SubscriptionService) WithCurrency(currency string) *SubscriptionService {
-	s.currency = currency
+// WithCurrencies sets where the currency of payments recorded by Assign
+// comes from (the default currency; USD until set).
+func (s *SubscriptionService) WithCurrencies(currencies domain.CurrencySource) *SubscriptionService {
+	s.currencies = currencies
 	return s
 }
 
@@ -64,6 +65,10 @@ func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (_ 
 			"amount": {"The amount must be greater than zero."},
 		})
 	}
+	currency, err := s.currencies.DefaultCode(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var (
 		subscription *domain.Subscription
@@ -99,7 +104,7 @@ func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (_ 
 			PaymentMethod:  input.PaymentMethod,
 			Status:         domain.PaymentPending,
 			Amount:         amount,
-			Currency:       s.currency,
+			Currency:       currency,
 			InvoiceNumber:  invoice,
 			CreatedBy:      &input.ActorID,
 		})

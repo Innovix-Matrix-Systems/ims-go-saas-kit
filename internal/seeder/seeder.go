@@ -17,6 +17,7 @@ import (
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/access"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/currencies"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/identity"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/tenants"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
@@ -86,6 +87,10 @@ func Run(ctx context.Context, cfg *config.Config, queries *dbgen.Queries, tx *da
 	}
 	if _, err := roleSvc.SyncTenantAdminRoles(ctx); err != nil {
 		return fmt.Errorf("sync tenant admin roles: %w", err)
+	}
+	// Amounts need a default currency to be written in.
+	if err := currencies.NewService(currencies.NewRepository(queries), nil).EnsureSeeds(ctx); err != nil {
+		return fmt.Errorf("seed currencies: %w", err)
 	}
 	// Without a plan the default tenant could not add a single user (402).
 	if err := ensureDefaultSubscription(ctx, queries, tenant.ID, logger); err != nil {

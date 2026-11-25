@@ -179,4 +179,4 @@ so user input never reaches `ORDER BY`.
 | deleted / logged out | `204 No Content` |
 | any error | `application/problem+json` (RFC 9457) — see [Validation & errors](./validation-and-errors.md) |
 
-Timestamps are RFC 3339 in UTC. Money is an integer in minor units (paisa). IDs are 64-bit integers.
+Timestamps are RFC 3339 in UTC. Money is an integer in the minor units of its currency (see [Money and currency](currencies.md)). IDs are 64-bit integers.

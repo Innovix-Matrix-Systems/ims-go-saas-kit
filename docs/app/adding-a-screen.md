@@ -64,7 +64,7 @@ interface Page {
 function ProductsPage() {
   const t = useT()
   const session = useSession()
-  const money = useMoney() // 1250 → "৳12.50", formatted for the chosen language
+  const money = useMoney() // 1250 → "$12.50": the default currency's format, the language's digits
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)

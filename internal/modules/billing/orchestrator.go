@@ -3,6 +3,9 @@ package billing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -15,19 +18,20 @@ import (
 
 // Orchestrator selects drivers, creates payment rows and invokes gateways.
 type Orchestrator struct {
-	drivers  map[string]domain.PaymentDriver
-	payments domain.PaymentRepository
-	currency string
-	now      func() time.Time
+	drivers    map[string]domain.PaymentDriver
+	payments   domain.PaymentRepository
+	currencies domain.CurrencySource
+	now        func() time.Time
 }
 
-// NewOrchestrator creates an empty orchestrator.
-func NewOrchestrator(payments domain.PaymentRepository, currency string) *Orchestrator {
+// NewOrchestrator creates an empty orchestrator; payments are recorded in
+// the currencies' default.
+func NewOrchestrator(payments domain.PaymentRepository, currencies domain.CurrencySource) *Orchestrator {
 	return &Orchestrator{
-		drivers:  map[string]domain.PaymentDriver{},
-		payments: payments,
-		currency: currency,
-		now:      time.Now,
+		drivers:    map[string]domain.PaymentDriver{},
+		payments:   payments,
+		currencies: currencies,
+		now:        time.Now,
 	}
 }
 
@@ -74,6 +78,15 @@ func (o *Orchestrator) Charge(ctx context.Context, tenantID int64, subscriptionI
 	if err != nil {
 		return nil, err
 	}
+	currency, err := o.currencies.DefaultCode(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if limited, ok := driver.(domain.CurrencyLimited); ok && !slices.Contains(limited.Currencies(), currency) {
+		return nil, apperr.Validation(map[string][]string{"payment_method": {
+			fmt.Sprintf("This payment method accepts only %s; payments are in %s.", strings.Join(limited.Currencies(), ", "), currency),
+		}})
+	}
 
 	invoice, err := domain.GenerateInvoiceNumber(o.now())
 	if err != nil {
@@ -85,7 +98,7 @@ func (o *Orchestrator) Charge(ctx context.Context, tenantID int64, subscriptionI
 		PaymentMethod:  method,
 		Status:         domain.PaymentPending,
 		Amount:         amount,
-		Currency:       o.currency,
+		Currency:       currency,
 		InvoiceNumber:  invoice,
 		CreatedBy:      actorID,
 	})

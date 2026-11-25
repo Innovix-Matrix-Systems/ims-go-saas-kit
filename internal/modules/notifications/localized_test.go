@@ -6,6 +6,7 @@ import (
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/money"
 )
 
 // useNotificationText makes the process translator one with this module's
@@ -82,5 +83,17 @@ func TestMailIsInTheRecipientsLanguage(t *testing.T) {
 	}
 	if data["url"] != "/billing" {
 		t.Fatalf("mail url = %q", data["url"])
+	}
+}
+
+func TestMoneyIsInTheReadersDigits(t *testing.T) {
+	useNotificationText(t)
+	bdt := money.Currency{Code: "BDT", Symbol: "৳", SymbolFirst: true, Precision: 2, DecimalMark: ".", ThousandsSeparator: ","}
+	data := renewalData(t, map[string]any{"Count": 1, "Date": Money(money.Of(150000, bdt))})
+	for locale, want := range map[string]string{"en": "৳1,500.00", "bn": "৳১,৫০০.০০"} {
+		_, body := localize(locale, data, "stored", nil)
+		if body == nil || !strings.Contains(*body, want) {
+			t.Errorf("%s body = %v, want it to contain %q", locale, body, want)
+		}
 	}
 }

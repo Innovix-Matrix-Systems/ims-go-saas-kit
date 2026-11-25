@@ -11,5 +11,6 @@
   "inputs.today": "Aujourd'hui",
   "inputs.clear": "Effacer",
   "inputs.hour": "Heure",
-  "inputs.minute": "Min"
+  "inputs.minute": "Min",
+  "inputs.amountInvalid": "Saisissez un montant comme {example}."
 }

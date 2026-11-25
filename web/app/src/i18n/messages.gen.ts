@@ -41,6 +41,10 @@ export interface MessageVars {
   'activity.label.branch.deleted': never
   'activity.label.branch.updated': never
   'activity.label.command.run': never
+  'activity.label.currency.created': never
+  'activity.label.currency.default_changed': never
+  'activity.label.currency.deleted': never
+  'activity.label.currency.updated': never
   'activity.label.impersonation.denied': never
   'activity.label.impersonation.request': never
   'activity.label.impersonation.started': never
@@ -110,6 +114,7 @@ export interface MessageVars {
   'activity.showingAll': 'shown' | 'total'
   'activity.subject.announcement': never
   'activity.subject.branch': never
+  'activity.subject.currency': never
   'activity.subject.file': never
   'activity.subject.oauth_client': never
   'activity.subject.oauth_grant': never
@@ -451,6 +456,43 @@ export interface MessageVars {
   'copy.copied': never
   'copy.copy': never
   'copy.unavailable': never
+  'currencies.after': never
+  'currencies.apostrophe': never
+  'currencies.before': never
+  'currencies.code': never
+  'currencies.codeHint': never
+  'currencies.colActions': never
+  'currencies.colCurrency': never
+  'currencies.colDecimals': never
+  'currencies.colExample': never
+  'currencies.colStatus': never
+  'currencies.decimalMark': never
+  'currencies.decimals': never
+  'currencies.decimalsLocked': never
+  'currencies.default': never
+  'currencies.defaultHint': never
+  'currencies.delete': never
+  'currencies.deleteConfirm': 'code'
+  'currencies.disabled': never
+  'currencies.enableFirst': never
+  'currencies.enabled': never
+  'currencies.inUse': never
+  'currencies.isDefault': never
+  'currencies.makeDefault': never
+  'currencies.makeDefaultHint': never
+  'currencies.name': never
+  'currencies.new': never
+  'currencies.noConversion': never
+  'currencies.noSeparator': never
+  'currencies.none': never
+  'currencies.nowDefault': 'code'
+  'currencies.position': never
+  'currencies.preview': never
+  'currencies.space': never
+  'currencies.subtitle': never
+  'currencies.symbol': never
+  'currencies.thousands': never
+  'currencies.title': never
   'dashboard.active': never
   'dashboard.activeMembers': 'count'
   'dashboard.activity': never
@@ -593,6 +635,7 @@ export interface MessageVars {
   'home.roles': never
   'home.staffSubtitle': never
   'home.subtitle': never
+  'inputs.amountInvalid': 'example'
   'inputs.chooseDate': never
   'inputs.clear': never
   'inputs.clearDate': never

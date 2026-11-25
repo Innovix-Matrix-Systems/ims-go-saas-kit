@@ -289,3 +289,14 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     business screens mix amounts, codes and IDs that are already Latin. Translation and review
     are done by an AI agent following the `translate` skill and a glossary per language
     (`docs/guides/languages.md`).
+56. **Currencies are data, Akaunting style; amounts are never converted.** A currency is a row
+    (symbol, position, precision, separators, enabled, default) and every amount is an integer in
+    its minor units, so changing the default currency is a label change. That is what a kit can
+    promise without exchange rates, multi-currency prices or tax: none of those can be wrong
+    because none exist, and each can be added on top later. The default lives on the row
+    (`is_default`, one partial unique index) rather than in a setting, so one module owns it.
+    Payments keep their own code (old invoices stay right), a currency's precision is locked once
+    payments use it (or stored amounts would be misread), and an upgraded install's default is the
+    currency its payments already use. Go and the app format with the same rules from the same
+    rows (`internal/platform/money`, `web/app/src/money.ts`), digits per language
+    (`docs/guides/currencies.md`). The earlier `BILLING_CURRENCY` variable is gone.

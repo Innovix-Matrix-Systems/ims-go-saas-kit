@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { PageSkeleton } from './components/Skeleton'
 import { ToastProvider } from './components/Toasts'
 import { startI18n } from './i18n'
+import { currenciesQuery } from './money'
 import { queryClient } from './query'
 import { routeTree } from './routeTree.gen'
 import './styles.css'
@@ -27,8 +28,9 @@ declare module '@tanstack/react-router' {
 }
 
 // The starting language's text arrives before the first render, so the screen
-// never shows one language and then another.
-void startI18n().finally(() =>
+// never shows one language and then another; the currencies load alongside, so
+// prices never show in a placeholder format first.
+void Promise.allSettled([startI18n(), queryClient.prefetchQuery(currenciesQuery)]).finally(() =>
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>

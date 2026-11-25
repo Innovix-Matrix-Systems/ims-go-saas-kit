@@ -28,7 +28,7 @@ type SubscriptionService struct {
 	tx            *database.TxManager
 	now           func() time.Time
 	activity      *activity.Recorder
-	currency      string
+	currencies    domain.CurrencySource
 	// payNotices tells staff and the organization about payments (optional).
 	payNotices PaymentNotifier
 }
@@ -72,7 +72,7 @@ func NewSubscriptionService(
 		approvals:     approvals,
 		orchestrator:  orchestrator,
 		now:           time.Now,
-		currency:      "BDT",
+		currencies:    domain.FixedCurrency("USD"),
 	}
 }
 

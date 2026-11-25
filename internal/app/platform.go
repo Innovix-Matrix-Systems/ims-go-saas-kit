@@ -22,6 +22,7 @@ import (
 	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 	billingservice "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/currencies"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/dataprocessing"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/dev"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/featureflags"
@@ -89,10 +90,13 @@ type Platform struct {
 	Notifications *notifications.Service
 	Announcements *announcements.Service
 	// Webhooks delivers activity-log events to tenants' endpoints.
-	Webhooks         *webhooks.Service
-	Activity         *activity.Recorder
-	Exchange         *identity.ExchangeService
-	ActivityExport   *activityexport.Exporter
+	Webhooks       *webhooks.Service
+	Activity       *activity.Recorder
+	Exchange       *identity.ExchangeService
+	ActivityExport *activityexport.Exporter
+	// Currencies says how amounts are written and which currency is the
+	// default.
+	Currencies       *currencies.Service
 	BillingPackages  *billingservice.PackageService
 	BillingSubs      *billingservice.SubscriptionService
 	BillingPayments  *billingservice.PaymentService
@@ -271,12 +275,18 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		}
 	}
 
+	// Currencies: how amounts are written; the default is the currency of
+	// plan prices and new payments.
+	currencyService := currencies.NewService(currencies.NewRepository(txManager.Queries()), store).
+		WithTx(txManager).
+		WithActivity(activityRecorder)
+
 	// Billing
 	billingPackages := billingdomain.NewPackageRepository(txManager.Queries())
 	billingSubscriptions := billingdomain.NewSubscriptionRepository(txManager.Queries())
 	billingPayments := billingdomain.NewPaymentRepository(txManager.Queries())
 	billingApprovals := billingdomain.NewApprovalRepository(txManager.Queries())
-	orchestrator := billing.NewOrchestrator(billingPayments, cfg.Billing.Currency).
+	orchestrator := billing.NewOrchestrator(billingPayments, currencyService).
 		Register(billingdomain.MethodBkash, billing.NewBkashDriver(cfg.Billing.Bkash, store)).
 		Register(billingdomain.MethodNagad, billing.NagadDriver{}).
 		Register(billingdomain.MethodCash, billing.CashDriver{}).
@@ -284,10 +294,10 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	billingPackageService := billingservice.NewPackageService(billingPackages).WithTx(txManager)
 	billingSubscriptionService := billingservice.NewSubscriptionService(billingSubscriptions, billingPackages, billingPayments, billingApprovals, orchestrator).
 		WithNotifier(notificationsService).
-		WithCurrency(cfg.Billing.Currency).
+		WithCurrencies(currencyService).
 		WithTx(txManager).
 		WithActivity(activityRecorder)
-	billingPaymentService := billingservice.NewPaymentService(billingPayments, cfg.Billing.Currency)
+	billingPaymentService := billingservice.NewPaymentService(billingPayments, currencyService)
 	billingApprovalService := billingservice.NewApprovalService(billingApprovals, billingPayments, billingSubscriptions, txManager).
 		WithActivity(activityRecorder)
 	billingGuard := billingservice.NewGuard(billingSubscriptions, billingPackages)
@@ -311,7 +321,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		value, _ := settingsService.Get(ctx, tenancy.Scope{}, "system.name")
 		name, _ := value.(string)
 		return name
-	})
+	}).WithCurrencies(currencyService)
 	paymentNotices := newBillingNotices(billingNotices{
 		notifications: notificationsService,
 		invoices:      billingInvoices,
@@ -418,6 +428,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		Notifications:    notificationsService,
 		Announcements:    announcementService.WithActivity(activityRecorder),
 		Webhooks:         webhooksService,
+		Currencies:       currencyService,
 		BillingPackages:  billingPackageService,
 		BillingSubs:      billingSubscriptionService,
 		BillingPayments:  billingPaymentService,

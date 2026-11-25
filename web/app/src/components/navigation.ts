@@ -44,6 +44,7 @@ export const pages: Page[] = [
   { to: '/console/activity', label: 'console.auditLog', icon: 'activity', group: 'console', key: 'd', keywords: 'audit log activity history system impersonation', permission: 'activity.view.all', platformOnly: true },
   { to: '/console/approvals', label: 'console.approvals', icon: 'check', group: 'console', key: 'v', keywords: 'payments bank transfer review approve reject', permission: 'payment_approval.view.all', platformOnly: true },
   { to: '/console/plans', label: 'console.plans', icon: 'package', group: 'console', key: 'l', keywords: 'packages pricing features limits', permission: 'package.view.all', platformOnly: true },
+  { to: '/console/currencies', label: 'currencies.title', icon: 'coins', group: 'console', key: 'q', keywords: 'currency money symbol taka dollar euro default decimals', permission: 'currency.view.all', platformOnly: true },
   { to: '/console/staff', label: 'console.staff', icon: 'shield', group: 'console', key: 'x', keywords: 'internal users team admins', permission: 'user.internal.create', platformOnly: true },
   { to: '/console/announcements', label: 'console.announcements', icon: 'bell', group: 'console', key: 'k', keywords: 'broadcast notify maintenance news message', permission: 'announcement.view', platformOnly: true },
   { to: '/console/flags', label: 'console.flags', icon: 'flags', group: 'console', key: 'e', keywords: 'feature toggles rollout', permission: 'feature_flag.internal.update', platformOnly: true },
