@@ -6,6 +6,59 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-25
+
+The project is now **IMS Go SaaS Kit**: the multi-tenant API, the app for organizations and staff,
+and the developer dashboard in one binary. The binary and CLI keep their name, `ims`. The
+documentation is published as a site at
+[ims-go-saas-kit.innovixmatrixsystem.com](https://ims-go-saas-kit.innovixmatrixsystem.com) and
+now covers the app as fully as the API.
+
+**Upgrading from 0.1.8:** no migrations, and no API changes. The rename touches deploy names:
+
+- **systemd:** the units are now `ims-go-saas-kit.service`, `ims-go-saas-kit-worker.service` and
+  `ims-go-saas-kit-scheduler.service`, and the default install path is `/opt/ims/ims-go-saas-kit`
+  (environment file `/etc/ims/ims-go-saas-kit/.env`). To keep a server on its current names, run
+  `release.sh` with `IMS_SERVICE_PREFIX=ims-go-admin-starter`, `IMS_BASE_DIR`, `IMS_ENV_FILE` and
+  `IMS_STATE_DIR` set to the old paths. To move to the new names, stop the old units, install the
+  new ones from `deploy/systemd/`, then disable the old.
+- **Docker:** the image is `ims-go-saas-kit`; update any `docker run` or registry tags.
+- **Defaults:** `APP_NAME` is `ims-go-saas-kit` and `MAIL_FROM_NAME` is `IMS Go SaaS Kit` in the
+  example environments. A deployed `.env` keeps its own values. `APP_NAME` is also the default
+  OpenTelemetry service name, so traces appear under the new name only if you change it.
+- **Code:** the Go module is `github.com/Innovix-Matrix-Systems/ims-go-saas-kit`. A project made
+  from this template has its own module and is not affected.
+
+### Added
+
+- **The documentation site** (`docsite/`, Astro Starlight over `docs/`): a landing page with the
+  one-binary route map, OpenTelemetry tracing, the four screens and Bangla; a layer strip on each
+  page (database, API, app, dev dashboard); `make docs` and `make docs-build`. The build fails on a
+  page missing from the sidebar or a broken link or anchor. CI builds it on every push, and
+  `.github/workflows/docs-deploy.yml` deploys it to Cloudflare Workers when a release is published.
+- **App documentation:** an overview, the organization workspace, the staff console, adding a
+  screen, and translations and theming. The first-module tutorial now gives the module a screen,
+  with a sidebar entry, permissions and both languages.
+- **Make it yours:** `make rename`, rebranding the app and publishing your own docs, on one page.
+- **Live updates guide:** how polling and the SSE stream work together, subscribing from any
+  client, and adding live updates to your own feature.
+
+### Changed
+
+- Renamed to **ims-go-saas-kit** (module, deploy names, title); the `ims` binary and the `IMS_`
+  deploy variables are unchanged.
+- `make rename` starts from the kit's own names, so a project made from this template can rename
+  itself again.
+- The introduction, quick start, project tour, how it works, architecture overview, local
+  development and releases pages, and both READMEs, describe the whole kit; every feature guide
+  with a screen says where it is in the app.
+
+### Fixed
+
+- `deploy/scripts/release.sh` builds the app (`web/app`) as well as the developer dashboard before
+  compiling, so a server deploy serves the app at `/` instead of an empty page. Docker builds were
+  not affected.
+
 ## [0.1.8] - 2026-11-25
 
 The developer dashboard gets charts on its panels (Recharts) and shows database connection
@@ -304,7 +357,8 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.8...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.6...v0.1.8
 [0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.0...v0.1.5

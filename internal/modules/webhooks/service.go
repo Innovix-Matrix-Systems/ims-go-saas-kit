@@ -67,7 +67,7 @@ type Service struct {
 }
 
 // NewService creates the webhook service. userAgent names the sender
-// ("ims-go-saas-kit-Webhooks/0.1.8").
+// ("ims-go-saas-kit-Webhooks/0.2.0").
 func NewService(repo Repository, encrypter *crypto.Encrypter, engine queue.Engine, cfg config.Webhooks, userAgent string, logger *slog.Logger) *Service {
 	return &Service{
 		repo: repo, encrypter: encrypter, queue: engine, cfg: cfg, userAgent: userAgent, logger: logger,

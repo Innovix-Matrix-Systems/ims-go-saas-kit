@@ -5,13 +5,13 @@ description: The VERSION file, semantic versioning, the changelog, cutting a rel
 
 ## One version, one file
 
-The `VERSION` file at the repository root holds the current release — `0.1.8` — as plain
+The `VERSION` file at the repository root holds the current release — `0.2.0` — as plain
 [semver](https://semver.org) (no leading `v`). Everything reads it:
 
 | Where | Shows |
 | --- | --- |
-| `make build` | stamps it into the binary: `ims version` → `ims 0.1.8` |
-| `go run`, air, tests | the same number with a suffix: `ims 0.1.8-dev` — a local build is never mistaken for a release |
+| `make build` | stamps it into the binary: `ims version` → `ims 0.2.0` |
+| `go run`, air, tests | the same number with a suffix: `ims 0.2.0-dev` — a local build is never mistaken for a release |
 | `/api/v1/system/info`, `/api/health`, the dashboard | the running version |
 | the README | the version badge |
 
@@ -38,13 +38,13 @@ usual rules apply:
 
    ```bash
    make docs-gen gen-check
-   git commit -am "release: v0.2.0"
+   git commit -am "release: v0.3.0"
    ```
 
 4. Tag and push:
 
    ```bash
-   git tag -a v0.2.0 -m "v0.2.0"
+   git tag -a v0.3.0 -m "v0.3.0"
    git push origin main --tags
    ```
 
