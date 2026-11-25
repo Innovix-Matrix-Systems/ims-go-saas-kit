@@ -93,6 +93,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/inspector/access", h.inspectorAccess)
 	r.Get("/inspector/config", h.inspectorConfig)
 	r.Get("/inspector/packages", h.inspectorPackages)
+	r.Get("/inspector/translations", h.inspectorTranslations)
 	r.Get("/inspector/database", h.inspectorDatabase)
 
 	r.Get("/maintenance", h.maintenanceStatus)

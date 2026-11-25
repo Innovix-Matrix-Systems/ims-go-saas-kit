@@ -1,0 +1,5 @@
+<p>مرحبًا{{if .To.Name}} {{.To.Name}}{{end}}،</p>
+<p>تلقينا طلبًا لإعادة تعيين كلمة المرور الخاصة بك. استخدم الزر أدناه لاختيار كلمة مرور جديدة.</p>
+<p style="margin:24px 0;"><a href="{{.Data.link}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">إعادة تعيين كلمة المرور</a></p>
+<p style="font-size:13px;color:#6b7785;">أو افتح هذا الرابط: <a href="{{.Data.link}}">{{.Data.link}}</a></p>
+<p>تنتهي صلاحية الرابط خلال {{duration .Data.minutes}}. إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.</p>

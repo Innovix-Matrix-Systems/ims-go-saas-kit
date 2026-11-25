@@ -1,0 +1,5 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Ihr Konto verwendet jetzt eine neue E-Mail-Adresse ({{.Data.new_email}}), und alle Sitzungen wurden abgemeldet. Mit dieser Adresse können Sie sich nicht mehr anmelden.
+
+Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich sofort an Ihre Administration oder unser Support-Team.

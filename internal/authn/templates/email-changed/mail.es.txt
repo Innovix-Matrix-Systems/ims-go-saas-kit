@@ -1,0 +1,5 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Su cuenta usa ahora una nueva dirección de correo electrónico ({{.Data.new_email}}) y se cerraron todas las sesiones. Esta dirección ya no sirve para iniciar sesión.
+
+Si no hizo este cambio, contacte de inmediato con su administrador o con nuestro equipo de soporte.

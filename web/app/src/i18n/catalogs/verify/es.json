@@ -1,0 +1,8 @@
+{
+  "verify.title": "Confirme su dirección de correo",
+  "verify.working": "Confirmando su dirección…",
+  "verify.done": "Su dirección de correo está confirmada. Ya puede iniciar sesión.",
+  "verify.failed": "Este enlace no es válido o ha caducado. Introduzca su correo para recibir uno nuevo.",
+  "verify.resend": "Enviar un nuevo enlace",
+  "verify.resent": "Si esa dirección necesita confirmarse, va de camino un enlace nuevo."
+}

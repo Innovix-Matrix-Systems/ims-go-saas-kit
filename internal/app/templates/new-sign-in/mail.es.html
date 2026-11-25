@@ -1,0 +1,9 @@
+<p>Hola{{if .To.Name}} {{.To.Name}}{{end}}:</p>
+<p>Se acaba de iniciar sesión en su cuenta desde un lugar nuevo:</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:12px 0;font-size:14px;">
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">Cuándo</td><td>{{.Data.when}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">Dónde</td><td>{{.Data.ip}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">Navegador</td><td>{{if .Data.browser}}{{.Data.browser}}{{else}}desconocido{{end}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">Dispositivo</td><td>{{.Data.device}}</td></tr>
+</table>
+<p>Si fue usted, no tiene que hacer nada. Si no, <strong>cambie su contraseña ahora</strong> y cierre sus otras sesiones.</p>

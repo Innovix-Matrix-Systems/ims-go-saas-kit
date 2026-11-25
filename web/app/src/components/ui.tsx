@@ -131,10 +131,13 @@ const paths: Record<IconName, ReactNode> = {
   backup: <><ellipse cx="12" cy="5" rx="7" ry="3" /><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5" /><path d="M5 11v6c0 1.7 3.1 3 7 3" /><path d="M17 16v6M14.5 19.5 17 22l2.5-2.5" /></>,
 }
 
+/** Icons that point along the reading direction: mirrored right to left (.icon-flip). */
+const directional = new Set<IconName>(['chevron', 'first', 'last', 'logout'])
+
 export function Icon({ name, className, style }: { name: IconName; className?: string; style?: React.CSSProperties }) {
   return (
     <svg
-      className={className}
+      className={directional.has(name) ? `icon-flip ${className ?? ''}`.trim() : className}
       style={style}
       viewBox="0 0 24 24"
       fill="none"

@@ -1,0 +1,4 @@
+<p>مرحبًا{{if .To.Name}} {{.To.Name}}{{end}}،</p>
+<p>رمز تسجيل الدخول الخاص بك هو:</p>
+<p dir="ltr" style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0;">{{.Data.code}}</p>
+<p>تنتهي صلاحيته خلال {{duration .Data.minutes}}. إذا لم تحاول تسجيل الدخول، يمكنك تجاهل هذه الرسالة، ويُستحسن أن تغيّر كلمة المرور.</p>

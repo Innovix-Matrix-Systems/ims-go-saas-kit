@@ -1,0 +1,27 @@
+{
+  "auth.signIn": "Anmelden",
+  "auth.signInTitle": "Bei Ihrem Konto anmelden",
+  "auth.signInSubtitle": "Verwenden Sie die E-Mail-Adresse und das Passwort Ihres Organisationskontos.",
+  "auth.email": "E-Mail-Adresse",
+  "auth.password": "Passwort",
+  "auth.remember": "Auf diesem Gerät angemeldet bleiben",
+  "auth.forgot": "Passwort vergessen?",
+  "auth.signingIn": "Anmeldung läuft…",
+  "auth.otpTitle": "Bestätigungscode eingeben",
+  "auth.otpSubtitleTotp": "Öffnen Sie Ihre Authentifizierungs-App und geben Sie den 6-stelligen Code ein.",
+  "auth.otpSubtitleEmail": "Wir haben einen 6-stelligen Code an Ihre E-Mail-Adresse gesendet.",
+  "auth.otpCode": "Bestätigungscode",
+  "auth.otpRecoveryHint": "Gerät verloren? Geben Sie stattdessen einen Ihrer Wiederherstellungscodes ein.",
+  "auth.verify": "Bestätigen",
+  "auth.useAnotherAccount": "Anderes Konto verwenden",
+  "auth.signedOut": "Sie wurden abgemeldet.",
+  "auth.sessionExpired": "Ihre Sitzung ist beendet. Bitte melden Sie sich erneut an.",
+  "auth.throttled": {
+    "one": "Zu viele Versuche. Versuchen Sie es in {count} Sekunde erneut.",
+    "other": "Zu viele Versuche. Versuchen Sie es in {count} Sekunden erneut."
+  },
+  "auth.noAccount": "Neu hier?",
+  "auth.createOrganization": "Organisation anlegen",
+  "auth.haveAccount": "Sie haben schon ein Konto?",
+  "auth.backToSignIn": "Zurück zur Anmeldung"
+}

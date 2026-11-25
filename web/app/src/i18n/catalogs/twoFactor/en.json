@@ -1,0 +1,33 @@
+{
+  "twoFactor.setupTitle": "Set up two-factor authentication",
+  "twoFactor.setupSubtitle": "Your organization requires a second step when you sign in. It keeps your account safe even if your password leaks.",
+  "twoFactor.methodApp": "Authenticator app",
+  "twoFactor.methodAppHint": "Recommended. Works offline (Google Authenticator, Microsoft Authenticator, 1Password…).",
+  "twoFactor.methodEmail": "E-mail code",
+  "twoFactor.methodEmailHint": "A code is mailed to you each time you sign in.",
+  "twoFactor.passwordPrompt": "Confirm with your password to continue.",
+  "twoFactor.start": "Continue",
+  "twoFactor.scan": "Scan this code with your authenticator app, then enter the 6-digit code it shows.",
+  "twoFactor.manual": "Cannot scan? Enter this key instead:",
+  "twoFactor.emailSent": "We mailed you a 6-digit code. Enter it below.",
+  "twoFactor.code": "6-digit code",
+  "twoFactor.confirm": "Turn on",
+  "twoFactor.codesTitle": "Save your recovery codes",
+  "twoFactor.codesBody": "Each code signs you in once if you lose your phone or mailbox. They are shown only now.",
+  "twoFactor.copyCodes": "Copy codes",
+  "twoFactor.downloadCodes": "Download",
+  "twoFactor.savedCodes": "I saved my recovery codes",
+  "twoFactor.finish": "Done",
+  "twoFactor.status": "Two-factor authentication",
+  "twoFactor.on": "On",
+  "twoFactor.off": "Off",
+  "twoFactor.required": "Required by your organization",
+  "twoFactor.codesLeft": {
+    "one": "{count} recovery code left",
+    "other": "{count} recovery codes left"
+  },
+  "twoFactor.enable": "Turn on two-factor",
+  "twoFactor.disable": "Turn off",
+  "twoFactor.regenerate": "New recovery codes",
+  "twoFactor.disableConfirm": "Turn off two-factor authentication? Your other devices will be signed out."
+}

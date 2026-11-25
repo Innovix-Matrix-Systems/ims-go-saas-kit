@@ -1,0 +1,17 @@
+{
+  "start.title": "Prepare su organización",
+  "start.progress": "{done} de {total} hechos",
+  "start.dismiss": "Ocultar",
+  "start.done": "Hecho",
+  "start.go": "Configurar",
+  "start.email": "Verifique su correo",
+  "start.emailHint": "Para recibir notificaciones y poder restablecer su contraseña.",
+  "start.team": "Invite a su equipo",
+  "start.teamHint": "Añada a las personas que trabajarán con usted.",
+  "start.twoFactor": "Active el inicio de sesión en dos pasos",
+  "start.twoFactorHint": "Mantiene su cuenta segura aunque se filtre su contraseña.",
+  "start.plan": "Elija un plan",
+  "start.planHint": "Escoja el plan que se ajuste a su organización.",
+  "start.brand": "Añada su logotipo",
+  "start.brandHint": "Se muestra en la aplicación y en los correos a sus miembros."
+}

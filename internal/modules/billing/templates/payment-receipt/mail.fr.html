@@ -1,0 +1,6 @@
+<p>Bonjour{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Nous avons reçu <strong>{{.Data.amount}}</strong> de {{.Data.organization}} pour l'offre <strong>{{.Data.plan}}</strong>, qui est désormais active.</p>
+<p>Facture <strong>{{.Data.invoice}}</strong>, payée le {{.Data.paid_on}}. La facture est jointe au format PDF.</p>
+<p style="margin:24px 0;"><a href="{{.Data.url}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Ouvrir la facturation</a></p>
+<p style="font-size:13px;color:#6b7785;">Ou ouvrez ce lien : <a href="{{.Data.url}}">{{.Data.url}}</a></p>
+<p>Merci.</p>

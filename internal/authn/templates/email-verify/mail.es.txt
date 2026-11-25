@@ -1,0 +1,7 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Confirme su dirección de correo electrónico abriendo este enlace:
+
+{{.Data.link}}
+
+El enlace caduca en {{duration .Data.minutes}}.

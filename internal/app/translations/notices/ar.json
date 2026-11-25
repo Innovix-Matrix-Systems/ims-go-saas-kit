@@ -1,0 +1,18 @@
+{
+    "notices.payment_to_review.title": "دفعة للمراجعة: {{.Organization}}",
+    "notices.payment_to_review.body": "دفعت {{.Organization}} مبلغ {{.Amount}} مقابل خطة {{.Plan}} عبر {{.Method}}. تحقق من التحويل ثم وافق عليه أو ارفضه.",
+    "notices.payment_submitted.title": "أُرسلت الدفعة للتأكيد",
+    "notices.payment_submitted.body": "أُرسلت دفعتك البالغة {{.Amount}} مقابل خطة {{.Plan}}. سنبلغك فور تأكيدها.",
+    "notices.payment_received.title": "تم استلام الدفعة",
+    "notices.payment_received.body": "استلمنا {{.Amount}}. خطة {{.Plan}} الخاصة بك مفعّلة. الإيصال في طريقه إليك بالبريد الإلكتروني.",
+    "notices.payment_rejected.title": "لم يتم تأكيد الدفعة",
+    "notices.payment_rejected.body": "تعذر تأكيد دفعتك البالغة {{.Amount}} مقابل خطة {{.Plan}}.",
+    "notices.payment_rejected_with_reason.title": "لم يتم تأكيد الدفعة",
+    "notices.payment_rejected_with_reason.body": "تعذر تأكيد دفعتك البالغة {{.Amount}} مقابل خطة {{.Plan}}. السبب: {{.Reason}}",
+    "notices.webhook_disabled.title": "تم تعطيل نقطة نهاية Webhook",
+    "notices.webhook_disabled.body": "توقف {{.URL}} عن استقبال الأحداث بعد تكرار فشل عمليات التسليم. أصلح المستقبِل ثم أعد تفعيل نقطة النهاية.",
+    "notices.method.bkash": "bKash",
+    "notices.method.nagad": "Nagad",
+    "notices.method.cash": "نقدًا",
+    "notices.method.bank_transfer": "تحويل بنكي"
+}

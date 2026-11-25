@@ -4,9 +4,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 8082",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/i18n.mjs types --check && tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "check:style": "node scripts/contrast.mjs",
+    "check:logical": "node scripts/logical.mjs",
+    "i18n:types": "node scripts/i18n.mjs types",
+    "i18n:check": "node scripts/i18n.mjs check",
     "openapi:gen": "openapi-typescript ../../api/openapi.yaml -o src/api/schema.d.ts",
     "openapi:check": "npm run openapi:gen && git diff --exit-code -- src/api/schema.d.ts"
   },

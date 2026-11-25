@@ -170,6 +170,16 @@ export function useSession(): Session | undefined {
   return useQuery(sessionQuery).data
 }
 
+/**
+ * Where the signed-in account saves its own profile: platform staff (no
+ * organization) use the internal routes, organization members their own.
+ */
+export function ownProfile(session: Session | undefined): { update: { path: string; method: 'PATCH' | 'POST' }; avatar: string } {
+  return session?.isPlatformUser
+    ? { update: { path: '/internal/user/profile/update', method: 'PATCH' }, avatar: '/internal/user/profile/update-avatar' }
+    : { update: { path: '/user/profile/update', method: 'POST' }, avatar: '/user/profile/update-avatar' }
+}
+
 /** Whether the session holds a permission (UI hint only; the API enforces). */
 export function can(session: Session | undefined, permission: string): boolean {
   return Boolean(session && (session.superAdmin || session.permissions.has(permission)))

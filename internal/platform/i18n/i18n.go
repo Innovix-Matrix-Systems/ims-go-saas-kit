@@ -7,14 +7,15 @@ import (
 	"strings"
 )
 
-// Locale is a normalized language tag ("en", "bn").
+// Locale is a normalized language code (a registered Language.Code).
 type Locale string
 
 type contextKey string
 
 const (
-	localeKey    contextKey = "locale"
-	localizerKey contextKey = "localizer"
+	localeKey     contextKey = "locale"
+	localizerKey  contextKey = "localizer"
+	fromHeaderKey contextKey = "locale_from_header"
 )
 
 // FromContext returns the request locale, or "" when unset.

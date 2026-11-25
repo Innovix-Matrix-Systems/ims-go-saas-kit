@@ -78,11 +78,13 @@ type (
 	BranchLister interface {
 		List(ctx context.Context, filter branches.ListFilter) ([]branches.Branch, error)
 	}
-	// SettingsReader reads typed settings.
-	SettingsReader interface {
+	// SettingStore reads typed settings and writes the new organization's
+	// own (its language).
+	SettingStore interface {
 		Get(ctx context.Context, scope tenancy.Scope, name string) (any, error)
 		GetInt(ctx context.Context, scope tenancy.Scope, name string) (int, error)
 		GetBool(ctx context.Context, scope tenancy.Scope, name string) (bool, error)
+		Set(ctx context.Context, scope tenancy.Scope, name string, value any) error
 	}
 	// Mailer sends a templated message.
 	Mailer interface {
@@ -100,7 +102,7 @@ type Deps struct {
 	Accounts AccountLookup
 	Roles    RoleFinder
 	Branches BranchLister
-	Settings SettingsReader
+	Settings SettingStore
 	Mailer   Mailer
 	// ClientURL is the client app's origin (login and password-reset links).
 	ClientURL string
@@ -273,6 +275,15 @@ func (s *Service) fillIn(ctx context.Context, tenant *tenants.Tenant, pkg *domai
 			UserID: owner.ID, TenantID: &tenant.ID, Document: document, Version: version,
 			IPAddress: optional(input.IPAddress), UserAgent: optional(input.UserAgent),
 		}); err != nil {
+			return err
+		}
+	}
+	// The language chosen at sign-up becomes the organization's: its members'
+	// screens and e-mails until they choose their own. It is the last step
+	// that can fail, so a sign-up that is undone leaves no settings row
+	// behind (settings rows are not removed with the organization).
+	if input.Locale != "" {
+		if err := s.Settings.Set(ctx, tenancy.Scope{TenantID: tenant.ID}, "general.default_locale", input.Locale); err != nil {
 			return err
 		}
 	}

@@ -1,0 +1,6 @@
+<p>Hallo{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Wir haben <strong>{{.Data.amount}}</strong> von {{.Data.organization}} für den Tarif <strong>{{.Data.plan}}</strong> erhalten, und der Tarif ist jetzt aktiv.</p>
+<p>Rechnung <strong>{{.Data.invoice}}</strong>, bezahlt am {{.Data.paid_on}}. Die Rechnung ist als PDF angehängt.</p>
+<p style="margin:24px 0;"><a href="{{.Data.url}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Abrechnung öffnen</a></p>
+<p style="font-size:13px;color:#6b7785;">Oder öffnen Sie diesen Link: <a href="{{.Data.url}}">{{.Data.url}}</a></p>
+<p>Vielen Dank.</p>

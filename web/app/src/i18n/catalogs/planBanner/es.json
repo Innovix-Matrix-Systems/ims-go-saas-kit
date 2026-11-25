@@ -1,0 +1,25 @@
+{
+  "planBanner.today": "hoy",
+  "planBanner.tomorrow": "mañana",
+  "planBanner.inDays": {
+    "one": "en {count} día",
+    "many": "en {count} días",
+    "other": "en {count} días"
+  },
+  "planBanner.none": "Su organización no tiene plan.",
+  "planBanner.noneBody": "Elija un plan para seguir añadiendo miembros y guardando archivos.",
+  "planBanner.ended": "Su plan {plan} ha terminado.",
+  "planBanner.endedBody": "Elija un plan para que todo siga funcionando para sus miembros.",
+  "planBanner.pastDue": "El pago de su plan {plan} está vencido.",
+  "planBanner.pastDueBody": "Pague o cambie de plan antes de que se limite el acceso.",
+  "planBanner.pending": "Su pago de {plan} está pendiente de aprobación.",
+  "planBanner.pendingBody": "El plan comienza en cuanto se confirme el pago.",
+  "planBanner.cancelled": "Su plan {plan} se canceló y termina el {date}.",
+  "planBanner.renewBody": "Renueve o elija otro plan para que nada se detenga.",
+  "planBanner.trialEnds": "Su prueba termina {when}.",
+  "planBanner.trialBody": "Elija un plan para seguir usando todo después de la prueba.",
+  "planBanner.ends": "Su plan {plan} termina {when}.",
+  "planBanner.choose": "Ver planes",
+  "planBanner.viewBilling": "Ver facturación",
+  "planBanner.hide": "Ocultar por hoy"
+}

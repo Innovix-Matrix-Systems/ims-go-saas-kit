@@ -1,0 +1,8 @@
+{
+  "invite.title": "Join {organization}",
+  "invite.subtitleWithInviter": "{inviter} invited you to {organization}. Choose a password to activate your account.",
+  "invite.subtitle": "Choose a password to activate your account.",
+  "invite.submit": "Activate account",
+  "invite.done": "Your account is ready. Sign in with your e-mail address and new password.",
+  "invite.invalid": "This invitation link is invalid, expired or already used. Ask your administrator to send a new one."
+}

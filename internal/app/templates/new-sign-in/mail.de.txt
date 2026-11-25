@@ -1,0 +1,10 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Ihr Konto wurde gerade von einem neuen Ort aus angemeldet:
+
+  Wann:    {{.Data.when}}
+  Wo:      {{.Data.ip}}
+  Browser: {{if .Data.browser}}{{.Data.browser}}{{else}}unbekannt{{end}}
+  Gerät:   {{.Data.device}}
+
+Wenn Sie das waren, müssen Sie nichts tun. Wenn nicht, ändern Sie jetzt Ihr Passwort und melden Sie Ihre anderen Sitzungen ab.

@@ -1,0 +1,9 @@
+<p>Hallo{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Ihr Konto wurde gerade von einem neuen Ort aus angemeldet:</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:12px 0;font-size:14px;">
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">Wann</td><td>{{.Data.when}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">Wo</td><td>{{.Data.ip}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">Browser</td><td>{{if .Data.browser}}{{.Data.browser}}{{else}}unbekannt{{end}}</td></tr>
+<tr><td style="padding:2px 16px 2px 0;color:#6b7785;">Gerät</td><td>{{.Data.device}}</td></tr>
+</table>
+<p>Wenn Sie das waren, müssen Sie nichts tun. Wenn nicht, <strong>ändern Sie jetzt Ihr Passwort</strong> und melden Sie Ihre anderen Sitzungen ab.</p>

@@ -1,0 +1,9 @@
+{{.Data.title}}
+{{if .Data.body}}
+{{.Data.body}}
+{{end}}{{if .Data.url}}
+افتحه: {{.Data.url}}
+{{end}}{{if .Data.unsubscribe}}
+--
+تصلك هذه الرسالة بسبب إعدادات الإشعارات لديك. لإيقاف هذه الرسائل: {{.Data.unsubscribe}}
+{{end}}

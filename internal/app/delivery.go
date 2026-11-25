@@ -2,19 +2,27 @@ package app
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"regexp"
 	"strconv"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing"
 	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 	billingservice "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/notifications"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/onboarding"
+	privacymodule "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/privacy"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/crypto"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/mail"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/sms"
@@ -25,21 +33,54 @@ import (
 // newDelivery builds the delivery system: mail through the
 // configured mail driver, SMS through the SMS driver, push to the log until
 // a provider is added; the e-mail brand from settings.
-func newDelivery(cfg *config.Config, repo delivery.Repository, engine queue.Engine, mailDriver mail.Driver,
+func newDelivery(cfg *config.Config, translator *i18n.Translator, repo delivery.Repository, users *dbgen.Queries, engine queue.Engine, mailDriver mail.Driver,
 	settingsService *settings.Service, guard *billingservice.Guard, disks *storage.Registry, encrypter *crypto.Encrypter, logger *slog.Logger,
 ) (*delivery.Service, error) {
 	smsDriver, err := sms.New(cfg.SMS, logger, cfg.IsDebug())
 	if err != nil {
 		return nil, err
 	}
-	return delivery.NewService(delivery.NewRegistry(), repo, engine, logger).
+	templates, err := newTemplateRegistry()
+	if err != nil {
+		return nil, err
+	}
+	return delivery.NewService(templates, repo, engine, logger).
 		WithSender(delivery.Mail, delivery.MailSender{Driver: mailDriver}).
 		WithSender(delivery.SMS, delivery.SMSSender{Driver: smsDriver}).
 		WithSender(delivery.Push, delivery.LogPushSender{Logger: logger, Debug: cfg.IsDebug()}).
 		WithBrand(settingsBrand{settings: settingsService, guard: guard, logger: logger}).
 		WithAttachments(storageOpener{disks: disks}, int64(cfg.Mail.MaxAttachmentMB)<<20).
 		WithEncrypter(encrypter).
+		WithLocales(accountLocales{translator: translator, users: users, settings: settingsService, logger: logger}).
 		WithFallbackLocale(cfg.App.FallbackLocale), nil
+}
+
+//go:embed all:templates
+var appTemplatesFS embed.FS
+
+// newTemplateRegistry registers every module's delivery templates. The
+// platform brings the mail layout only; a module that contacts people adds
+// its templates here. A later folder with the same name replaces an earlier
+// one, so a project changes a kit template by registering its own last.
+func newTemplateRegistry() (*delivery.Registry, error) {
+	appTemplates, err := fs.Sub(appTemplatesFS, "templates")
+	if err != nil {
+		return nil, err
+	}
+	registry := delivery.NewRegistry()
+	for _, templates := range []fs.FS{
+		authn.Templates(),
+		onboarding.Templates(),
+		notifications.Templates(),
+		billing.Templates(),
+		privacymodule.Templates(),
+		appTemplates, // new-sign-in
+	} {
+		if err := registry.Register(templates); err != nil {
+			return nil, err
+		}
+	}
+	return registry, nil
 }
 
 // settingsBrand reads the e-mail brand from the branding.* settings. A

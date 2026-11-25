@@ -1,0 +1,4 @@
+<h2 style="margin:0 0 12px;font-size:18px;">{{.Data.title}}</h2>
+{{if .Data.body}}<p style="white-space:pre-line;">{{.Data.body}}</p>{{end}}
+{{if .Data.url}}<p style="margin:24px 0;"><a href="{{.Data.url}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Abrir</a></p>{{end}}
+{{if .Data.unsubscribe}}<p style="font-size:12px;color:#6b7785;">Recibe este correo por su configuración de notificaciones. <a href="{{.Data.unsubscribe}}">Dejar de recibir estos correos</a>.</p>{{end}}

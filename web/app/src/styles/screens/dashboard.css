@@ -4,7 +4,7 @@
 .dash-hero-text { min-width: 0; flex: 1; }
 .dash-hero h1 { font-size: var(--fs-xl); font-weight: var(--fw-semibold); margin: 0; line-height: var(--lh-heading); }
 .dash-hero p { margin: 4px 0 0; color: var(--text-2); }
-.dash-hero-actions { margin-left: auto; }
+.dash-hero-actions { margin-inline-start: auto; }
 
 .dash { display: flex; flex-direction: column; gap: var(--space-4); transition: opacity 0.15s; }
 .dash.is-updating { opacity: 0.6; }
@@ -26,8 +26,9 @@
 .kpi-card.linked:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
 .kpi-head { display: flex; align-items: center; gap: 6px; }
 .kpi-label { font-size: var(--fs-sm); color: var(--text-2); font-weight: var(--fw-medium); }
-.kpi-go { width: 14px; height: 14px; margin-left: auto; color: var(--text-3); opacity: 0; transition: opacity var(--ease), transform var(--ease); }
+.kpi-go { width: 14px; height: 14px; margin-inline-start: auto; color: var(--text-3); opacity: 0; transition: opacity var(--ease), transform var(--ease); }
 .kpi-card.linked:hover .kpi-go { opacity: 1; transform: translateX(2px); }
+:dir(rtl) .kpi-card.linked:hover .kpi-go { transform: translateX(-2px); }
 .kpi-value { font-size: var(--fs-xl); font-weight: var(--fw-semibold); line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .kpi-text { font-size: var(--fs-base); font-weight: var(--fw-medium); line-height: var(--lh-body); }
 .kpi-attention { color: var(--warn-fg); }
@@ -82,7 +83,7 @@
 .donut-legend li.active .donut-legend-row, a.donut-legend-row:hover { background: var(--surface-2); }
 .donut-legend-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .donut-legend-value { font-weight: var(--fw-medium); font-variant-numeric: tabular-nums; }
-.donut-legend-share { min-width: 38px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.donut-legend-share { min-width: 38px; text-align: end; color: var(--text-3); font-variant-numeric: tabular-nums; }
 
 /* Meters against a limit */
 .meter-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
@@ -136,7 +137,7 @@
 @media (max-width: 640px) {
   .dash-hero { gap: 12px; }
   .dash-hero-text { flex: 1 1 200px; }
-  .dash-hero-actions { margin-left: 0; width: 100%; }
+  .dash-hero-actions { margin-inline-start: 0; width: 100%; }
   .dash-hero-actions .segmented { display: flex; }
   .dash-hero-actions .segmented button { flex: 1; justify-content: center; text-align: center; }
   .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }

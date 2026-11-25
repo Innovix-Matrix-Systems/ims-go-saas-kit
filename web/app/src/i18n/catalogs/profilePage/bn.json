@@ -1,0 +1,30 @@
+{
+  "profilePage.photoSaved": "ছবি হালনাগাদ হয়েছে।",
+  "profilePage.changePhoto": "ছবি বদলান",
+  "profilePage.verified": "যাচাইকৃত",
+  "profilePage.unverified": "যাচাই হয়নি",
+  "profilePage.edit": "প্রোফাইল সম্পাদনা",
+  "profilePage.about": "পরিচিতি",
+  "profilePage.fullName": "পুরো নাম",
+  "profilePage.notSet": "দেওয়া হয়নি",
+  "profilePage.email": "ই-মেইল",
+  "profilePage.phone": "ফোন",
+  "profilePage.memberSince": "সদস্য হয়েছেন",
+  "profilePage.userId": "ব্যবহারকারী আইডি",
+  "profilePage.organization": "সংস্থা",
+  "profilePage.view": "দেখুন",
+  "profilePage.manage": "পরিচালনা",
+  "profilePage.twoFactor": "টু-ফ্যাক্টর সাইন-ইন",
+  "profilePage.twoFactorApp": "চালু, অথেন্টিকেটর অ্যাপ দিয়ে",
+  "profilePage.twoFactorEmail": "চালু, ই-মেইল কোড দিয়ে",
+  "profilePage.twoFactorOff": "বন্ধ। অ্যাকাউন্ট সুরক্ষিত রাখতে চালু করুন।",
+  "profilePage.emailCheck": "ই-মেইল ঠিকানা",
+  "profilePage.devices": {
+    "one": "{count}টি ডিভাইসে সাইন ইন",
+    "other": "{count}টি ডিভাইসে সাইন ইন"
+  },
+  "profilePage.thisDevice": "এই ডিভাইস: {device}",
+  "profilePage.photo": "ছবি",
+  "profilePage.photoHint": "বর্গাকার ছবি সবচেয়ে ভালো দেখায়। PNG, JPG, WebP বা GIF, ৫ MB পর্যন্ত।",
+  "profilePage.addPhoto": "ছবি যোগ করুন"
+}

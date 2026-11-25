@@ -5,6 +5,10 @@ package settings
 import (
 	"fmt"
 	"math"
+	"slices"
+	"strings"
+
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 )
 
 // ValueType describes the storage/validation type of a setting.
@@ -37,6 +41,32 @@ type Key struct {
 	Group       string // settings_groups.slug
 	SortOrder   int
 	Scope       Scope
+	// Choices, when set, lists the values a string setting accepts (read
+	// when it is written, so a list from a registry stays current); "" is
+	// always accepted and means "not set".
+	Choices func() []string
+}
+
+// CheckChoice refuses a value outside the key's choices.
+func (k Key) CheckChoice(value any) error {
+	if k.Choices == nil {
+		return nil
+	}
+	text, _ := value.(string)
+	if text == "" || slices.Contains(k.Choices(), text) {
+		return nil
+	}
+	return fmt.Errorf("setting %q accepts one of: %s", k.Name, strings.Join(k.Choices(), ", "))
+}
+
+// supportedLanguages lists the language codes the application offers.
+func supportedLanguages() []string {
+	languages := i18n.Default().Supported()
+	codes := make([]string, len(languages))
+	for i, lang := range languages {
+		codes[i] = lang.Code
+	}
+	return codes
 }
 
 // AllowsTenant reports whether a tenant override is legal for the key.
@@ -75,6 +105,16 @@ var Catalog = []Key{
 		Group:       "general",
 		SortOrder:   10,
 		Scope:       ScopeGlobalOnly,
+	},
+	{
+		Name:        "general.default_locale",
+		Type:        TypeString,
+		Default:     "",
+		Description: "The organization's language: the screen for members who haven't chosen one, and e-mails to them and to people invited (a supported language code; empty: the browser's language, then APP_LOCALE).",
+		Group:       "general",
+		SortOrder:   20,
+		Scope:       ScopeTenant,
+		Choices:     supportedLanguages,
 	},
 	{
 		Name:        "notification.enabled",

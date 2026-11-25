@@ -11,8 +11,9 @@ import {
   type SignInOutcome,
 } from '../auth/session'
 import { AppearanceMenu } from '../components/AppearanceMenu'
+import { LanguageMenu } from '../components/LanguageMenu'
 import { ErrorBox, Icon, Spinner } from '../components/ui'
-import { setLocale, useT } from '../i18n'
+import { isLocale, setLocale, useT } from '../i18n'
 import { queryClient } from '../query'
 import { onboardingQuery } from './_app.onboarding'
 
@@ -57,7 +58,7 @@ function LoginPage() {
     // The language the user chose follows them to every device.
     const session = await queryClient.fetchQuery(sessionQuery).catch(() => null)
     const saved = session?.user.locale
-    if (saved === 'en' || saved === 'bn') setLocale(saved)
+    if (saved && isLocale(saved)) void setLocale(saved)
     // A new organization's owner continues its setup first.
     const progress = await queryClient.fetchQuery(onboardingQuery).catch(() => null)
     if (progress?.is_owner && !progress.completed) {
@@ -95,6 +96,7 @@ function LoginPage() {
   return (
     <div className="login-wrap">
       <div className="login-top">
+        <LanguageMenu />
         <AppearanceMenu />
       </div>
       <div className="login-card">
@@ -206,7 +208,7 @@ function LoginPage() {
 function errorMessage(error: ApiError | Error | null, t: ReturnType<typeof useT>): string | null {
   if (!error) return null
   if (error instanceof ApiError) {
-    if (error.status === 429 && error.retryAfter) return t('auth.throttled', { seconds: error.retryAfter })
+    if (error.status === 429 && error.retryAfter) return t('auth.throttled', { count: error.retryAfter })
     if (error.errors && Object.keys(error.errors).length > 0) return null
   }
   return error.message

@@ -1,0 +1,1 @@
+Se eliminó su cuenta de {{.Brand.Name}}

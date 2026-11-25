@@ -1,0 +1,42 @@
+{
+  "language": "ar",
+  "style": [
+    "Modern Standard Arabic; address the reader directly in the second person, plainly and politely.",
+    "Right to left: never reorder placeholders or Latin words, the layout handles direction.",
+    "Generated numbers use Western digits 0–9 (digits: latn); keep codes, IDs, amounts and URLs as they are.",
+    "Arabic punctuation: comma ، and question mark ؟; quotation marks « ».",
+    "Plural values need all six forms: zero, one, two, few, many, other (one and two usually spell the number: يوم واحد، يومان)."
+  ],
+  "terms": {
+    "organization": "مؤسسة",
+    "tenant": "مستأجر (only where English says tenant)",
+    "member": "عضو",
+    "user": "مستخدم",
+    "role": "دور",
+    "permission": "صلاحية",
+    "branch": "فرع",
+    "plan": "خطة",
+    "subscription": "اشتراك",
+    "payment": "دفعة",
+    "invoice": "فاتورة",
+    "billing": "الفوترة",
+    "settings": "الإعدادات",
+    "activity log": "سجل النشاط",
+    "audit log": "سجل التدقيق",
+    "notification": "إشعار",
+    "announcement": "إعلان",
+    "background job": "مهمة خلفية",
+    "endpoint": "نقطة نهاية",
+    "sign in": "تسجيل الدخول",
+    "sign out": "تسجيل الخروج",
+    "sign up": "التسجيل",
+    "two-factor": "التحقق بخطوتين",
+    "recovery code": "رمز استرداد",
+    "e-mail": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "staff": "موظف / فريق الدعم",
+    "impersonate": "العمل نيابةً عن",
+    "trial": "فترة تجريبية"
+  },
+  "keep": ["IMS Go SaaS Kit", "bKash", "Nagad", "MCP", "Google", "GitHub", "API", "OAuth", "Webhook", "Claude", "ChatGPT", "Cursor"]
+}

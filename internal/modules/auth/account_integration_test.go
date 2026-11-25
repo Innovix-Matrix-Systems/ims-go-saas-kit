@@ -105,4 +105,12 @@ func TestProfileLocale(t *testing.T) {
 	if profile.Locale == nil || *profile.Locale != "bn" {
 		t.Fatal("an update without locale must keep it")
 	}
+	// Only a registered, offered language is accepted; "" clears the choice.
+	app.As(user).Post("/api/v1/user/profile/update", map[string]any{"name": profile.Name, "locale": "zz"}).
+		Status(t, http.StatusUnprocessableEntity)
+	app.As(user).Post("/api/v1/user/profile/update", map[string]any{"name": profile.Name, "locale": ""}).
+		Status(t, http.StatusOK).Data(t, &profile)
+	if profile.Locale != nil {
+		t.Fatalf("locale after clearing = %q, want none", *profile.Locale)
+	}
 }

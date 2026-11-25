@@ -1,0 +1,8 @@
+{
+  "pagination.label": "পাতা",
+  "pagination.showing": "{total}টির মধ্যে {from} থেকে {to} দেখানো হচ্ছে",
+  "pagination.perPage": "প্রতি পাতায়",
+  "pagination.page": "পাতা {page}",
+  "pagination.first": "প্রথম পাতা",
+  "pagination.last": "শেষ পাতা"
+}

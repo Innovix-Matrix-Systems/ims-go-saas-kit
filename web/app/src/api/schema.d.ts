@@ -118,6 +118,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/languages": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Supported languages
+         * @description The languages this server offers (`APP_SUPPORTED_LOCALES`, or every registered language),
+         *     the reference language (English) first, and the default (`APP_LOCALE`). Clients build their
+         *     language menu from it and send one of the codes as `Accept-Language` or a user's `locale`.
+         */
+        get: operations["listLanguages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/echo": {
         parameters: {
             query?: never;
@@ -5478,6 +5512,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dev/api/inspector/translations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How complete each language is
+         * @description Every registered language with its API catalog coverage (missing, extra and mismatched keys),
+         *     its CLDR plural forms, the delivery templates without its variant and the keys the project's
+         *     overrides replace; plus the namespaces and the module that owns each. The client app's own
+         *     catalogs are checked by `npm run i18n:check` in web/app.
+         */
+        get: operations["devInspectorTranslations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dev/api/inspector/packages": {
         parameters: {
             query?: never;
@@ -6847,6 +6904,11 @@ export interface components {
                 id: number;
                 name: string;
                 code: string;
+                /**
+                 * @description The organization's language (`general.default_locale`) for members who haven't chosen one, and their e-mails. Null when unset.
+                 * @example bn
+                 */
+                language: string | null;
                 phone?: string | null;
                 email?: string | null;
                 is_active: boolean;
@@ -6957,6 +7019,44 @@ export interface components {
                 since?: string;
                 message?: string;
                 retry_after?: number;
+            };
+        };
+        Language: {
+            /**
+             * @description Two-letter language code.
+             * @example bn
+             */
+            code: string;
+            /**
+             * @description The language's own name.
+             * @example বাংলা
+             */
+            label: string;
+            /**
+             * @description Its English name.
+             * @example Bangla
+             */
+            english: string;
+            /**
+             * @description BCP 47 tag for formatting dates and numbers.
+             * @example bn-BD
+             */
+            intl: string;
+            /** @enum {string} */
+            dir: "ltr" | "rtl";
+            /**
+             * @description Numbering system for generated numbers (`latn`, `beng`, `arab`).
+             * @example beng
+             */
+            digits: string;
+            /** @description False while the translation has not passed review (shown as beta). */
+            reviewed: boolean;
+        };
+        LanguagesEnvelope: {
+            data: {
+                /** @example en */
+                default: string;
+                languages: components["schemas"]["Language"][];
             };
         };
         SystemInfoEnvelope: {
@@ -8050,6 +8150,7 @@ export interface components {
             priority: "INFO" | "WARNING" | "CRITICAL";
             title: string;
             body?: string | null;
+            /** @description Free-form JSON. A notification the system writes carries its message key under `i18n` (`{"i18n": {"key": "notices.payment_received", "params": {...}}}`); `title` and `body` are then the English text, and each reader's feed renders the key in their language. */
             data?: unknown;
             group_key?: string | null;
             /** Format: int64 */
@@ -8206,6 +8307,7 @@ export interface components {
             priority: "INFO" | "WARNING" | "CRITICAL";
             title: string;
             body?: string | null;
+            /** @description Free-form JSON. When it has an `i18n` entry (`{"key": "...", "params": {...}}`, a notification the system wrote), `title` and `body` are already rendered from that key in the request's language. */
             data?: unknown;
             group_key?: string | null;
             /** Format: date-time */
@@ -8325,6 +8427,8 @@ export interface components {
             editable: boolean;
             sort_order: number;
             group?: components["schemas"]["SettingsGroupRef"];
+            /** @description The accepted values when the setting has a fixed set (for example `general.default_locale`: the supported language codes); an empty string always means "not set". */
+            choices?: string[];
         };
         SettingsGroupSection: {
             group: components["schemas"]["SettingsGroupRef"];
@@ -8713,6 +8817,45 @@ export interface components {
             avg_acquire_ms: number;
             /** @description active is at busy_share of max or more. */
             busy: boolean;
+        };
+        DevTranslationsReport: {
+            /** @description APP_LOCALE */
+            default: string;
+            languages: {
+                code: string;
+                label: string;
+                english: string;
+                intl: string;
+                /** @enum {string} */
+                dir: "ltr" | "rtl";
+                digits: string;
+                reviewed: boolean;
+                /** @description Offered to clients (APP_SUPPORTED_LOCALES). */
+                supported: boolean;
+                total: number;
+                translated: number;
+                missing: string[];
+                extra: string[];
+                problems: {
+                    key: string;
+                    detail: string;
+                }[];
+                plural_forms: string[];
+                template_gaps: {
+                    template: string;
+                    language: string;
+                    missing: string[];
+                    problems: string[];
+                }[];
+                /** @description Keys the project's overrides replace in this language. */
+                overrides: string[];
+            }[];
+            namespaces: {
+                name: string;
+                owner: string;
+                keys: number;
+            }[];
+            templates: string[];
         };
         DevPackagesReport: {
             go_version: string;
@@ -10149,6 +10292,38 @@ export interface operations {
             };
         };
     };
+    listLanguages: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The offered languages. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LanguagesEnvelope"];
+                };
+            };
+        };
+    };
     systemEcho: {
         parameters: {
             query?: never;
@@ -10492,8 +10667,8 @@ export interface operations {
                     password: string;
                     organization_name: string;
                     phone?: string | null;
-                    /** @enum {string} */
-                    locale?: "en" | "bn";
+                    /** @description A supported language code (`GET /api/v1/languages`); becomes the new organization's language (`general.default_locale`). */
+                    locale?: string;
                     /** @description Must be true (terms of service and privacy policy). */
                     accept_terms: boolean;
                 };
@@ -13586,7 +13761,7 @@ export interface operations {
                     last_name?: string | null;
                     name?: string | null;
                     phone?: string | null;
-                    /** @description The user's language ("en", "bn"). An empty string clears it; leave it out to keep it. */
+                    /** @description The user's language, a supported language code (`GET /api/v1/languages`). An empty string clears it; leave it out to keep it. */
                     locale?: string;
                 };
             };
@@ -16168,7 +16343,7 @@ export interface operations {
                     last_name?: string | null;
                     name?: string | null;
                     phone?: string | null;
-                    /** @description The user's language ("en", "bn"). An empty string clears it; leave it out to keep it. */
+                    /** @description The user's language, a supported language code (`GET /api/v1/languages`). An empty string clears it; leave it out to keep it. */
                     locale?: string;
                 };
             };
@@ -24544,6 +24719,46 @@ export interface operations {
             };
             /** @description Resource not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    devInspectorTranslations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The translation report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DevTranslationsReport"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

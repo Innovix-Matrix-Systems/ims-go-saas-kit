@@ -1,0 +1,22 @@
+{
+  "branches.subtitle": "Wo Ihre Organisation arbeitet. Mitglieder gehören zu einer Filiale und können zu anderen wechseln.",
+  "branches.search": "Filialen suchen",
+  "branches.create": "Neue Filiale",
+  "branches.createTitle": "Neue Filiale",
+  "branches.name": "Name",
+  "branches.address": "Adresse",
+  "branches.phone": "Telefon",
+  "branches.email": "E-Mail",
+  "branches.description": "Beschreibung",
+  "branches.manager": "Leitung",
+  "branches.noManager": "Keine Leitung",
+  "branches.current": "Aktuell",
+  "branches.empty": "Keine Filialen gefunden.",
+  "branches.save": "Filiale speichern",
+  "branches.delete": "Filiale löschen",
+  "branches.deleteConfirm": "Die Filiale {name} löschen? Ihre Mitglieder müssen zuerst in eine andere Filiale verschoben werden.",
+  "branches.all": "Alle Filialen",
+  "branches.switchedAll": "Sie sehen jetzt alle Filialen.",
+  "branches.switch": "Filiale wechseln",
+  "branches.switched": "Sie arbeiten jetzt in {name}."
+}

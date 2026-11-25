@@ -1,0 +1,22 @@
+{
+  "branches.subtitle": "আপনার প্রতিষ্ঠান যেখানে কাজ করে। সদস্যরা একটি শাখার অন্তর্ভুক্ত এবং অন্য শাখায় যেতে পারেন।",
+  "branches.search": "শাখা খুঁজুন",
+  "branches.create": "নতুন শাখা",
+  "branches.createTitle": "নতুন শাখা",
+  "branches.name": "নাম",
+  "branches.address": "ঠিকানা",
+  "branches.phone": "ফোন",
+  "branches.email": "ই-মেইল",
+  "branches.description": "বিবরণ",
+  "branches.manager": "ব্যবস্থাপক",
+  "branches.noManager": "কোনো ব্যবস্থাপক নেই",
+  "branches.current": "বর্তমান",
+  "branches.empty": "কোনো শাখা মেলেনি।",
+  "branches.save": "শাখা সংরক্ষণ করুন",
+  "branches.delete": "শাখা মুছুন",
+  "branches.deleteConfirm": "{name} শাখাটি মুছবেন? আগে এর সদস্যদের অন্য শাখায় সরাতে হবে।",
+  "branches.all": "সব শাখা",
+  "branches.switchedAll": "আপনি এখন সব শাখা দেখছেন।",
+  "branches.switch": "শাখা পরিবর্তন",
+  "branches.switched": "আপনি এখন {name}-এ কাজ করছেন।"
+}

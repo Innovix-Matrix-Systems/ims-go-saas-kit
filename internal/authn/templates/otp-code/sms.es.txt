@@ -1,0 +1,1 @@
+{{.Data.code}} es su código de inicio de sesión de {{.Brand.Name}}. Caduca en {{duration .Data.minutes}}.

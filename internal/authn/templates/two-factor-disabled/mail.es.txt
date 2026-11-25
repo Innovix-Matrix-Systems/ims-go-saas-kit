@@ -1,0 +1,5 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+El inicio de sesión en dos pasos se desactivó en su cuenta el {{.Data.when}}{{if .Data.reset}} por un administrador{{end}}. Ahora basta con su contraseña para iniciar sesión.
+
+Si no lo esperaba, cambie su contraseña ahora y vuelva a activar el inicio de sesión en dos pasos.

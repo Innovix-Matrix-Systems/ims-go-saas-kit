@@ -67,7 +67,7 @@ const sidebar = [
       { label: 'Organizations', items: ['guides/tenancy', 'guides/permissions', 'guides/billing'] },
       {
         label: 'Product',
-        items: ['guides/settings', 'guides/feature-flags', 'guides/notifications', 'guides/mail-and-i18n'],
+        items: ['guides/settings', 'guides/feature-flags', 'guides/notifications', 'guides/languages'],
       },
       {
         label: 'Data',

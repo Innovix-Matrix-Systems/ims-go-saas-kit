@@ -1,0 +1,6 @@
+{
+  "forgot.title": "Restablecer su contraseña",
+  "forgot.subtitle": "Introduzca su correo electrónico y le enviaremos un enlace para elegir una nueva contraseña.",
+  "forgot.submit": "Enviar enlace de restablecimiento",
+  "forgot.sent": "Si esa dirección pertenece a una cuenta, va de camino un enlace de restablecimiento. Revise su bandeja de entrada."
+}

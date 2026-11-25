@@ -1,0 +1,7 @@
+{
+  "reset.title": "Elija una nueva contraseña",
+  "reset.subtitle": "Después, se cerrará la sesión en todos los dispositivos de su cuenta.",
+  "reset.submit": "Establecer la nueva contraseña",
+  "reset.done": "Se cambió su contraseña. Inicie sesión con la nueva.",
+  "reset.missing": "Esta página necesita el enlace de su correo. Solicite uno nuevo."
+}

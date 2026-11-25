@@ -1,0 +1,18 @@
+{
+  "privacy.exportTitle": "Download your data",
+  "privacy.exportBody": "We prepare a file with your account data and e-mail you a link. One export a day.",
+  "privacy.exportStart": "Prepare my data",
+  "privacy.exportStarted": "We are preparing your data. You will get an e-mail when it is ready.",
+  "privacy.exportReady": "Your data is ready.",
+  "privacy.download": "Download",
+  "privacy.exportUntil": "You can download it until {date}.",
+  "privacy.exportFailed": "Preparing your data failed. Try again.",
+  "privacy.exportGone": "That export is no longer available: it expired or was removed. Prepare a new one.",
+  "privacy.deleteTitle": "Delete my account",
+  "privacy.deleteBody": "Your account is deleted after a waiting period. You are signed out now, and you can sign in and cancel until then.",
+  "privacy.deleteStart": "Delete my account",
+  "privacy.deleteConfirmLabel": "Type DELETE to confirm",
+  "privacy.deleteScheduled": "Your account will be deleted on {date}.",
+  "privacy.cancelDeletion": "Cancel deletion",
+  "privacy.deletionCancelled": "Deletion cancelled. Your account stays."
+}

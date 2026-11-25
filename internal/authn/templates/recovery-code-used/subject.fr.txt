@@ -1,0 +1,1 @@
+Un code de récupération a servi à se connecter à {{.Brand.Name}}

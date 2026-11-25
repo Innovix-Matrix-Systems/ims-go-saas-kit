@@ -1,0 +1,7 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Recibimos una solicitud para restablecer su contraseña. Abra este enlace para elegir una nueva:
+
+{{.Data.link}}
+
+El enlace caduca en {{duration .Data.minutes}}. Si no lo solicitó, puede ignorar este correo.

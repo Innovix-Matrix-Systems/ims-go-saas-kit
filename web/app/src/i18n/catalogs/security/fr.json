@@ -1,0 +1,11 @@
+{
+  "security.changePassword": "Changer le mot de passe",
+  "security.changePasswordHint": "Les autres appareils sont déconnectés quand vous changez votre mot de passe.",
+  "security.passwordChanged": "Votre mot de passe a été modifié.",
+  "security.sessions": "Appareils connectés",
+  "security.sessionsHint": "Déconnectez tout appareil que vous ne reconnaissez pas.",
+  "security.thisDevice": "Cet appareil",
+  "security.lastUsed": "Dernière utilisation {when}",
+  "security.signOutDevice": "Déconnecter",
+  "security.signOutOthers": "Déconnecter tous les autres appareils"
+}

@@ -1,0 +1,18 @@
+{
+    "notices.payment_to_review.title": "Pago por revisar: {{.Organization}}",
+    "notices.payment_to_review.body": "{{.Organization}} pagó {{.Amount}} por el plan {{.Plan}} mediante {{.Method}}. Compruebe la transferencia y apruébela o recházela.",
+    "notices.payment_submitted.title": "Pago enviado para su confirmación",
+    "notices.payment_submitted.body": "Se envió su pago de {{.Amount}} por el plan {{.Plan}}. Le avisaremos en cuanto se confirme.",
+    "notices.payment_received.title": "Pago recibido",
+    "notices.payment_received.body": "Recibimos {{.Amount}}. Su plan {{.Plan}} está activo. El recibo va de camino por correo electrónico.",
+    "notices.payment_rejected.title": "Pago no confirmado",
+    "notices.payment_rejected.body": "No se pudo confirmar su pago de {{.Amount}} por el plan {{.Plan}}.",
+    "notices.payment_rejected_with_reason.title": "Pago no confirmado",
+    "notices.payment_rejected_with_reason.body": "No se pudo confirmar su pago de {{.Amount}} por el plan {{.Plan}}. Motivo: {{.Reason}}",
+    "notices.webhook_disabled.title": "Se desactivó un endpoint de webhook",
+    "notices.webhook_disabled.body": "{{.URL}} dejó de recibir eventos porque sus entregas fallaban una y otra vez. Corrija el receptor y vuelva a activar el endpoint.",
+    "notices.method.bkash": "bKash",
+    "notices.method.nagad": "Nagad",
+    "notices.method.cash": "efectivo",
+    "notices.method.bank_transfer": "transferencia bancaria"
+}

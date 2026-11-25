@@ -4,12 +4,14 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
 )
 
 var testBrand = Brand{Name: "Acme", Color: "#112233", Footer: "Acme Ltd, Dhaka"}
 
 func TestBuiltinTemplatesRender(t *testing.T) {
-	registry := NewRegistry()
+	registry := testRegistry(t)
 	cases := []struct {
 		template string
 		channel  Channel
@@ -48,7 +50,7 @@ func TestBuiltinTemplatesRender(t *testing.T) {
 }
 
 func TestBuiltinTemplatesRenderTheirSamples(t *testing.T) {
-	registry := NewRegistry()
+	registry := testRegistry(t)
 	for _, name := range registry.Names() {
 		sample, err := registry.Sample(name)
 		if err != nil {
@@ -65,7 +67,7 @@ func TestBuiltinTemplatesRenderTheirSamples(t *testing.T) {
 }
 
 func TestSMSTemplatesFitTwoSegments(t *testing.T) {
-	registry := NewRegistry()
+	registry := testRegistry(t)
 	for _, name := range registry.Names() {
 		sample, _ := registry.Sample(name)
 		for _, channel := range registry.Channels(name) {
@@ -86,7 +88,7 @@ func TestSMSTemplatesFitTwoSegments(t *testing.T) {
 }
 
 func TestPlainTextTemplateWorksAlone(t *testing.T) {
-	registry := NewRegistry()
+	registry := testRegistry(t)
 	if err := registry.Register(fstest.MapFS{
 		"welcome/subject.txt": {Data: []byte("Welcome, {{.To.Name}}")},
 		"welcome/mail.txt":    {Data: []byte("Hello {{.To.Name}}, your plan is {{.Data.plan}}.")},
@@ -107,7 +109,7 @@ func TestPlainTextTemplateWorksAlone(t *testing.T) {
 }
 
 func TestTemplateErrors(t *testing.T) {
-	registry := NewRegistry()
+	registry := testRegistry(t)
 	if _, err := registry.Render("otp-code", Mail, []string{"en"}, View{Data: map[string]any{"minutes": 5}}); err == nil {
 		t.Error("a missing data key rendered without an error")
 	}
@@ -120,7 +122,7 @@ func TestTemplateErrors(t *testing.T) {
 }
 
 func TestHTMLEscapesData(t *testing.T) {
-	registry := NewRegistry()
+	registry := testRegistry(t)
 	content, err := registry.Render("otp-code", Mail, []string{"en"},
 		View{To: Recipient{Name: "<script>alert(1)</script>"}, Data: map[string]any{"code": "1", "minutes": 1}, Brand: testBrand})
 	if err != nil {
@@ -132,7 +134,7 @@ func TestHTMLEscapesData(t *testing.T) {
 }
 
 func TestRegisteredTemplateOverridesBuiltin(t *testing.T) {
-	registry := NewRegistry()
+	registry := testRegistry(t)
 	if err := registry.Register(fstest.MapFS{
 		"otp-code/subject.txt": {Data: []byte("Code")},
 		"otp-code/mail.txt":    {Data: []byte("Use {{.Data.code}}")},
@@ -185,5 +187,41 @@ func TestMaskAddress(t *testing.T) {
 		if got := MaskAddress(tc.channel, tc.address); got != tc.want {
 			t.Errorf("MaskAddress(%s, %q) = %q, want %q", tc.channel, tc.address, got, tc.want)
 		}
+	}
+}
+
+// testRegistry is the platform layout plus authn's templates (otp-code,
+// password-reset, …), which these tests send.
+func testRegistry(t *testing.T) *Registry {
+	t.Helper()
+	registry := NewRegistry()
+	if err := registry.Register(authn.Templates()); err != nil {
+		t.Fatal(err)
+	}
+	return registry
+}
+
+func TestCoverageReportsMissingVariantsAndFields(t *testing.T) {
+	registry := NewRegistry()
+	if err := registry.Register(fstest.MapFS{
+		"greet/subject.txt":    {Data: []byte("Hello {{.Data.name}}")},
+		"greet/subject.bn.txt": {Data: []byte("হ্যালো")},
+		"greet/mail.txt":       {Data: []byte("Hello {{.Data.name}}")},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	reports, err := registry.Coverage([]string{"bn"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 1 {
+		t.Fatalf("Coverage() = %+v, want one report", reports)
+	}
+	got := reports[0]
+	if len(got.Missing) != 1 || got.Missing[0] != "mail.txt" {
+		t.Errorf("missing = %v, want [mail.txt]", got.Missing)
+	}
+	if len(got.Problems) != 1 || !strings.Contains(got.Problems[0], "subject.bn.txt") {
+		t.Errorf("problems = %v, want the dropped .Data.name in subject.bn.txt", got.Problems)
 	}
 }

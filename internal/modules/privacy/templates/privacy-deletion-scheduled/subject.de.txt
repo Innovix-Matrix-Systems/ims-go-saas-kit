@@ -1,0 +1,1 @@
+Ihr {{.Brand.Name}}-Konto wird am {{.Data.date}} gelöscht

@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { api, type Schemas } from '../api/client'
 import { formatDateTime, localDayEnd, localDayStart, relativeTimeIn } from '../format'
-import { intlLocale, useLocale, useT } from '../i18n'
+import { hasMessage, intlLocale, translate, useLocale, useT, type MessageKey } from '../i18n'
 import { allTenantsQuery } from './console'
 import { useStartExport } from './jobs'
 import { DatePicker, Select } from './inputs'
@@ -39,13 +39,27 @@ type Entry = Schemas['ActivityEntry']
 type Feed = Schemas['ActivityFeedEnvelope']
 type Facets = Schemas['ActivityFacets']
 
-/** "role.permissions_assigned" → "Role permissions assigned". */
+/** An action's name in the current language (activity.label.<action>); an action without a
+ * catalog entry (a project's own) is spelled from its code: "role.permissions_assigned" →
+ * "Role permissions assigned". */
 export function actionLabel(action: string): string {
-  const text = action.replace(/[._-]+/g, ' ').trim()
+  const key = `activity.label.${action}`
+  if (hasMessage(key)) return translate(key as MessageKey)
+  return humanize(action)
+}
+
+/** A subject type's name ("user" → "User") in the current language. */
+export function subjectLabel(subject: string): string {
+  const key = `activity.subject.${subject}`
+  return hasMessage(key) ? translate(key as MessageKey) : humanize(subject)
+}
+
+function humanize(code: string): string {
+  const text = code.replace(/[._-]+/g, ' ').trim()
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-const subjectOf = (entry: Entry) => (entry.subject_id ? `${entry.subject_type} #${entry.subject_id}` : entry.subject_type)
+const subjectOf = (entry: Entry) => (entry.subject_id ? `${subjectLabel(entry.subject_type)} #${entry.subject_id}` : subjectLabel(entry.subject_type))
 
 /**
  * The activity log, laid out like the developer dashboard's audit log. An
@@ -236,7 +250,7 @@ export function ActivityLog({
               onChange={(value) => setFilter({ area: value || undefined })}
               options={[
                 { value: '', label: t('activity.anyArea') },
-                ...(facets.data?.subjects ?? []).map((item) => ({ value: item.value, label: actionLabel(item.value), hint: String(item.total) })),
+                ...(facets.data?.subjects ?? []).map((item) => ({ value: item.value, label: subjectLabel(item.value), hint: String(item.total) })),
               ]}
             />
           </div>
@@ -303,7 +317,7 @@ export function ActivityLog({
                       <span className="audit-action">
                         <span className="status-dot ok" />
                         <b>{actionLabel(row.action)}</b>
-                        <span className="tag">{row.subject_type}</span>
+                        <span className="tag">{subjectLabel(row.subject_type)}</span>
                       </span>
                     </td>
                     <td className="mono small dim truncate maxw-sm">{subjectOf(row)}</td>
@@ -454,7 +468,7 @@ function ActivityDrawer({
             {t('activity.onlyAction', { action: actionLabel(entry.action) })}
           </Button>
           <Button size="sm" icon="list" onClick={() => onFilter({ area: entry.subject_type })}>
-            {t('activity.onlySubject', { type: entry.subject_type })}
+            {t('activity.onlySubject', { type: subjectLabel(entry.subject_type) })}
           </Button>
           {entry.ip ? (
             <Button size="sm" icon="search" onClick={() => onFilter({ q: entry.ip ?? undefined })}>

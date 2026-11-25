@@ -1,0 +1,8 @@
+{
+  "pagination.label": "الصفحات",
+  "pagination.showing": "عرض {from} إلى {to} من {total} إدخال",
+  "pagination.perPage": "لكل صفحة",
+  "pagination.page": "الصفحة {page}",
+  "pagination.first": "الصفحة الأولى",
+  "pagination.last": "الصفحة الأخيرة"
+}

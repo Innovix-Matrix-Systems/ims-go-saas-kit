@@ -1,0 +1,7 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+Vous avez demandé à utiliser cette adresse pour votre compte. Ouvrez ce lien pour la confirmer :
+
+{{.Data.link}}
+
+Le lien expire dans {{duration .Data.minutes}}. D'ici là, votre compte garde son adresse actuelle. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.

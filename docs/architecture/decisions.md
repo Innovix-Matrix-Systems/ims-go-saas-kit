@@ -32,8 +32,9 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     with the effective tenant, so impersonated uploads land in the acting tenant) and
     `/v1/internal/files` behind `tenant.internal` with system `file.internal.*` permissions
     (global uploads, cross-tenant reads). One handler serves both, parameterized by the family.
-13. i18n catalogs cover the API-relevant message groups (`messages`, `http-statuses`,
-    `validation`; ~390 keys × en/bn); validator tags map to `validation.*` keys via go-i18n.
+13. i18n catalogs cover the API-relevant message groups (`http-statuses`, `validation`,
+    `common`, and each module's own namespace); validator tags map to `validation.*` keys via
+    go-i18n. See decision 55.
 14. Legacy `.xls` imports are rejected (xlsx/csv supported); per-row import errors use a
     `[{row, errors:{...}}]` shape; filter snapshots live in `data_processing_jobs`.
 15. **Storage disks** (`config/storage.go`, `platform/storage`) work like Laravel's
@@ -164,7 +165,7 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     provider. A message renders once at `Send`, so a broken template or a missing data key fails
     the caller instead of a background job, and again in the `delivery.send` job, so a template
     fix applies to retries. One job per channel means a slow SMS provider never delays the mail.
-    Templates are folders of plain files with locale variants (`mail.bn.txt`), not i18n keys per
+    Templates are folders of plain files with language variants (`mail.de.txt`), not i18n keys per
     sentence: a translator edits a whole mail, and plain text works without any HTML. The
     `deliveries` log stores the outcome and a masked address but never a body or the data, so
     one-time codes never reach the database.
@@ -273,3 +274,18 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     refetch. Browsers read the stream with `fetch` so the bearer header stays a header (not a URL
     parameter), one tab per user holds it, and polling stays as a slow fallback
     (`docs/guides/realtime.md`).
+55. **A language is data, not code; each module owns its text.** A language is a descriptor
+    (code, own name, `Intl` tag, direction, digits, reviewed) in one list per side
+    (`internal/app/i18n.go`, `web/app/src/i18n/languages.json`, kept equal by a test) plus catalog
+    files; `TestNoHardCodedLanguageCodes` and `npm run i18n:check` fail on a language code anywhere
+    else. Text is registered as bundles in order (platform → modules → the project's overrides);
+    a key outside its owner's namespace is refused, and overrides may only replace existing keys,
+    so a project changes wording without editing kit files and upgrades don't conflict. Coverage
+    checks (`ims i18n:coverage`, `i18n:check`) fail while any language misses a key, a
+    placeholder, a CLDR plural form or a template variant: the English fallback is a safety net,
+    not a plan. The language someone gets is the most specific choice (account → organization →
+    default, `internal/app/locale.go`). Right to left is logical CSS properties only, enforced by
+    `check:logical`. Arabic uses Western digits by default (one setting per language) because
+    business screens mix amounts, codes and IDs that are already Latin. Translation and review
+    are done by an AI agent following the `translate` skill and a glossary per language
+    (`docs/guides/languages.md`).

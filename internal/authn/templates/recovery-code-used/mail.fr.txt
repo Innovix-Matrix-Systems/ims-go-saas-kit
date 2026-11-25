@@ -1,0 +1,5 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+Un code de récupération a servi à se connecter à votre compte le {{.Data.when}}. Il vous reste {{.Data.left}} code(s) de récupération.
+
+Si c'était vous, configurez à nouveau la connexion en deux étapes sur votre nouvel appareil et générez de nouveaux codes de récupération. Sinon, changez votre mot de passe dès maintenant.

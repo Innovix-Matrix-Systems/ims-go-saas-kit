@@ -1,0 +1,11 @@
+{
+  "security.changePassword": "পাসওয়ার্ড বদলান",
+  "security.changePasswordHint": "পাসওয়ার্ড বদলালে অন্যান্য ডিভাইস থেকে সাইন আউট হয়ে যাবে।",
+  "security.passwordChanged": "আপনার পাসওয়ার্ড বদলানো হয়েছে।",
+  "security.sessions": "সাইন ইন থাকা ডিভাইস",
+  "security.sessionsHint": "যে ডিভাইস চেনেন না সেটি থেকে সাইন আউট করুন।",
+  "security.thisDevice": "এই ডিভাইস",
+  "security.lastUsed": "শেষ ব্যবহার {when}",
+  "security.signOutDevice": "সাইন আউট",
+  "security.signOutOthers": "অন্য সব ডিভাইস থেকে সাইন আউট"
+}

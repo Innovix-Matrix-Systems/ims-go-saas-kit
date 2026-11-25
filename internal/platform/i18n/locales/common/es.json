@@ -1,0 +1,18 @@
+{
+    "common.duration.days": {
+        "one": "{{.Count}} día",
+        "many": "{{.Count}} de días",
+        "other": "{{.Count}} días"
+    },
+    "common.duration.hours": {
+        "one": "{{.Count}} hora",
+        "many": "{{.Count}} de horas",
+        "other": "{{.Count}} horas"
+    },
+    "common.duration.minutes": {
+        "one": "{{.Count}} minuto",
+        "many": "{{.Count}} de minutos",
+        "other": "{{.Count}} minutos"
+    },
+    "common.duration.separator": " y "
+}

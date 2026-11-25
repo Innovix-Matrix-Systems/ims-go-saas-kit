@@ -52,7 +52,8 @@ func newConfigShowCommand(state *State) *cobra.Command {
 				{"APP_URL", cfg.App.URL},
 				{"APP_LISTEN_ADDR", cfg.HTTP.ListenAddr},
 				{"APP_TIMEZONE", cfg.App.Timezone},
-				{"APP_LOCALES", strings.Join(cfg.App.SupportedLocales, ",")},
+				{"APP_LOCALE", cfg.App.Locale},
+				{"APP_SUPPORTED_LOCALES", supportedLocales(cfg.App.SupportedLocales)},
 				{"APP_FALLBACK_LOCALE", cfg.App.FallbackLocale},
 				{"APP_LOG_LEVEL", cfg.App.LogLevel},
 				{"APP_DATA_DIR", cfg.App.DataDir},
@@ -129,4 +130,12 @@ func connectionNames(cfg *config.Config) []string {
 		names = append(names, conn.Name)
 	}
 	return names
+}
+
+// supportedLocales shows APP_SUPPORTED_LOCALES, or what empty means.
+func supportedLocales(codes []string) string {
+	if len(codes) == 0 {
+		return "(every registered language)"
+	}
+	return strings.Join(codes, ",")
 }

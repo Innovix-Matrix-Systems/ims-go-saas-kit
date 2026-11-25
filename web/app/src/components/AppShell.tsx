@@ -1,10 +1,12 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { useSession } from '../auth/session'
-import { useT } from '../i18n'
+import { isLocale, setLocale, useT } from '../i18n'
 import { ActingBanner } from './ActingBanner'
 import { AnnouncementBanner, PlanBanner } from './SystemBanners'
 import { AppearanceMenu } from './AppearanceMenu'
+import { LanguageMenu } from './LanguageMenu'
 import { BranchSwitcher } from './BranchSwitcher'
 import { JobsTray } from './JobsTray'
 import { PlanTray } from './PlanTray'
@@ -15,7 +17,8 @@ import { RealtimeConnector } from './realtime'
 import { ShortcutsSheet } from './ShortcutsSheet'
 import { useShortcuts } from './shortcuts'
 import { Icon, Kbd } from './ui'
-import { AccountMenu, WorkspaceMenu, useOrganizationName } from './WorkspaceMenu'
+import { organizationQuery } from './organization'
+import { AccountMenu, WorkspaceMenu, inOrganization, useOrganizationName } from './WorkspaceMenu'
 
 const SIDEBAR_KEY = 'ims.app.sidebar'
 const WIDTH_KEY = 'ims.app.sidebar-width'
@@ -58,6 +61,17 @@ export function AppShell() {
   const pages = visiblePages(session)
   const current = pageFor(pathname)
   const orgName = useOrganizationName()
+
+  // Signed in, the language is the account's choice (it follows the account
+  // to every device), then the organization's; this browser's pick only
+  // decides when neither is set. Acting as someone else keeps your own.
+  const organization = useQuery({ ...organizationQuery, enabled: inOrganization(session) })
+  const accountLocale = session?.acting ? null : session?.user.locale
+  const organizationLocale = inOrganization(session) ? organization.data?.language : null
+  const chosen = [accountLocale, organizationLocale].find((code) => code && isLocale(code))
+  useEffect(() => {
+    if (chosen) void setLocale(chosen)
+  }, [chosen])
 
   useEffect(() => {
     try {
@@ -214,6 +228,7 @@ export function AppShell() {
             <PlanTray />
             <JobsTray />
             <NotificationBell />
+            <LanguageMenu />
             <AppearanceMenu />
             <button
               type="button"

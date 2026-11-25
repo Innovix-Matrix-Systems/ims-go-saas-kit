@@ -56,16 +56,15 @@ func NewResponse(tenant Tenant) Response {
 
 // Handler serves tenant endpoints (tenant-exempt group).
 type Handler struct {
-	service  *Service
-	checker  *authz.Checker
-	settings SettingReader
+	service *Service
+	checker *authz.Checker
 	httpx.Kit
 }
 
 // respond is a tenant with its branding, for staff screens that show its logo.
 func (h *Handler) respond(r *http.Request, tenant Tenant) Response {
 	out := NewResponse(tenant)
-	branding := h.branding(r.Context(), tenant.ID)
+	branding := newBrandingResponse(h.service.Presentation(r.Context(), tenant.ID))
 	out.Branding = &branding
 	return out
 }

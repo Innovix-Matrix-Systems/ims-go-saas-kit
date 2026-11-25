@@ -70,7 +70,7 @@ func (d *Dependencies) Router() http.Handler {
 	r.Use(httpx.Timeout(d.Config.HTTP.RequestTimeout, d.Responder, realtime.StreamPath))
 	// Health probes and metrics scrapes never spend the per-IP budget.
 	r.Use(ratelimit.Middleware(d.Limiter, ratelimit.KeyByIP, d.Responder, "/up", "/api/health", "/metrics"))
-	r.Use(d.I18n.Middleware(d.Config.App.SupportedLocales, d.Config.App.FallbackLocale))
+	r.Use(d.I18n.Middleware(d.Config.App.Locale))
 
 	r.Get("/up", d.up)
 	r.Get("/api/health", d.HealthHandler.ServeHTTP)
@@ -125,6 +125,11 @@ func (d *Dependencies) Router() http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Use(authn.Authenticate(d.Authenticator, d.Responder))
+			// Without a matching Accept-Language, answer in the account's
+			// language, then the organization's (internal/app/locale.go).
+			if d.Platform != nil {
+				r.Use(accountLocale(d.I18n, d.Platform.Settings))
+			}
 			// Duplicate-request protection: a write repeated
 			// while it runs, or just after it succeeded, is refused; an
 			// Idempotency-Key replays the first answer.

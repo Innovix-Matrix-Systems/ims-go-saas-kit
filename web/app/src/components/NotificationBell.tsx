@@ -53,7 +53,7 @@ export function NotificationBell() {
         {unread > 0 ? <span className="bell-count">{unread > 99 ? '99+' : unread}</span> : null}
       </button>
       {open ? (
-        <div className="ui-popover align-right bell-panel" role="dialog" aria-label={t('notifications.title')}>
+        <div className="ui-popover align-end bell-panel" role="dialog" aria-label={t('notifications.title')}>
           <div className="bell-head">
             <strong>{t('notifications.title')}</strong>
             {unread > 0 ? (

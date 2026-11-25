@@ -1,0 +1,31 @@
+{
+  "profilePage.photoSaved": "Foto actualizada.",
+  "profilePage.changePhoto": "Cambiar foto",
+  "profilePage.verified": "Verificado",
+  "profilePage.unverified": "Sin verificar",
+  "profilePage.edit": "Editar perfil",
+  "profilePage.about": "Acerca de",
+  "profilePage.fullName": "Nombre completo",
+  "profilePage.notSet": "Sin definir",
+  "profilePage.email": "Correo electrónico",
+  "profilePage.phone": "Teléfono",
+  "profilePage.memberSince": "Miembro desde",
+  "profilePage.userId": "ID de usuario",
+  "profilePage.organization": "Organización",
+  "profilePage.view": "Ver",
+  "profilePage.manage": "Gestionar",
+  "profilePage.twoFactor": "Inicio de sesión en dos pasos",
+  "profilePage.twoFactorApp": "Activado, con una aplicación de autenticación",
+  "profilePage.twoFactorEmail": "Activado, con códigos por correo",
+  "profilePage.twoFactorOff": "Desactivado. Actívelo para proteger su cuenta.",
+  "profilePage.emailCheck": "Correo electrónico",
+  "profilePage.devices": {
+    "one": "Sesión iniciada en {count} dispositivo",
+    "many": "Sesión iniciada en {count} dispositivos",
+    "other": "Sesión iniciada en {count} dispositivos"
+  },
+  "profilePage.thisDevice": "Este dispositivo: {device}",
+  "profilePage.photo": "Foto",
+  "profilePage.photoHint": "Lo mejor es una imagen cuadrada. PNG, JPG, WebP o GIF, hasta 5 MB.",
+  "profilePage.addPhoto": "Añadir foto"
+}

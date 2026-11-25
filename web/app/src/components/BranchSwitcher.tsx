@@ -55,7 +55,7 @@ export function BranchSwitcher() {
         <span className="branch-trigger-name">{current?.name ?? t('branches.all')}</span>
       </button>
       {open ? (
-        <div className="ui-popover align-right branch-menu" role="menu" aria-label={t('branches.switch')}>
+        <div className="ui-popover align-end branch-menu" role="menu" aria-label={t('branches.switch')}>
           <button type="button" role="menuitemradio" aria-checked={currentId == null} className="branch-option" onClick={() => void choose(null)}>
             <span>{t('branches.all')}</span>
             {currentId == null ? <Icon name="check" /> : null}

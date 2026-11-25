@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	texttemplate "text/template"
+
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 )
 
 // A template is a folder; each file is optional except what its channels
@@ -25,8 +27,8 @@ import (
 //	<name>/sms.txt       SMS body
 //	<name>/push.json     {"title": …, "body": …}
 //
-// A locale variant sits next to its file: mail.bn.txt is used for "bn" and
-// mail.txt for every other locale. Templates see .To (the Recipient), .Data
+// A language variant sits next to its file: mail.<code>.txt is used for that
+// language and mail.txt (English, the reference) for every other one. Templates see .To (the Recipient), .Data
 // (the message data) and .Brand. A missing data key is an error, so a typo
 // fails at Send instead of mailing "<no value>". The layout is
 // _layout/mail.html; a registered FS can override it.
@@ -49,22 +51,29 @@ type View struct {
 	Brand Brand
 }
 
-// layoutView is what the layout is executed with.
+// layoutView is what the layout is executed with. Lang and Dir are the
+// message's language and direction; Align is the start edge as a physical
+// value ("left"/"right"), since mail clients don't know text-align: start.
 type layoutView struct {
 	Brand   Brand
 	Subject string
 	Body    htmltemplate.HTML
+	Lang    string
+	Dir     string
+	Align   string
 }
 
 const layoutDir = "_layout"
 
-// funcs are the template functions; they speak the variant's locale.
+// funcs are the template functions; they speak the variant's language.
 //
 //	{{duration .Data.minutes}}   90 → "1 hour 30 minutes" / "১ ঘণ্টা ৩০ মিনিট"
+//	{{number .Data.count}}       1234 → "1,234" / "১,২৩৪"
 //	{{json .Data.title}}         a JSON string, for push.json
 func funcs(locale string) map[string]any {
 	return map[string]any{
 		"duration": func(minutes any) string { return humanMinutes(toInt(minutes), locale) },
+		"number":   func(n any) string { return i18n.LanguageFor(locale).FormatNumber(int64(toInt(n))) },
 		// {{json .Data.title}} quotes a value for push.json.
 		"json": func(value any) (string, error) {
 			encoded, err := json.Marshal(value)
@@ -73,8 +82,8 @@ func funcs(locale string) map[string]any {
 	}
 }
 
-// Registry holds the templates: the built-in ones and those registered by
-// modules. A later registration of the same name replaces the earlier one,
+// Registry holds the templates: the platform's mail layout and the templates
+// registered by modules. A later registration of the same name replaces the earlier one,
 // so a project overrides a built-in template by registering its own.
 type Registry struct {
 	mu        sync.RWMutex
@@ -82,7 +91,7 @@ type Registry struct {
 	layout    fs.FS
 }
 
-// NewRegistry returns a registry with the built-in templates.
+// NewRegistry returns a registry with the platform's mail layout.
 func NewRegistry() *Registry {
 	registry := &Registry{templates: map[string]fs.FS{}}
 	builtin, err := fs.Sub(builtinFS, "templates")
@@ -181,7 +190,7 @@ func (r *Registry) Render(name string, channel Channel, locales []string, view V
 			return Content{}, err
 		}
 		if body != "" {
-			if content.HTML, err = r.Layout(view.Brand, content.Subject, body); err != nil {
+			if content.HTML, err = r.Layout(view.Brand, firstLocale(locales), content.Subject, body); err != nil {
 				return Content{}, err
 			}
 		}
@@ -208,8 +217,19 @@ func (r *Registry) Render(name string, channel Channel, locales []string, view V
 	return content, nil
 }
 
-// Layout wraps an HTML body (already rendered and escaped) in the layout.
-func (r *Registry) Layout(brand Brand, subject string, body htmltemplate.HTML) (string, error) {
+// firstLocale is the language a message is written in: the first one given.
+func firstLocale(locales []string) string {
+	for _, locale := range locales {
+		if locale != "" {
+			return locale
+		}
+	}
+	return ""
+}
+
+// Layout wraps an HTML body (already rendered and escaped) in the layout,
+// marked with the message's language and direction.
+func (r *Registry) Layout(brand Brand, locale, subject string, body htmltemplate.HTML) (string, error) {
 	r.mu.RLock()
 	layout := r.layout
 	r.mu.RUnlock()
@@ -225,7 +245,12 @@ func (r *Registry) Layout(brand Brand, subject string, body htmltemplate.HTML) (
 		return "", fmt.Errorf("delivery: layout: %w", err)
 	}
 	var out bytes.Buffer
-	if err := tmpl.Execute(&out, layoutView{Brand: brand, Subject: subject, Body: body}); err != nil {
+	lang := i18n.LanguageFor(locale)
+	align := "left"
+	if lang.Dir == i18n.RTL {
+		align = "right"
+	}
+	if err := tmpl.Execute(&out, layoutView{Brand: brand, Subject: subject, Body: body, Lang: lang.Code, Dir: lang.Dir, Align: align}); err != nil {
 		return "", fmt.Errorf("delivery: layout: %w", err)
 	}
 	return out.String(), nil
@@ -337,15 +362,13 @@ func firstLine(text string) string {
 	return strings.TrimSpace(line)
 }
 
-// humanMinutes spells a duration in days, hours and minutes, in English or
-// (locale "bn") Bangla with Bangla digits.
+// humanMinutes spells a duration in days, hours and minutes in a language,
+// from the common.duration.* plural keys ("1 hour 30 minutes").
 func humanMinutes(minutes int, locale string) string {
-	type unit struct {
-		size             int
-		singular, plural string
-		bangla           string
-	}
-	units := []unit{{1440, "day", "days", "দিন"}, {60, "hour", "hours", "ঘণ্টা"}, {1, "minute", "minutes", "মিনিট"}}
+	units := []struct {
+		size int
+		key  string
+	}{{1440, "common.duration.days"}, {60, "common.duration.hours"}, {1, "common.duration.minutes"}}
 	var parts []string
 	for _, u := range units {
 		n := minutes / u.size
@@ -353,31 +376,12 @@ func humanMinutes(minutes int, locale string) string {
 			continue
 		}
 		minutes -= n * u.size
-		switch {
-		case locale == "bn":
-			parts = append(parts, banglaDigits(strconv.Itoa(n))+" "+u.bangla)
-		case n == 1:
-			parts = append(parts, "1 "+u.singular)
-		default:
-			parts = append(parts, strconv.Itoa(n)+" "+u.plural)
-		}
+		parts = append(parts, i18n.Tr(locale, u.key, i18n.Count(locale, int64(n), nil)))
 	}
 	if len(parts) == 0 {
-		if locale == "bn" {
-			return "০ মিনিট"
-		}
-		return "0 minutes"
+		return i18n.Tr(locale, "common.duration.minutes", i18n.Count(locale, 0, nil))
 	}
-	return strings.Join(parts, " ")
-}
-
-func banglaDigits(ascii string) string {
-	return strings.Map(func(r rune) rune {
-		if r >= '0' && r <= '9' {
-			return '০' + (r - '0')
-		}
-		return r
-	}, ascii)
+	return strings.Join(parts, i18n.Tr(locale, "common.duration.separator", nil))
 }
 
 // toInt reads a number that may have come back from JSON (float64).

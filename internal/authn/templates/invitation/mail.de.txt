@@ -1,0 +1,9 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+{{if .Data.inviter}}{{.Data.inviter}} hat Sie{{else}}Sie wurden{{end}} zu {{.Brand.Name}} eingeladen. Öffnen Sie diesen Link, um Ihr Passwort festzulegen und Ihr Konto zu aktivieren:
+
+{{.Data.link}}
+
+Der Link funktioniert einmal und läuft in {{duration .Data.minutes}} ab. Danach melden Sie sich mit Ihrer E-Mail-Adresse und dem gewählten Passwort an.
+
+Wenn Sie diese Einladung nicht erwartet haben, können Sie diese E-Mail ignorieren.

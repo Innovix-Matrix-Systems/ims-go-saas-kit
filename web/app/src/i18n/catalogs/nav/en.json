@@ -1,0 +1,19 @@
+{
+  "nav.group.workspace": "Workspace",
+  "nav.group.account": "Account",
+  "nav.home": "Home",
+  "nav.profile": "Your profile",
+  "nav.collapse": "Collapse",
+  "nav.expand": "Expand the sidebar",
+  "nav.openMenu": "Open the menu",
+  "nav.searchOrJump": "Search or jump to…",
+  "nav.shortcuts": "Keyboard shortcuts",
+  "nav.group.organization": "Organization",
+  "nav.group.console": "Console",
+  "nav.resize": "Drag to resize the sidebar",
+  "nav.orgSettings": "Org settings",
+  "nav.jobs": "Jobs",
+  "nav.breadcrumb": "You are here",
+  "nav.organization": "Organization",
+  "nav.account": "Account"
+}

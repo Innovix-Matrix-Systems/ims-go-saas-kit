@@ -9,6 +9,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
@@ -40,8 +41,9 @@ func (h *Handler) feed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := make([]FeedItemResponse, 0, len(page.Items))
+	locale := string(i18n.FromContext(r.Context()))
 	for _, item := range page.Items {
-		data = append(data, NewFeedResponse(item))
+		data = append(data, NewFeedResponse(item, locale))
 	}
 	meta := FeedMeta{
 		Path:        r.URL.Path,

@@ -113,7 +113,7 @@ func newTestService(t *testing.T) (*Service, *memoryRepo, *recordingSender, *rec
 	registry := queue.NewRegistry()
 	repo := &memoryRepo{}
 	mailSender, smsSender := &recordingSender{}, &recordingSender{}
-	service := NewService(NewRegistry(), repo, queue.NewSyncEngine(registry), slog.New(slog.NewTextHandler(io.Discard, nil))).
+	service := NewService(testRegistry(t), repo, queue.NewSyncEngine(registry), slog.New(slog.NewTextHandler(io.Discard, nil))).
 		WithSender(Mail, mailSender).
 		WithSender(SMS, smsSender).
 		WithBrand(StaticBrand(testBrand))
@@ -303,7 +303,7 @@ func TestSensitiveDataIsSealedInTheQueue(t *testing.T) {
 	registry := queue.NewRegistry()
 	engine := &capturingEngine{}
 	mailSender := &recordingSender{}
-	service := NewService(NewRegistry(), &memoryRepo{}, engine, slog.New(slog.NewTextHandler(io.Discard, nil))).
+	service := NewService(testRegistry(t), &memoryRepo{}, engine, slog.New(slog.NewTextHandler(io.Discard, nil))).
 		WithSender(Mail, mailSender).
 		WithEncrypter(encrypter)
 	if err := service.RegisterJob(registry); err != nil {

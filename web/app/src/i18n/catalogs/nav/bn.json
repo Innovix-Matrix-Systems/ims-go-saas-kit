@@ -1,0 +1,19 @@
+{
+  "nav.group.workspace": "ওয়ার্কস্পেস",
+  "nav.group.account": "অ্যাকাউন্ট",
+  "nav.home": "হোম",
+  "nav.profile": "আপনার প্রোফাইল",
+  "nav.collapse": "ছোট করুন",
+  "nav.expand": "সাইডবার বড় করুন",
+  "nav.openMenu": "মেনু খুলুন",
+  "nav.searchOrJump": "খুঁজুন বা পাতায় যান…",
+  "nav.shortcuts": "কিবোর্ড শর্টকাট",
+  "nav.group.organization": "প্রতিষ্ঠান",
+  "nav.group.console": "কনসোল",
+  "nav.resize": "সাইডবারের আকার বদলাতে টেনে নিন",
+  "nav.orgSettings": "সংস্থার সেটিংস",
+  "nav.jobs": "কাজ",
+  "nav.breadcrumb": "আপনি এখানে আছেন",
+  "nav.organization": "সংস্থা",
+  "nav.account": "অ্যাকাউন্ট"
+}

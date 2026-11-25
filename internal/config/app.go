@@ -52,7 +52,7 @@ func (c *Config) loadApp(envFile string) error {
 		Timezone:         getString("APP_TIMEZONE", "UTC"),
 		Locale:           getString("APP_LOCALE", "en"),
 		FallbackLocale:   getString("APP_FALLBACK_LOCALE", "en"),
-		SupportedLocales: splitCSV(getString("APP_SUPPORTED_LOCALES", "en")),
+		SupportedLocales: splitCSV(getString("APP_SUPPORTED_LOCALES", "")),
 		DataDir:          getString("APP_DATA_DIR", "./var"),
 		StorageDir:       getString("APP_STORAGE_DIR", "./var/storage"),
 		CacheDir:         getString("APP_CACHE_DIR", "./var/cache"),

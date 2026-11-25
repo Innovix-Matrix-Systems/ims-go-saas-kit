@@ -31,6 +31,10 @@ type CreateInput struct {
 	// Channels: the feed ("database") plus mail, sms, push (normalized by
 	// the service).
 	Channels []string
+	// Message makes a system notification translatable (localized.go): the
+	// service stores it in Data and fills Title and Body with the reference
+	// text.
+	Message *Message
 }
 
 // UpdateInput carries notification update input (targets replace the old set).
@@ -624,7 +628,7 @@ func (r *repository) Recipients(ctx context.Context, userIDs []int64) ([]deliver
 	}
 	recipients := make([]delivery.Recipient, 0, len(rows))
 	for _, row := range rows {
-		recipient := delivery.Recipient{UserID: row.ID, Name: row.Name, Email: row.Email, Phone: row.Phone}
+		recipient := delivery.Recipient{UserID: row.ID, Name: row.Name, Email: row.Email, Phone: row.Phone, Locale: row.Locale}
 		if row.TenantID != nil {
 			recipient.TenantID = *row.TenantID
 		}

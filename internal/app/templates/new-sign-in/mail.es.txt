@@ -1,0 +1,10 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Se acaba de iniciar sesión en su cuenta desde un lugar nuevo:
+
+  Cuándo:      {{.Data.when}}
+  Dónde:       {{.Data.ip}}
+  Navegador:   {{if .Data.browser}}{{.Data.browser}}{{else}}desconocido{{end}}
+  Dispositivo: {{.Data.device}}
+
+Si fue usted, no tiene que hacer nada. Si no, cambie su contraseña ahora y cierre sus otras sesiones.

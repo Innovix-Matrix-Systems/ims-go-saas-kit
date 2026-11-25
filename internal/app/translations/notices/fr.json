@@ -1,0 +1,18 @@
+{
+    "notices.payment_to_review.title": "Paiement à vérifier : {{.Organization}}",
+    "notices.payment_to_review.body": "{{.Organization}} a payé {{.Amount}} pour l'offre {{.Plan}} par {{.Method}}. Vérifiez le virement, puis approuvez-le ou refusez-le.",
+    "notices.payment_submitted.title": "Paiement envoyé pour confirmation",
+    "notices.payment_submitted.body": "Votre paiement de {{.Amount}} pour l'offre {{.Plan}} a été envoyé. Nous vous préviendrons dès qu'il sera confirmé.",
+    "notices.payment_received.title": "Paiement reçu",
+    "notices.payment_received.body": "Nous avons reçu {{.Amount}}. Votre offre {{.Plan}} est active. Le reçu arrive par e-mail.",
+    "notices.payment_rejected.title": "Paiement non confirmé",
+    "notices.payment_rejected.body": "Votre paiement de {{.Amount}} pour l'offre {{.Plan}} n'a pas pu être confirmé.",
+    "notices.payment_rejected_with_reason.title": "Paiement non confirmé",
+    "notices.payment_rejected_with_reason.body": "Votre paiement de {{.Amount}} pour l'offre {{.Plan}} n'a pas pu être confirmé. Motif : {{.Reason}}",
+    "notices.webhook_disabled.title": "Un point de terminaison webhook a été désactivé",
+    "notices.webhook_disabled.body": "{{.URL}} ne reçoit plus d'événements car ses livraisons échouaient sans cesse. Corrigez le récepteur, puis réactivez le point de terminaison.",
+    "notices.method.bkash": "bKash",
+    "notices.method.nagad": "Nagad",
+    "notices.method.cash": "espèces",
+    "notices.method.bank_transfer": "virement bancaire"
+}

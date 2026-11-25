@@ -702,7 +702,7 @@ func (s *Service) ProfileUpdate(ctx context.Context, userID int64, input UpdateP
 		return updated, err
 	}
 	var locale *string
-	if value := strings.TrimSpace(*input.Locale); value != "" {
+	if value := strings.ToLower(strings.TrimSpace(*input.Locale)); value != "" {
 		locale = &value
 	}
 	if err := s.repo.UpdateLocale(ctx, target.ID, locale); err != nil {

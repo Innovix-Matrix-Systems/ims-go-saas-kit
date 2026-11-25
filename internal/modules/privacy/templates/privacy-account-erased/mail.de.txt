@@ -1,0 +1,5 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Ihr {{.Brand.Name}}-Konto wurde gelöscht und Ihre personenbezogenen Daten wurden entfernt. Dies ist die letzte Nachricht, die wir an diese Adresse senden.
+
+Unterlagen, die die Organisation aufbewahren muss, etwa Rechnungen und ihr Aktivitätsprotokoll, bleiben ohne Ihren Namen, Ihre E-Mail-Adresse und Ihre Telefonnummer erhalten.

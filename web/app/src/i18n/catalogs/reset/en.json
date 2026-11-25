@@ -1,0 +1,7 @@
+{
+  "reset.title": "Choose a new password",
+  "reset.subtitle": "After this, every device signed in to your account is signed out.",
+  "reset.submit": "Set new password",
+  "reset.done": "Your password has been changed. Sign in with the new one.",
+  "reset.missing": "This page needs the link from your e-mail. Ask for a new one."
+}

@@ -261,33 +261,29 @@ delete action, an editable form for someone who may only read.
 The API is the security boundary, not the UI: it checks the same permission on every call. Hiding
 a button is about not offering an action that will fail.
 
-## 6. Write the text in both languages
+## 6. Write the text in every language
 
-Every string comes from the catalog through `t()`. Add your keys to the English reference, then to
-Bangla; TypeScript fails the build if a key is missing from any language:
+Every string comes from the catalog through `t()`. Give the screen its own namespace folder with the
+English reference:
 
-```ts title="web/app/src/i18n/en.ts"
-'products.title': 'Products',
-'products.subtitle': 'Your catalogue: names, SKUs, prices and stock.',
-'products.create': 'New product',
-'products.search': 'Search by name or SKU',
-'products.empty': 'No products yet.',
-'products.name': 'Name',
-'products.sku': 'SKU',
-'products.price': 'Price',
-'products.stock': 'In stock',
-'products.save': 'Save product',
+```json title="web/app/src/i18n/catalogs/products/en.json"
+{
+  "products.title": "Products",
+  "products.subtitle": "Your catalogue: names, SKUs, prices and stock.",
+  "products.create": "New product",
+  "products.search": "Search by name or SKU",
+  "products.empty": "No products yet.",
+  "products.count": {"one": "{count} product", "other": "{count} products"},
+  "products.save": "Save product"
+}
 ```
 
-```ts title="web/app/src/i18n/bn.ts"
-'products.title': 'পণ্য',
-'products.subtitle': 'আপনার ক্যাটালগ: নাম, SKU, দাম ও স্টক।',
-'products.create': 'নতুন পণ্য',
-// … every key from en.ts
-```
+Run `npm --prefix web/app run i18n:types` so `t('products.title')` type-checks, then add
+`products/<code>.json` for every other language (`node web/app/scripts/i18n.mjs missing <code>`
+lists what to translate). `npm run i18n:check` fails until every language has every key.
 
-See [Translations and theming](./translations-and-theming.md) for variables, plural-free wording
-and adding a language.
+See [Translations and theming](./translations-and-theming.md) for plurals, right to left and
+overrides.
 
 ## 7. Check it
 

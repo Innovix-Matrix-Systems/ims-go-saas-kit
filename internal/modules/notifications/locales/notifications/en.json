@@ -1,0 +1,7 @@
+{
+    "notifications.renewal_reminder.title": {
+        "one": "Your subscription renews in {{.Count}} day",
+        "other": "Your subscription renews in {{.Count}} days"
+    },
+    "notifications.renewal_reminder.body": "The subscription expires on {{.Date}}."
+}

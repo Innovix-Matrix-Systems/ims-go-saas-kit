@@ -1,0 +1,1 @@
+La connexion en deux étapes est désactivée pour votre compte {{.Brand.Name}}

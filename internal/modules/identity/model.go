@@ -32,7 +32,8 @@ type User struct {
 	InvitedAt            *time.Time
 	InvitedBy            *int64
 	InvitationAcceptedAt *time.Time
-	// Locale is the language the user chose ("en", "bn"); nil = default.
+	// Locale is the language the user chose (a language code); nil = the
+	// default.
 	Locale    *string
 	CreatedBy *int64
 	UpdatedBy *int64
@@ -133,6 +134,7 @@ func (u User) toRecord(tenantActive bool) *authn.UserRecord {
 		BranchID:       u.BranchIDValue(),
 		ActiveBranchID: u.ActiveBranchIDValue(),
 		TenantActive:   tenantActive,
+		Locale:         derefString(u.Locale),
 	}
 }
 

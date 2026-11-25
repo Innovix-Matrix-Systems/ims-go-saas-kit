@@ -1,0 +1,7 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Sie möchten diese Adresse für Ihr Konto verwenden. Öffnen Sie diesen Link, um sie zu bestätigen:
+
+{{.Data.link}}
+
+Der Link läuft in {{duration .Data.minutes}} ab. Bis dahin behält Ihr Konto seine bisherige Adresse. Wenn Sie das nicht angefordert haben, ignorieren Sie diese E-Mail.

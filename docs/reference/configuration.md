@@ -25,9 +25,9 @@ effective values with secrets masked.
 | `APP_PREVIOUS_KEYS` | — | *Optional.* old keys still accepted while rotating (comma-separated) |
 | `APP_LISTEN_ADDR` | `:8080` |  |
 | `APP_TIMEZONE` | `Asia/Dhaka` |  |
-| `APP_LOCALE` | `en` |  |
-| `APP_FALLBACK_LOCALE` | `en` |  |
-| `APP_SUPPORTED_LOCALES` | `en,bn` |  |
+| `APP_LOCALE` | `en` | the default language (a registered code) |
+| `APP_FALLBACK_LOCALE` | `en` | template language when a recipient's has no variant |
+| `APP_SUPPORTED_LOCALES` | — | *Optional.* languages offered (comma-separated); empty = every registered one |
 | `APP_LOG_LEVEL` | `info` |  |
 | `APP_DATA_DIR` | `./var` |  |
 | `APP_STORAGE_DIR` | `./var/storage` |  |

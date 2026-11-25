@@ -1,0 +1,30 @@
+{
+  "profilePage.photoSaved": "Photo updated.",
+  "profilePage.changePhoto": "Change photo",
+  "profilePage.verified": "Verified",
+  "profilePage.unverified": "Not verified",
+  "profilePage.edit": "Edit profile",
+  "profilePage.about": "About",
+  "profilePage.fullName": "Full name",
+  "profilePage.notSet": "Not set",
+  "profilePage.email": "E-mail",
+  "profilePage.phone": "Phone",
+  "profilePage.memberSince": "Member since",
+  "profilePage.userId": "User ID",
+  "profilePage.organization": "Organization",
+  "profilePage.view": "View",
+  "profilePage.manage": "Manage",
+  "profilePage.twoFactor": "Two-factor sign-in",
+  "profilePage.twoFactorApp": "On, with an authenticator app",
+  "profilePage.twoFactorEmail": "On, with e-mail codes",
+  "profilePage.twoFactorOff": "Off. Turn it on to protect your account.",
+  "profilePage.emailCheck": "E-mail address",
+  "profilePage.devices": {
+    "one": "Signed in on {count} device",
+    "other": "Signed in on {count} devices"
+  },
+  "profilePage.thisDevice": "This device: {device}",
+  "profilePage.photo": "Photo",
+  "profilePage.photoHint": "A square image works best. PNG, JPG, WebP or GIF, up to 5 MB.",
+  "profilePage.addPhoto": "Add photo"
+}

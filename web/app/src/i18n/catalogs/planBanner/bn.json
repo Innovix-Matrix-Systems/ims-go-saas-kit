@@ -1,0 +1,24 @@
+{
+  "planBanner.today": "আজ",
+  "planBanner.tomorrow": "আগামীকাল",
+  "planBanner.inDays": {
+    "one": "{count} দিনের মধ্যে",
+    "other": "{count} দিনের মধ্যে"
+  },
+  "planBanner.none": "আপনার সংস্থার কোনো প্ল্যান নেই।",
+  "planBanner.noneBody": "সদস্য যোগ ও ফাইল রাখা চালিয়ে যেতে একটি প্ল্যান বেছে নিন।",
+  "planBanner.ended": "আপনার {plan} প্ল্যান শেষ হয়ে গেছে।",
+  "planBanner.endedBody": "সদস্যদের জন্য সবকিছু চালু রাখতে একটি প্ল্যান বেছে নিন।",
+  "planBanner.pastDue": "আপনার {plan} প্ল্যানের পেমেন্ট বকেয়া।",
+  "planBanner.pastDueBody": "অ্যাক্সেস সীমিত হওয়ার আগে পেমেন্ট করুন বা প্ল্যান বদলান।",
+  "planBanner.pending": "{plan}-এর জন্য আপনার পেমেন্ট অনুমোদনের অপেক্ষায়।",
+  "planBanner.pendingBody": "পেমেন্ট নিশ্চিত হলেই প্ল্যান শুরু হবে।",
+  "planBanner.cancelled": "আপনার {plan} প্ল্যান বাতিল হয়েছে এবং {date} তারিখে শেষ হবে।",
+  "planBanner.renewBody": "কিছু যেন বন্ধ না হয়, তাই নবায়ন করুন বা অন্য প্ল্যান বেছে নিন।",
+  "planBanner.trialEnds": "আপনার ট্রায়াল {when} শেষ হবে।",
+  "planBanner.trialBody": "ট্রায়ালের পরও সব ব্যবহার করতে একটি প্ল্যান বেছে নিন।",
+  "planBanner.ends": "আপনার {plan} প্ল্যান {when} শেষ হবে।",
+  "planBanner.choose": "প্ল্যান দেখুন",
+  "planBanner.viewBilling": "বিলিং দেখুন",
+  "planBanner.hide": "আজকের জন্য লুকান"
+}

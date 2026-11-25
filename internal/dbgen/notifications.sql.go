@@ -703,7 +703,8 @@ func (q *Queries) ListNotificationPreferences(ctx context.Context, userID int64)
 const listNotificationRecipients = `-- name: ListNotificationRecipients :many
 SELECT id, tenant_id, name,
        CASE WHEN email_verified_at IS NOT NULL THEN email ELSE '' END::text AS email,
-       CASE WHEN phone_verified_at IS NOT NULL THEN coalesce(phone, '') ELSE '' END::text AS phone
+       CASE WHEN phone_verified_at IS NOT NULL THEN coalesce(phone, '') ELSE '' END::text AS phone,
+       coalesce(locale, '')::text AS locale
 FROM users
 WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL AND is_active = 1
 `
@@ -714,10 +715,12 @@ type ListNotificationRecipientsRow struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Phone    string `json:"phone"`
+	Locale   string `json:"locale"`
 }
 
 // Who a notification is delivered to outside the feed: addresses only when
-// verified (an unverified address may not be theirs).
+// verified (an unverified address may not be theirs), and the language they
+// chose (” = the default).
 func (q *Queries) ListNotificationRecipients(ctx context.Context, ids []int64) ([]ListNotificationRecipientsRow, error) {
 	rows, err := q.db.Query(ctx, listNotificationRecipients, ids)
 	if err != nil {
@@ -733,6 +736,7 @@ func (q *Queries) ListNotificationRecipients(ctx context.Context, ids []int64) (
 			&i.Name,
 			&i.Email,
 			&i.Phone,
+			&i.Locale,
 		); err != nil {
 			return nil, err
 		}

@@ -1,0 +1,42 @@
+{
+  "webhooks.subtitle": "Send events to your own systems as they happen.",
+  "webhooks.endpoint": "Endpoint",
+  "webhooks.create": "Add endpoint",
+  "webhooks.createTitle": "Add a webhook endpoint",
+  "webhooks.url": "URL",
+  "webhooks.urlHint": "An https address that accepts POST requests.",
+  "webhooks.description": "Description",
+  "webhooks.events": "Events",
+  "webhooks.allEvents": "Every event (including future ones)",
+  "webhooks.active": "Active",
+  "webhooks.disabled": "Disabled",
+  "webhooks.failures": {
+    "one": "{count} failed in a row",
+    "other": "{count} failed in a row"
+  },
+  "webhooks.empty": "No endpoints yet.",
+  "webhooks.secretTitle": "Signing secret",
+  "webhooks.secretHint": "Copy it now: it is shown only once. Use it to check the webhook-signature header.",
+  "webhooks.save": "Save endpoint",
+  "webhooks.enable": "Turn on",
+  "webhooks.disable": "Turn off",
+  "webhooks.test": "Send test event",
+  "webhooks.testSent": "The endpoint answered {status}.",
+  "webhooks.rotate": "New secret",
+  "webhooks.rotateConfirm": "Create a new signing secret? Deliveries carry a signature with the old one too for 24 hours, so you have time to switch.",
+  "webhooks.delete": "Delete endpoint",
+  "webhooks.deleteConfirm": "Delete this endpoint and its delivery log?",
+  "webhooks.deliveries": "Recent deliveries",
+  "webhooks.noDeliveries": "No deliveries yet.",
+  "webhooks.redeliver": "Send again",
+  "webhooks.redelivered": "Sent again: the endpoint answered {status}.",
+  "webhooks.status.pending": "Pending",
+  "webhooks.status.succeeded": "Delivered",
+  "webhooks.status.abandoned": "Failed",
+  "webhooks.attempts": {
+    "one": "{count} attempt",
+    "other": "{count} attempts"
+  },
+  "webhooks.response": "Response",
+  "webhooks.payload": "Payload"
+}

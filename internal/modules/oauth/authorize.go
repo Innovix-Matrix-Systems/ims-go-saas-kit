@@ -84,6 +84,7 @@ func NewPages(service *Service, signIn *authn.Service, users authn.UserLookup, s
 type view struct {
 	ctx           context.Context
 	Lang          string
+	Dir           string
 	Product       string
 	Heading       string
 	Error         string
@@ -111,7 +112,8 @@ func (v view) T(key, fallback string, params ...map[string]any) string {
 }
 
 func (p *Pages) newView(r *http.Request, heading string) view {
-	return view{ctx: r.Context(), Lang: string(i18n.FromContext(r.Context())), Product: p.product, Heading: heading}
+	lang := i18n.LanguageFor(string(i18n.FromContext(r.Context())))
+	return view{ctx: r.Context(), Lang: lang.Code, Dir: lang.Dir, Product: p.product, Heading: heading}
 }
 
 func (p *Pages) render(w http.ResponseWriter, status int, page string, v view) {

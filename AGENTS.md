@@ -15,6 +15,7 @@ recipes live in
 | `db-change` | migrations, sqlc queries, `internal/dbgen` regeneration |
 | `dev-dashboard` | dashboard panels, `/dev/api` endpoints, dashboard commands |
 | `verify-changes` | finishing any task: the gates to run before reporting done |
+| `translate` | adding a language or filling translation gaps (API, app, e-mail templates) |
 
 ## What this repo is
 
@@ -47,9 +48,10 @@ make migrate               # goose + River migrations
 make web-typecheck         # dashboard: tsc --noEmit
 make web-style-check       # dashboard: token contrast and style rules
 make web-build             # dashboard: build web/dev/dist (embedded by the binary)
-make app-typecheck         # client app: tsc --noEmit (also app-style-check, app-openapi-check)
+make app-typecheck         # client app: tsc --noEmit (also app-style-check, app-i18n-check, app-openapi-check)
 make app-build             # client app: build web/app/dist (embedded, served at /)
 make docs-gen              # docs/reference/* from the CLI, .env.example, permission catalog, Makefile
+go run ./cmd/app i18n:coverage                        # every language complete (API keys, plurals, e-mail templates)
 
 # Integration tests (real Postgres; each package gets its own schema):
 $env:DATABASE_TEST_DSN = "postgres://postgres:postgres@127.0.0.1:5432/ims_go_api_test?sslmode=disable"
@@ -88,7 +90,8 @@ web/app/                      client app SPA served at / (Vite + TanStack Router
   src/api/client.ts           api() wrapper: /api/v1 paths, ApiError (problem+json), token storage, app-wide events
   src/auth/session.ts         sign-in/2FA/sign-out, session query (profile + permissions), can()
   src/components/navigation.ts every page: label key, icon, group, `g` letter, required permission
-  src/i18n/                   en.ts (reference catalog) + bn.ts; useT(), Accept-Language sent with every call
+  src/i18n/                   catalogs/<namespace>/<code>.json (en is the reference, others load on demand),
+                              languages.json, messages.gen.ts (npm run i18n:types); useT(), Accept-Language on every call
   public/appearance.js        theme/accent/density before first paint (a file, so the CSP needs no inline script)
 internal/
   app/        composition root: platform.go (shared deps), schedule.go (recurring tasks),
@@ -208,15 +211,17 @@ Rules of the layering (enforced by review and `route_permissions_integration_tes
 | Group | Middleware | Use for |
 |---|---|---|
 | Public | none | login/OTP, social login, password reset, e-mail verify, public packages, gateway callbacks, `/api/health`, `/up` |
-| Authenticated (no tenancy) | `auth` | logout, the caller's own sessions, two-factor, account deletion and data export (tenantless accounts must reach them) |
-| Authenticated + tenant-resolved | `auth` → `tenant.resolve` | tenant-scoped resources (users, branches, roles, files, settings, flags, activity, billing status) |
-| Authenticated + tenant-exempt | `auth` → `tenant.exempt` (+ `tenant.internal`) | global management (tenants, permissions, internal users/roles/files, packages, approvals) |
+| Authenticated (no tenancy) | `auth` → `account-locale` → `dedupe` | logout, the caller's own sessions, two-factor, account deletion and data export (tenantless accounts must reach them) |
+| Authenticated + tenant-resolved | `auth` → `account-locale` → `dedupe` → `tenant.resolve` | tenant-scoped resources (users, branches, roles, files, settings, flags, activity, billing status) |
+| Authenticated + tenant-exempt | `auth` → `account-locale` → `dedupe` → `tenant.exempt` (+ `tenant.internal`) | global management (tenants, permissions, internal users/roles/files, packages, approvals) |
 | Dashboard `/dev/api` | `dev.enabled` → `auth` → `tenant.exempt` → `can:dev.view` | dashboard JSON API; mutations add `can:dev.manage` |
 | MCP `/mcp`, `/oauth/*`, `/.well-known/oauth-*` | `mcp.enabled` → (for `/mcp`) MCP bearer token → scope check | the MCP connector; tools dispatch into `/api/v1` |
 
 Global middleware (outermost first): `request-id → public-origin (non-local) → real-ip →
 tracing (with an OTLP endpoint) → security-headers → cors → access-log → recover → telescope → metrics → maintenance → timeout →
-throttle → locale`. The live table, with each route's permission: `ims route:list` (`--json` for
+throttle → locale`. `locale` answers in the Accept-Language language; for a signed-in request without
+a matching one, `account-locale` (right after `auth`, `internal/app/locale.go`) switches to the
+account's language, then the organization's. `dedupe` runs only when enabled. The live table, with each route's permission: `ims route:list` (`--json` for
 tools; `--path`, `--method`, `--middleware`) or the dashboard's Inspector → Routes.
 
 ## Cross-cutting patterns (memorize these)
@@ -283,11 +288,25 @@ ordering via `httpx.OrderParams`, `h.Paginated(...)` with `httpx.NewPagination`.
 **Delivery** — anything that contacts a person calls `platform.Delivery.Send(ctx, delivery.Message{
 To: delivery.Recipient{...}, Template: "name", Data: {...}, Channels: [...]})`: never a mail or SMS
 driver directly. Templates are folders (`subject.txt`, `mail.txt`, optional `mail.html`, `sms.txt`,
-`push.json`, `sample.json`; `mail.bn.txt` for Bangla) registered with
-`platform.Delivery.Templates().Register(fsys)`; a missing data key fails at `Send`. One
+`push.json`, `sample.json`; `mail.<code>.txt` per language) that live with the module that sends
+them and are listed in `newTemplateRegistry` (`internal/app/delivery.go`); a missing data key fails
+at `Send`. The recipient's language comes from `delivery.LocaleSource` (account → organization). One
 `delivery.send` job per channel; the `deliveries` log keeps status and a masked address, never a
 body. `authn` reaches it through `authn.Deliverer` (adapter in `internal/app/delivery.go`: delivery →
 queue → tenancy → authn would be a cycle). `ims delivery:test` sends one now.
+
+**Languages** — nothing names a language except the registry (`i18n.Builtin()` /
+`languages()` in `internal/app/i18n.go`, mirrored in `web/app/src/i18n/languages.json`). A module's
+API text is a bundle, `locales/<namespace>/<code>.json` + `Translations()`, listed in
+`translationBundles`; keys start with the module's namespace and values may be CLDR plural forms
+(`{"one": …, "other": …}`). Translate with `i18n.T(ctx, key, params)` in a request and
+`i18n.Tr(code, key, i18n.Count(code, n, params))` outside one. A system notification takes
+`CreateInput.Message` (a key) so each reader gets their language. App text goes in
+`web/app/src/i18n/catalogs/<namespace>/<code>.json`, then `npm run i18n:types`. Every language must
+be complete: `ims i18n:coverage`, `TestTranslationsCoverEveryLanguage` and `npm run i18n:check` fail
+otherwise (the `translate` skill fills gaps). CSS uses logical properties only (`check:logical`), so
+Arabic mirrors. Lookup order: account → organization (`general.default_locale`) → default
+(`internal/app/locale.go`, `docs/guides/languages.md`).
 
 **Notifications** — register an event type with `notifications.RegisterEvent(name, Event{Channels,
 Mandatory})`; a notification with `channels` (`mail`, `sms`, `push`) is delivered through the
@@ -424,6 +443,10 @@ Keep this list accurate; add to it when you make a non-obvious choice (also upda
 - Live updates are nudges (kind + audience, no data) over Postgres `LISTEN/NOTIFY`, streamed as
   SSE read with `fetch` (bearer header, never a URL token); one `LISTEN` connection per `ims serve`,
   any process publishes, polling stays as the fallback (`docs/guides/realtime.md`).
+- A language is data, not code: descriptors plus catalog files, module-owned bundles registered in
+  order with the project's overrides last (replace, never add), coverage checks that fail while any
+  language is incomplete, logical CSS for right to left, Western digits for Arabic by default
+  (`docs/architecture/decisions.md` #55, `docs/guides/languages.md`).
 - Erasure tombstones the `users` row (personal columns blanked, `erased_at` set) instead of
   deleting it. **A table that stores a user id or personal data needs a `PrivacyContributor`
   in its module** (`privacy.go`: `Columns`, `Export`, `Erase`), registered in

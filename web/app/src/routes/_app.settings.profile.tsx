@@ -2,13 +2,13 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api, type User } from '../api/client'
-import { useSession } from '../auth/session'
+import { ownProfile, useSession } from '../auth/session'
 import { Field, PasswordInput, useApiErrors } from '../components/form'
 import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
 import { Card, Icon, Spinner } from '../components/ui'
 import { PhotoField } from '../components/PhotoUpload'
-import { locales, setLocale, useT, type Locale } from '../i18n'
+import { getLanguages, isLocale, setLocale, useT } from '../i18n'
 
 export const Route = createFileRoute('/_app/settings/profile')({
   component: ProfilePage,
@@ -26,6 +26,7 @@ function ProfilePage() {
 }
 
 function ProfileForm({ user }: { user: User }) {
+  const session = useSession()
   const t = useT()
   const queryClient = useQueryClient()
   const { push } = useToast()
@@ -42,8 +43,8 @@ function ProfileForm({ user }: { user: User }) {
     setBusy(true)
     errors.clear()
     try {
-      await api<User>('/user/profile/update', {
-        method: 'POST',
+      await api<User>(ownProfile(session).update.path, {
+        method: ownProfile(session).update.method,
         body: {
           // An empty string clears a field; the API keeps one it is not sent.
           first_name: firstName.trim(),
@@ -53,7 +54,7 @@ function ProfileForm({ user }: { user: User }) {
           locale,
         },
       })
-      if (locale === 'en' || locale === 'bn') setLocale(locale as Locale)
+      if (isLocale(locale)) void setLocale(locale)
       await queryClient.invalidateQueries({ queryKey: ['session'] })
       push(t('form.saved'), 'success')
     } catch (cause) {
@@ -82,14 +83,14 @@ function ProfileForm({ user }: { user: User }) {
         <Field label={`${t('signup.phone')} (${t('form.optional')})`} error={errors.field('phone')}>
           <input className="input" type="tel" name="phone" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
-        <Field label={t('profile.language')} error={errors.field('locale')}>
+        <Field label={t('profile.language')} hint={t('profile.languageHint')} error={errors.field('locale')}>
           <Select
             value={locale}
             ariaLabel={t('profile.language')}
             onChange={setLocaleChoice}
             options={[
               { value: '', label: t('profile.languageDefault') },
-              ...locales.map((item) => ({ value: item.code, label: <span lang={item.code}>{item.label}</span>, text: item.label })),
+              ...getLanguages().map((item) => ({ value: item.code, label: <span lang={item.code}>{item.label}</span>, text: item.label })),
             ]}
           />
         </Field>

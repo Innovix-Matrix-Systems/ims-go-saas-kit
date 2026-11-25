@@ -1,0 +1,11 @@
+{
+  "security.changePassword": "Passwort ändern",
+  "security.changePasswordHint": "Andere Geräte werden abgemeldet, wenn Sie Ihr Passwort ändern.",
+  "security.passwordChanged": "Ihr Passwort wurde geändert.",
+  "security.sessions": "Angemeldete Geräte",
+  "security.sessionsHint": "Melden Sie jedes Gerät ab, das Sie nicht kennen.",
+  "security.thisDevice": "Dieses Gerät",
+  "security.lastUsed": "Zuletzt verwendet {when}",
+  "security.signOutDevice": "Abmelden",
+  "security.signOutOthers": "Alle anderen Geräte abmelden"
+}

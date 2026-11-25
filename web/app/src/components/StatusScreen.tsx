@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { LanguageMenu } from './LanguageMenu'
 import { Icon, type IconName } from './ui'
 
 /** A centred, full-page message: suspended, maintenance, errors, not found. */
@@ -19,6 +20,9 @@ export function StatusScreen({
 }) {
   return (
     <div className="login-wrap">
+      <div className="login-top">
+        <LanguageMenu />
+      </div>
       <div className="login-card">
         <div className="card">
           <div className={`status-icon ${tone === 'accent' ? '' : tone}`}>

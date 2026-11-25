@@ -38,6 +38,7 @@ type Handler struct {
 	commands          *CommandService
 	maintenance       *maintenance.Service
 	deliveries        *delivery.Service
+	translations      *TranslationService
 	overview          *OverviewService
 	pools             PoolSource
 	stats             *StatsService
@@ -79,6 +80,7 @@ func NewHandler(deps Deps) *Handler {
 		commands:           deps.Commands,
 		maintenance:        deps.Maintenance,
 		deliveries:         deps.Deliveries,
+		translations:       newTranslationService(deps),
 		overview:           newOverviewService(deps),
 		pools:              deps.Pools,
 		stats:              &StatsService{telemetry: deps.Telemetry, deliveries: deps.Deliveries, now: time.Now},

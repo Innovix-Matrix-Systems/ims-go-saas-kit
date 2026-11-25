@@ -1,0 +1,5 @@
+<p>مرحبًا{{if .To.Name}} {{.To.Name}}{{end}}،</p>
+<p>{{if .Data.inviter}}دعاك <strong>{{.Data.inviter}}</strong>{{else}}تمت دعوتك{{end}} إلى <strong>{{.Brand.Name}}</strong>. اختر كلمة المرور لتفعيل حسابك.</p>
+<p style="margin:24px 0;"><a href="{{.Data.link}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">قبول الدعوة</a></p>
+<p style="font-size:13px;color:#6b7785;">أو افتح هذا الرابط: <a href="{{.Data.link}}">{{.Data.link}}</a></p>
+<p>يعمل الرابط مرة واحدة وتنتهي صلاحيته خلال {{duration .Data.minutes}}. إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.</p>

@@ -1,0 +1,5 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+Votre compte {{.Brand.Name}} a été supprimé et vos données personnelles effacées. C'est le dernier message que nous envoyons à cette adresse.
+
+Les documents que l'organisation doit conserver, comme les factures et son journal d'audit, restent sans votre nom, votre adresse e-mail ni votre numéro de téléphone.

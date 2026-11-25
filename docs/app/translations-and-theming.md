@@ -1,12 +1,13 @@
 ---
 title: Translations and theming
-description: How the app speaks English and Bangla, how to add a language, and how the theme, accent and density work on design tokens.
+description: How the app speaks six languages (including right to left), how to add one, and how the theme, accent and density work on design tokens.
 layers: [app, api]
 ---
 
-The app ships in **English and Bangla**, in light and dark, with five accent colours and two
-densities. All of it rests on two small systems: a typed message catalog and a set of design
-tokens.
+The app ships in **six languages** (English, Bangla, German, Arabic, Spanish and French, Arabic
+right to left), in light and dark, with five accent colours and two densities. All of it rests on
+two small systems: typed message catalogs and a set of design tokens. How languages work across the
+whole kit (lookup order, e-mails, adding one) is in [Languages](../guides/languages.md).
 
 ![The organization home in Bangla](../images/app-org-dashboard-bn.png)
 
@@ -14,51 +15,64 @@ tokens.
 
 ### How text works
 
-Every visible string is a key in a catalog:
+Every visible string is a key in a catalog, one folder per screen area:
 
-```ts title="web/app/src/i18n/en.ts"
-'members.invitedToast': 'Invitation sent to {email}.',
+```json title="web/app/src/i18n/catalogs/members/en.json"
+"members.invitedToast": "Invitation sent to {email}.",
+"members.count": {"one": "{count} member", "other": "{count} members"}
 ```
 
 ```tsx
 const t = useT()
 push(t('members.invitedToast', { email }), 'success')
+t('members.count', { count: members.length })
 ```
 
-- `en.ts` is the **reference** catalog. `bn.ts` is typed `Messages`, so TypeScript refuses a
-  build where Bangla is missing a key (or has one English doesn't).
-- `{name}` placeholders are filled from the second argument. Write sentences that work for any
-  value ("Invitation sent to {email}.") rather than building them from pieces, and avoid
-  plural-dependent wording ("{count} files" reads fine as "Files: {count}").
-- The language is chosen per browser (the account menu), first from the browser's own language.
-  It sets `<html lang>`, and every API call sends it as `Accept-Language`.
+- `catalogs/<namespace>/en.json` is the **reference**. `npm run i18n:types` generates
+  `messages.gen.ts`, so a key that doesn't exist, or a missing `{placeholder}`, is a type error.
+- A value that depends on a number is **plural forms** selected by `{count}` (`Intl.PluralRules`);
+  `{count}` is shown in the language's digits. Never build "1 files": give `one` and `other` (and
+  whatever the language needs; `npm run i18n:check` lists them).
+- **English is bundled; every other language loads when chosen**, as one chunk, and the screen
+  switches only once it has arrived.
+- The language follows the account (signed in), then this browser's pick, then the organization's
+  language, then the browser. It sets `<html lang dir>`, and every API call sends it as
+  `Accept-Language`.
+- **Activity log** actions have labels in the `activity` namespace (`activity.label.<action>`); an
+  action without one is spelled from its code.
 
 ### The server speaks the same language
 
-Because each request carries `Accept-Language`, API messages come back translated too: validation
-errors, problem titles, notification texts. E-mails use the **recipient's** saved language. The
-server catalogs and e-mail templates are described in [Mail and i18n](../guides/mail-and-i18n.md).
+API messages come back translated too: validation errors, problem titles, the notifications the
+system writes. E-mails use the **recipient's** language. See [Languages](../guides/languages.md).
 
-Dates, numbers and money are formatted with `Intl` for the chosen language (`bn-BD` for Bangla),
-so a Bangla user sees Bangla numerals and month names: use `useMoney()` and the helpers in
-`src/format.ts` rather than formatting by hand.
+Dates, numbers and money are formatted with `Intl` for the chosen language and its digits, so a
+Bangla user sees Bangla numerals and month names: use `useMoney()` and the helpers in `src/format.ts`
+rather than formatting by hand.
 
 ![Billing in Bangla](../images/app-billing-bn.png)
 
 ### Adding a language
 
-1. Copy `src/i18n/bn.ts` to `src/i18n/<code>.ts`, rename the export and translate every value.
-   Keep product names (`'app.name'`) as they are.
-2. Register it in `src/i18n/index.ts`: add the code to `Locale`, an entry to `locales` (its own
-   name and the `Intl` locale, e.g. `{ code: 'ar', label: 'العربية', intl: 'ar' }`) and the catalog
-   to `catalogs`. Update `detect()` so a browser in that language starts in it.
-3. Add the server side: messages and e-mail templates for the same code (see
-   [Mail and i18n](../guides/mail-and-i18n.md)).
-4. `npm --prefix web/app run typecheck` fails until every key is translated.
+1. Add its descriptor to `src/i18n/languages.json` and to the API's list (see
+   [Languages](../guides/languages.md#adding-a-language)); the app reads the offered list from
+   `GET /api/v1/languages`.
+2. Add `catalogs/<namespace>/<code>.json` for every namespace: `node scripts/i18n.mjs missing <code>`
+   lists the English text and the plural forms.
+3. `npm --prefix web/app run i18n:check` fails until every key, placeholder and plural form is there.
 
-A right-to-left language also needs `dir="rtl"` on `<html>` (set it next to `lang` in
-`applyDocument()`), and the stylesheets would need their left/right margins and paddings turned
-into logical ones (`margin-inline-start` and so on): today they are written for left-to-right.
+### Right to left
+
+Stylesheets use logical properties only (`margin-inline-start`, `padding-inline-end`,
+`inset-inline-start`, `text-align: start/end`); `npm run check:logical` fails on `left`/`right`.
+Write new rules the same way, use the `end` class for numbers in tables and `align-end` for popovers
+on the end edge. Inputs for e-mail, URL, password, phone and numbers, `.mono`, code and charts stay
+left to right.
+
+### Changing the wording
+
+Put only the keys you change in `src/i18n/overrides/<namespace>/<code>.json`; they are merged last,
+so kit upgrades don't conflict.
 
 ## Theming
 

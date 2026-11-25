@@ -1,0 +1,6 @@
+{
+  "emailChange.title": "Confirme su nueva dirección de correo electrónico",
+  "emailChange.working": "Cambiando su dirección de correo electrónico…",
+  "emailChange.done": "Se cambió su dirección de correo electrónico y se cerró la sesión en todos los dispositivos. Inicie sesión con la nueva dirección.",
+  "emailChange.failed": "Este enlace no es válido o ha caducado. Solicite uno nuevo desde su perfil."
+}

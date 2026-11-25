@@ -1,9 +1,7 @@
 package tenants
 
 import (
-	"context"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -42,51 +40,23 @@ type BrandingResponse struct {
 
 // OrganizationResponse is the caller's organization.
 type OrganizationResponse struct {
-	ID        int64            `json:"id"`
-	Name      string           `json:"name"`
-	Code      string           `json:"code"`
-	Phone     *string          `json:"phone"`
-	Email     *string          `json:"email"`
-	IsActive  bool             `json:"is_active"`
-	Owner     *OwnerResponse   `json:"owner"`
-	IsOwner   bool             `json:"is_owner"`
-	Branding  BrandingResponse `json:"branding"`
-	CreatedAt time.Time        `json:"created_at"`
+	ID       int64            `json:"id"`
+	Name     string           `json:"name"`
+	Code     string           `json:"code"`
+	Phone    *string          `json:"phone"`
+	Email    *string          `json:"email"`
+	IsActive bool             `json:"is_active"`
+	Owner    *OwnerResponse   `json:"owner"`
+	IsOwner  bool             `json:"is_owner"`
+	Branding BrandingResponse `json:"branding"`
+	// Language is the organization's default language (general.default_locale);
+	// nil when unset.
+	Language  *string   `json:"language"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-// SettingReader reads a tenant's effective settings (the settings service).
-type SettingReader interface {
-	Get(ctx context.Context, scope tenancy.Scope, name string) (any, error)
-}
-
-// WithSettings adds the branding to organization responses.
-func (h *Handler) WithSettings(settings SettingReader) *Handler {
-	h.settings = settings
-	return h
-}
-
-// branding reads the organization's logo and colour; unset or unreadable
-// values are null.
-func (h *Handler) branding(ctx context.Context, tenantID int64) BrandingResponse {
-	out := BrandingResponse{}
-	if h.settings == nil {
-		return out
-	}
-	scope := tenancy.Scope{TenantID: tenantID}
-	text := func(name string) *string {
-		value, err := h.settings.Get(ctx, scope, name)
-		if err != nil {
-			return nil
-		}
-		if s, ok := value.(string); ok && strings.TrimSpace(s) != "" {
-			trimmed := strings.TrimSpace(s)
-			return &trimmed
-		}
-		return nil
-	}
-	out.LogoURL = text("branding.logo_url")
-	out.Color = text("branding.color")
-	return out
+func newBrandingResponse(p Presentation) BrandingResponse {
+	return BrandingResponse{LogoURL: p.LogoURL, Color: p.Color}
 }
 
 func newOrganizationResponse(tenant Tenant, owner *Owner, callerID int64) OrganizationResponse {
@@ -149,6 +119,8 @@ func (h *Handler) transferOwnership(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) respondOrganization(w http.ResponseWriter, r *http.Request, tenant Tenant, owner *Owner) {
 	out := newOrganizationResponse(tenant, owner, authn.UserID(r))
-	out.Branding = h.branding(r.Context(), tenant.ID)
+	presentation := h.service.Presentation(r.Context(), tenant.ID)
+	out.Branding = newBrandingResponse(presentation)
+	out.Language = presentation.Language
 	h.Data(w, r, http.StatusOK, out)
 }

@@ -1,0 +1,4 @@
+<p>Hola{{if .To.Name}} {{.To.Name}}{{end}}:</p>
+<p>Su código de inicio de sesión es:</p>
+<p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0;">{{.Data.code}}</p>
+<p>Caduca en {{duration .Data.minutes}}. Si no intentó iniciar sesión, puede ignorar este correo y le recomendamos cambiar su contraseña.</p>

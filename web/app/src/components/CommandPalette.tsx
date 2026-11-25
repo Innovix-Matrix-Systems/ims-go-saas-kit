@@ -2,7 +2,8 @@ import { Command } from 'cmdk'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback } from 'react'
 import { signOut, useSession } from '../auth/session'
-import { getLocale, setLocale, useT } from '../i18n'
+import { getLanguages, getLocale, useT } from '../i18n'
+import { useChooseLanguage } from './LanguageMenu'
 import { nextTheme, setAppearance, useAppearance } from './appearance'
 import { visiblePages } from './navigation'
 import { Icon, Kbd, useEscape } from './ui'
@@ -14,6 +15,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const session = useSession()
   const appearance = useAppearance()
   const close = useCallback(() => onOpenChange(false), [onOpenChange])
+  const chooseLanguage = useChooseLanguage()
   useEscape(open, close)
 
   if (!open) return null
@@ -64,14 +66,22 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                 <Icon name={appearance.theme === 'dark' ? 'moon' : appearance.theme === 'light' ? 'sun' : 'monitor'} />
                 {t('palette.toggleTheme')}
               </Command.Item>
-              <Command.Item
-                value="language bangla english বাংলা"
-                className="command-item"
-                onSelect={() => select(() => setLocale(getLocale() === 'en' ? 'bn' : 'en'))}
-              >
-                <Icon name="globe" />
-                {t('palette.switchLanguage')}
-              </Command.Item>
+              {getLanguages()
+                .filter((item) => item.code !== getLocale())
+                .map((item) => (
+                  <Command.Item
+                    key={item.code}
+                    value={`language ${item.english} ${item.label} ${item.code}`}
+                    className="command-item"
+                    onSelect={() => select(() => void chooseLanguage(item.code))}
+                  >
+                    <Icon name="globe" />
+                    {t('language.choose')}
+                    <span className="command-hint language-hint" lang={item.code} dir={item.dir}>
+                      {item.label}
+                    </span>
+                  </Command.Item>
+                ))}
               <Command.Item
                 value="sign out logout"
                 className="command-item"
@@ -91,3 +101,4 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     </div>
   )
 }
+

@@ -1,0 +1,22 @@
+{
+  "branches.subtitle": "Where your organization works. Members belong to one branch and can switch to others.",
+  "branches.search": "Search branches",
+  "branches.create": "New branch",
+  "branches.createTitle": "New branch",
+  "branches.name": "Name",
+  "branches.address": "Address",
+  "branches.phone": "Phone",
+  "branches.email": "E-mail",
+  "branches.description": "Description",
+  "branches.manager": "Manager",
+  "branches.noManager": "No manager",
+  "branches.current": "Current",
+  "branches.empty": "No branches match.",
+  "branches.save": "Save branch",
+  "branches.delete": "Delete branch",
+  "branches.deleteConfirm": "Delete the branch {name}? Its members must be moved to another branch first.",
+  "branches.all": "All branches",
+  "branches.switchedAll": "You now see every branch.",
+  "branches.switch": "Switch branch",
+  "branches.switched": "You are now working in {name}."
+}

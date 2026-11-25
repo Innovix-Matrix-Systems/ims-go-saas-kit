@@ -40,6 +40,7 @@ type Service struct {
 	cfg       config.Tenancy
 	activity  *activity.Recorder
 	ownership *OwnershipCollaborators
+	settings  SettingReader
 }
 
 // NewService creates the tenant service.

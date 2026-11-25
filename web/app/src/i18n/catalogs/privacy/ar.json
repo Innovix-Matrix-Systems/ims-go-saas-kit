@@ -1,0 +1,18 @@
+{
+  "privacy.exportTitle": "تنزيل بياناتك",
+  "privacy.exportBody": "نُعدّ ملفًا ببيانات حسابك ونرسل إليك رابطه بالبريد الإلكتروني. تصدير واحد في اليوم.",
+  "privacy.exportStart": "إعداد بياناتي",
+  "privacy.exportStarted": "نُعدّ بياناتك الآن. ستتلقى رسالة عندما تصبح جاهزة.",
+  "privacy.exportReady": "بياناتك جاهزة.",
+  "privacy.download": "تنزيل",
+  "privacy.exportUntil": "يمكنك تنزيلها حتى {date}.",
+  "privacy.exportFailed": "فشل إعداد بياناتك. حاول مرة أخرى.",
+  "privacy.exportGone": "لم يعد ملف التصدير هذا متاحًا: انتهت صلاحيته أو أُزيل. أعدّ ملفًا جديدًا.",
+  "privacy.deleteTitle": "حذف حسابي",
+  "privacy.deleteBody": "يُحذف حسابك بعد فترة انتظار. يُسجَّل خروجك الآن، ويمكنك تسجيل الدخول وإلغاء الحذف حتى ذلك الحين.",
+  "privacy.deleteStart": "حذف حسابي",
+  "privacy.deleteConfirmLabel": "اكتب DELETE للتأكيد",
+  "privacy.deleteScheduled": "سيُحذف حسابك في {date}.",
+  "privacy.cancelDeletion": "إلغاء الحذف",
+  "privacy.deletionCancelled": "أُلغي الحذف. سيبقى حسابك."
+}

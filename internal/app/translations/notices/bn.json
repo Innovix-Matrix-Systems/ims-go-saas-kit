@@ -1,0 +1,18 @@
+{
+    "notices.payment_to_review.title": "যাচাই করার পেমেন্ট: {{.Organization}}",
+    "notices.payment_to_review.body": "{{.Organization}} {{.Plan}} প্ল্যানের জন্য {{.Method}}-এর মাধ্যমে {{.Amount}} পরিশোধ করেছে। লেনদেনটি দেখে অনুমোদন বা প্রত্যাখ্যান করুন।",
+    "notices.payment_submitted.title": "পেমেন্ট নিশ্চিতকরণের জন্য জমা হয়েছে",
+    "notices.payment_submitted.body": "{{.Plan}} প্ল্যানের জন্য আপনার {{.Amount}} পেমেন্ট জমা হয়েছে। নিশ্চিত হলেই আমরা আপনাকে জানাব।",
+    "notices.payment_received.title": "পেমেন্ট পাওয়া গেছে",
+    "notices.payment_received.body": "আমরা {{.Amount}} পেয়েছি। আপনার {{.Plan}} প্ল্যান চালু আছে। রসিদ ই-মেইলে পাঠানো হচ্ছে।",
+    "notices.payment_rejected.title": "পেমেন্ট নিশ্চিত হয়নি",
+    "notices.payment_rejected.body": "{{.Plan}} প্ল্যানের জন্য আপনার {{.Amount}} পেমেন্ট নিশ্চিত করা যায়নি।",
+    "notices.payment_rejected_with_reason.title": "পেমেন্ট নিশ্চিত হয়নি",
+    "notices.payment_rejected_with_reason.body": "{{.Plan}} প্ল্যানের জন্য আপনার {{.Amount}} পেমেন্ট নিশ্চিত করা যায়নি। কারণ: {{.Reason}}",
+    "notices.webhook_disabled.title": "একটি ওয়েবহুক এন্ডপয়েন্ট বন্ধ করা হয়েছে",
+    "notices.webhook_disabled.body": "বারবার ডেলিভারি ব্যর্থ হওয়ায় {{.URL}} আর ইভেন্ট পাচ্ছে না। রিসিভারটি ঠিক করুন, তারপর এন্ডপয়েন্টটি আবার চালু করুন।",
+    "notices.method.bkash": "বিকাশ",
+    "notices.method.nagad": "নগদ",
+    "notices.method.cash": "নগদ টাকা",
+    "notices.method.bank_transfer": "ব্যাংক ট্রান্সফার"
+}

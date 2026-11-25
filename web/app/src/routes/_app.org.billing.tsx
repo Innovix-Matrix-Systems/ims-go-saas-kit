@@ -324,7 +324,7 @@ function PaymentsCard() {
                 <th>{t('billing.colInvoice')}</th>
                 <th>{t('billing.colDate')}</th>
                 <th>{t('billing.colMethod')}</th>
-                <th className="right">{t('billing.colAmount')}</th>
+                <th className="end">{t('billing.colAmount')}</th>
                 <th>{t('billing.colStatus')}</th>
                 <th />
               </tr>
@@ -335,11 +335,11 @@ function PaymentsCard() {
                   <td className="mono small">{payment.invoice_number}</td>
                   <td className="small muted">{date(payment.paid_at ?? payment.created_at)}</td>
                   <td className="small">{t(`billing.method.${payment.payment_method}` as MessageKey)}</td>
-                  <td className="right">{money(payment.amount, payment.currency)}</td>
+                  <td className="end">{money(payment.amount, payment.currency)}</td>
                   <td>
                     <Badge tone={paymentTones[payment.status]}>{t(`billing.payment.${payment.status}` as MessageKey)}</Badge>
                   </td>
-                  <td className="right">
+                  <td className="end">
                     <div className="flex justify-end">
                       <Button size="sm" variant="ghost" icon="download" onClick={() => void downloadInvoice(payment, 'pdf')}>
                         {t('billing.invoice')}

@@ -1,0 +1,7 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Wir haben eine Anfrage erhalten, Ihr Passwort zurückzusetzen. Öffnen Sie diesen Link, um ein neues zu wählen:
+
+{{.Data.link}}
+
+Der Link läuft in {{duration .Data.minutes}} ab. Wenn Sie das nicht angefordert haben, können Sie diese E-Mail ignorieren.

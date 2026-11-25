@@ -104,7 +104,8 @@ Everything else sits under the `_app` layout route (`routes/_app.tsx`), which lo
   letter jumps to it, `?` lists every shortcut.
 - **Appearance** per browser: light, dark or system theme; five accent presets (indigo, blue,
   teal, violet, slate); comfortable or compact density.
-- **Language**: English and Bangla, switched from the account menu. See
+- **Language**: six languages (English, Bangla, German, Arabic right to left, Spanish, French),
+  switched from the language menu in the top bar and followed by e-mails. See
   [Translations and theming](./translations-and-theming.md).
 - **Live updates**: when the API's realtime stream is on, notifications, jobs and announcements
   arrive as they happen; otherwise screens poll. See [Live updates](../guides/realtime.md), which
@@ -121,7 +122,7 @@ web/app/
 │  ├─ api/          client.ts (the fetch wrapper) · schema.d.ts (generated)
 │  ├─ auth/         session.ts: sign-in, the session query, can()
 │  ├─ components/   the shell, navigation.ts, ui.tsx, form.tsx, charts.tsx, …
-│  ├─ i18n/         en.ts (reference) · bn.ts · index.ts
+│  ├─ i18n/         catalogs/<namespace>/<code>.json · languages.json · index.ts
 │  ├─ routes/       one file per screen; routeTree.gen.ts is generated
 │  └─ styles/       tokens.css · base.css · components.css · screens/
 ├─ embed.go         embeds dist/ in the Go binary

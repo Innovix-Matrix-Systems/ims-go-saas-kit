@@ -1,0 +1,12 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+Nous avons reçu {{.Data.amount}} de {{.Data.organization}} pour l'offre {{.Data.plan}}, qui est désormais active.
+
+Facture : {{.Data.invoice}}
+Payée le : {{.Data.paid_on}}
+
+La facture est jointe au format PDF. Vous pouvez aussi la télécharger à tout moment depuis la page de facturation :
+
+{{.Data.url}}
+
+Merci.

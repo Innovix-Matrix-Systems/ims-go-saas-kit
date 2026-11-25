@@ -9,7 +9,7 @@ type SignUpRequest struct {
 	Password         string  `json:"password" validate:"required,min=8,max=72"`
 	OrganizationName string  `json:"organization_name" validate:"required,min=2,max=100"`
 	Phone            *string `json:"phone" validate:"omitempty,max=50"`
-	Locale           string  `json:"locale" validate:"omitempty,oneof=en bn"`
+	Locale           string  `json:"locale" validate:"omitempty,locale"`
 	AcceptTerms      bool    `json:"accept_terms"`
 }
 

@@ -1,0 +1,23 @@
+{
+  "roles.subtitle": "Was jede Rolle ihren Mitgliedern erlaubt.",
+  "roles.create": "Neue Rolle",
+  "roles.createTitle": "Neue Rolle",
+  "roles.name": "Name",
+  "roles.description": "Beschreibung",
+  "roles.managed": "Verwaltet",
+  "roles.managedHint": "Die Rolle „Admin“ hat immer alle Berechtigungen der Organisation. Legen Sie für einen engeren Zugriff eine andere Rolle an.",
+  "roles.permissions": "Berechtigungen",
+  "roles.permissionsHint": "Sie können nur Berechtigungen vergeben, die Sie selbst haben.",
+  "roles.notGrantable": "Sie haben diese Berechtigung nicht und können sie daher nicht vergeben.",
+  "roles.permissionCount": {
+    "one": "{count} Berechtigung",
+    "other": "{count} Berechtigungen"
+  },
+  "roles.save": "Rolle speichern",
+  "roles.savePermissions": "Berechtigungen speichern",
+  "roles.delete": "Rolle löschen",
+  "roles.deleteConfirm": "Die Rolle {name} löschen? Mitglieder mit dieser Rolle verlieren ihre Berechtigungen.",
+  "roles.empty": "Noch keine Rollen.",
+  "roles.selectAll": "Alle",
+  "roles.selectNone": "Keine"
+}

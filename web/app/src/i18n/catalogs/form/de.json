@@ -1,0 +1,15 @@
+{
+  "form.showPassword": "Passwort anzeigen",
+  "form.hidePassword": "Passwort verbergen",
+  "form.passwordTooShort": "Verwenden Sie mindestens 8 Zeichen.",
+  "form.passwordTooLong": "Dieses Passwort ist zu lang.",
+  "form.passwordHint": "Mindestens 8 Zeichen. Ein kurzer Satz ist leicht zu merken und schwer zu erraten.",
+  "form.passwordsDiffer": "Die Passwörter stimmen nicht überein.",
+  "form.confirmPassword": "Passwort bestätigen",
+  "form.newPassword": "Neues Passwort",
+  "form.currentPassword": "Aktuelles Passwort",
+  "form.save": "Speichern",
+  "form.saving": "Wird gespeichert…",
+  "form.saved": "Gespeichert.",
+  "form.optional": "optional"
+}

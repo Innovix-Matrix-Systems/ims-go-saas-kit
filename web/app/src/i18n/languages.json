@@ -1,0 +1,8 @@
+[
+  { "code": "en", "label": "English", "english": "English", "intl": "en", "dir": "ltr", "digits": "latn", "reviewed": true },
+  { "code": "bn", "label": "বাংলা", "english": "Bangla", "intl": "bn-BD", "dir": "ltr", "digits": "beng", "reviewed": true },
+  { "code": "de", "label": "Deutsch", "english": "German", "intl": "de", "dir": "ltr", "digits": "latn", "reviewed": true },
+  { "code": "ar", "label": "العربية", "english": "Arabic", "intl": "ar", "dir": "rtl", "digits": "latn", "reviewed": true },
+  { "code": "es", "label": "Español", "english": "Spanish", "intl": "es", "dir": "ltr", "digits": "latn", "reviewed": true },
+  { "code": "fr", "label": "Français", "english": "French", "intl": "fr", "dir": "ltr", "digits": "latn", "reviewed": true }
+]

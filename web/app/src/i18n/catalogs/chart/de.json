@@ -1,0 +1,7 @@
+{
+  "chart.summary": {
+    "one": "{label}, ein Wert pro Tag für {count} Tag",
+    "other": "{label}, ein Wert pro Tag für {count} Tage"
+  },
+  "chart.other": "Sonstige"
+}

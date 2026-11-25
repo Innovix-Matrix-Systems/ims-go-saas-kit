@@ -1,0 +1,14 @@
+{
+  "status.suspendedTitle": "Votre organisation est suspendue",
+  "status.suspendedBody": "L'accès à cette organisation est suspendu. Contactez votre administrateur ou notre équipe d'assistance pour le rétablir.",
+  "status.maintenanceTitle": "Nous revenons très vite",
+  "status.maintenanceBody": "Le service est en maintenance. Veuillez réessayer dans quelques minutes.",
+  "status.twoFactorTitle": "Authentification en deux étapes requise",
+  "status.twoFactorBody": "Votre organisation exige l'authentification en deux étapes. Configurez-la pour continuer.",
+  "status.errorTitle": "Une erreur s'est produite",
+  "status.errorBody": "Cette page n'a pas pu s'afficher. Vous pouvez réessayer ou revenir à l'accueil.",
+  "status.reference": "Référence : {id}",
+  "status.notFoundTitle": "Page introuvable",
+  "status.notFoundBody": "La page que vous cherchez n'existe pas ou a été déplacée.",
+  "status.home": "Aller à l'accueil"
+}

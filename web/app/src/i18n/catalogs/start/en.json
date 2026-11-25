@@ -1,0 +1,17 @@
+{
+  "start.title": "Get your organization ready",
+  "start.progress": "{done} of {total} done",
+  "start.dismiss": "Hide",
+  "start.done": "Done",
+  "start.go": "Set up",
+  "start.email": "Verify your e-mail",
+  "start.emailHint": "So you can get notifications and reset your password.",
+  "start.team": "Invite your team",
+  "start.teamHint": "Add the people who will work with you.",
+  "start.twoFactor": "Turn on two-factor sign-in",
+  "start.twoFactorHint": "Keep your account safe even if your password leaks.",
+  "start.plan": "Choose a plan",
+  "start.planHint": "Pick the plan that fits your organization.",
+  "start.brand": "Add your logo",
+  "start.brandHint": "It shows in the app and in e-mails to your members."
+}

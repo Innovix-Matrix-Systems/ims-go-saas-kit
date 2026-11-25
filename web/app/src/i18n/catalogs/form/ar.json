@@ -1,0 +1,15 @@
+{
+  "form.showPassword": "إظهار كلمة المرور",
+  "form.hidePassword": "إخفاء كلمة المرور",
+  "form.passwordTooShort": "استخدم 8 أحرف على الأقل.",
+  "form.passwordTooLong": "كلمة المرور هذه طويلة جدًا.",
+  "form.passwordHint": "8 أحرف على الأقل. جملة قصيرة يسهل تذكرها ويصعب تخمينها.",
+  "form.passwordsDiffer": "كلمتا المرور غير متطابقتين.",
+  "form.confirmPassword": "تأكيد كلمة المرور",
+  "form.newPassword": "كلمة المرور الجديدة",
+  "form.currentPassword": "كلمة المرور الحالية",
+  "form.save": "حفظ",
+  "form.saving": "جارٍ الحفظ…",
+  "form.saved": "تم الحفظ.",
+  "form.optional": "اختياري"
+}

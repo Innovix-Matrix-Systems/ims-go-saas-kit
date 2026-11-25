@@ -1,0 +1,4 @@
+<p>Bonjour{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Votre code de connexion est :</p>
+<p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0;">{{.Data.code}}</p>
+<p>Il expire dans {{duration .Data.minutes}}. Si vous n'avez pas essayé de vous connecter, vous pouvez ignorer cet e-mail ; pensez à changer votre mot de passe.</p>

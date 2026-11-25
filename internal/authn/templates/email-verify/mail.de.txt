@@ -1,0 +1,7 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie diesen Link öffnen:
+
+{{.Data.link}}
+
+Der Link läuft in {{duration .Data.minutes}} ab.

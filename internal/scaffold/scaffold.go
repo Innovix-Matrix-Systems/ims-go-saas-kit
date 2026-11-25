@@ -113,6 +113,8 @@ func Generate(opts Options) ([]File, error) {
 		{path: "internal/modules/" + data.NameLower + "/handler.go", tmpl: handlerTmpl, format: true},
 		{path: "internal/modules/" + data.NameLower + "/routes.go", tmpl: routesTmpl, format: true},
 		{path: "internal/modules/" + data.NameLower + "/service_test.go", tmpl: serviceTestTmpl, format: true},
+		{path: "internal/modules/" + data.NameLower + "/locales.go", tmpl: localesTmpl, format: true},
+		{path: "internal/modules/" + data.NameLower + "/locales/" + data.NameLower + "/en.json", tmpl: localeEnTmpl},
 	}
 
 	files := make([]File, 0, len(specs))
@@ -157,7 +159,7 @@ func isSnake(s string) bool {
 func pluralize(name string) string {
 	switch {
 	case strings.HasSuffix(name, "s"), strings.HasSuffix(name, "x"), strings.HasSuffix(name, "ch"), strings.HasSuffix(name, "sh"):
-		return name + "es"
+		return name + "es" // English plural suffix, not a language code
 	case strings.HasSuffix(name, "y") && len(name) > 1:
 		return name[:len(name)-1] + "ies"
 	default:

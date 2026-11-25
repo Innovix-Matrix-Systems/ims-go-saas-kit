@@ -1,0 +1,1 @@
+{{.Data.code}} هو رمز تسجيل الدخول إلى {{.Brand.Name}}. تنتهي صلاحيته خلال {{duration .Data.minutes}}.

@@ -1,0 +1,14 @@
+{
+  "status.suspendedTitle": "Su organización está suspendida",
+  "status.suspendedBody": "Se pausó el acceso a esta organización. Contacte con su administrador o con nuestro equipo de soporte para restablecerlo.",
+  "status.maintenanceTitle": "Volvemos enseguida",
+  "status.maintenanceBody": "El servicio está en mantenimiento. Inténtelo de nuevo en unos minutos.",
+  "status.twoFactorTitle": "Se requiere autenticación en dos pasos",
+  "status.twoFactorBody": "Su organización exige la autenticación en dos pasos. Configúrela para continuar.",
+  "status.errorTitle": "Algo salió mal",
+  "status.errorBody": "No se pudo mostrar esta página. Puede reintentar o volver a la página de inicio.",
+  "status.reference": "Referencia: {id}",
+  "status.notFoundTitle": "Página no encontrada",
+  "status.notFoundBody": "La página que busca no existe o se ha movido.",
+  "status.home": "Ir al inicio"
+}

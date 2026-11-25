@@ -22,7 +22,8 @@ info:
     Authenticated routes are resolved to a tenant/branch from the caller's identity.
     Impersonators may send the optional headers `X-Acting-Tenant` and `X-Acting-Branch`;
     sends on tenant-resolved write routes without acting headers are rejected with 403.
-    Request locale is negotiated from `Accept-Language` (`en`, `bn`).
+    Request locale is negotiated from `Accept-Language` against the supported languages
+    (`GET /api/v1/languages`).
 
 servers:
   - url: http://localhost:8080
@@ -241,6 +242,26 @@ paths:
             application/json:
               schema: {$ref: "#/components/schemas/SystemInfoEnvelope"}
 
+  /api/v1/languages:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+    get:
+      tags: [System]
+      summary: Supported languages
+      description: |
+        The languages this server offers (`APP_SUPPORTED_LOCALES`, or every registered language),
+        the reference language (English) first, and the default (`APP_LOCALE`). Clients build their
+        language menu from it and send one of the codes as `Accept-Language` or a user's `locale`.
+      operationId: listLanguages
+      security: []
+      responses:
+        "200":
+          description: The offered languages.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/LanguagesEnvelope"}
+
   /api/v1/system/echo:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -425,7 +446,7 @@ paths:
                 password: {type: string, minLength: 8, maxLength: 72}
                 organization_name: {type: string, minLength: 2, maxLength: 100}
                 phone: {type: string, maxLength: 50, nullable: true}
-                locale: {type: string, enum: [en, bn]}
+                locale: {type: string, maxLength: 10, description: 'A supported language code (`GET /api/v1/languages`); becomes the new organization''s language (`general.default_locale`).'}
                 accept_terms:
                   type: boolean
                   description: Must be true (terms of service and privacy policy).
@@ -1789,7 +1810,7 @@ paths:
                 locale:
                   type: string
                   maxLength: 10
-                  description: The user's language ("en", "bn"). An empty string clears it; leave it out to keep it.
+                  description: The user's language, a supported language code (`GET /api/v1/languages`). An empty string clears it; leave it out to keep it.
       responses:
         "200":
           description: Updated profile.
@@ -2671,7 +2692,7 @@ paths:
                 locale:
                   type: string
                   maxLength: 10
-                  description: The user's language ("en", "bn"). An empty string clears it; leave it out to keep it.
+                  description: The user's language, a supported language code (`GET /api/v1/languages`). An empty string clears it; leave it out to keep it.
       responses:
         "200":
           description: Updated profile.
@@ -5544,6 +5565,29 @@ paths:
         "403": *forbidden
         "404": *notFound
 
+  /dev/api/inspector/translations:
+    get:
+      tags: [Dev]
+      summary: How complete each language is
+      description: |
+        Every registered language with its API catalog coverage (missing, extra and mismatched keys),
+        its CLDR plural forms, the delivery templates without its variant and the keys the project's
+        overrides replace; plus the namespaces and the module that owns each. The client app's own
+        catalogs are checked by `npm run i18n:check` in web/app.
+      operationId: devInspectorTranslations
+      responses:
+        "200":
+          description: The translation report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/DevTranslationsReport"}
+        "401": *unauthorized
+        "403": *forbidden
+
   /dev/api/inspector/packages:
     get:
       tags: [Dev]
@@ -7558,11 +7602,16 @@ components:
       properties:
         data:
           type: object
-          required: [id, name, code, is_active, is_owner, branding, created_at]
+          required: [id, name, code, is_active, is_owner, branding, language, created_at]
           properties:
             id: {type: integer, format: int64}
             name: {type: string}
             code: {type: string}
+            language:
+              type: string
+              nullable: true
+              example: bn
+              description: The organization's language (`general.default_locale`) for members who haven't chosen one, and their e-mails. Null when unset.
             phone: {type: string, nullable: true}
             email: {type: string, nullable: true}
             is_active: {type: boolean}
@@ -7708,6 +7757,29 @@ components:
             message: {type: string}
             retry_after: {type: integer}
 
+    Language:
+      type: object
+      required: [code, label, english, intl, dir, digits, reviewed]
+      properties:
+        code: {type: string, example: bn, description: Two-letter language code.}
+        label: {type: string, example: বাংলা, description: The language's own name.}
+        english: {type: string, example: Bangla, description: Its English name.}
+        intl: {type: string, example: bn-BD, description: BCP 47 tag for formatting dates and numbers.}
+        dir: {type: string, enum: [ltr, rtl]}
+        digits: {type: string, example: beng, description: 'Numbering system for generated numbers (`latn`, `beng`, `arab`).'}
+        reviewed: {type: boolean, description: False while the translation has not passed review (shown as beta).}
+    LanguagesEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [default, languages]
+          properties:
+            default: {type: string, example: en}
+            languages:
+              type: array
+              items: {$ref: "#/components/schemas/Language"}
     SystemInfoEnvelope:
       type: object
       required: [data]
@@ -8870,7 +8942,12 @@ components:
         priority: {type: string, enum: [INFO, WARNING, CRITICAL]}
         title: {type: string}
         body: {type: string, nullable: true}
-        data: {}
+        data:
+          description: >-
+            Free-form JSON. A notification the system writes carries its message key under
+            `i18n` (`{"i18n": {"key": "notices.payment_received", "params": {...}}}`); `title`
+            and `body` are then the English text, and each reader's feed renders the key in
+            their language.
         group_key: {type: string, nullable: true}
         created_by: {type: integer, format: int64, nullable: true}
         updated_by: {type: integer, format: int64, nullable: true}
@@ -9058,7 +9135,11 @@ components:
         priority: {type: string, enum: [INFO, WARNING, CRITICAL]}
         title: {type: string}
         body: {type: string, nullable: true}
-        data: {}
+        data:
+          description: >-
+            Free-form JSON. When it has an `i18n` entry (`{"key": "...", "params": {...}}`, a
+            notification the system wrote), `title` and `body` are already rendered from that
+            key in the request's language.
         group_key: {type: string, nullable: true}
         created_at: {type: string, format: date-time}
         is_read: {type: boolean}
@@ -9192,6 +9273,10 @@ components:
         editable: {type: boolean}
         sort_order: {type: integer}
         group: {$ref: "#/components/schemas/SettingsGroupRef"}
+        choices:
+          type: array
+          items: {type: string}
+          description: 'The accepted values when the setting has a fixed set (for example `general.default_locale`: the supported language codes); an empty string always means "not set".'
 
     SettingsGroupSection:
       type: object
@@ -9604,6 +9689,60 @@ components:
         canceled: {type: integer, format: int64, description: "Waits that gave up (the request was canceled)."}
         avg_acquire_ms: {type: number, description: "Mean time to get a connection, waits included."}
         busy: {type: boolean, description: "active is at busy_share of max or more."}
+    DevTranslationsReport:
+      type: object
+      required: [default, languages, namespaces, templates]
+      properties:
+        default: {type: string, description: APP_LOCALE}
+        languages:
+          type: array
+          items:
+            type: object
+            required: [code, label, english, intl, dir, digits, reviewed, supported, total, translated, missing, extra, problems, plural_forms, template_gaps, overrides]
+            properties:
+              code: {type: string}
+              label: {type: string}
+              english: {type: string}
+              intl: {type: string}
+              dir: {type: string, enum: [ltr, rtl]}
+              digits: {type: string}
+              reviewed: {type: boolean}
+              supported: {type: boolean, description: Offered to clients (APP_SUPPORTED_LOCALES).}
+              total: {type: integer}
+              translated: {type: integer}
+              missing: {type: array, items: {type: string}}
+              extra: {type: array, items: {type: string}}
+              problems:
+                type: array
+                items:
+                  type: object
+                  required: [key, detail]
+                  properties:
+                    key: {type: string}
+                    detail: {type: string}
+              plural_forms: {type: array, items: {type: string}}
+              template_gaps:
+                type: array
+                items:
+                  type: object
+                  required: [template, language, missing, problems]
+                  properties:
+                    template: {type: string}
+                    language: {type: string}
+                    missing: {type: array, items: {type: string}}
+                    problems: {type: array, items: {type: string}}
+              overrides: {type: array, items: {type: string}, description: Keys the project's overrides replace in this language.}
+        namespaces:
+          type: array
+          items:
+            type: object
+            required: [name, owner, keys]
+            properties:
+              name: {type: string}
+              owner: {type: string}
+              keys: {type: integer}
+        templates: {type: array, items: {type: string}}
+
     DevPackagesReport:
       type: object
       required: [go_version, module, packages]

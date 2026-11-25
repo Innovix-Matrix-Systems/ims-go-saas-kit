@@ -1,0 +1,7 @@
+{
+  "reset.title": "Neues Passwort wählen",
+  "reset.subtitle": "Danach werden alle Geräte, die bei Ihrem Konto angemeldet sind, abgemeldet.",
+  "reset.submit": "Neues Passwort festlegen",
+  "reset.done": "Ihr Passwort wurde geändert. Melden Sie sich mit dem neuen an.",
+  "reset.missing": "Diese Seite braucht den Link aus Ihrer E-Mail. Fordern Sie einen neuen an."
+}

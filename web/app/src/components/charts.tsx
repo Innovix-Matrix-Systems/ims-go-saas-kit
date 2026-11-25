@@ -112,7 +112,7 @@ export function TrendChart({
     return <Readout title={days.long(point.date)} rows={[{ color: colors.accent, label, value: format(point.value) }]} />
   }
   return (
-    <div className="chart" role="figure" aria-label={t('chart.summary', { label, days: points.length })}>
+    <div className="chart" role="figure" aria-label={t('chart.summary', { label, count: points.length })}>
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <defs>

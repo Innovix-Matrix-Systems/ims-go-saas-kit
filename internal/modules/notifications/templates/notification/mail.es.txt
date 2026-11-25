@@ -1,0 +1,9 @@
+{{.Data.title}}
+{{if .Data.body}}
+{{.Data.body}}
+{{end}}{{if .Data.url}}
+Ábralo: {{.Data.url}}
+{{end}}{{if .Data.unsubscribe}}
+--
+Recibe este correo por su configuración de notificaciones. Dejar de recibir estos correos: {{.Data.unsubscribe}}
+{{end}}

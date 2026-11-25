@@ -1,0 +1,5 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+La connexion en deux étapes a été désactivée pour votre compte le {{.Data.when}}{{if .Data.reset}} par un administrateur{{end}}. Votre mot de passe suffit désormais pour vous connecter.
+
+Si vous ne vous y attendiez pas, changez votre mot de passe maintenant et réactivez la connexion en deux étapes.

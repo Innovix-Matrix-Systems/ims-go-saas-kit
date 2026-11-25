@@ -1,0 +1,17 @@
+{
+  "start.title": "جهّز مؤسستك",
+  "start.progress": "تم {done} من {total}",
+  "start.dismiss": "إخفاء",
+  "start.done": "تم",
+  "start.go": "إعداد",
+  "start.email": "تحقق من بريدك الإلكتروني",
+  "start.emailHint": "لتتلقى الإشعارات وتتمكن من إعادة تعيين كلمة المرور.",
+  "start.team": "ادعُ فريقك",
+  "start.teamHint": "أضف الأشخاص الذين سيعملون معك.",
+  "start.twoFactor": "شغّل تسجيل الدخول بخطوتين",
+  "start.twoFactorHint": "لحماية حسابك حتى لو تسربت كلمة المرور.",
+  "start.plan": "اختر خطة",
+  "start.planHint": "اختر الخطة المناسبة لمؤسستك.",
+  "start.brand": "أضف شعارك",
+  "start.brandHint": "يظهر في التطبيق وفي الرسائل إلى أعضائك."
+}

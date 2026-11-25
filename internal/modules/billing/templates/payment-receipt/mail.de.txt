@@ -1,0 +1,12 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Wir haben {{.Data.amount}} von {{.Data.organization}} für den Tarif {{.Data.plan}} erhalten, und der Tarif ist jetzt aktiv.
+
+Rechnung: {{.Data.invoice}}
+Bezahlt am: {{.Data.paid_on}}
+
+Die Rechnung ist als PDF angehängt. Sie können sie auch jederzeit auf der Abrechnungsseite herunterladen:
+
+{{.Data.url}}
+
+Vielen Dank.

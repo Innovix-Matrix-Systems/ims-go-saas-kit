@@ -1,0 +1,7 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+La eliminación de su cuenta está programada para el {{.Data.date}}. Ese día se borrarán sus datos personales de {{.Brand.Name}}; después no se podrán recuperar.
+
+Se cerró su sesión en todas partes. Para conservar su cuenta, inicie sesión antes de esa fecha y cancele la eliminación.
+
+Si no lo solicitó, inicie sesión ahora, cancele la eliminación y cambie su contraseña.

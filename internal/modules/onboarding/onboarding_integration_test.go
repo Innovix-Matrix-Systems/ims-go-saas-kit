@@ -149,3 +149,27 @@ func TestSignUpRefusesAPackageWithoutUsers(t *testing.T) {
 	}
 	app.As(staff).Delete(fmt.Sprintf("/api/v1/packages/%d", created.ID)).Status(t, http.StatusNoContent)
 }
+
+// The language chosen at sign-up becomes the organization's: the screen and
+// e-mails of its members who haven't chosen one.
+func TestSignUpSetsTheOrganizationLanguage(t *testing.T) {
+	app := testkit.New(t)
+	body := signUpBody("lina@acme.test")
+	body["locale"] = "zz"
+	app.Guest().Post("/api/v1/signup", body).Status(t, http.StatusUnprocessableEntity)
+	body["locale"] = "bn"
+	app.Guest().Post("/api/v1/signup", body).Status(t, http.StatusAccepted)
+
+	var tenantID int64
+	if err := app.Pool.QueryRow(context.Background(), `SELECT tenant_id FROM users WHERE email = 'lina@acme.test'`).Scan(&tenantID); err != nil {
+		t.Fatalf("owner not created: %v", err)
+	}
+	var language string
+	if err := app.Pool.QueryRow(context.Background(), `SELECT coalesce(value #>> '{}', '') FROM settings
+		WHERE target_type = 'tenant' AND target_id = $1 AND key = 'general.default_locale'`, tenantID).Scan(&language); err != nil {
+		t.Fatal(err)
+	}
+	if language != `bn` {
+		t.Errorf("organization language = %q, want bn", language)
+	}
+}

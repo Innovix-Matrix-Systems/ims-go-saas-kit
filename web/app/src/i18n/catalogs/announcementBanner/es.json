@@ -1,0 +1,8 @@
+{
+  "announcementBanner.more": {
+    "one": "{count} más",
+    "many": "{count} más",
+    "other": "{count} más"
+  },
+  "announcementBanner.dismiss": "Marcar como leído"
+}

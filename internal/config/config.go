@@ -225,11 +225,16 @@ func (c *Config) Validate() error {
 	if c.HTTP.RequestTimeout <= 0 {
 		return errors.New("HTTP_REQUEST_TIMEOUT must be greater than zero")
 	}
-	if len(c.App.SupportedLocales) == 0 {
-		return errors.New("APP_SUPPORTED_LOCALES must not be empty")
-	}
-	if !containsFold(c.App.SupportedLocales, c.App.FallbackLocale) {
-		return fmt.Errorf("APP_FALLBACK_LOCALE %q must be part of APP_SUPPORTED_LOCALES", c.App.FallbackLocale)
+	// APP_SUPPORTED_LOCALES empty means every registered language; the
+	// codes themselves are checked against the language registry at start
+	// (app.newTranslator).
+	if len(c.App.SupportedLocales) > 0 {
+		if !containsFold(c.App.SupportedLocales, c.App.Locale) {
+			return fmt.Errorf("APP_LOCALE %q must be part of APP_SUPPORTED_LOCALES", c.App.Locale)
+		}
+		if !containsFold(c.App.SupportedLocales, c.App.FallbackLocale) {
+			return fmt.Errorf("APP_FALLBACK_LOCALE %q must be part of APP_SUPPORTED_LOCALES", c.App.FallbackLocale)
+		}
 	}
 	if c.RateLimit.PerMinute <= 0 {
 		return errors.New("RATE_LIMIT_PER_MINUTE must be greater than zero")

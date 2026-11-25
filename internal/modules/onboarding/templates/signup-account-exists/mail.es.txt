@@ -1,0 +1,11 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Alguien intentó crear una nueva organización con esta dirección de correo electrónico, pero usted ya tiene una cuenta.
+
+Si fue usted, inicie sesión:
+{{.Data.login_url}}
+
+¿Olvidó su contraseña? Restablézcala aquí:
+{{.Data.reset_url}}
+
+Si no fue usted, puede ignorar este correo: no se cambió nada.

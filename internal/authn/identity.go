@@ -25,6 +25,9 @@ type Identity struct {
 	// SetupOnly marks a setup-only token: the user must turn on two-factor
 	// authentication, and only the session routes accept the token.
 	SetupOnly bool
+	// Locale is the language the user chose ("" = none): a request without a
+	// matching Accept-Language is answered in it.
+	Locale string
 
 	// ImpersonatorID is set when another user is acting as this one
 	// (X-Acting-User). UserID and every field above are then the target's;
@@ -90,6 +93,8 @@ type UserRecord struct {
 	ActiveBranchID int64
 	// TenantActive: see Identity.TenantActive.
 	TenantActive bool
+	// Locale is the language the user chose ("" = none).
+	Locale string
 }
 
 // UserLookup is the persistence contract the auth engine requires. It is

@@ -1,0 +1,28 @@
+{
+  "planBanner.today": "اليوم",
+  "planBanner.tomorrow": "غدًا",
+  "planBanner.inDays": {
+    "zero": "اليوم",
+    "one": "خلال يوم واحد",
+    "two": "خلال يومين",
+    "few": "خلال {count} أيام",
+    "many": "خلال {count} يومًا",
+    "other": "خلال {count} يوم"
+  },
+  "planBanner.none": "ليس لدى مؤسستك خطة.",
+  "planBanner.noneBody": "اختر خطة لمواصلة إضافة الأعضاء وتخزين الملفات.",
+  "planBanner.ended": "انتهت خطة {plan}.",
+  "planBanner.endedBody": "اختر خطة ليستمر كل شيء في العمل لأعضائك.",
+  "planBanner.pastDue": "تأخر دفع خطة {plan}.",
+  "planBanner.pastDueBody": "ادفع أو غيّر الخطة قبل تقييد الوصول.",
+  "planBanner.pending": "دفعتك لخطة {plan} بانتظار الموافقة.",
+  "planBanner.pendingBody": "تبدأ الخطة فور تأكيد الدفعة.",
+  "planBanner.cancelled": "أُلغيت خطة {plan} وتنتهي في {date}.",
+  "planBanner.renewBody": "جدّد أو اختر خطة أخرى حتى لا يتوقف شيء.",
+  "planBanner.trialEnds": "تنتهي فترتك التجريبية {when}.",
+  "planBanner.trialBody": "اختر خطة لمواصلة استخدام كل شيء بعد الفترة التجريبية.",
+  "planBanner.ends": "تنتهي خطة {plan} {when}.",
+  "planBanner.choose": "مراجعة الخطط",
+  "planBanner.viewBilling": "عرض الفوترة",
+  "planBanner.hide": "إخفاء لهذا اليوم"
+}

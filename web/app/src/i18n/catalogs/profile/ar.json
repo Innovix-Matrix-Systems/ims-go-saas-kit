@@ -1,0 +1,13 @@
+{
+  "profile.firstName": "الاسم الأول",
+  "profile.lastName": "اسم العائلة",
+  "profile.displayName": "الاسم المعروض",
+  "profile.language": "اللغة",
+  "profile.languageDefault": "استخدام لغة المؤسسة",
+  "profile.email": "البريد الإلكتروني",
+  "profile.changeEmail": "تغيير البريد الإلكتروني",
+  "profile.newEmail": "البريد الإلكتروني الجديد",
+  "profile.changeEmailSent": "أرسلنا رابط تأكيد إلى {email}. يتغير عنوانك عند فتحه.",
+  "profile.sendLink": "إرسال رابط التأكيد",
+  "profile.languageHint": "تُكتب الرسائل الموجهة إليك بهذه اللغة أيضًا."
+}

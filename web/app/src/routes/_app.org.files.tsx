@@ -265,7 +265,7 @@ function FilesPage() {
                     </td>
                     <td className="small muted nowrap">{formatBytes(file.size)}</td>
                     <td className="small muted nowrap">{when(file.created_at)}</td>
-                    <td className="right">
+                    <td className="end">
                       <div className="flex justify-end">{fileActions(file)}</div>
                     </td>
                   </tr>

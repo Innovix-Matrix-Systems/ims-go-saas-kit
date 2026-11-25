@@ -1,0 +1,18 @@
+{
+    "notices.payment_to_review.title": "Zahlung zu prüfen: {{.Organization}}",
+    "notices.payment_to_review.body": "{{.Organization}} hat {{.Amount}} für den Tarif {{.Plan}} per {{.Method}} bezahlt. Prüfen Sie die Überweisung und genehmigen oder lehnen Sie sie ab.",
+    "notices.payment_submitted.title": "Zahlung zur Bestätigung eingereicht",
+    "notices.payment_submitted.body": "Ihre Zahlung von {{.Amount}} für den Tarif {{.Plan}} wurde eingereicht. Wir melden uns, sobald sie bestätigt ist.",
+    "notices.payment_received.title": "Zahlung erhalten",
+    "notices.payment_received.body": "Wir haben {{.Amount}} erhalten. Ihr Tarif {{.Plan}} ist aktiv. Die Quittung ist per E-Mail unterwegs.",
+    "notices.payment_rejected.title": "Zahlung nicht bestätigt",
+    "notices.payment_rejected.body": "Ihre Zahlung von {{.Amount}} für den Tarif {{.Plan}} konnte nicht bestätigt werden.",
+    "notices.payment_rejected_with_reason.title": "Zahlung nicht bestätigt",
+    "notices.payment_rejected_with_reason.body": "Ihre Zahlung von {{.Amount}} für den Tarif {{.Plan}} konnte nicht bestätigt werden. Grund: {{.Reason}}",
+    "notices.webhook_disabled.title": "Ein Webhook-Endpunkt wurde deaktiviert",
+    "notices.webhook_disabled.body": "{{.URL}} empfängt keine Ereignisse mehr, weil die Zustellungen wiederholt fehlgeschlagen sind. Beheben Sie den Empfänger und aktivieren Sie den Endpunkt dann wieder.",
+    "notices.method.bkash": "bKash",
+    "notices.method.nagad": "Nagad",
+    "notices.method.cash": "Barzahlung",
+    "notices.method.bank_transfer": "Banküberweisung"
+}

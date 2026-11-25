@@ -1,0 +1,7 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+Nous avons reçu une demande de réinitialisation de votre mot de passe. Ouvrez ce lien pour en choisir un nouveau :
+
+{{.Data.link}}
+
+Le lien expire dans {{duration .Data.minutes}}. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.

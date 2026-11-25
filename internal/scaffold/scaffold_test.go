@@ -67,6 +67,8 @@ func TestGenerateProducesExpectedFiles(t *testing.T) {
 		"internal/modules/product/handler.go",
 		"internal/modules/product/routes.go",
 		"internal/modules/product/service_test.go",
+		"internal/modules/product/locales.go",
+		"internal/modules/product/locales/product/en.json",
 	}
 	for _, path := range want {
 		if _, ok := byPath[path]; !ok {
@@ -75,13 +77,15 @@ func TestGenerateProducesExpectedFiles(t *testing.T) {
 	}
 
 	checks := map[string]string{
-		"migrations/00013_create_products.sql":   "CREATE TABLE products",
-		"sql/queries/products.sql":               "-- name: GetProduct :one",
-		"internal/modules/product/model.go":      "type Product struct",
-		"internal/modules/product/repository.go": "func NewRepository(queries *dbgen.Queries) Repository",
-		"internal/modules/product/service.go":    "func NewService(repo Repository) *Service",
-		"internal/modules/product/handler.go":    "PermView",
-		"internal/modules/product/routes.go":     "r.With(h.can(PermView)).Get(",
+		"migrations/00013_create_products.sql":             "CREATE TABLE products",
+		"sql/queries/products.sql":                         "-- name: GetProduct :one",
+		"internal/modules/product/model.go":                "type Product struct",
+		"internal/modules/product/repository.go":           "func NewRepository(queries *dbgen.Queries) Repository",
+		"internal/modules/product/service.go":              "func NewService(repo Repository) *Service",
+		"internal/modules/product/handler.go":              "PermView",
+		"internal/modules/product/routes.go":               "r.With(h.can(PermView)).Get(",
+		"internal/modules/product/locales.go":              `i18n.Bundle{Owner: "product", Namespaces: []string{"product"}`,
+		"internal/modules/product/locales/product/en.json": `"product.not_found": "Product with ID '{{.ID}}' was not found."`,
 	}
 	for path, needle := range checks {
 		if !strings.Contains(byPath[path], needle) {
@@ -107,6 +111,18 @@ func TestGenerateRejectsBadName(t *testing.T) {
 		opts.Fields = []Field{{Name: "x", Type: "string"}}
 		if _, err := Generate(opts); err == nil {
 			t.Errorf("Generate(%+v) accepted an unsafe identifier", opts)
+		}
+	}
+}
+
+func TestGeneratedNotFoundIsTranslatable(t *testing.T) {
+	files, err := Generate(Options{ModulePath: "example.com/x", Name: "product", Fields: []Field{{Name: "name", Type: "string"}}, NextNumber: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range files {
+		if f.Path == "internal/modules/product/repository.go" && !strings.Contains(string(f.Content), `WithMessageKey("product.not_found"`) {
+			t.Error("the generated not-found error has no message key")
 		}
 	}
 }

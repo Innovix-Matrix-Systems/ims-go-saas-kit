@@ -1,0 +1,24 @@
+{
+  "planBanner.today": "heute",
+  "planBanner.tomorrow": "morgen",
+  "planBanner.inDays": {
+    "one": "in {count} Tag",
+    "other": "in {count} Tagen"
+  },
+  "planBanner.none": "Ihre Organisation hat keinen Tarif.",
+  "planBanner.noneBody": "Wählen Sie einen Tarif, um weiter Mitglieder hinzuzufügen und Dateien zu speichern.",
+  "planBanner.ended": "Ihr Tarif {plan} ist beendet.",
+  "planBanner.endedBody": "Wählen Sie einen Tarif, damit für Ihre Mitglieder alles weiter funktioniert.",
+  "planBanner.pastDue": "Die Zahlung für Ihren Tarif {plan} ist überfällig.",
+  "planBanner.pastDueBody": "Bezahlen oder wechseln Sie den Tarif, bevor der Zugang eingeschränkt wird.",
+  "planBanner.pending": "Ihre Zahlung für {plan} wartet auf Freigabe.",
+  "planBanner.pendingBody": "Der Tarif beginnt, sobald die Zahlung bestätigt ist.",
+  "planBanner.cancelled": "Ihr Tarif {plan} wurde gekündigt und endet am {date}.",
+  "planBanner.renewBody": "Verlängern Sie oder wählen Sie einen anderen Tarif, damit nichts stoppt.",
+  "planBanner.trialEnds": "Ihre Testphase endet {when}.",
+  "planBanner.trialBody": "Wählen Sie einen Tarif, um nach der Testphase alles weiter zu nutzen.",
+  "planBanner.ends": "Ihr Tarif {plan} endet {when}.",
+  "planBanner.choose": "Tarife ansehen",
+  "planBanner.viewBilling": "Abrechnung ansehen",
+  "planBanner.hide": "Für heute ausblenden"
+}

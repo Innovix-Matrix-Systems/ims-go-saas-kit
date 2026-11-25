@@ -1,0 +1,23 @@
+{
+  "roles.subtitle": "প্রতিটি ভূমিকা তার সদস্যদের কী করতে দেয়।",
+  "roles.create": "নতুন ভূমিকা",
+  "roles.createTitle": "নতুন ভূমিকা",
+  "roles.name": "নাম",
+  "roles.description": "বিবরণ",
+  "roles.managed": "স্বয়ংক্রিয়",
+  "roles.managedHint": "অ্যাডমিন ভূমিকা সবসময় প্রতিষ্ঠানের সব অনুমতি রাখে। সীমিত অ্যাক্সেসের জন্য আরেকটি ভূমিকা তৈরি করুন।",
+  "roles.permissions": "অনুমতি",
+  "roles.permissionsHint": "আপনি কেবল নিজের থাকা অনুমতিগুলোই দিতে পারবেন।",
+  "roles.notGrantable": "এই অনুমতি আপনার নেই, তাই আপনি এটি দিতে পারবেন না।",
+  "roles.permissionCount": {
+    "one": "{count}টি অনুমতি",
+    "other": "{count}টি অনুমতি"
+  },
+  "roles.save": "ভূমিকা সংরক্ষণ করুন",
+  "roles.savePermissions": "অনুমতি সংরক্ষণ করুন",
+  "roles.delete": "ভূমিকা মুছুন",
+  "roles.deleteConfirm": "{name} ভূমিকাটি মুছবেন? যাদের এটি আছে তারা এর অনুমতিগুলো হারাবেন।",
+  "roles.empty": "এখনো কোনো ভূমিকা নেই।",
+  "roles.selectAll": "সব",
+  "roles.selectNone": "কোনোটি না"
+}

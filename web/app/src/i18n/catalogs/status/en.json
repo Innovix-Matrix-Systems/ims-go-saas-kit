@@ -1,0 +1,14 @@
+{
+  "status.suspendedTitle": "Your organization is suspended",
+  "status.suspendedBody": "Access to this organization has been paused. Contact your administrator or our support team to restore it.",
+  "status.maintenanceTitle": "We will be right back",
+  "status.maintenanceBody": "The service is undergoing maintenance. Please try again in a few minutes.",
+  "status.twoFactorTitle": "Two-factor authentication required",
+  "status.twoFactorBody": "Your organization requires two-factor authentication. Set it up to continue.",
+  "status.errorTitle": "Something went wrong",
+  "status.errorBody": "This page could not be displayed. You can retry, or go back to the home page.",
+  "status.reference": "Reference: {id}",
+  "status.notFoundTitle": "Page not found",
+  "status.notFoundBody": "The page you are looking for does not exist or has moved.",
+  "status.home": "Go to home"
+}

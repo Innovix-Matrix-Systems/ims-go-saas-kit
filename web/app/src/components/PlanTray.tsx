@@ -48,7 +48,7 @@ export function PlanTray() {
         {nearlyFull ? <span className="jobs-dot warn" aria-hidden="true" /> : null}
       </button>
       {open ? (
-        <div className="ui-popover align-right plan-tray" role="dialog" aria-label={t('planTray.title')}>
+        <div className="ui-popover align-end plan-tray" role="dialog" aria-label={t('planTray.title')}>
           <div className="jobs-menu-head">
             <span className="workspace-text">
               <span className="workspace-name">{pkg?.name ?? t('dashboard.noPlan')}</span>

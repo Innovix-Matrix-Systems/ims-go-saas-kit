@@ -1,0 +1,13 @@
+{
+  "profile.firstName": "নামের প্রথম অংশ",
+  "profile.lastName": "নামের শেষ অংশ",
+  "profile.displayName": "প্রদর্শিত নাম",
+  "profile.language": "ভাষা",
+  "profile.languageDefault": "প্রতিষ্ঠানের ভাষা ব্যবহার করুন",
+  "profile.email": "ই-মেইল ঠিকানা",
+  "profile.changeEmail": "ই-মেইল ঠিকানা বদলান",
+  "profile.newEmail": "নতুন ই-মেইল ঠিকানা",
+  "profile.changeEmailSent": "আমরা {email} ঠিকানায় একটি নিশ্চিতকরণ লিংক পাঠিয়েছি। লিংকটি খুললে আপনার ঠিকানা বদলাবে।",
+  "profile.sendLink": "নিশ্চিতকরণ লিংক পাঠান",
+  "profile.languageHint": "আপনার কাছে পাঠানো ই-মেইলও এই ভাষায় লেখা হয়।"
+}

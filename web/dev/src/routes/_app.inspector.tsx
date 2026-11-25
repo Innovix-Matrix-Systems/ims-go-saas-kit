@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState, type ReactNode } from 'react'
 import { api } from '../api/client'
-import type { DevAccessReport, DevConfigSection, DevPackagesReport, DevRouteReport } from '../api/types'
+import type { DevAccessReport, DevConfigSection, DevPackagesReport, DevRouteReport, DevTranslationsReport } from '../api/types'
 import { Select } from '../components/inputs'
 import { SystemTab } from '../components/SystemTab'
 import {
@@ -19,8 +19,8 @@ import {
   Tabs,
 } from '../components/ui'
 
-type InspectorTab = 'system' | 'routes' | 'access' | 'config' | 'packages'
-const tabIds: InspectorTab[] = ['system', 'routes', 'access', 'config', 'packages']
+type InspectorTab = 'system' | 'routes' | 'access' | 'config' | 'packages' | 'translations'
+const tabIds: InspectorTab[] = ['system', 'routes', 'access', 'config', 'packages', 'translations']
 
 export const Route = createFileRoute('/_app/inspector')({
   validateSearch: (search: Record<string, unknown>): { tab: InspectorTab; q?: string } => ({
@@ -36,6 +36,7 @@ const placeholders: Record<InspectorTab, string> = {
   access: 'Search roles and permissions',
   config: 'Search config keys and values',
   packages: 'Search packages',
+  translations: 'Search keys, namespaces or templates',
 }
 
 function matches(needle: string, ...values: (string | undefined | null)[]): boolean {
@@ -58,7 +59,7 @@ function InspectorPage() {
     <>
       <PageHeader
         title="Inspector"
-        description="System health, routes, roles and permissions, configuration (secrets masked) and installed packages."
+        description="System health, routes, roles and permissions, configuration (secrets masked), installed packages and translations."
       />
       <div className="inspector-bar">
         <Tabs
@@ -68,6 +69,7 @@ function InspectorPage() {
             { id: 'access', label: 'Roles & permissions' },
             { id: 'config', label: 'Config' },
             { id: 'packages', label: 'Packages' },
+            { id: 'translations', label: 'Translations' },
           ]}
           active={tab}
           onChange={setTab}
@@ -87,6 +89,7 @@ function InspectorPage() {
       {tab === 'access' ? <AccessTab needle={needle} /> : null}
       {tab === 'config' ? <ConfigTab needle={needle} /> : null}
       {tab === 'packages' ? <PackagesTab needle={needle} /> : null}
+      {tab === 'translations' ? <TranslationsTab needle={needle} /> : null}
     </>
   )
 }
@@ -494,5 +497,157 @@ function PackagesTab({ needle }: { needle: string }) {
         )
       }}
     </Loadable>
+  )
+}
+
+// ── Translations ─────────────────────────────────────────────────────────
+
+type TranslationLanguage = DevTranslationsReport['languages'][number]
+
+function languageGaps(language: TranslationLanguage): number {
+  return language.missing.length + language.extra.length + language.problems.length + language.template_gaps.length
+}
+
+function TranslationsTab({ needle }: { needle: string }) {
+  const [selected, setSelected] = useState<string | null>(null)
+  const query = useQuery({
+    queryKey: ['inspector', 'translations'],
+    queryFn: ({ signal }) => api<DevTranslationsReport>('/dev/api/inspector/translations', { signal }),
+  })
+  return (
+    <Loadable query={query}>
+      {(report) => {
+        const complete = report.languages.filter((language) => languageGaps(language) === 0).length
+        const current = report.languages.find((language) => language.code === selected) ?? report.languages.find((language) => languageGaps(language) > 0)
+        const namespaces = report.namespaces.filter((ns) => matches(needle, ns.name, ns.owner))
+        return (
+          <>
+            <div className="grid cols-4">
+              <StatTile label="Languages" value={report.languages.length} hint={`default ${report.default}`} />
+              <StatTile label="Complete" value={`${complete}/${report.languages.length}`} tone={complete === report.languages.length ? undefined : 'warn'} hint="API keys and e-mail templates" />
+              <StatTile label="API keys" value={report.languages[0]?.total ?? 0} hint={`${report.namespaces.length} namespaces`} />
+              <StatTile label="Templates" value={report.templates.length} hint="e-mail, SMS and push" />
+            </div>
+            <Card className="mt-16" tight>
+              <CardHeader title="Languages" sub="The client app's catalogs are checked by npm run i18n:check in web/app." />
+              <div className="table-wrap flat">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Language</th>
+                      <th>API keys</th>
+                      <th>Missing</th>
+                      <th>Problems</th>
+                      <th>Template gaps</th>
+                      <th>Plural forms</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.languages.map((language) => (
+                      <tr key={language.code} className="clickable" onClick={() => setSelected(language.code)}>
+                        <td>
+                          <b lang={language.code} dir={language.dir}>
+                            {language.label}
+                          </b>{' '}
+                          <span className="small dim">
+                            {language.english} · {language.code} · {language.dir}
+                          </span>
+                        </td>
+                        <td className="mono small">
+                          {language.translated}/{language.total}
+                        </td>
+                        <td className="mono small">{language.missing.length + language.extra.length}</td>
+                        <td className="mono small">{language.problems.length}</td>
+                        <td className="mono small">{language.template_gaps.length}</td>
+                        <td className="small dim">{language.plural_forms.join(', ')}</td>
+                        <td>
+                          <span className="flex g-2">
+                            {languageGaps(language) === 0 ? <Badge tone="ok">complete</Badge> : <Badge tone="warn">incomplete</Badge>}
+                            {language.reviewed ? null : <Badge tone="info">beta</Badge>}
+                            {language.supported ? null : <Badge tone="neutral">not offered</Badge>}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+            {current ? <LanguageDetail language={current} needle={needle} /> : null}
+            <Card className="mt-16" tight>
+              <CardHeader title="Namespaces" sub="Each namespace belongs to one module; a project changes wording through internal/app/locales overrides." />
+              {namespaces.length === 0 ? (
+                <EmptyState title="No namespace matches" />
+              ) : (
+                <div className="table-wrap flat">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Namespace</th>
+                        <th>Owner</th>
+                        <th>Keys</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {namespaces.map((ns) => (
+                        <tr key={ns.name}>
+                          <td className="mono">{ns.name}</td>
+                          <td>{ns.owner}</td>
+                          <td className="mono small">{ns.keys}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          </>
+        )
+      }}
+    </Loadable>
+  )
+}
+
+function LanguageDetail({ language, needle }: { language: TranslationLanguage; needle: string }) {
+  const rows = [
+    ...language.missing.map((key) => ({ key, what: 'missing' })),
+    ...language.extra.map((key) => ({ key, what: 'extra (not in English)' })),
+    ...language.problems.map((problem) => ({ key: problem.key, what: problem.detail })),
+    ...language.template_gaps.flatMap((gap) => [
+      ...gap.missing.map((file) => ({ key: `template ${gap.template}`, what: `no variant of ${file}` })),
+      ...gap.problems.map((problem) => ({ key: `template ${gap.template}`, what: problem })),
+    ]),
+    ...language.overrides.map((key) => ({ key, what: 'replaced by the overrides' })),
+  ].filter((row) => matches(needle, row.key, row.what))
+  return (
+    <Card className="mt-16" tight>
+      <CardHeader
+        title={`${language.english}: ${rows.length} item${rows.length === 1 ? '' : 's'}`}
+        sub={`ims i18n:missing --locale ${language.code} lists the English text to translate.`}
+      />
+      {rows.length === 0 ? (
+        <EmptyState title="Nothing missing" />
+      ) : (
+        <div className="table-wrap flat">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>What</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={`${row.key}:${row.what}`}>
+                  <td className="mono small">{row.key}</td>
+                  <td className="small">{row.what}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   )
 }

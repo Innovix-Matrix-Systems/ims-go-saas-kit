@@ -1,0 +1,8 @@
+{
+  "pagination.label": "Páginas",
+  "pagination.showing": "Mostrando {from} a {to} de {total} registros",
+  "pagination.perPage": "Por página",
+  "pagination.page": "Página {page}",
+  "pagination.first": "Primera página",
+  "pagination.last": "Última página"
+}
