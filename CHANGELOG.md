@@ -14,7 +14,7 @@ minor units and are never converted: changing the currency changes the label. US
 built in; staff add and edit currencies under Console → Currencies. See
 [Money and currency](docs/guides/currencies.md).
 
-**Upgrading from 0.2.3:** run `ims migrate` (migration 00043). Things to check:
+**Upgrading from 0.2.3:** run `ims migrate` (migrations 00043 and 00044). Things to check:
 
 - **`BILLING_CURRENCY` is gone.** The currency is data now. The migration makes the currency your
   payments already use the default (BDT for existing installs), so prices keep reading the same; a
@@ -46,7 +46,9 @@ built in; staff add and edit currencies under Console → Currencies. See
   draw every symbol).
 - bKash and Nagad refuse a payment unless the default currency is BDT; bKash amounts are sent
   without floating-point maths.
-- "Amount (৳)" and "Price (৳)" lost the symbol in every language: the input shows it.
+- "Amount (৳)" and "Price (৳)" lost the symbol in every language: the input shows the default
+  currency's symbol.
+- `payments.currency` no longer defaults to `BDT` in the database; the application always sets it.
 
 ### Fixed
 
