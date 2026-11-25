@@ -5512,6 +5512,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dev/api/inspector/translations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How complete each language is
+         * @description Every registered language with its API catalog coverage (missing, extra and mismatched keys),
+         *     its CLDR plural forms, the delivery templates without its variant and the keys the project's
+         *     overrides replace; plus the namespaces and the module that owns each. The client app's own
+         *     catalogs are checked by `npm run i18n:check` in web/app.
+         */
+        get: operations["devInspectorTranslations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dev/api/inspector/packages": {
         parameters: {
             query?: never;
@@ -8792,6 +8815,45 @@ export interface components {
             avg_acquire_ms: number;
             /** @description active is at busy_share of max or more. */
             busy: boolean;
+        };
+        DevTranslationsReport: {
+            /** @description APP_LOCALE */
+            default: string;
+            languages: {
+                code: string;
+                label: string;
+                english: string;
+                intl: string;
+                /** @enum {string} */
+                dir: "ltr" | "rtl";
+                digits: string;
+                reviewed: boolean;
+                /** @description Offered to clients (APP_SUPPORTED_LOCALES). */
+                supported: boolean;
+                total: number;
+                translated: number;
+                missing: string[];
+                extra: string[];
+                problems: {
+                    key: string;
+                    detail: string;
+                }[];
+                plural_forms: string[];
+                template_gaps: {
+                    template: string;
+                    language: string;
+                    missing: string[];
+                    problems: string[];
+                }[];
+                /** @description Keys the project's overrides replace in this language. */
+                overrides: string[];
+            }[];
+            namespaces: {
+                name: string;
+                owner: string;
+                keys: number;
+            }[];
+            templates: string[];
         };
         DevPackagesReport: {
             go_version: string;
@@ -24655,6 +24717,46 @@ export interface operations {
             };
             /** @description Resource not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    devInspectorTranslations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The translation report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DevTranslationsReport"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
