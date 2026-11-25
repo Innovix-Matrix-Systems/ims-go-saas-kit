@@ -1,14 +1,16 @@
 ---
-title: Build your first module
-description: A step-by-step tutorial — build a products module with a unique SKU rule, permissions, an activity log entry and tests, the way every module in this codebase is built.
+title: Your first feature
+description: A step-by-step tutorial — build a products feature end to end, from the table and the API to a screen in the app, with permissions, an activity log entry and tests.
+layers: [database, api, app, dashboard]
 ---
 
 import { Steps, Aside, FileTree, Tabs, TabItem } from '@astrojs/starlight/components'
 import Terminal from '@components/Terminal.astro'
 
-In this tutorial you build a **products** module for a shop: each tenant keeps its own catalogue
-of products with a name, a SKU, a price, a stock count and optional notes. Along the way you touch
-every layer once, so by the end you know where everything goes.
+In this tutorial you build a **products** feature for a shop: each organization keeps its own
+catalogue of products with a name, a SKU, a price, a stock count and optional notes. You build it
+the way every feature in the kit is built, from the database table to a screen in the app, and
+touch every layer once, so by the end you know where everything goes.
 
 **You will:**
 
@@ -18,11 +20,12 @@ every layer once, so by the end you know where everything goes.
 - record changes in the tenant's activity log,
 - register permissions, wire the routes and call the API,
 - write an integration test that proves tenant isolation,
+- give it a screen in the app, with a sidebar entry, permissions and both languages,
 - see your requests in the developer dashboard.
 
 <Aside>
   Finish the [Quick start](../getting-started/quick-start.mdx) first: you need Postgres running,
-  `make migrate seed` done and `make dev` working. Every command below runs from the repository
+  `make migrate seed` done and `make dev` working, with the app at http://localhost:8082. Every command below runs from the repository
   root. Use `go run ./cmd/app …` while developing; a built binary runs the same commands as
   `ims …`.
 </Aside>
@@ -40,7 +43,7 @@ go run ./cmd/app gen module --name=product \
   title="ims gen module"
   lines={[
     { cmd: 'go run ./cmd/app gen module --name=product --fields="name:string,sku:string,price:decimal,stock:int,is_active:bool,notes:text?"' },
-    { out: 'wrote migrations/00028_create_products.sql', tone: 'dim' },
+    { out: 'wrote migrations/00043_create_products.sql', tone: 'dim' },
     { out: 'wrote sql/queries/products.sql', tone: 'dim' },
     { out: 'wrote internal/modules/product/model.go', tone: 'dim' },
     { out: 'wrote internal/modules/product/repository.go', tone: 'dim' },
@@ -63,7 +66,7 @@ What you got:
 
 <FileTree>
 - migrations/
-  - 00028_create_products.sql the table, tenant index, soft delete
+  - 00043_create_products.sql the table, tenant index, soft delete
 - sql/queries/
   - products.sql tenant-filtered CRUD queries
 - internal/
@@ -99,7 +102,7 @@ Every route declares its permission. The generated module is **tenant-scoped**: 
 The migration is yours to edit until it has been applied. Add a unique index on the SKU, per
 tenant, ignoring soft-deleted rows (so a deleted product's SKU can be reused):
 
-```sql title="migrations/00028_create_products.sql" ins={2}
+```sql title="migrations/00043_create_products.sql" ins={2}
 CREATE INDEX products_tenant_id_idx ON products (tenant_id);
 CREATE UNIQUE INDEX products_tenant_sku_unique ON products (tenant_id, lower(sku)) WHERE deleted_at IS NULL;
 ```
@@ -108,7 +111,7 @@ Apply it:
 
 ```bash
 go run ./cmd/app migrate
-go run ./cmd/app migrate:status   # 00028_create_products.sql: applied
+go run ./cmd/app migrate:status   # 00043_create_products.sql: applied
 ```
 
 <Aside type="caution" title="Never edit an applied migration">
@@ -234,8 +237,9 @@ go run ./cmd/app permission:sync    # Synced 4 permission(s).
 
 <Aside title="Existing tenants">
   `permission:sync` adds permissions; it never changes existing roles. New tenants get them through
-  their Admin role automatically. For tenants that already exist, add the permissions to their
-  roles through the roles API (`PATCH /api/v1/role/{id}`). The super admin bypasses every
+  their Admin role automatically. For organizations that already exist, tick the new **Products**
+  permissions on their roles in the app (**Roles**, as an organization admin), or through the
+  roles API (`PATCH /api/v1/role/{id}`). The super admin bypasses every
   permission check, so you can try the API right away.
 </Aside>
 
@@ -347,7 +351,158 @@ whatever you see there is what the API really accepts. Your frontend team can us
 way, or generate a typed client from `/docs/openapi.yaml`. `DOCS_ENABLED=false` turns it off
 in production.
 
-## 8. Write the tests
+## 8. Give it a screen
+
+Your organization's members don't use curl: they use the app. A screen is three files you edit
+and one you generate. [Adding a screen](../app/adding-a-screen.md) explains every line; here you
+build it.
+
+**Generate the API types.** The app's TypeScript types come from the same OpenAPI file, so the
+screen can only use fields the API really has:
+
+```bash
+npm --prefix web/app run openapi:gen    # rewrites web/app/src/api/schema.d.ts
+```
+
+**Create the route file.** Its name is its path: `_app.org.products.tsx` is `/org/products`,
+inside the signed-in shell. The app's dev server picks it up and regenerates the route tree.
+
+```tsx title="web/app/src/routes/_app.org.products.tsx"
+import { createFileRoute } from '@tanstack/react-router'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { api, type Schemas } from '../api/client'
+import { can, useSession } from '../auth/session'
+import { useMoney } from '../components/billing'
+import { Pagination } from '../components/Pagination'
+import { TableSkeleton } from '../components/Skeleton'
+import { Button, Card, EmptyState, PageHeader } from '../components/ui'
+import { useT } from '../i18n'
+
+export const Route = createFileRoute('/_app/org/products')({
+  component: ProductsPage,
+})
+
+type Product = Schemas['Product']
+interface Page {
+  data: Product[]
+  meta: Schemas['PaginationMeta']
+}
+
+function ProductsPage() {
+  const t = useT()
+  const session = useSession()
+  const money = useMoney()
+  const [page, setPage] = useState(1)
+
+  const products = useQuery({
+    queryKey: ['products', page],
+    queryFn: () => api<Page>('/product', { envelope: true, query: { page, per_page: 20 } }),
+    placeholderData: keepPreviousData,
+  })
+
+  return (
+    <>
+      <PageHeader
+        title={t('products.title')}
+        description={t('products.subtitle')}
+        actions={can(session, 'product.create') ? <Button variant="primary" icon="plus">{t('products.create')}</Button> : null}
+      />
+      <Card flush>
+        {products.isLoading ? (
+          <TableSkeleton columns={4} avatar={false} />
+        ) : (products.data?.data ?? []).length === 0 ? (
+          <EmptyState icon="package" title={t('products.empty')} />
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>{t('products.name')}</th>
+                  <th>{t('products.sku')}</th>
+                  <th className="num">{t('products.price')}</th>
+                  <th className="num">{t('products.stock')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.data!.data.map((product) => (
+                  <tr key={product.id}>
+                    <td>{product.name}</td>
+                    <td className="mono small">{product.sku}</td>
+                    <td className="num">{money(product.price)}</td>
+                    <td className="num">{product.stock}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {products.data ? <Pagination page={page} perPage={20} total={products.data.meta.total} onPage={setPage} /> : null}
+      </Card>
+    </>
+  )
+}
+```
+
+`api('/product')` calls `/api/v1/product` with the signed-in member's token, so the list is
+already filtered to their organization by the tenant filter you saw in step 1. `useMoney()`
+turns the stored minor units (1250) into a price in the member's language (৳12.50).
+
+**Add it to the sidebar.** One entry in `navigation.ts` puts the page in the sidebar, the Ctrl+K
+palette and the shortcuts sheet (`g t` opens it), and only for members whose role has
+`product.view`:
+
+```ts title="web/app/src/components/navigation.ts" ins={2-3}
+  { to: '/org/branches', label: 'org.branches', icon: 'tenants', group: 'organization', key: 'b', /* … */ },
+  { to: '/org/products', label: 'products.title', icon: 'package', group: 'organization', key: 't',
+    keywords: 'catalogue inventory sku stock', permission: 'product.view', tenantOnly: true },
+```
+
+**Write the text in both languages.** Add the keys to English, then to Bangla. The build fails
+until both have every key:
+
+```ts title="web/app/src/i18n/en.ts"
+'products.title': 'Products',
+'products.subtitle': 'Your catalogue: names, SKUs, prices and stock.',
+'products.create': 'New product',
+'products.empty': 'No products yet.',
+'products.name': 'Name',
+'products.sku': 'SKU',
+'products.price': 'Price',
+'products.stock': 'In stock',
+```
+
+```ts title="web/app/src/i18n/bn.ts"
+'products.title': 'পণ্য',
+'products.subtitle': 'আপনার ক্যাটালগ: নাম, SKU, দাম ও স্টক।',
+'products.create': 'নতুন পণ্য',
+'products.empty': 'এখনো কোনো পণ্য নেই।',
+'products.name': 'নাম',
+'products.sku': 'SKU',
+'products.price': 'দাম',
+'products.stock': 'স্টকে আছে',
+```
+
+**Try it.** Open [localhost:8082](http://localhost:8082) and sign in as the super admin, open
+**Organizations**, choose "Main Tenant" and press **Impersonate**. **Products** is in the sidebar,
+with the pen you created in step 7. Switch the language to বাংলা in the account menu: the page
+and the price follow.
+
+<Aside type="tip" title="Create and edit from the screen">
+  The **New product** button doesn't open anything yet. Add the editor drawer from
+  [Adding a screen → The editor drawer](../app/adding-a-screen.md#3-the-editor-drawer): a form
+  that posts with an idempotency key and shows your "This SKU is already in use." error under the
+  SKU field.
+</Aside>
+
+Check the app the way CI does:
+
+```bash
+npm --prefix web/app run typecheck
+npm --prefix web/app run check:style
+```
+
+## 9. Write the tests
 
 The generator already wrote **unit tests** (`service_test.go`) that check the service scopes to
 the tenant, using a fake repository — they need no database:
@@ -425,11 +580,11 @@ go test -count=1 ./internal/modules/product/
   without permissions is refused. If you ever mount a route without `h.can(...)`, CI fails.
 </Aside>
 
-## 9. See it in the dashboard
+## 10. See it in the dashboard
 
 Open [localhost:8080/dev/](http://localhost:8080/dev/) and look at what you built:
 
-- **Telescope** shows each request you made, with the SQL it ran and its timing.
+- **Requests** shows each call you and the app made, with the SQL it ran and its timing.
 - **Inspector → Routes** lists `/api/v1/product` with its `can:` middleware; filter by `product`.
   From the terminal, `go run ./cmd/app route:list --path=/api/v1/product` prints the same rows.
 - **Inspector → Roles & permissions** shows the new `product` group.
@@ -449,7 +604,7 @@ With `MCP_ENABLED=true`, an agent connected to `/mcp` (Claude Code, claude.ai, C
 `list_products` tool. It runs through the same route, permission and tenant filter as the REST
 call, so it needs no Go code. See [MCP server](../guides/mcp.md).
 
-## 10. Finish like a pro
+## 11. Finish like a pro
 
 ```bash
 make check            # gofmt + vet + lint + unit tests
@@ -457,8 +612,8 @@ make gen-check        # generated code (sqlc, OpenAPI, docs) is current
 make openapi-check    # the spec matches the router
 ```
 
-Then commit the module, the migration, the regenerated `internal/dbgen` and `api/openapi.yaml`
-together.
+Then commit the module, the migration, the regenerated `internal/dbgen`, `api/openapi.yaml`, the
+screen and the regenerated `schema.d.ts` and `routeTree.gen.ts` together: one feature, one commit.
 
 ## What you learned
 
@@ -470,8 +625,11 @@ together.
 | changed `service.go` | business rules and activity belong in the service |
 | edited `catalog.go` | every permission is declared once, in Go |
 | edited `wiring.go`, `routes.go` | everything is wired explicitly; tenant data goes in the resolved group |
+| added `_app.org.products.tsx` | a screen is a route file; its types come from the OpenAPI spec (`openapi:gen`) |
+| edited `navigation.ts` | one entry puts a page in the sidebar, Ctrl+K and shortcuts, behind a permission |
+| edited `en.ts` and `bn.ts` | every string is a key; the build fails if a language misses one |
 | wrote a `testkit` test | prove isolation: another tenant gets 404 |
 
 Next, read the guides for the parts you'll use most: [Modules](../guides/modules.md),
-[Handlers & routes](../guides/handlers-and-routes.md), [Database](../guides/database.md) and
-[Testing](../guides/testing.md).
+[Handlers & routes](../guides/handlers-and-routes.md), [Database](../guides/database.md),
+[Testing](../guides/testing.md) and, for the app, [Adding a screen](../app/adding-a-screen.md).

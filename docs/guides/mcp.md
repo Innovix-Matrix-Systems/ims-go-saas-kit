@@ -1,6 +1,7 @@
 ---
 title: MCP server (AI agents)
 description: Let Claude, ChatGPT, Cursor and other AI agents work with your API as a connector, with the user's own permissions.
+layers: [api, app]
 ---
 
 The API can be added to an AI client **as a connector**. The user pastes one URL, signs in with
@@ -15,7 +16,7 @@ Inspector.
 
 Here the API is the OAuth **server** that AI apps sign in to. That is the opposite of
 [social login](social-login.md), where the API is a **client** of Google or GitHub; the two are
-separate features. [OAuth in this starter](oauth.md) puts them side by side.
+separate features. [OAuth in this kit](oauth.md) puts them side by side.
 
 ## Turn it on
 
@@ -128,7 +129,7 @@ mark, a duplicate name, or a DELETE not marked destructive.
 `ims gen module` writes a commented `# x-mcp:` line on the list operation it generates; uncomment
 it to expose the list. `ims gen openapi` keeps a mark you enabled.
 
-The starter exposes five tools, enough to prove reads, writes, tenancy and audit: `whoami`,
+The kit exposes five tools, enough to prove reads, writes, tenancy and audit: `whoami`,
 `list_branches`, `create_branch`, `list_users`, `create_user`. Which operations a product exposes
 is its own choice.
 
@@ -177,7 +178,7 @@ agent ─POST /mcp─▶ origin check ▶ bearer token ▶ scope check ▶ rate 
 - Results contain user-entered data, so treat prompt injection as given. The protections are
   structural: RBAC and tenant scoping bound what an agent can do, connections are read-only unless
   the user allows changes, write tools carry hints so clients confirm them, and there are no delete
-  tools in the starter.
+  tools in the kit.
 - The CIMD fetch is SSRF-guarded: https on port 443 only, public addresses only (checked after DNS,
   at dial time), no redirects, 5 s, 64 KiB, cached 5 minutes to 24 hours.
 - A bad `client_id` or redirect URI shows an error page and never redirects. Loopback redirect URIs
@@ -186,3 +187,7 @@ agent ─POST /mcp─▶ origin check ▶ bearer token ▶ scope check ▶ rate 
   on this computer" will connect.
 - The sign-in and consent pages carry CSRF tokens, `X-Frame-Options: DENY` and
   `frame-ancestors 'none'`. Codes, verifiers and tokens are hashed at rest and never logged.
+
+## In the app
+
+Members see the AI assistants they connected under **Account → Connected apps** (`/settings/connections`) and can disconnect one there, which revokes its access.

@@ -1,6 +1,7 @@
 ---
 title: Database and SQL
 description: Migrations with goose, type-safe queries with sqlc, transactions, quotas under advisory locks, and the gotchas.
+layers: [database]
 ---
 
 PostgreSQL is the only database (v1 is Postgres-only, on purpose — decision 22). There is no ORM:

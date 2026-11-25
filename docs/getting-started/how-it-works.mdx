@@ -23,7 +23,17 @@ That is the whole architecture. Everything else is a consequence of it.
 
 ## A request, end to end
 
-Here is `POST /api/v1/branch` from the wire to the database and back.
+Here is creating a branch, from the click in the app to the database and back.
+
+**0. The screen calls the API** (`web/app/src/routes/_app.org.branches.tsx`). The **New branch**
+button only shows when the session holds `branch.create`; the form posts through the app's API
+client, which adds the token, the language and an idempotency key:
+
+```ts
+await api('/branch', { method: 'POST', idempotent: true, body })
+```
+
+That arrives at the server as `POST /api/v1/branch`.
 
 **1. The route declares the permission** (`internal/modules/branches/routes.go`) — Laravel's
 `->middleware('can:branch.create')`:
@@ -61,6 +71,10 @@ activity entry.
 parameter of every tenant-scoped query.
 
 **5. The response** goes back up the same path: domain struct → response DTO → JSON envelope.
+
+**6. The screen updates.** The app invalidates its cached `['branches']` query, so the list
+refetches, and shows a toast. A 422 lands under the right form field; a 402 (the plan's branch
+limit) explains the limit and links to Billing. See [Adding a screen](../app/adding-a-screen.md).
 
 ## Laravel → this codebase
 

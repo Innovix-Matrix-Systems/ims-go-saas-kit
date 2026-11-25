@@ -1,6 +1,7 @@
 ---
 title: Notifications
 description: Notifications targeted at users, roles, branches, tenants or everyone — in the in-app feed, and by mail, SMS or push when you ask — with per-user preferences and one-click unsubscribe.
+layers: [api, app]
 ---
 
 Notifications are in-app messages — "Your import finished", "Subscription expires in 3 days".
@@ -57,7 +58,7 @@ notifications.RegisterEvent("billing.payment_failed", notifications.Event{
 })
 ```
 
-The starter ships `renewal.reminder` (mail and SMS; billing sends it by mail) and
+The kit ships `renewal.reminder` (mail and SMS; billing sends it by mail) and
 `platform.announcement` (mail) for staff announcements.
 
 ## Announcements to organizations
@@ -123,3 +124,7 @@ Platform accounts use the same endpoints (preferences included) under
 `/api/v1/internal/notification/…`. Reads are
 **user-scoped** — never branch-scoped — so moving branches doesn't hide notifications. Unread
 counters are cached and recomputed from the database on a cache miss.
+
+## In the app
+
+The bell in the top bar shows unread notifications, **Notifications** (`/notifications`) lists them all, and members choose channels per notification under **Account → Notifications** (`/settings/notifications`). With realtime on, new notifications appear without a refresh.

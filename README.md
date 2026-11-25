@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-0.1.8-ff5c1a)
-[![API docs](https://img.shields.io/badge/API%20docs-website-ff5c1a)](https://ims-go-api-starter.innovixmatrixsystem.com)
+[![Docs](https://img.shields.io/badge/docs-website-ff5c1a)](https://ims-go-saas-kit.innovixmatrixsystem.com)
 [![Use this template](https://img.shields.io/badge/use%20this-template-2ea44f?logo=github)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate)
 <br>
 ![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
@@ -14,22 +14,19 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![CGO free](https://img.shields.io/badge/CGO-free-00ADD8)
 
-**A multi-tenant SaaS admin, ready to build on.** IMS Go SaaS Kit is the
-[IMS Go API Starter](https://github.com/Innovix-Matrix-Systems/ims-go-api-starter) with the app your
-customers and your staff actually use: an organization workspace (members, roles, billing, files,
-dashboards) and a staff console (organizations, plans, payments, announcements, audit), in English
+**A multi-tenant SaaS admin, ready to build on.** IMS Go SaaS Kit is a
+multi-tenant Go backend together with the app your customers and your staff actually use: an
+organization workspace (members, roles, billing, files, dashboards) and a staff console (organizations, plans, payments, announcements, audit), in English
 and Bangla, light or dark. It ships as **one CGO-free binary** that serves the app at `/`, the API,
 the developer dashboard at `/dev` and the API reference at `/docs`, and runs migrations, queue
 workers and the scheduler. No containers required, Docker-ready when you want it.
 
-**📖 Documentation:** the backend is the API starter's, so its website is the place to learn it:
-**[ims-go-api-starter.innovixmatrixsystem.com](https://ims-go-api-starter.innovixmatrixsystem.com)**. Start with the
-[quick start](https://ims-go-api-starter.innovixmatrixsystem.com/getting-started/quick-start/), the
-[first module tutorial](https://ims-go-api-starter.innovixmatrixsystem.com/tutorial/first-module/) and
-[coming from Laravel](https://ims-go-api-starter.innovixmatrixsystem.com/getting-started/coming-from-laravel/), then the
-[guides](https://ims-go-api-starter.innovixmatrixsystem.com/guides/modules/) and the [reference](https://ims-go-api-starter.innovixmatrixsystem.com/reference/http-api/).
-This repository's [`docs/`](docs/README.md) holds the same guides, updated for what this starter adds
-(the app, branch-scoped lists, job ownership, announcements); the links in the table below point there.
+**📖 Documentation:** **[ims-go-saas-kit.innovixmatrixsystem.com](https://ims-go-saas-kit.innovixmatrixsystem.com)**. Start with the
+[quick start](https://ims-go-saas-kit.innovixmatrixsystem.com/getting-started/quick-start/), build
+[your first feature](https://ims-go-saas-kit.innovixmatrixsystem.com/tutorial/first-module/) from the table to the screen,
+see [every screen of the app](https://ims-go-saas-kit.innovixmatrixsystem.com/app/overview/), or read
+[coming from Laravel](https://ims-go-saas-kit.innovixmatrixsystem.com/getting-started/coming-from-laravel/). The same pages are
+in [`docs/`](docs/README.md) as Markdown; the links in the tables below point there.
 
 | Organization dashboard | Staff console |
 | --- | --- |
@@ -39,13 +36,23 @@ This repository's [`docs/`](docs/README.md) holds the same guides, updated for w
 | --- | --- |
 | ![Developer dashboard](docs/images/dev-dashboard.png) | ![OpenAPI reference](docs/images/api-docs.png) |
 
+| Light mode | বাংলা (Bangla) |
+| --- | --- |
+| ![Organization home in light mode](docs/images/app-org-dashboard-light.png) | ![Organization home in Bangla](docs/images/app-org-dashboard-bn.png) |
+
+**Every request traced with OpenTelemetry**: one call, its Redis commands and SQL queries, timed
+([Tracing](docs/guides/health-and-observability.md#tracing-opentelemetry)).
+
+![One request in Jaeger: its Redis commands and SQL queries, 22 spans in 7.6 ms](docs/images/tracing-request-redis.png)
+
 ## Why
 
 - **Start from a product, not a blank page.** Sign-up, onboarding, a workspace per organization,
   billing with plan limits and a console for your team already work together; you add your own
   modules and screens.
-- **One backend, kept in step.** The server is the IMS Go API Starter's: the same modules, the same
-  conventions, the same `ims` commands. Backend improvements made here go back upstream.
+- **One codebase, one binary.** The API, the app and both dashboards change in the same pull
+  request and deploy as one `ims` binary; the app's API types are generated from the same spec the
+  server is checked against.
 - **Multi-tenant and safe by default.** Tenant and branch isolation in SQL (fails closed), a
   permission on every route, staff impersonation and "log in as" recorded in the audit log.
 - **Built the Go way, with Laravel's batteries.** Thin handlers, permissions on routes, typed SQL
@@ -101,7 +108,7 @@ Building a product on it? Press **[Use this template](https://github.com/Innovix
 
 ```bash
 make rename MODULE=github.com/acme/shop-admin BINARY=shop TITLE="Acme Shop"   # DRY=1 to preview
-git add -A && git commit -m "chore: rename the starter to shop-admin"
+git add -A && git commit -m "chore: rename the kit to shop-admin"
 ```
 
 That rewrites the Go module path, the binary and CLI name, the deploy names and paths, the
@@ -136,12 +143,14 @@ A feature is a backend module and, if people use it, a screen in the app:
 
 1. **Module:** `go run ./cmd/app gen module --name=product --fields="name:string,price:decimal"`
    scaffolds the migration, queries, service, handler, routes with permissions, tests and the
-   OpenAPI entry. Follow the API starter's
-   [first module tutorial](https://ims-go-api-starter.innovixmatrixsystem.com/tutorial/first-module/) and [module guide](https://ims-go-api-starter.innovixmatrixsystem.com/guides/modules/).
+   OpenAPI entry. See the [module guide](docs/guides/modules.md).
 2. **Screen:** add a route in `web/app/src/routes/`, run `npm --prefix web/app run openapi:gen` for
    typed API calls, and add it to the sidebar and Ctrl+K in `web/app/src/components/navigation.ts`.
    Reuse the components in `web/app/src/components` and add messages in English and Bangla
-   (`web/app/src/i18n`).
+   (`web/app/src/i18n`). See [Adding a screen](docs/app/adding-a-screen.md).
+
+The [first-feature tutorial](docs/tutorial/first-module.mdx) does both, end to end, in about 45
+minutes.
 
 [AGENTS.md](AGENTS.md) is the working guide for both, for people and AI agents.
 

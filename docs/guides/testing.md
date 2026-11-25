@@ -1,6 +1,7 @@
 ---
 title: Testing
 description: Unit tests with fakes, integration tests with testkit, tenant isolation tests and the safety nets that run in CI.
+layers: [database, api]
 ---
 
 ## Two kinds of tests

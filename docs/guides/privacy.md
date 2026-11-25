@@ -1,6 +1,7 @@
 ---
 title: Account deletion & data export
 description: Erase a user's personal data in every module, or hand them a copy of it — the right to erasure and the right of access (GDPR and similar laws).
+layers: [api, app]
 ---
 
 A user can ask for their account to be deleted, or for a copy of everything the application
@@ -156,3 +157,7 @@ Finished queue jobs (River) keep their payloads, a queued mail's address include
 queue's retention removes them. Logs and traces never carry e-mails or phone numbers by design;
 their retention is an operations setting. Mail and SMS providers and other processors keep their
 own copies: the `user.erased` webhook is how the application tells them.
+
+## In the app
+
+Members export their data and delete their account under **Account → Privacy** (`/settings/privacy`).

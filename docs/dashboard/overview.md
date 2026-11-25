@@ -1,6 +1,7 @@
 ---
 title: Dashboard tour
 description: Every panel of the developer dashboard at /dev — what it shows, what it can change, who can use it, and how to make it yours.
+layers: [dashboard]
 ---
 
 The developer dashboard is a React app **embedded in the binary** and served at `/dev`. Think of
@@ -9,7 +10,7 @@ inspector, tenants, settings, flags, sessions, an audit log), for the people who
 API, not for your customers. [Coming from Laravel](../getting-started/coming-from-laravel.md#the-developer-dashboard)
 compares them panel by panel.
 
-![The dashboard overview](../images/dev-dashboard.png)
+![The dashboard overview](../images/dev-dashboard-light.png)
 
 ## Who can open it
 
@@ -32,6 +33,8 @@ and the environment badge is red, so a change is never made on the wrong instanc
 | **Requests** | requests by status class (1 hour, 24 hours or 7 days) and the busiest or slowest routes as charts; every captured request with a pinned summary (method, status, duration, who, request ID) and tabs for the SQL it ran (total time, slowest and repeated statements), cache calls, jobs it queued, logs, exceptions, headers and bodies (redacted) |
 | **Logs** | warn-and-above log lines, the level as the row's edge, with search and a link to each line's request |
 | **Exceptions** | exceptions per hour over the last day and by class as charts; panics and 5xx, grouped by class and message with a count and first/last seen, each with its stack trace and request |
+
+![Requests: every call with its SQL, logs and timing](../images/dev-requests-light.png)
 
 ## Operate
 
@@ -90,7 +93,7 @@ Press **?** for the full list. Letter keys work in either case. Shortcuts do not
 The top bar's appearance menu sets the **theme** (system, light or dark), the **accent** colour
 (indigo, blue, teal, violet or slate) and the **density** (comfortable or compact). The choice is
 kept per browser and applied before the page paints, so there is no flash of the wrong theme. A
-project built on the starter changes the default accent, or adds its own, in one place:
+project built on the kit changes the default accent, or adds its own, in one place:
 `web/dev/src/styles/tokens.css`. Every colour, size and radius is a token there, and
 `npm run check:style` (also in CI) checks that every text colour passes WCAG AA in both themes and
 with every accent.

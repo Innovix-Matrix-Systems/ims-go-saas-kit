@@ -1,6 +1,7 @@
 ---
 title: Mail and translations
 description: The mail transport (log or SMTP driver) behind the delivery system, and the English/Bangla message catalogs.
+layers: [api, app, dashboard]
 ---
 
 ## Mail
@@ -39,3 +40,7 @@ curl -s localhost:8080/api/v1/branch -H 'Accept-Language: bn' …   # Bangla err
 
 To add a language, add `locales/<code>.json` with the same keys and list the code in
 `APP_SUPPORTED_LOCALES`.
+
+## In the app
+
+The app has its own catalogs (`web/app/src/i18n/`) and sends the chosen language as `Accept-Language` on every call, so the server's messages match the screen. See [Translations and theming](../app/translations-and-theming.md).

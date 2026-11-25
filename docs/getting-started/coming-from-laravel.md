@@ -1,6 +1,6 @@
 ---
 title: Coming from Laravel
-description: Laravel's batteries and workflow, Go's runtime, without the magic. What this starter takes from Laravel, what it takes from Go, what it leaves out on purpose, what you will miss, and how the developer dashboard covers Telescope, Horizon and more.
+description: Laravel's batteries and workflow, Go's runtime, without the magic. What this kit takes from Laravel, what it takes from Go, what it leaves out on purpose, what you will miss, and how the developer dashboard covers Telescope, Horizon and more.
 ---
 
 **Laravel's batteries and workflow. Go's runtime, without the magic.**

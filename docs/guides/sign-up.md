@@ -1,6 +1,7 @@
 ---
 title: Sign-up and onboarding
 description: Let people create an organization themselves, and track each new organization's first-run setup.
+layers: [api, app]
 ---
 
 Organizations normally come from platform staff (`POST /api/v1/tenant`). With self-service
@@ -65,3 +66,7 @@ an owner) answer `404`.
 `user_agreements` and `tenant_onboarding.owner_user_id` are covered by the module's privacy
 contributor: exports list the accepted documents and owned organizations; erasure keeps the
 acceptances (evidence of consent) but clears their IP address and browser.
+
+## In the app
+
+**Create an organization** on the sign-in page opens `/signup`; after it, the setup wizard (`/onboarding`) asks for a plan, invites the team and offers two-factor. The organization home then shows a getting-started checklist until the owner hides it. See [Organization workspace](../app/organization-workspace.md#getting-started-checklist).

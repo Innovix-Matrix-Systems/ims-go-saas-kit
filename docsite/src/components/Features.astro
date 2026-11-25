@@ -1,0 +1,137 @@
+---
+// What the kit already does, six areas, each linking to its guide.
+const features = [
+  {
+    title: 'Tenancy you can trust',
+    text: 'Organizations and branches isolated in SQL that fails closed. Staff can act as an organization or a user, and every request is audited.',
+    link: 'Tenancy',
+    href: '/guides/tenancy/',
+  },
+  {
+    title: 'Sign-in done properly',
+    text: 'OTP, two-factor by app or e-mail, invitations, revocable sessions, access tokens, Google and GitHub sign-in.',
+    link: 'Authentication',
+    href: '/guides/authentication/',
+  },
+  {
+    title: 'Billing with limits',
+    text: 'Plans with feature limits, self-service checkout, bKash, cash and bank payments with staff approvals.',
+    link: 'Billing',
+    href: '/guides/billing/',
+  },
+  {
+    title: 'Background work',
+    text: 'A River queue, a cron scheduler, imports and exports with progress, and signed webhooks with retries.',
+    link: 'Queue and scheduler',
+    href: '/guides/queue-and-scheduler/',
+  },
+  {
+    title: 'Talk to your users',
+    text: 'Notifications by feed, mail, SMS and push, with preferences. Announcements with schedules and per-organization stats.',
+    link: 'Notifications',
+    href: '/guides/notifications/',
+  },
+  {
+    title: 'Ready for production',
+    text: 'RFC 9457 errors, Prometheus metrics, OpenTelemetry tracing, health probes, maintenance mode, systemd or Docker.',
+    link: 'Deploy',
+    href: '/operations/deploy/',
+  },
+]
+---
+
+<section class="band not-content" aria-labelledby="features-title">
+  <header>
+    <h2 id="features-title">What's already built</h2>
+    <p>The work every SaaS needs before its first real feature. Each area has a guide.</p>
+  </header>
+  <div class="grid">
+    {
+      features.map((f) => (
+        <article>
+          <h3>{f.title}</h3>
+          <p>{f.text}</p>
+          <a href={f.href}>{f.link} →</a>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .band {
+    display: grid;
+    gap: 1.4rem;
+    padding-block: 2.5rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: end;
+    gap: 0.5rem 1.5rem;
+  }
+  h2 {
+    margin: 0;
+    font-family: var(--ims-font-display);
+    font-size: clamp(1.4rem, 1.1rem + 1vw, 1.75rem);
+    font-weight: 700;
+    color: var(--sl-color-white);
+    letter-spacing: -0.015em;
+  }
+  header p {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    max-width: 52ch;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 10px;
+    overflow: hidden;
+    gap: 1px;
+    background: var(--sl-color-gray-5);
+  }
+  article {
+    display: grid;
+    gap: 0.4rem;
+    align-content: start;
+    padding: 1.15rem 1.2rem;
+    background: var(--sl-color-black);
+    min-width: 0;
+  }
+  h3 {
+    margin: 0;
+    font-family: var(--ims-font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+  p {
+    margin: 0;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+  a {
+    font: 0.78rem var(--sl-font-mono);
+    color: var(--sl-color-accent);
+    text-decoration: none;
+    margin-top: 0.2rem;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  /* Six cards: 3 × 2 on wide screens, 2 × 3 in between, one column on phones. */
+  @media (min-width: 40rem) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 64rem) {
+    .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

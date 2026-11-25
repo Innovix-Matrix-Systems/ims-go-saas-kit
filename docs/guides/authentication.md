@@ -1,6 +1,7 @@
 ---
 title: Authentication
 description: Opaque per-device tokens, login throttling, OTP, password reset and e-mail verification.
+layers: [api, app]
 ---
 
 ## Tokens
@@ -41,7 +42,7 @@ JWT driver can be added without touching handlers. Every login, successful or no
 
 Two features use OAuth, in opposite roles: [social login](social-login.md) (the API as a client of
 Google or GitHub) and the [MCP connector](mcp.md) (the API as a server for AI apps). See
-[OAuth in this starter](oauth.md).
+[OAuth in this kit](oauth.md).
 
 ## Login checks
 
@@ -242,3 +243,7 @@ In code, `authn.IdentityFromContext(ctx)` is the target; `identity.Impersonated(
 userID := authn.UserID(r)                       // 0 when anonymous
 identity, ok := authn.IdentityFromContext(ctx)  // id, name, email, tenant, branch
 ```
+
+## In the app
+
+The sign-in screens are routes in `web/app/src/routes/`: `/login` (password, then the second factor when it is on), `/forgot-password` and `/reset-password`, `/verify-email`, `/confirm-email-change`, `/accept-invitation`, and `/setup-two-factor` when an organization requires two-factor. Members manage their password, two-factor and signed-in devices under **Account → Security** (`/settings/security`). See [The app](../app/overview.md#signing-in-and-the-screens-outside-the-app).

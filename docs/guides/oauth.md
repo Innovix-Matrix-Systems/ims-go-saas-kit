@@ -1,6 +1,7 @@
 ---
-title: OAuth in this starter
+title: OAuth in this kit
 description: The API uses OAuth twice, in opposite roles — as a client of Google and GitHub for social login, and as a server for AI agents. What each one is, how they differ, and the vocabulary.
+layers: [api]
 ---
 
 The API speaks OAuth in two places, and they are easy to mix up because they share the

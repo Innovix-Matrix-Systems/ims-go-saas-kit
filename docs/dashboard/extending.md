@@ -1,6 +1,7 @@
 ---
 title: Extending the dashboard
 description: Add a maintenance command, a dashboard endpoint, a panel or a palette entry.
+layers: [api, dashboard]
 ---
 
 ## Add a maintenance command

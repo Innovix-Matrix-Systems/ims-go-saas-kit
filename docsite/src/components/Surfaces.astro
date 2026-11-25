@@ -1,0 +1,160 @@
+---
+// The four screens the kit ships, from the repository's own screenshots
+// (docs/images). Each card names the path it is served on.
+import { Image } from 'astro:assets'
+import orgDark from '../../../docs/images/app-org-dashboard.png'
+import orgLight from '../../../docs/images/app-org-dashboard-light.png'
+import staffDark from '../../../docs/images/app-staff-console.png'
+import staffLight from '../../../docs/images/app-staff-console-light.png'
+import devDark from '../../../docs/images/dev-dashboard.png'
+import devLight from '../../../docs/images/dev-dashboard-light.png'
+import apiDocs from '../../../docs/images/api-docs.png'
+
+const surfaces = [
+  {
+    light: orgLight,
+    dark: orgDark,
+    path: '/',
+    title: 'Organization workspace',
+    text: 'Members, roles, branches, billing, files and activity, for each organization.',
+    href: '/app/organization-workspace/',
+  },
+  {
+    light: staffLight,
+    dark: staffDark,
+    path: '/console',
+    title: 'Staff console',
+    text: 'Organizations, plans, payment approvals, announcements and the audit log.',
+    href: '/app/staff-console/',
+  },
+  {
+    light: devLight,
+    dark: devDark,
+    path: '/dev',
+    title: 'Developer dashboard',
+    text: 'Live requests, the queue, schedules, logs and maintenance commands.',
+    href: '/dashboard/overview/',
+  },
+  {
+    light: apiDocs,
+    dark: apiDocs,
+    path: '/docs',
+    title: 'API reference',
+    text: 'The OpenAPI 3 contract, checked against the code on every build.',
+    href: '/reference/http-api/',
+  },
+]
+---
+
+<section class="band not-content" aria-labelledby="surfaces-title">
+  <header>
+    <h2 id="surfaces-title">Four screens, ready on day one</h2>
+    <p>Every screen below is in the repository and works after <code>make dev</code>.</p>
+  </header>
+  <div class="grid">
+    {
+      surfaces.map((s) => (
+        <a class="card" href={s.href}>
+          <span class="shot">
+            <Image class="only-light" src={s.light} alt={s.title} widths={[480, 960]} sizes="(min-width: 72rem) 270px, (min-width: 40rem) 45vw, 92vw" />
+            <Image class="only-dark" src={s.dark} alt={s.title} widths={[480, 960]} sizes="(min-width: 72rem) 270px, (min-width: 40rem) 45vw, 92vw" />
+          </span>
+          <code class="path">{s.path}</code>
+          <strong>{s.title}</strong>
+          <span class="text">{s.text}</span>
+        </a>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .band {
+    display: grid;
+    gap: 1.4rem;
+    padding-block: 2.5rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: end;
+    gap: 0.5rem 1.5rem;
+  }
+  h2 {
+    margin: 0;
+    font-family: var(--ims-font-display);
+    font-size: clamp(1.4rem, 1.1rem + 1vw, 1.75rem);
+    font-weight: 700;
+    color: var(--sl-color-white);
+    letter-spacing: -0.015em;
+  }
+  header p {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    max-width: 52ch;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: 1.25rem;
+  }
+  .card {
+    display: grid;
+    gap: 0.45rem;
+    align-content: start;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+  }
+  .shot {
+    display: block;
+    aspect-ratio: 16 / 10;
+    border-radius: 9px;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-gray-6);
+    margin-bottom: 0.35rem;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .shot :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    display: block;
+  }
+  /* One screenshot per theme: the light one on the light site, the dark one on the dark site. */
+  :global(:root[data-theme="light"]) .shot :global(img.only-dark),
+  :global(:root[data-theme="dark"]) .shot :global(img.only-light) {
+    display: none;
+  }
+  .card:hover .shot {
+    border-color: var(--sl-color-accent);
+    transform: translateY(-2px);
+  }
+  .path {
+    font-size: 0.75rem;
+    color: var(--sl-color-accent);
+    background: none;
+    padding: 0;
+  }
+  strong {
+    font-family: var(--ims-font-display);
+    font-size: 1.05rem;
+    color: var(--sl-color-white);
+  }
+  .text {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shot {
+      transition: none;
+    }
+    .card:hover .shot {
+      transform: none;
+    }
+  }
+</style>

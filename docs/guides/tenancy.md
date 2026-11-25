@@ -1,6 +1,7 @@
 ---
 title: Tenancy
 description: How tenants and branches are resolved, scoped in SQL, impersonated — and why a forgotten filter fails closed.
+layers: [database, api, app]
 ---
 
 Every organisation using the API is a **tenant**; each tenant has one or more **branches** (shops,
@@ -246,3 +247,7 @@ owner, deactivate them, change their roles, set their password or reset their tw
 can deactivate them, and the owner's account cannot be erased (self-deletion and admin erasure
 answer 409). Platform super admins can still act, for support. Transfers are
 `organization.ownership_transferred` activity entries.
+
+## In the app
+
+Members never choose a tenant: the app sends only their token. Organizations with several branches get a **branch switcher** in the top bar (it sets the active branch on the account). Staff work inside an organization by **impersonating** it or **logging in as** a user from the console; the app then sends `X-Acting-Tenant` or `X-Acting-User` and shows a banner until they stop. See [Staff console](../app/staff-console.md#working-inside-an-organization).

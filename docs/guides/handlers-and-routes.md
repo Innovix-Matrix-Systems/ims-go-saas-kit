@@ -1,6 +1,7 @@
 ---
 title: Handlers and routes
 description: The httpx.Kit handler pattern, route permissions, pagination, filters and the response envelope.
+layers: [api]
 ---
 
 ## The handler pattern

@@ -1,6 +1,7 @@
 ---
 title: Files and storage
 description: Named storage disks (local, S3, Cloudflare R2, MinIO), private and public visibility, and file attachments.
+layers: [api, app, dashboard]
 ---
 
 ## Disks
@@ -97,3 +98,7 @@ Uploads count against the plan's `storage.mb` when the plan defines it.
 
 **Files** browses every file across disks with thumbnails, a preview drawer (images and PDFs),
 filters by owner, tenant, type and date, and audited download and delete.
+
+## In the app
+
+Members browse, upload and preview files under **Files** (`/org/files`), in a grid or a list. The profile photo and the organization logo use the same upload endpoints.

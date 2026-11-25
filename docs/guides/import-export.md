@@ -1,6 +1,7 @@
 ---
 title: Import and export
 description: Background spreadsheet imports and exports with real progress, per-row errors and safe downloads.
+layers: [api, app]
 ---
 
 Large imports and exports run as **data-processing jobs**: the request returns at once with a job,
@@ -61,3 +62,7 @@ member's job and list them all. A personal-data export stays its owner's alone, 
 `…export`), create a job row with `dataprocessing.Service`, enqueue with the tenant scope, then
 report progress with `UpdateProgress` as rows are processed. The
 `feature.data_processing` [flag](./feature-flags.md) gates the whole feature.
+
+## In the app
+
+Exports and imports start from the screen that owns the data (members, activity) and run in the queue. The **jobs tray** in the top bar and the **Jobs** page (`/jobs`) show progress, retry and the download link until it expires. In code, `useStartExport()` (`src/components/jobs.tsx`) starts one.

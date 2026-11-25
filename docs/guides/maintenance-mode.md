@@ -1,6 +1,7 @@
 ---
 title: Maintenance mode
 description: Take the API down for an upgrade or migration and bring it back — `ims down` / `ims up`, the dashboard toggle, what stays open, the bypass secret, background work and running it across many servers.
+layers: [api, app, dashboard]
 ---
 
 One switch takes the API down and brings it back, like Laravel's `artisan down` / `up`. While
@@ -114,3 +115,7 @@ ims migrate
 curl -H "X-Maintenance-Bypass: <secret>" https://api.example.com/api/v1/system/info
 ims up
 ```
+
+## In the app
+
+While maintenance mode is on, the first refused call sends the app to its maintenance screen (`/maintenance`) instead of failing request by request. **Retry** returns to the app once the API answers again.

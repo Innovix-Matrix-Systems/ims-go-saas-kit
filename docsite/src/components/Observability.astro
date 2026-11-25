@@ -1,0 +1,189 @@
+---
+// OpenTelemetry tracing, first band under the hero: in a SaaS you need to
+// know what one customer's slow request actually did, across the API, SQL,
+// the queue and the services it called.
+import { Image } from 'astro:assets'
+import trace from '../../../docs/images/tracing-request-redis.png'
+
+const spans = [
+  { what: 'HTTP requests', name: 'POST /api/v1/branch', note: 'with user, organization and impersonator' },
+  { what: 'SQL', name: 'db CreateBranch', note: 'the statement, never its arguments' },
+  { what: 'Redis', name: 'get, set, incrby', note: 'the cache, rate limits and locks' },
+  { what: 'Service writes', name: 'billing.approve_payment', note: 'every write, enforced by a test' },
+  { what: 'Queue jobs and tasks', name: 'job webhook.deliver', note: 'joined to the request that queued them' },
+  { what: 'Outbound calls', name: 'POST hooks.example.com', note: 'webhooks, SMS, bKash, S3' },
+]
+const backends = ['Grafana Tempo', 'Jaeger', 'Honeycomb', 'Datadog', 'New Relic', 'any OTel Collector']
+---
+
+<section class="band not-content" aria-labelledby="otel-title">
+  <div class="copy">
+    <p class="eyebrow">OpenTelemetry, built in</p>
+    <h2 id="otel-title">See what every request did, end to end</h2>
+    <p class="lede">
+      When one customer says "it's slow", open their trace: the route, each SQL query and Redis command it
+      ran, the service write, the job it queued on another process and the webhook that job sent, timed and in order. Set
+      one variable and traces flow over OTLP; leave it unset and tracing costs nothing.
+    </p>
+    <pre class="env"><span class="c"># .env: set = tracing on</span>
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318</pre>
+    <ul class="backends" aria-label="Works with">
+      {backends.map((b) => <li>{b}</li>)}
+    </ul>
+    <a class="more" href="/guides/health-and-observability/#tracing-opentelemetry">Tracing, metrics and health →</a>
+  </div>
+
+  <div class="visual">
+    <span class="shot">
+      <Image
+        src={trace}
+        loading="eager"
+        alt="One request in Jaeger: GET /api/v1/data-processing/jobs/user with its Redis commands and SQL queries, 22 spans in 7.6 ms"
+        widths={[640, 1280]}
+        sizes="(min-width: 64rem) 560px, 92vw"
+      />
+    </span>
+    <dl class="spans">
+      {
+        spans.map((s) => (
+          <div>
+            <dt>{s.what}</dt>
+            <dd>
+              <code>{s.name}</code>
+              <span>{s.note}</span>
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<style>
+  .band {
+    display: grid;
+    gap: 2rem;
+    padding-block: 2.5rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+    align-items: start;
+  }
+  .copy {
+    display: grid;
+    gap: 0.85rem;
+    min-width: 0;
+  }
+  .eyebrow {
+    margin: 0;
+    font: 500 0.75rem var(--sl-font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-color-accent);
+  }
+  h2 {
+    margin: 0;
+    font-family: var(--ims-font-display);
+    font-size: clamp(1.5rem, 1.15rem + 1.2vw, 2rem);
+    font-weight: 800;
+    line-height: 1.12;
+    color: var(--sl-color-white);
+    letter-spacing: -0.02em;
+  }
+  .lede {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    max-width: 50ch;
+  }
+  .env {
+    margin: 0.25rem 0 0;
+    background: var(--ims-terminal);
+    color: var(--ims-terminal-fg);
+    border: 0;
+    border-radius: 9px;
+    padding: 0.8rem 1rem;
+    font: 0.76rem/1.6 var(--sl-font-mono);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .env .c {
+    color: var(--ims-terminal-dim);
+  }
+  .backends {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .backends li {
+    margin: 0;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    color: var(--sl-color-gray-2);
+  }
+  .more {
+    font: 0.8rem var(--sl-font-mono);
+    color: var(--sl-color-accent);
+    text-decoration: none;
+  }
+  .more:hover {
+    text-decoration: underline;
+  }
+  .visual {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .shot {
+    display: block;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--ims-terminal);
+  }
+  .shot :global(img) {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .spans {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: 0.6rem 1.25rem;
+  }
+  .spans div {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+  dt {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  dd {
+    margin: 0;
+    display: grid;
+    gap: 0.1rem;
+    font-size: 0.78rem;
+    color: var(--sl-color-gray-3);
+  }
+  dd code {
+    font-size: 0.74rem;
+    color: var(--sl-color-accent-high);
+    background: none;
+    padding: 0;
+    overflow-wrap: anywhere;
+  }
+  @media (min-width: 64rem) {
+    .band {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      gap: 2.75rem;
+    }
+  }
+</style>

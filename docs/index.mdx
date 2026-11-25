@@ -1,107 +1,40 @@
 ---
 title: IMS Go SaaS Kit
-description: "Laravel's batteries and workflow. Go's runtime, without the magic. A multi-tenant API starter that ships as one binary, with a developer dashboard built in."
+description: "One Go binary, your whole SaaS: a multi-tenant kit with an organization app, a staff console, a developer dashboard and the API, queue and scheduler behind them."
 template: splash
+editUrl: false
+lastUpdated: false
 hero:
-  tagline: "Laravel's batteries and workflow. Go's runtime, without the magic. A multi-tenant API that ships as one CGO-free binary: it serves the API, runs migrations, queue workers and the scheduler, embeds a Telescope-style developer dashboard, and is an MCP server AI agents add as a connector."
+  title: "One Go binary.<br><em>Your whole SaaS.</em>"
+  tagline: "A multi-tenant kit with the app your customers use, the console your staff use, and the API, queue and scheduler behind them, traced end to end with OpenTelemetry. Start from a working product and add your own modules."
   actions:
-    - text: Get started
-      link: /getting-started/quick-start/
-      icon: right-arrow
-    - text: Build your first module
-      link: /tutorial/first-module/
-      variant: minimal
-    - text: Coming from Laravel?
-      link: /getting-started/coming-from-laravel/
-      variant: minimal
     - text: Use this template
       link: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate
       icon: github
+    - text: Quick start
+      link: /getting-started/quick-start/
+      icon: right-arrow
       variant: secondary
+    - text: Coming from Laravel?
+      link: /getting-started/coming-from-laravel/
+      variant: minimal
 ---
 
-import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components'
-import Terminal from '@components/Terminal.astro'
+{/* The landing page. Its sections are components in docsite/src/components;
+    this file only orders them. Read the README for the same story on GitHub. */}
 
-<Terminal
-  title="from zero to a running API"
-  lines={[
-    { cmd: 'cp .env.example .env && make key-generate' },
-    { out: 'Application key set in .env.', tone: 'dim' },
-    { cmd: 'make migrate seed' },
-    { out: 'goose: 35 migrations applied · River schema v8', tone: 'dim' },
-    { out: 'seeded 75 permissions, tenant "Default", admin + developer accounts', tone: 'ok' },
-    { cmd: 'go run ./cmd/app gen module --name=product --fields="name:string,price:decimal"' },
-    { out: 'wrote migrations/00036_create_products.sql', tone: 'dim' },
-    { out: 'wrote internal/modules/product/{model,repository,service,request,handler,routes}.go', tone: 'dim' },
-    { out: 'Module "product" generated.', tone: 'ok' },
-    { cmd: 'make dev' },
-    { out: 'dashboard  → http://localhost:8080/dev', tone: 'accent' },
-    { out: 'API docs   → http://localhost:8080/docs', tone: 'accent' },
-  ]}
-/>
+import Observability from '@components/Observability.astro'
+import Surfaces from '@components/Surfaces.astro'
+import Features from '@components/Features.astro'
+import Languages from '@components/Languages.astro'
+import Steps from '@components/Steps.astro'
 
-## Why this starter
+<Observability />
 
-<CardGrid stagger>
-  <Card title="Laravel's batteries and workflow" icon="laptop">
-    Thin handlers (`h.Bind`, `h.Data`), permissions on routes (`r.With(h.can("product.create"))`),
-    services, one config file per section, artisan-style `ims` commands, and `ims gen module`
-    scaffolds the stack. [What carries over](/getting-started/coming-from-laravel/).
-  </Card>
-  <Card title="Go's runtime, without the magic" icon="seti:go">
-    One process that stays running, SQL typed by sqlc instead of an ORM, every dependency wired in
-    plain code instead of a container, and tenant filters you can read instead of global scopes.
-  </Card>
-  <Card title="Multi-tenant, safe by default" icon="approve-check">
-    Tenant and branch isolation in SQL that fails closed, RBAC, staff acting as a tenant or as a
-    user (every request audited), per-tenant plan limits, and a test that fails any route without a
-    permission.
-  </Card>
-  <Card title="Everything an API needs" icon="puzzle">
-    Auth with OTP, two-factor (app or e-mail), invitations, sessions users can revoke, recovery and
-    Google/GitHub sign-in · billing with plan limits · settings · feature flags with rollout ·
-    activity log with a system audit log · public tenant routes · MCP server for AI agents (as a
-    connector) · mail, SMS and push from one delivery system · notifications with preferences ·
-    outbound webhooks · duplicate-write protection · files on local/S3/R2/MinIO · import/export ·
-    backups · queue · scheduler · maintenance mode (`ims down` / `ims up`) · OpenTelemetry tracing ·
-    RFC 9457 errors · OpenAPI.
-  </Card>
-  <Card title="A dashboard you'll actually use" icon="seti:html">
-    Requests, logs, exceptions, queue, a delivery log with template previews, one-click commands, a
-    maintenance-mode toggle, an inspector for health, routes, roles and config, tenants, settings,
-    flags, files, sessions and an audit log. Status first, light or dark with your accent colour, and
-    a keyboard for everything: Ctrl+K, `g` + a letter, `?`.
-  </Card>
-  <Card title="Fast feedback" icon="rocket">
-    Type-safe SQL (sqlc), integration tests in a few lines (`testkit`), hot reload, and AI-agent
-    skills that know the codebase.
-  </Card>
-  <Card title="One binary in production" icon="rocket">
-    No containers needed: systemd runs the API, the worker and the scheduler from the same
-    binary. Prefer Docker? One image and a `compose.yaml` run the same stack.
-  </Card>
-</CardGrid>
+<Surfaces />
 
-## Where to go next
+<Languages />
 
-<CardGrid>
-  <LinkCard title="Quick start" description="Run it locally in five minutes." href="/getting-started/quick-start/" />
-  <LinkCard title="How it works" description="The one rule every request follows." href="/getting-started/how-it-works/" />
-  <LinkCard title="Tutorial" description="Build a products module, step by step." href="/tutorial/first-module/" />
-  <LinkCard title="Design decisions" description="What we chose, and why." href="/architecture/decisions/" />
-</CardGrid>
+<Features />
 
-## Who's behind it
-
-IMS Go SaaS Kit is built and maintained by
-**[Innovix Matrix System](https://innovixmatrixsystem.com)**, a software studio in Dhaka, Bangladesh.
-We run our own products on it, and it joins our other open-source starters for
-[PocketBase](https://github.com/Innovix-Matrix-Systems/ims-pocketbase-baas-starter),
-[NestJS](https://github.com/Innovix-Matrix-Systems/ims-nest-api-starter) and
-[Laravel](https://github.com/Innovix-Matrix-Systems/ims-laravel-api-starter).
-
-<CardGrid>
-  <LinkCard title="Need a team to build on it?" description="Custom software, web platforms and mobile apps. Write to hello@innovixmatrixsystem.com." href="mailto:hello@innovixmatrixsystem.com" />
-  <LinkCard title="Follow our open source" description="Every starter we publish, on GitHub." href="https://github.com/Innovix-Matrix-Systems" />
-</CardGrid>
+<Steps />

@@ -1,6 +1,6 @@
 ---
 title: Project tour
-description: Where everything lives, and what you will — and will never — edit.
+description: Where everything lives — the Go backend, the app, the developer dashboard and the docs — and what you will, and will never, edit.
 ---
 
 import { FileTree, Aside } from '@astrojs/starlight/components'
@@ -11,6 +11,7 @@ import { FileTree, Aside } from '@astrojs/starlight/components'
 - cmd/app/main.go the single entry point (`ims`)
 - cmd/rename/ `make rename`: turns the template into your app (logic in internal/rename)
 - docs/ these pages, as plain Markdown
+- docsite/ the site that publishes docs/ (Astro Starlight)
 - internal/
   - app/ composition root
     - platform.go shared dependencies (DB, cache, queue, services)
@@ -36,8 +37,14 @@ import { FileTree, Aside } from '@astrojs/starlight/components'
   - testkit/ integration-test helpers
 - migrations/ goose SQL — the only schema source
 - sql/queries/ SQL that sqlc turns into Go
-- web/dev/ developer dashboard (React, embedded in the binary)
-- website/ this documentation site (Astro Starlight)
+- web/
+  - app/ the app at / (React, embedded in the binary)
+    - src/routes/ one file per screen
+    - src/components/ the shell, navigation.ts, shared UI
+    - src/api/ the fetch wrapper and **generated** API types
+    - src/i18n/ English and Bangla messages
+    - src/styles/ design tokens and stylesheets
+  - dev/ the developer dashboard at /dev (React, embedded in the binary)
 - .agents/skills/ task recipes for AI agents
 - AGENTS.md working guide for humans and agents
 - Makefile
@@ -64,22 +71,23 @@ business services in `service/`, which keeps the packages free of import cycles.
 
 ## Generated code
 
-Three folders are generated and **committed**. CI regenerates them and fails on any diff.
+These files are generated and **committed**. CI regenerates them and fails on any diff.
 
-| Folder | Generated from | Regenerate with |
+| File or folder | Generated from | Regenerate with |
 | --- | --- | --- |
 | `internal/dbgen` | `migrations/` + `sql/queries/` | `make sqlc` |
 | `internal/contract` | `api/openapi.yaml` | `make openapi` |
+| `web/app/src/api/schema.d.ts`, `web/dev/src/api/schema.d.ts` | `api/openapi.yaml` | `npm --prefix web/app run openapi:gen` (and `web/dev`) |
+| `web/app/src/routeTree.gen.ts` | the files in `web/app/src/routes/` | the app's dev server or build |
 | `docs/reference/*` | the CLI, `.env.example`, the permission catalog, the Makefile | `make docs-gen` |
 
-`make gen-check` runs all of them and fails if anything is stale.
+`make gen-check` checks the Go and docs ones; the `web` and `app` CI jobs check the TypeScript ones.
 
 <Aside type="tip" title="Building your own product on it?">
   Start with GitHub's **[Use this template](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate)** button rather than a fork: you get a repository of
   your own with a clean history. Then run `make rename MODULE=github.com/you/your-app` to give it
   your module path, binary and names (see the [quick start](./quick-start.mdx)), and keep `docs/`:
-  it documents your codebase. If you don't want to publish a docs site, delete `website/`; nothing
-  else depends on it.
+  it documents your codebase. All of it is in [Make it yours](./make-it-yours.md).
 </Aside>
 
 ## Where does X go?
@@ -92,6 +100,8 @@ Three folders are generated and **committed**. CI regenerates them and fails on 
 | add a config setting | `internal/config/<section>.go` and `.env.example` |
 | add a recurring task | `internal/app/schedule.go` |
 | add a queue job | the module's `RegisterJobs`, registered in `platform.go` |
+| add a screen to the app | a file in `web/app/src/routes/`, an entry in `navigation.ts`, keys in `i18n/en.ts` and `bn.ts` ([Adding a screen](../app/adding-a-screen.md)) |
+| change the app's colours or language | `web/app/src/styles/tokens.css`, `web/app/src/i18n/` ([Translations and theming](../app/translations-and-theming.md)) |
 | add a CLI command | `internal/cli` |
 | add a dashboard command | `internal/app/dev_commands.go` |
 | change the schema | a new file in `migrations/` ([database guide](../guides/database.md)) |
