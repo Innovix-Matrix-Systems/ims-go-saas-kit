@@ -179,7 +179,9 @@ function PlatformHome({ session }: { session: Session }) {
     placeholderData: keepPreviousData,
   })
   const data = dashboard.data
+  // The default currency leads (the API orders it first); other currencies with payments follow.
   const lead = data?.revenue?.currencies[0]
+  const others = (data?.revenue?.currencies.slice(1) ?? []).filter((row) => row.amount.total > 0)
   const pending = data?.revenue?.pending ?? []
   const pendingCount = pending.reduce((sum, row) => sum + row.count, 0)
   const moneyCompact = (currency: string) => (value: number) => money(value, currency, { compact: true })
@@ -221,7 +223,12 @@ function PlatformHome({ session }: { session: Session }) {
                 label={t('dashboard.revenue')}
                 value={lead ? money(lead.amount.total, lead.currency) : '—'}
                 delta={lead ? <Delta current={lead.amount.total} previous={lead.amount.previous_total} /> : undefined}
-                sub={lead ? t('dashboard.payments', { count: n.plain(lead.payments) }) : t('dashboard.noRevenue')}
+                sub={
+                  lead
+                    ? // Other currencies are their own figures (never converted).
+                      [t('dashboard.payments', { count: n.plain(lead.payments) }), ...others.map((row) => money(row.amount.total, row.currency))].join(' · ')
+                    : t('dashboard.noRevenue')
+                }
                 points={lead?.amount.points}
               />
             ) : null}
