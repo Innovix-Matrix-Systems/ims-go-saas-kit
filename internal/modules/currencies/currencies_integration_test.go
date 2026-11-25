@@ -113,6 +113,26 @@ func TestCurrencyRules(t *testing.T) {
 	if public.Default != "GBP" {
 		t.Fatalf("public default = %q after the change, want GBP", public.Default)
 	}
+
+	// Every change is in the system audit log (no tenant).
+	rows, err := app.Pool.Query(t.Context(), `SELECT action FROM activity_log WHERE subject_type = 'currency' AND tenant_id IS NULL`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	actions := map[string]int{}
+	for rows.Next() {
+		var action string
+		if err := rows.Scan(&action); err != nil {
+			t.Fatal(err)
+		}
+		actions[action]++
+	}
+	rows.Close()
+	for _, action := range []string{"currency.created", "currency.default_changed", "currency.updated", "currency.deleted"} {
+		if actions[action] == 0 {
+			t.Errorf("no %s entry in the audit log (have %v)", action, actions)
+		}
+	}
 }
 
 // Payments take the default currency's code, and bKash (taka only) is

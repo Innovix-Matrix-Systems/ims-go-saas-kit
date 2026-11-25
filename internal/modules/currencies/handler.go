@@ -99,7 +99,7 @@ func (h *Handler) destroy(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := h.service.Delete(r.Context(), id); err != nil {
+	if err := h.service.Delete(r.Context(), authn.UserID(r), id); err != nil {
 		h.Error(w, r, err)
 		return
 	}

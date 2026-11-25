@@ -3,13 +3,13 @@
 
 -- name: ListCurrencies :many
 -- The default first, then by code; in_use says whether payments use it.
-SELECT c.*,
+SELECT sqlc.embed(c),
        EXISTS (SELECT 1 FROM payments p WHERE p.currency = c.code) AS in_use
 FROM currencies c
 ORDER BY c.is_default DESC, c.code;
 
 -- name: GetCurrency :one
-SELECT c.*,
+SELECT sqlc.embed(c),
        EXISTS (SELECT 1 FROM payments p WHERE p.currency = c.code) AS in_use
 FROM currencies c
 WHERE c.id = @id;

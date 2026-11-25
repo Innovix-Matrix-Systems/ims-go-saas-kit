@@ -9,6 +9,7 @@ import (
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/activity"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/money"
@@ -26,9 +27,10 @@ const (
 // be disabled or deleted, a currency with payments keeps its decimals and
 // can't be deleted.
 type Service struct {
-	repo  Repository
-	cache cache.Store
-	tx    *database.TxManager
+	repo     Repository
+	cache    cache.Store
+	tx       *database.TxManager
+	activity *activity.Recorder
 }
 
 // NewService creates the currency service.
@@ -39,6 +41,13 @@ func NewService(repo Repository, store cache.Store) *Service {
 // WithTx makes moving the default one transaction.
 func (s *Service) WithTx(tx *database.TxManager) *Service {
 	s.tx = tx
+	return s
+}
+
+// WithActivity records currency changes in the system audit log (platform
+// level, no tenant), like other staff-managed data.
+func (s *Service) WithActivity(recorder *activity.Recorder) *Service {
+	s.activity = recorder
 	return s
 }
 
@@ -117,11 +126,15 @@ func (s *Service) Format(ctx context.Context, code string) money.Currency {
 func (s *Service) Create(ctx context.Context, actorID int64, input Input) (_ *Currency, err error) {
 	ctx, end := tracing.Begin(ctx, "currencies.create", attribute.String("currency.code", input.Code))
 	defer end(&err)
+	if err := checkFormat(input); err != nil {
+		return nil, err
+	}
 	currency, err := s.repo.Create(ctx, input, actor(actorID))
 	if err != nil {
 		return nil, err
 	}
 	s.forget(ctx)
+	s.record(ctx, actorID, "currency.created", currency.ID, input.changes(currency.Code))
 	return currency, nil
 }
 
@@ -132,6 +145,9 @@ func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (_
 	defer end(&err)
 	existing, err := s.repo.Get(ctx, id)
 	if err != nil {
+		return nil, err
+	}
+	if err := checkFormat(input); err != nil {
 		return nil, err
 	}
 	problems := map[string][]string{}
@@ -150,6 +166,7 @@ func (s *Service) Update(ctx context.Context, actorID, id int64, input Input) (_
 	}
 	currency.InUse = existing.InUse
 	s.forget(ctx)
+	s.record(ctx, actorID, "currency.updated", currency.ID, input.changes(currency.Code))
 	return currency, nil
 }
 
@@ -161,6 +178,10 @@ func (s *Service) SetDefault(ctx context.Context, actorID, id int64) (_ *Currenc
 	existing, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+	previous := ""
+	if current, err := s.Default(ctx); err == nil {
+		previous = current.Code
 	}
 	if !existing.IsEnabled {
 		return nil, apperr.Validation(map[string][]string{"is_enabled": {"Enable the currency before making it the default."}})
@@ -175,12 +196,13 @@ func (s *Service) SetDefault(ctx context.Context, actorID, id int64) (_ *Currenc
 		return nil, err
 	}
 	s.forget(ctx)
+	s.record(ctx, actorID, "currency.default_changed", id, map[string]any{"code": existing.Code, "previous": previous})
 	return s.repo.Get(ctx, id)
 }
 
 // Delete removes a currency that is neither the default nor used by a
 // payment (disable those instead).
-func (s *Service) Delete(ctx context.Context, id int64) (err error) {
+func (s *Service) Delete(ctx context.Context, actorID, id int64) (err error) {
 	ctx, end := tracing.Begin(ctx, "currencies.delete", attribute.Int64("currency.id", id))
 	defer end(&err)
 	existing, err := s.repo.Get(ctx, id)
@@ -197,6 +219,7 @@ func (s *Service) Delete(ctx context.Context, id int64) (err error) {
 		return err
 	}
 	s.forget(ctx)
+	s.record(ctx, actorID, "currency.deleted", id, map[string]any{"code": existing.Code})
 	return nil
 }
 
@@ -227,6 +250,33 @@ func (s *Service) EnsureSeeds(ctx context.Context) (err error) {
 	}
 	s.forget(ctx)
 	return nil
+}
+
+// checkFormat refuses a format that can't be read back: the decimal mark
+// and the thousands separator must differ, or "1,234" is ambiguous.
+func checkFormat(input Input) error {
+	if input.ThousandsSeparator != "" && input.ThousandsSeparator == input.DecimalMark {
+		return apperr.Validation(map[string][]string{
+			"thousands_separator": {"The thousands separator must differ from the decimal mark."},
+		})
+	}
+	return nil
+}
+
+func (input Input) changes(code string) map[string]any {
+	return map[string]any{
+		"code": code, "name": input.Name, "symbol": input.Symbol, "symbol_first": input.SymbolFirst,
+		"precision": input.Precision, "decimal_mark": input.DecimalMark,
+		"thousands_separator": input.ThousandsSeparator, "is_enabled": input.IsEnabled,
+	}
+}
+
+// record writes a platform-level audit entry (no tenant).
+func (s *Service) record(ctx context.Context, actorID int64, action string, id int64, changes map[string]any) {
+	if s.activity == nil {
+		return
+	}
+	s.activity.Record(ctx, activity.Entry{ActorID: actorID, Action: action, Subject: "currency", SubjectID: id, Changes: changes})
 }
 
 func (s *Service) forget(ctx context.Context) {

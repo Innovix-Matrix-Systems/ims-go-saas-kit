@@ -54,11 +54,7 @@ func (r *repository) List(ctx context.Context) ([]Currency, error) {
 	}
 	items := make([]Currency, 0, len(rows))
 	for _, row := range rows {
-		item := mapCurrency(dbgen.Currency{
-			ID: row.ID, Code: row.Code, Name: row.Name, Symbol: row.Symbol, SymbolFirst: row.SymbolFirst,
-			Precision: row.Precision, DecimalMark: row.DecimalMark, ThousandsSeparator: row.ThousandsSeparator,
-			IsEnabled: row.IsEnabled, IsDefault: row.IsDefault, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
-		})
+		item := mapCurrency(row.Currency)
 		item.InUse = row.InUse
 		items = append(items, item)
 	}
@@ -73,11 +69,7 @@ func (r *repository) Get(ctx context.Context, id int64) (*Currency, error) {
 		}
 		return nil, database.MapError("currencies.get", err)
 	}
-	item := mapCurrency(dbgen.Currency{
-		ID: row.ID, Code: row.Code, Name: row.Name, Symbol: row.Symbol, SymbolFirst: row.SymbolFirst,
-		Precision: row.Precision, DecimalMark: row.DecimalMark, ThousandsSeparator: row.ThousandsSeparator,
-		IsEnabled: row.IsEnabled, IsDefault: row.IsDefault, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
-	})
+	item := mapCurrency(row.Currency)
 	item.InUse = row.InUse
 	return &item, nil
 }

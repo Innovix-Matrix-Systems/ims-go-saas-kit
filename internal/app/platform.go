@@ -277,7 +277,9 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 
 	// Currencies: how amounts are written; the default is the currency of
 	// plan prices and new payments.
-	currencyService := currencies.NewService(currencies.NewRepository(txManager.Queries()), store).WithTx(txManager)
+	currencyService := currencies.NewService(currencies.NewRepository(txManager.Queries()), store).
+		WithTx(txManager).
+		WithActivity(activityRecorder)
 
 	// Billing
 	billingPackages := billingdomain.NewPackageRepository(txManager.Queries())

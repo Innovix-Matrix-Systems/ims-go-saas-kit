@@ -7,8 +7,6 @@ package dbgen
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const clearDefaultCurrency = `-- name: ClearDefaultCurrency :exec
@@ -127,41 +125,28 @@ WHERE c.id = $1
 `
 
 type GetCurrencyRow struct {
-	ID                 int64              `json:"id"`
-	Code               string             `json:"code"`
-	Name               string             `json:"name"`
-	Symbol             string             `json:"symbol"`
-	SymbolFirst        bool               `json:"symbol_first"`
-	Precision          int16              `json:"precision"`
-	DecimalMark        string             `json:"decimal_mark"`
-	ThousandsSeparator string             `json:"thousands_separator"`
-	IsEnabled          bool               `json:"is_enabled"`
-	IsDefault          bool               `json:"is_default"`
-	CreatedBy          *int64             `json:"created_by"`
-	UpdatedBy          *int64             `json:"updated_by"`
-	CreatedAt          pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
-	InUse              bool               `json:"in_use"`
+	Currency Currency `json:"currency"`
+	InUse    bool     `json:"in_use"`
 }
 
 func (q *Queries) GetCurrency(ctx context.Context, id int64) (GetCurrencyRow, error) {
 	row := q.db.QueryRow(ctx, getCurrency, id)
 	var i GetCurrencyRow
 	err := row.Scan(
-		&i.ID,
-		&i.Code,
-		&i.Name,
-		&i.Symbol,
-		&i.SymbolFirst,
-		&i.Precision,
-		&i.DecimalMark,
-		&i.ThousandsSeparator,
-		&i.IsEnabled,
-		&i.IsDefault,
-		&i.CreatedBy,
-		&i.UpdatedBy,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.Currency.ID,
+		&i.Currency.Code,
+		&i.Currency.Name,
+		&i.Currency.Symbol,
+		&i.Currency.SymbolFirst,
+		&i.Currency.Precision,
+		&i.Currency.DecimalMark,
+		&i.Currency.ThousandsSeparator,
+		&i.Currency.IsEnabled,
+		&i.Currency.IsDefault,
+		&i.Currency.CreatedBy,
+		&i.Currency.UpdatedBy,
+		&i.Currency.CreatedAt,
+		&i.Currency.UpdatedAt,
 		&i.InUse,
 	)
 	return i, err
@@ -176,21 +161,8 @@ ORDER BY c.is_default DESC, c.code
 `
 
 type ListCurrenciesRow struct {
-	ID                 int64              `json:"id"`
-	Code               string             `json:"code"`
-	Name               string             `json:"name"`
-	Symbol             string             `json:"symbol"`
-	SymbolFirst        bool               `json:"symbol_first"`
-	Precision          int16              `json:"precision"`
-	DecimalMark        string             `json:"decimal_mark"`
-	ThousandsSeparator string             `json:"thousands_separator"`
-	IsEnabled          bool               `json:"is_enabled"`
-	IsDefault          bool               `json:"is_default"`
-	CreatedBy          *int64             `json:"created_by"`
-	UpdatedBy          *int64             `json:"updated_by"`
-	CreatedAt          pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
-	InUse              bool               `json:"in_use"`
+	Currency Currency `json:"currency"`
+	InUse    bool     `json:"in_use"`
 }
 
 // Currencies: how each one is written. One row is the default (the currency
@@ -206,20 +178,20 @@ func (q *Queries) ListCurrencies(ctx context.Context) ([]ListCurrenciesRow, erro
 	for rows.Next() {
 		var i ListCurrenciesRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Code,
-			&i.Name,
-			&i.Symbol,
-			&i.SymbolFirst,
-			&i.Precision,
-			&i.DecimalMark,
-			&i.ThousandsSeparator,
-			&i.IsEnabled,
-			&i.IsDefault,
-			&i.CreatedBy,
-			&i.UpdatedBy,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.Currency.ID,
+			&i.Currency.Code,
+			&i.Currency.Name,
+			&i.Currency.Symbol,
+			&i.Currency.SymbolFirst,
+			&i.Currency.Precision,
+			&i.Currency.DecimalMark,
+			&i.Currency.ThousandsSeparator,
+			&i.Currency.IsEnabled,
+			&i.Currency.IsDefault,
+			&i.Currency.CreatedBy,
+			&i.Currency.UpdatedBy,
+			&i.Currency.CreatedAt,
+			&i.Currency.UpdatedAt,
 			&i.InUse,
 		); err != nil {
 			return nil, err
