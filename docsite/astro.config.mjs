@@ -182,6 +182,7 @@ export default defineConfig({
         Footer: './src/components/Footer.astro',
         Search: './src/components/Search.astro',
         PageTitle: './src/components/PageTitle.astro',
+        ThemeSelect: './src/components/ThemeSelect.astro',
       },
       social: [{ icon: 'github', label: 'Source code on GitHub', href: repoUrl }],
       // Pages are ../docs/*, so the base points at docsite/ and URL resolution
