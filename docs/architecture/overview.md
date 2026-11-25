@@ -55,7 +55,7 @@ other: it has no endpoints of its own and no privileged access.
   renders; `can()` hides what the role can't do. The API enforces it regardless.
 - **Navigation** (`src/components/navigation.ts`): one list feeds the sidebar, Ctrl+K, shortcuts
   and titles, filtered by permission and by organization vs staff.
-- **Text and look**: typed message catalogs (English, Bangla) and design tokens with theme, accent
+- **Text and look**: typed message catalogs in six languages (Arabic right to left, logical CSS) and design tokens with theme, accent
   and density presets, checked for WCAG AA contrast in CI.
 
 In development the app runs on Vite (:8082) and proxies API paths to the API (:8081); see

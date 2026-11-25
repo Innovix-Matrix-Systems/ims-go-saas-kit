@@ -1,8 +1,9 @@
 ---
-// The app in another language: the same screens in Bangla, to show that the
-// whole app (and the API's messages) is translated, not only its menus.
+// The app in other languages: Arabic (right to left) and Bangla, to show that the
+// whole app (and the API's messages and e-mails) is translated, not only its
+// menus.
 import { Image } from 'astro:assets'
-import homeBn from '../../../docs/images/app-org-dashboard-bn.png'
+import homeAr from '../../../docs/images/app-org-dashboard-ar.png'
 import billingBn from '../../../docs/images/app-billing-bn.png'
 ---
 
@@ -10,15 +11,16 @@ import billingBn from '../../../docs/images/app-billing-bn.png'
   <div class="copy">
     <h2 id="languages-title">Every screen, in your customers' language</h2>
     <p>
-      The app ships in English and Bangla: menus, charts, dates, numerals and prices, and the API's
-      own messages and e-mails, since every call carries the chosen language. Add a language by
-      translating one file; the build refuses a missing key.
+      Six languages out of the box: English, Bangla, German, Arabic (right to left), Spanish and
+      French. Menus, charts, dates, numerals and prices, the API's messages, notifications and
+      e-mails, each in the reader's language. A new language is a descriptor and catalog files, no
+      code, and the checks fail until every key is translated.
     </p>
-    <a href="/app/translations-and-theming/">Translations and theming →</a>
+    <a href="/guides/languages/">Languages →</a>
   </div>
   <div class="shots">
-    <span class="shot">
-      <Image src={homeBn} alt="The organization home in Bangla" widths={[560, 1120]} sizes="(min-width: 64rem) 380px, 92vw" />
+    <span class="shot rtl">
+      <Image src={homeAr} alt="The organization home in Arabic, laid out right to left" widths={[560, 1120]} sizes="(min-width: 64rem) 380px, 92vw" />
     </span>
     <span class="shot">
       <Image src={billingBn} alt="The billing page in Bangla" widths={[560, 1120]} sizes="(min-width: 64rem) 380px, 92vw" />
@@ -81,6 +83,10 @@ import billingBn from '../../../docs/images/app-billing-bn.png'
     object-fit: cover;
     object-position: top left;
     display: block;
+  }
+  /* A right-to-left screen starts at the right edge: keep its sidebar. */
+  .shot.rtl :global(img) {
+    object-position: top right;
   }
   @media (min-width: 64rem) {
     .band {

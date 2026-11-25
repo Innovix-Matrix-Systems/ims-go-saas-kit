@@ -1,7 +1,9 @@
+<img src="docsite/src/assets/logo.svg" alt="IMS Go SaaS Kit" width="64">
+
 # IMS Go SaaS Kit
 
 [![CI](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.2.0-ff5c1a)
+![Version](https://img.shields.io/badge/version-0.2.3-ff5c1a)
 [![Docs](https://img.shields.io/badge/docs-website-ff5c1a)](https://ims-go-saas-kit.innovixmatrixsystem.com)
 [![Use this template](https://img.shields.io/badge/use%20this-template-2ea44f?logo=github)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate)
 <br>
@@ -16,8 +18,8 @@
 
 **A multi-tenant SaaS admin, ready to build on.** IMS Go SaaS Kit is a
 multi-tenant Go backend together with the app your customers and your staff actually use: an
-organization workspace (members, roles, billing, files, dashboards) and a staff console (organizations, plans, payments, announcements, audit), in English
-and Bangla, light or dark. It ships as **one CGO-free binary** that serves the app at `/`, the API,
+organization workspace (members, roles, billing, files, dashboards) and a staff console (organizations, plans, payments, announcements, audit), in six
+languages (Arabic right to left), light or dark. It ships as **one CGO-free binary** that serves the app at `/`, the API,
 the developer dashboard at `/dev` and the API reference at `/docs`, and runs migrations, queue
 workers and the scheduler. No containers required, Docker-ready when you want it.
 
@@ -39,6 +41,10 @@ in [`docs/`](docs/README.md) as Markdown; the links in the tables below point th
 | Light mode | বাংলা (Bangla) |
 | --- | --- |
 | ![Organization home in light mode](docs/images/app-org-dashboard-light.png) | ![Organization home in Bangla](docs/images/app-org-dashboard-bn.png) |
+
+| العربية (Arabic, right to left) | Six languages, one menu |
+| --- | --- |
+| ![Organization home in Arabic](docs/images/app-org-dashboard-ar.png) | ![The language menu](docs/images/app-language-menu.png) |
 
 **Every request traced with OpenTelemetry**: one call, its Redis commands and SQL queries, timed
 ([Tracing](docs/guides/health-and-observability.md#tracing-opentelemetry)).
@@ -146,8 +152,8 @@ A feature is a backend module and, if people use it, a screen in the app:
    OpenAPI entry. See the [module guide](docs/guides/modules.md).
 2. **Screen:** add a route in `web/app/src/routes/`, run `npm --prefix web/app run openapi:gen` for
    typed API calls, and add it to the sidebar and Ctrl+K in `web/app/src/components/navigation.ts`.
-   Reuse the components in `web/app/src/components` and add messages in English and Bangla
-   (`web/app/src/i18n`). See [Adding a screen](docs/app/adding-a-screen.md).
+   Reuse the components in `web/app/src/components` and add its text in every language
+   (`web/app/src/i18n/catalogs/`, checked by `npm run i18n:check`). See [Adding a screen](docs/app/adding-a-screen.md).
 
 The [first-feature tutorial](docs/tutorial/first-module.mdx) does both, end to end, in about 45
 minutes.

@@ -9,7 +9,7 @@ right to left), in light and dark, with five accent colours and two densities. A
 two small systems: typed message catalogs and a set of design tokens. How languages work across the
 whole kit (lookup order, e-mails, adding one) is in [Languages](../guides/languages.md).
 
-![The organization home in Bangla](../images/app-org-dashboard-bn.png)
+![The organization home in Arabic, laid out right to left](../images/app-org-dashboard-ar.png)
 
 ## Translations
 
@@ -38,8 +38,12 @@ t('members.count', { count: members.length })
 - The language follows the account (signed in), then this browser's pick, then the organization's
   language, then the browser. It sets `<html lang dir>`, and every API call sends it as
   `Accept-Language`.
+- People switch it from the **language menu** in the top bar (also on the signed-out screens, and
+  "Change language…" in Ctrl+K); signed in, the choice is saved to their account.
 - **Activity log** actions have labels in the `activity` namespace (`activity.label.<action>`); an
   action without one is spelled from its code.
+
+![The language menu in the top bar, with Arabic chosen](../images/app-language-menu.png)
 
 ### The server speaks the same language
 

@@ -146,6 +146,10 @@ export default defineConfig({
   // The public address: canonical links, the sitemap and link previews use it.
   // A fork publishing elsewhere sets DOCS_SITE_URL instead.
   site: siteUrl,
+  // Pages that moved: old links keep working.
+  redirects: {
+    '/guides/mail-and-i18n/': '/guides/languages/',
+  },
   markdown: {
     // Relative links such as ../guides/tenancy.md work on GitHub and here.
     processor: unified({ rehypePlugins: [[rehypeDocsLinks, { docsDir, repoUrl }]] }),

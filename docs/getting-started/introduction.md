@@ -8,8 +8,8 @@ product with three parts, all served by one Go binary:
 
 - **The app** at `/`: a React app with a workspace for each organization that signs up (members,
   roles, branches, billing, files, webhooks, activity) and a console for your staff
-  (organizations, plans, payment approvals, announcements, feature flags, audit). English and
-  Bangla, light and dark. See [The app](../app/overview.md).
+  (organizations, plans, payment approvals, announcements, feature flags, audit). Six
+  languages (Arabic right to left), light and dark. See [The app](../app/overview.md).
 - **The API** at `/api/v1`: everything the app does, as a documented HTTP API with an OpenAPI 3
   contract checked against the code. Authentication with two-factor, tenants and branches, roles
   and permissions, billing with plan limits, notifications, files, webhooks, a queue and a
