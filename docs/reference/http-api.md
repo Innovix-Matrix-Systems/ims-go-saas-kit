@@ -73,7 +73,8 @@ flaky network (mobile apps).
 
 - JSON keys are `snake_case`.
 - Timestamps are RFC 3339 in UTC.
-- Money is an integer in **minor units** (paisa) of `BILLING_CURRENCY`.
+- Money is an integer in the **minor units** of its `currency` (cents, paisa); plan prices are in the
+  default currency (`GET /api/v1/public/currencies`). Amounts are never converted.
 - IDs are 64-bit integers.
 - Booleans are real booleans; absent optional fields are `null` or omitted.
 

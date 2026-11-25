@@ -446,7 +446,8 @@ function ProductsPage() {
 
 `api('/product')` calls `/api/v1/product` with the signed-in member's token, so the list is
 already filtered to their organization by the tenant filter you saw in step 1. `useMoney()`
-turns the stored minor units (1250) into a price in the member's language (৳12.50).
+turns the stored minor units (1250) into a price in the default currency, in the member's language
+($12.50; see [Money and currency](../guides/currencies.md)).
 
 **Add it to the sidebar.** One entry in `navigation.ts` puts the page in the sidebar, the Ctrl+K
 palette and the shortcuts sheet (`g t` opens it), and only for members whose role has

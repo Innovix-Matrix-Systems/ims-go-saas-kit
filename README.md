@@ -1,7 +1,7 @@
 # <img src="docsite/src/assets/logo.svg" alt="" width="40" align="top"> IMS Go SaaS Kit
 
 [![CI](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.2.3-ff5c1a)
+![Version](https://img.shields.io/badge/version-0.2.5-ff5c1a)
 [![Docs](https://img.shields.io/badge/docs-website-ff5c1a)](https://ims-go-saas-kit.innovixmatrixsystem.com)
 [![Use this template](https://img.shields.io/badge/use%20this-template-2ea44f?logo=github)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate)
 <br>

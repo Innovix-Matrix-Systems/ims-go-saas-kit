@@ -308,6 +308,13 @@ otherwise (the `translate` skill fills gaps). CSS uses logical properties only (
 Arabic mirrors. Lookup order: account → organization (`general.default_locale`) → default
 (`internal/app/locale.go`, `docs/guides/languages.md`).
 
+**Money** — an amount is `bigint` minor units with a `currency` code (the default currency when
+it can't differ); a currency is a row (`currencies`: symbol, position, precision, separators), so
+changing the default relabels and never converts. Write amounts with `money.Of(minor,
+currencies.Format(ctx, code)).Format(lang)` in Go (`notifications.Money` for a notice param) and
+`useMoney()` / `MoneyInput` + `toMinor` in the app; never `/ 100` or floats. A currency's
+precision is locked once payments use it (`docs/guides/currencies.md`).
+
 **Notifications** — register an event type with `notifications.RegisterEvent(name, Event{Channels,
 Mandatory})`; a notification with `channels` (`mail`, `sms`, `push`) is delivered through the
 delivery system to the users fan-out newly addresses (retry-safe), honouring per-user preferences,

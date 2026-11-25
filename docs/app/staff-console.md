@@ -20,6 +20,7 @@ them. The seeded `superadmin@ims.com` is a staff account.
 | Audit log | `/console/activity` | the system audit log across organizations, including every impersonation, with export | `activity.view.all` |
 | Payment approvals | `/console/approvals` | bank transfers and cash payments waiting for a decision | `payment_approval.view.all` |
 | Plans | `/console/plans` | the plan catalog: prices, features and limits | `package.view.all` |
+| Currencies | `/console/currencies` | how amounts are written (symbol, position, decimals, separators) and the default currency | `currency.view.all` |
 | Staff accounts | `/console/staff` | your team's accounts and their roles | `user.internal.create` |
 | Announcements | `/console/announcements` | messages to every organization or chosen ones | `announcement.view` |
 | Feature flags | `/console/flags` | flags with rollout rules, per organization if needed | `feature_flag.internal.update` |
@@ -47,6 +48,10 @@ Organizations pick a plan on their Billing page. Free plans start at once; paid 
 the payment is confirmed. bKash payments confirm automatically; bank transfers and cash arrive in
 **Payment approvals**, where staff approve or reject them with a note. See
 [Billing](../guides/billing.md).
+
+Prices are typed in the default currency, which staff choose under **Currencies** together with how
+each currency is written. Changing the default changes the symbol, never the amounts. See
+[Money and currency](../guides/currencies.md).
 
 ## Announcements
 
