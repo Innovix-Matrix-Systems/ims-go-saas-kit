@@ -661,8 +661,9 @@ pre.json {
 .money-input { display: flex; align-items: stretch; }
 .money-input .input { flex: 1; min-width: 0; text-align: end; font-variant-numeric: tabular-nums; }
 .money-input-symbol {
-  display: inline-flex; align-items: center; padding-inline: 10px; color: var(--text-2);
-  border: 1px solid var(--border); background: var(--surface-2); font-size: var(--fs-md);
+  display: inline-flex; align-items: center; justify-content: center; min-width: 38px; padding-inline: 10px;
+  color: var(--text-1); border: 1px solid var(--border); background: var(--surface-2);
+  font-size: var(--fs-lg); line-height: 1;
 }
 .money-input-symbol:first-child { border-inline-end: 0; border-start-start-radius: var(--radius-sm); border-end-start-radius: var(--radius-sm); }
 .money-input-symbol:last-child { border-inline-start: 0; border-start-end-radius: var(--radius-sm); border-end-end-radius: var(--radius-sm); }
