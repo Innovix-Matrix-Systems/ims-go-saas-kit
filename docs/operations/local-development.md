@@ -128,7 +128,7 @@ watch Shell B process it, then check `queue:stats` and the job status.
 |---|---|---|
 | `scheduler.heartbeat` | `* * * * *` | heartbeat for the health check |
 | `dataprocessing.cleanup-completed` | `0 2 * * *` | prune completed import/export jobs |
-| `billing.expire-subscriptions` | `0 */6 * * *` | mark overdue subscriptions expired |
+| `billing.expire-subscriptions` | `0 * * * *` | mark overdue subscriptions expired, start scheduled ones |
 | `billing.send-renewal-reminders` | `0 8 * * *` | 7/3/1-day renewal reminders |
 | `backup.run` | `30 1 * * *` | database backup (when `BACKUP_ENABLED=true`) |
 | `backup.clean` | `30 2 * * *` | backup retention cleanup (when enabled) |

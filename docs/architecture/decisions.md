@@ -300,3 +300,14 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     currency its payments already use. Go and the app format with the same rules from the same
     rows (`internal/platform/money`, `web/app/src/money.ts`), digits per language
     (`docs/guides/currencies.md`). The earlier `BILLING_CURRENCY` variable is gone.
+57. **Plan changes follow the industry, with manual payments in mind.** One pure function
+    (`domain.QuoteChange`) prices every change and its result is frozen on the payment, so a bank
+    transfer approved days later is charged what the organization saw. Upgrades (more per day, or a
+    longer cycle) start when paid with a fresh period and credit the unused days of what was
+    actually paid, as Claude and Stripe do; downgrades wait for the period end and are paid at the
+    renewal, never refunded; renewals paid early stack after the current period (`scheduled`).
+    Unused value becomes account credit, a signed ledger (`billing_credits`) that pays the next
+    checkout first, and cash refunds are only ever a staff action. Days, not seconds, rounded in
+    the customer's favour, because people type these amounts into a banking app. Only one checkout
+    waits per organization, which closes the double-payment hole of approving two
+    (`docs/guides/billing.md#changing-plans`).
