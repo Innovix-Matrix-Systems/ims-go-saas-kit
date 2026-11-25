@@ -354,7 +354,7 @@ func (s *Service) render(ctx context.Context, channel Channel, message Message) 
 			content.Title, content.Subject = message.Subject, ""
 		}
 		if channel == Mail && message.HTML != "" {
-			if content.HTML, err = s.templates.Layout(brand, message.Subject, trustedHTML(message.HTML)); err != nil {
+			if content.HTML, err = s.templates.Layout(brand, message.To.Locale, message.Subject, trustedHTML(message.HTML)); err != nil {
 				return Content{}, err
 			}
 		}

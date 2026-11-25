@@ -51,11 +51,16 @@ type View struct {
 	Brand Brand
 }
 
-// layoutView is what the layout is executed with.
+// layoutView is what the layout is executed with. Lang and Dir are the
+// message's language and direction; Align is the start edge as a physical
+// value ("left"/"right"), since mail clients don't know text-align: start.
 type layoutView struct {
 	Brand   Brand
 	Subject string
 	Body    htmltemplate.HTML
+	Lang    string
+	Dir     string
+	Align   string
 }
 
 const layoutDir = "_layout"
@@ -185,7 +190,7 @@ func (r *Registry) Render(name string, channel Channel, locales []string, view V
 			return Content{}, err
 		}
 		if body != "" {
-			if content.HTML, err = r.Layout(view.Brand, content.Subject, body); err != nil {
+			if content.HTML, err = r.Layout(view.Brand, firstLocale(locales), content.Subject, body); err != nil {
 				return Content{}, err
 			}
 		}
@@ -212,8 +217,19 @@ func (r *Registry) Render(name string, channel Channel, locales []string, view V
 	return content, nil
 }
 
-// Layout wraps an HTML body (already rendered and escaped) in the layout.
-func (r *Registry) Layout(brand Brand, subject string, body htmltemplate.HTML) (string, error) {
+// firstLocale is the language a message is written in: the first one given.
+func firstLocale(locales []string) string {
+	for _, locale := range locales {
+		if locale != "" {
+			return locale
+		}
+	}
+	return ""
+}
+
+// Layout wraps an HTML body (already rendered and escaped) in the layout,
+// marked with the message's language and direction.
+func (r *Registry) Layout(brand Brand, locale, subject string, body htmltemplate.HTML) (string, error) {
 	r.mu.RLock()
 	layout := r.layout
 	r.mu.RUnlock()
@@ -229,7 +245,12 @@ func (r *Registry) Layout(brand Brand, subject string, body htmltemplate.HTML) (
 		return "", fmt.Errorf("delivery: layout: %w", err)
 	}
 	var out bytes.Buffer
-	if err := tmpl.Execute(&out, layoutView{Brand: brand, Subject: subject, Body: body}); err != nil {
+	lang := i18n.LanguageFor(locale)
+	align := "left"
+	if lang.Dir == i18n.RTL {
+		align = "right"
+	}
+	if err := tmpl.Execute(&out, layoutView{Brand: brand, Subject: subject, Body: body, Lang: lang.Code, Dir: lang.Dir, Align: align}); err != nil {
 		return "", fmt.Errorf("delivery: layout: %w", err)
 	}
 	return out.String(), nil

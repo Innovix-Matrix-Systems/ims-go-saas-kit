@@ -12,8 +12,8 @@
 .audit-kv dd { font-family: var(--sans); font-size: var(--fs-base); }
 .audit-quick { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
 .search-box { position: relative; display: block; }
-.search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-3); pointer-events: none; }
-.search-box .input { width: 100%; padding-left: 30px; }
+.search-box svg { position: absolute; inset-inline-start: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-3); pointer-events: none; }
+.search-box .input { width: 100%; padding-inline-start: 30px; }
 @media (max-width: 560px) {
   .audit-filters > .field:first-child, .audit-count { grid-column: 1 / -1; }
 }

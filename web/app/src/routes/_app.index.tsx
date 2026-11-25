@@ -301,7 +301,7 @@ function PlatformHome({ session }: { session: Session }) {
                   <thead>
                     <tr>
                       <th>{t('dashboard.colOrganization')}</th>
-                      <th className="right">{t('dashboard.members')}</th>
+                      <th className="end">{t('dashboard.members')}</th>
                       <th>{t('dashboard.colStatus')}</th>
                       <th>{t('dashboard.colJoined')}</th>
                     </tr>
@@ -320,7 +320,7 @@ function PlatformHome({ session }: { session: Session }) {
                             </span>
                           </span>
                         </td>
-                        <td className="right num">{n.plain(org.members)}</td>
+                        <td className="end num">{n.plain(org.members)}</td>
                         <td>{org.active ? <Badge tone="ok">{t('dashboard.active')}</Badge> : <Badge tone="warn">{t('dashboard.suspended')}</Badge>}</td>
                         <td className="small muted nowrap">{relativeTimeIn(intlLocale(locale), org.created_at)}</td>
                       </tr>

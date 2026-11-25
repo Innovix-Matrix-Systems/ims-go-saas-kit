@@ -105,9 +105,9 @@ function AnnouncementsPage() {
                   <th>{t('announcements.colAudience')}</th>
                   <th>{t('announcements.colState')}</th>
                   <th>{t('announcements.colWindow')}</th>
-                  <th className="right">{t('announcements.views')}</th>
-                  <th className="right">{t('announcements.clicks')}</th>
-                  <th className="right">{t('announcements.dismissals')}</th>
+                  <th className="end">{t('announcements.views')}</th>
+                  <th className="end">{t('announcements.clicks')}</th>
+                  <th className="end">{t('announcements.dismissals')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -130,12 +130,12 @@ function AnnouncementsPage() {
                       <br />
                       {item.ends_at ? `→ ${when(item.ends_at)}` : t('announcements.noEnd')}
                     </td>
-                    <td className="right num">{item.totals.views}</td>
-                    <td className="right num">
+                    <td className="end num">{item.totals.views}</td>
+                    <td className="end num">
                       {item.totals.clicks}
                       {item.cta_url ? <span className="small muted"> · {rate(item.totals.clicks, item.totals.views)}</span> : null}
                     </td>
-                    <td className="right num">{item.totals.dismissals}</td>
+                    <td className="end num">{item.totals.dismissals}</td>
                   </tr>
                 ))}
               </tbody>
@@ -355,9 +355,9 @@ function ByOrganization({ id }: { id: number }) {
             <thead>
               <tr>
                 <th>{t('dashboard.colOrganization')}</th>
-                <th className="right">{t('announcements.views')}</th>
-                <th className="right">{t('announcements.clicks')}</th>
-                <th className="right">{t('announcements.dismissals')}</th>
+                <th className="end">{t('announcements.views')}</th>
+                <th className="end">{t('announcements.clicks')}</th>
+                <th className="end">{t('announcements.dismissals')}</th>
               </tr>
             </thead>
             <tbody>
@@ -369,9 +369,9 @@ function ByOrganization({ id }: { id: number }) {
                       {row.name}
                     </span>
                   </td>
-                  <td className="right num">{row.views}</td>
-                  <td className="right num">{row.clicks}</td>
-                  <td className="right num">{row.dismissals}</td>
+                  <td className="end num">{row.views}</td>
+                  <td className="end num">{row.clicks}</td>
+                  <td className="end num">{row.dismissals}</td>
                 </tr>
               ))}
             </tbody>

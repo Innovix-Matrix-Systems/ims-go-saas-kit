@@ -42,7 +42,7 @@ export function JobsTray() {
         {running ? <span className="jobs-dot" aria-hidden="true" /> : null}
       </button>
       {open ? (
-        <div className="ui-popover align-right jobs-menu" role="dialog" aria-label={t('jobs.tray')}>
+        <div className="ui-popover align-end jobs-menu" role="dialog" aria-label={t('jobs.tray')}>
           <div className="jobs-menu-head">
             <span className="strong">{t('jobs.tray')}</span>
             <Link to="/jobs" className="link-btn" onClick={close}>

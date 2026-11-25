@@ -33,7 +33,19 @@ kbd {
 .dim { color: var(--text-3); }
 .small { font-size: var(--fs-sm); }
 .nowrap { white-space: nowrap; }
-.right { text-align: right; }
+/* Numbers and amounts: aligned to the end of the line (right in LTR, left in RTL). */
+.end { text-align: end; }
+
+/* ── Right to left ─────────────────────────────────────────
+   Layout uses logical properties (margin-inline-start, inset-inline-end, text-align: start),
+   so dir="rtl" on <html> mirrors it; `npm run check:logical` keeps left/right out.
+   Some things stay left to right inside an RTL page: e-mail addresses, URLs, passwords,
+   phone numbers, typed numbers, code, IDs and amounts, and charts. */
+input:is([type="email"], [type="url"], [type="password"], [type="tel"], [type="number"]), .ltr { direction: ltr; }
+:dir(rtl) input:is([type="email"], [type="url"], [type="password"], [type="tel"], [type="number"]),
+:dir(rtl) .ltr { text-align: right; /* physical: an LTR value starts at the RTL line's start */ }
+.mono, code, kbd, .num, .end { unicode-bidi: isolate; }
+.chart, .recharts-wrapper { direction: ltr; }
 .num { font-variant-numeric: tabular-nums; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .break { overflow-wrap: anywhere; }

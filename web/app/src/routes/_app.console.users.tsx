@@ -118,7 +118,7 @@ function UsersPage() {
                         <Badge tone="neutral">{t('members.inactive')}</Badge>
                       )}
                     </td>
-                    <td className="right">
+                    <td className="end">
                       {canLoginAs && user.tenant_id != null && user.is_active ? (
                         <Button size="sm" icon="user" onClick={() => setTarget(user)}>
                           {t('console.loginAs')}

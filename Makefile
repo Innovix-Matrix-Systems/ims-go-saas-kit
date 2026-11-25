@@ -155,8 +155,9 @@ app-build: ## Build the client app into web/app/dist (embedded by Go, served at 
 app-typecheck: ## Type-check the client app.
 	npm --prefix web/app run typecheck
 
-app-style-check: ## Check the client app's design tokens: WCAG AA contrast, type scale, no raw colours.
+app-style-check: ## Check the client app's design tokens (WCAG AA contrast, type scale, no raw colours) and logical CSS properties (RTL).
 	npm --prefix web/app run check:style
+	npm --prefix web/app run check:logical
 
 app-i18n-check: ## Fail if a client-app language lacks a key, a placeholder or a plural form (or the key types are stale).
 	npm --prefix web/app run i18n:check

@@ -14,7 +14,7 @@
 .role-list li + li { border-top: 1px solid var(--border); }
 .role-row {
   width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 12px 16px; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer;
+  padding: 12px 16px; background: none; border: 0; color: inherit; font: inherit; text-align: start; cursor: pointer;
 }
 .role-row:hover { background: var(--surface-2); }
 .role-row svg { width: 14px; height: 14px; color: var(--text-3); flex: none; }
@@ -40,7 +40,7 @@
 .branch-menu { min-width: 220px; padding: 4px; display: flex; flex-direction: column; }
 .branch-option {
   display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px;
-  border: 0; border-radius: var(--radius); background: none; color: var(--text-1); font: inherit; text-align: left; cursor: pointer;
+  border: 0; border-radius: var(--radius); background: none; color: var(--text-1); font: inherit; text-align: start; cursor: pointer;
 }
 .branch-option:hover { background: var(--surface-2); }
 .branch-option svg { width: 14px; height: 14px; color: var(--accent); }
@@ -60,7 +60,7 @@
 }
 .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 320px; }
 .webhook-url { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px; }
-.event-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; padding-left: 4px; }
+.event-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; padding-inline-start: 4px; }
 .secret-box { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
 .secret-box code { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .activity-body > .link-button { align-self: flex-start; }
@@ -123,7 +123,7 @@
 .field-error { color: var(--danger-fg); font-size: var(--fs-sm); }
 /* Exports & imports: the top-bar tray and the page. */
 .jobs-trigger { position: relative; }
-.jobs-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: livePulse 1.4s ease-in-out infinite; }
+.jobs-dot { position: absolute; top: 6px; inset-inline-end: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: livePulse 1.4s ease-in-out infinite; }
 .jobs-menu { width: 340px; padding: 0; }
 .jobs-menu-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--border); }
 .jobs-empty { padding: 16px 12px; }
@@ -137,7 +137,7 @@
 .jobs-status-cell .meter { width: 100%; }
 .danger-text { color: var(--danger-fg); }
 .jobs-errors { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-.jobs-errors ul { margin: 4px 0 0; padding-left: 16px; }
+.jobs-errors ul { margin: 4px 0 0; padding-inline-start: 16px; }
 .jobs-queued { display: flex; flex-direction: column; gap: 12px; }
 .jobs-queued p { margin: 0; }
 .jobs-queued-note {
@@ -155,7 +155,7 @@
 .setting-color input[type="color"] { width: 34px; height: 32px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-1); cursor: pointer; }
 .setting-color .input { width: 110px; }
 .input-unit { display: inline-flex; align-items: center; gap: 8px; }
-.input-unit .input { width: 96px; text-align: right; }
+.input-unit .input { width: 96px; text-align: end; }
 .input-unit-label { font-size: var(--fs-md); color: var(--text-2); }
 
 /* Plan peek in the top bar */

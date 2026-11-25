@@ -80,7 +80,7 @@ function ApprovalsPage() {
                 <tr>
                   <th>{t('console.colPayer')}</th>
                   <th>{t('console.colPlan')}</th>
-                  <th className="right">{t('console.colAmount')}</th>
+                  <th className="end">{t('console.colAmount')}</th>
                   <th>{t('console.colReference')}</th>
                   <th>{t('console.colSubmitted')}</th>
                   <th>{t('members.colStatus')}</th>
@@ -97,7 +97,7 @@ function ApprovalsPage() {
                       </span>
                     </td>
                     <td className="small">{approval.details?.package_name || '—'}</td>
-                    <td className="right">{approval.details ? money(approval.details.amount, approval.details.currency) : '—'}</td>
+                    <td className="end">{approval.details ? money(approval.details.amount, approval.details.currency) : '—'}</td>
                     <td className="mono small">
                       {reference(approval)}
                       <div className="small muted">{t(`billing.method.${approval.payment_method}` as MessageKey)}</div>
@@ -107,7 +107,7 @@ function ApprovalsPage() {
                       <Badge tone={statusTones[approval.status]}>{t(statusLabels[approval.status])}</Badge>
                       {approval.reviewer_note ? <div className="small muted">{approval.reviewer_note}</div> : null}
                     </td>
-                    <td className="right">
+                    <td className="end">
                       {canReview && approval.status === 'pending' ? (
                         <div className="flex justify-end">
                           <Button size="sm" variant="primary" icon="check" onClick={() => setReview({ approval, decision: 'approve' })}>

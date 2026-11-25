@@ -37,7 +37,7 @@ export function AppearanceMenu() {
         <Icon name={themeIcons[appearance.theme]} />
       </button>
       {open ? (
-        <div className="ui-popover align-right appearance-menu" role="dialog" aria-label={t('common.appearance')}>
+        <div className="ui-popover align-end appearance-menu" role="dialog" aria-label={t('common.appearance')}>
           <div className="field-label">{t('appearance.theme')}</div>
           <div className="segmented">
             {themes.map((theme) => (

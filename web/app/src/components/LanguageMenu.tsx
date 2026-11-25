@@ -87,7 +87,7 @@ export function LanguageMenu() {
         <span className="language-code">{locale.toUpperCase()}</span>
       </button>
       {open ? (
-        <div className="ui-popover align-right language-menu" role="menu" aria-label={t('common.language')} ref={list} onKeyDown={onKeyDown}>
+        <div className="ui-popover align-end language-menu" role="menu" aria-label={t('common.language')} ref={list} onKeyDown={onKeyDown}>
           {languages.map((item) => (
             <button
               key={item.code}

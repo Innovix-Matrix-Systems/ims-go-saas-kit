@@ -175,7 +175,7 @@ function JobsPage() {
                       </td>
                       <td className="small muted nowrap">{when(job.created_at)}</td>
                       <td className="small muted nowrap">{when(job.expires_at)}</td>
-                      <td className="right">
+                      <td className="end">
                         <div className="flex justify-end wrap">
                           {status === 'completed' && job.file_name ? (
                             <Button size="sm" variant="primary" icon="download" onClick={() => void actions.download(job)}>
