@@ -42,5 +42,8 @@
   "policy.termsVersion": "শর্তাবলীর সংস্করণ",
   "policy.termsVersionHint": "নতুন মালিক শর্ত মেনে নিলে রেকর্ড হয়। নতুন শর্ত প্রকাশ করলে এটি বদলান।",
   "policy.paymentInstructions": "ব্যাংক ট্রান্সফারের নির্দেশনা",
-  "policy.paymentInstructionsHint": "চেকআউটে দেখানো হয়: ব্যাংক, অ্যাকাউন্টের নাম ও নম্বর, এবং শাখা।"
+  "policy.paymentInstructionsHint": "চেকআউটে দেখানো হয়: ব্যাংক, অ্যাকাউন্টের নাম ও নম্বর, এবং শাখা।",
+  "policy.orgLanguage": "ভাষা",
+  "policy.orgLanguageHint": "যেসব সদস্য নিজের ভাষা বেছে নেননি তাদের স্ক্রিনের ভাষা, এবং তাদের ও আপনার আমন্ত্রিতদের কাছে পাঠানো ই-মেইলের ভাষা।",
+  "policy.orgLanguageNone": "নির্ধারিত নয় (প্রতিটি ব্রাউজার ঠিক করবে)"
 }

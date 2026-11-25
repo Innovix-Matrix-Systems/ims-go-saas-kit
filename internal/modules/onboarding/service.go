@@ -78,11 +78,13 @@ type (
 	BranchLister interface {
 		List(ctx context.Context, filter branches.ListFilter) ([]branches.Branch, error)
 	}
-	// SettingsReader reads typed settings.
+	// SettingsReader reads typed settings and writes the new organization's
+	// own (its language).
 	SettingsReader interface {
 		Get(ctx context.Context, scope tenancy.Scope, name string) (any, error)
 		GetInt(ctx context.Context, scope tenancy.Scope, name string) (int, error)
 		GetBool(ctx context.Context, scope tenancy.Scope, name string) (bool, error)
+		Set(ctx context.Context, scope tenancy.Scope, name string, value any) error
 	}
 	// Mailer sends a templated message.
 	Mailer interface {
@@ -266,6 +268,13 @@ func (s *Service) fillIn(ctx context.Context, tenant *tenants.Tenant, pkg *domai
 	}
 	if _, err := s.Repo.CreateProgress(ctx, tenant.ID, &owner.ID, "signup"); err != nil {
 		return err
+	}
+	// The language chosen at sign-up becomes the organization's: its members'
+	// screens and e-mails until they choose their own.
+	if input.Locale != "" {
+		if err := s.Settings.Set(ctx, tenancy.Scope{TenantID: tenant.ID}, "general.default_locale", input.Locale); err != nil {
+			return err
+		}
 	}
 	version := s.termsVersion(ctx)
 	for _, document := range []string{DocumentTerms, DocumentPrivacy} {

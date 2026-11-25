@@ -57,6 +57,7 @@ type Service struct {
 	encrypter      *crypto.Encrypter
 	maxAttachBytes int64
 	fallback       string
+	locales        LocaleSource
 	logger         *slog.Logger
 	now            func() time.Time
 }
@@ -103,6 +104,37 @@ func (s *Service) WithAttachments(opener AttachmentOpener, maxBytes int64) *Serv
 func (s *Service) WithEncrypter(encrypter *crypto.Encrypter) *Service {
 	s.encrypter = encrypter
 	return s
+}
+
+// LocaleSource finds the language of a recipient who has none set on the
+// message: their account's choice, then their organization's default ("" when
+// neither is known).
+type LocaleSource interface {
+	Locale(ctx context.Context, to Recipient) string
+}
+
+// WithLocales sets where recipients' languages come from.
+func (s *Service) WithLocales(source LocaleSource) *Service {
+	s.locales = source
+	return s
+}
+
+// LocaleFor is the language a message to this recipient is written in: the
+// one on the recipient, then the LocaleSource (account, organization), then
+// the request's language, then the fallback.
+func (s *Service) LocaleFor(ctx context.Context, to Recipient) string {
+	if to.Locale != "" {
+		return to.Locale
+	}
+	if s.locales != nil {
+		if locale := s.locales.Locale(ctx, to); locale != "" {
+			return locale
+		}
+	}
+	if locale := string(i18n.FromContext(ctx)); locale != "" {
+		return locale
+	}
+	return s.fallback
 }
 
 // WithFallbackLocale sets the locale used when a recipient has none and the
@@ -200,9 +232,7 @@ func (s *Service) dispatch(ctx context.Context, message Message, now bool) (err 
 		attribute.Int("delivery.channels", len(message.channels())),
 	)
 	defer end(&err)
-	if message.To.Locale == "" {
-		message.To.Locale = string(i18n.FromContext(ctx))
-	}
+	message.To.Locale = s.LocaleFor(ctx, message.To)
 	if message.Template != "" && !s.templates.Has(message.Template) {
 		return apperr.Newf(apperr.InternalServerError, "Delivery template %q is not registered.", message.Template)
 	}

@@ -125,6 +125,11 @@ func (d *Dependencies) Router() http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Use(authn.Authenticate(d.Authenticator, d.Responder))
+			// Without a matching Accept-Language, answer in the account's
+			// language, then the organization's (internal/app/locale.go).
+			if d.Platform != nil {
+				r.Use(accountLocale(d.I18n, d.Platform.Settings))
+			}
 			// Duplicate-request protection: a write repeated
 			// while it runs, or just after it succeeded, is refused; an
 			// Idempotency-Key replays the first answer.

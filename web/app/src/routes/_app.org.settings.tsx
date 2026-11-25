@@ -183,7 +183,7 @@ function PoliciesCard() {
     try {
       await api(`/settings/tenant/${encodeURIComponent(item.key)}`, { method: 'PATCH', body: { value } })
       await client.invalidateQueries({ queryKey: ['settings'] })
-      if (item.key.startsWith('branding.')) await client.invalidateQueries({ queryKey: ['organization'] })
+      if (item.key.startsWith('branding.') || item.key === 'general.default_locale') await client.invalidateQueries({ queryKey: ['organization'] })
       push(t('form.saved'), 'success')
     } catch (cause) {
       push(cause instanceof Error ? cause.message : String(cause), 'error')

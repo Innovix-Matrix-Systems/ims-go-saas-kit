@@ -1,4 +1,5 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { useSession } from '../auth/session'
 import { isLocale, setLocale, useT } from '../i18n'
@@ -16,7 +17,8 @@ import { RealtimeConnector } from './realtime'
 import { ShortcutsSheet } from './ShortcutsSheet'
 import { useShortcuts } from './shortcuts'
 import { Icon, Kbd } from './ui'
-import { AccountMenu, WorkspaceMenu, useOrganizationName } from './WorkspaceMenu'
+import { organizationQuery } from './organization'
+import { AccountMenu, WorkspaceMenu, inOrganization, useOrganizationName } from './WorkspaceMenu'
 
 const SIDEBAR_KEY = 'ims.app.sidebar'
 const WIDTH_KEY = 'ims.app.sidebar-width'
@@ -60,12 +62,16 @@ export function AppShell() {
   const current = pageFor(pathname)
   const orgName = useOrganizationName()
 
-  // The account's language follows it to every device and wins over this
-  // browser's pick; acting as someone else keeps your own.
+  // Signed in, the language is the account's choice (it follows the account
+  // to every device), then the organization's; this browser's pick only
+  // decides when neither is set. Acting as someone else keeps your own.
+  const organization = useQuery({ ...organizationQuery, enabled: inOrganization(session) })
   const accountLocale = session?.acting ? null : session?.user.locale
+  const organizationLocale = inOrganization(session) ? organization.data?.language : null
+  const chosen = [accountLocale, organizationLocale].find((code) => code && isLocale(code))
   useEffect(() => {
-    if (accountLocale && isLocale(accountLocale)) void setLocale(accountLocale)
-  }, [accountLocale])
+    if (chosen) void setLocale(chosen)
+  }, [chosen])
 
   useEffect(() => {
     try {

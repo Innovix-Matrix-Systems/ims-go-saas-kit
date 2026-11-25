@@ -134,6 +134,7 @@ func (u User) toRecord(tenantActive bool) *authn.UserRecord {
 		BranchID:       u.BranchIDValue(),
 		ActiveBranchID: u.ActiveBranchIDValue(),
 		TenantActive:   tenantActive,
+		Locale:         derefString(u.Locale),
 	}
 }
 

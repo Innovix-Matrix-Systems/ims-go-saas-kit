@@ -42,16 +42,19 @@ type BrandingResponse struct {
 
 // OrganizationResponse is the caller's organization.
 type OrganizationResponse struct {
-	ID        int64            `json:"id"`
-	Name      string           `json:"name"`
-	Code      string           `json:"code"`
-	Phone     *string          `json:"phone"`
-	Email     *string          `json:"email"`
-	IsActive  bool             `json:"is_active"`
-	Owner     *OwnerResponse   `json:"owner"`
-	IsOwner   bool             `json:"is_owner"`
-	Branding  BrandingResponse `json:"branding"`
-	CreatedAt time.Time        `json:"created_at"`
+	ID       int64            `json:"id"`
+	Name     string           `json:"name"`
+	Code     string           `json:"code"`
+	Phone    *string          `json:"phone"`
+	Email    *string          `json:"email"`
+	IsActive bool             `json:"is_active"`
+	Owner    *OwnerResponse   `json:"owner"`
+	IsOwner  bool             `json:"is_owner"`
+	Branding BrandingResponse `json:"branding"`
+	// Language is the organization's default language (general.default_locale);
+	// nil when unset.
+	Language  *string   `json:"language"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // SettingReader reads a tenant's effective settings (the settings service).
@@ -87,6 +90,21 @@ func (h *Handler) branding(ctx context.Context, tenantID int64) BrandingResponse
 	out.LogoURL = text("branding.logo_url")
 	out.Color = text("branding.color")
 	return out
+}
+
+// language reads the organization's default language (nil when unset).
+func (h *Handler) language(ctx context.Context, tenantID int64) *string {
+	if h.settings == nil {
+		return nil
+	}
+	value, err := h.settings.Get(ctx, tenancy.Scope{TenantID: tenantID}, "general.default_locale")
+	if err != nil {
+		return nil
+	}
+	if code, ok := value.(string); ok && code != "" {
+		return &code
+	}
+	return nil
 }
 
 func newOrganizationResponse(tenant Tenant, owner *Owner, callerID int64) OrganizationResponse {
@@ -150,5 +168,6 @@ func (h *Handler) transferOwnership(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) respondOrganization(w http.ResponseWriter, r *http.Request, tenant Tenant, owner *Owner) {
 	out := newOrganizationResponse(tenant, owner, authn.UserID(r))
 	out.Branding = h.branding(r.Context(), tenant.ID)
+	out.Language = h.language(r.Context(), tenant.ID)
 	h.Data(w, r, http.StatusOK, out)
 }

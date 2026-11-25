@@ -446,7 +446,7 @@ paths:
                 password: {type: string, minLength: 8, maxLength: 72}
                 organization_name: {type: string, minLength: 2, maxLength: 100}
                 phone: {type: string, maxLength: 50, nullable: true}
-                locale: {type: string, maxLength: 10, description: 'A supported language code (`GET /api/v1/languages`); the new account''s language.'}
+                locale: {type: string, maxLength: 10, description: 'A supported language code (`GET /api/v1/languages`); becomes the new organization''s language (`general.default_locale`).'}
                 accept_terms:
                   type: boolean
                   description: Must be true (terms of service and privacy policy).
@@ -7579,11 +7579,16 @@ components:
       properties:
         data:
           type: object
-          required: [id, name, code, is_active, is_owner, branding, created_at]
+          required: [id, name, code, is_active, is_owner, branding, language, created_at]
           properties:
             id: {type: integer, format: int64}
             name: {type: string}
             code: {type: string}
+            language:
+              type: string
+              nullable: true
+              example: bn
+              description: The organization's language (`general.default_locale`) for members who haven't chosen one, and their e-mails. Null when unset.
             phone: {type: string, nullable: true}
             email: {type: string, nullable: true}
             is_active: {type: boolean}
@@ -9236,6 +9241,10 @@ components:
         editable: {type: boolean}
         sort_order: {type: integer}
         group: {$ref: "#/components/schemas/SettingsGroupRef"}
+        choices:
+          type: array
+          items: {type: string}
+          description: 'The accepted values when the setting has a fixed set (for example `general.default_locale`: the supported language codes); an empty string always means "not set".'
 
     SettingsGroupSection:
       type: object

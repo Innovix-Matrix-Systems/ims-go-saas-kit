@@ -1,7 +1,7 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react'
 import { api } from '../api/client'
-import { ownProfile, useSession } from '../auth/session'
+import { isSignedIn, ownProfile, sessionQuery } from '../auth/session'
 import { getLanguages, setLocale, useLocale, useT } from '../i18n'
 import { useDismiss } from './inputs'
 import { Icon } from './ui'
@@ -11,7 +11,8 @@ import { Icon } from './ui'
  * devices follow it. Never while acting as someone else: their choice is theirs.
  */
 export function useChooseLanguage(): (code: string) => Promise<void> {
-  const session = useSession()
+  // Signed-out screens use this menu too: no session to read there.
+  const session = useQuery({ ...sessionQuery, enabled: isSignedIn() }).data
   const queryClient = useQueryClient()
   return useCallback(
     async (code: string) => {

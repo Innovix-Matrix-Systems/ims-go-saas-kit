@@ -83,7 +83,7 @@ function ProfileForm({ user }: { user: User }) {
         <Field label={`${t('signup.phone')} (${t('form.optional')})`} error={errors.field('phone')}>
           <input className="input" type="tel" name="phone" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
-        <Field label={t('profile.language')} error={errors.field('locale')}>
+        <Field label={t('profile.language')} hint={t('profile.languageHint')} error={errors.field('locale')}>
           <Select
             value={locale}
             ariaLabel={t('profile.language')}

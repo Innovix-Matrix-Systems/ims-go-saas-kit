@@ -118,6 +118,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/languages": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Supported languages
+         * @description The languages this server offers (`APP_SUPPORTED_LOCALES`, or every registered language),
+         *     the reference language (English) first, and the default (`APP_LOCALE`). Clients build their
+         *     language menu from it and send one of the codes as `Accept-Language` or a user's `locale`.
+         */
+        get: operations["listLanguages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/echo": {
         parameters: {
             query?: never;
@@ -6847,6 +6881,11 @@ export interface components {
                 id: number;
                 name: string;
                 code: string;
+                /**
+                 * @description The organization's language (`general.default_locale`) for members who haven't chosen one, and their e-mails. Null when unset.
+                 * @example bn
+                 */
+                language: string | null;
                 phone?: string | null;
                 email?: string | null;
                 is_active: boolean;
@@ -6957,6 +6996,44 @@ export interface components {
                 since?: string;
                 message?: string;
                 retry_after?: number;
+            };
+        };
+        Language: {
+            /**
+             * @description Two-letter language code.
+             * @example bn
+             */
+            code: string;
+            /**
+             * @description The language's own name.
+             * @example বাংলা
+             */
+            label: string;
+            /**
+             * @description Its English name.
+             * @example Bangla
+             */
+            english: string;
+            /**
+             * @description BCP 47 tag for formatting dates and numbers.
+             * @example bn-BD
+             */
+            intl: string;
+            /** @enum {string} */
+            dir: "ltr" | "rtl";
+            /**
+             * @description Numbering system for generated numbers (`latn`, `beng`, `arab`).
+             * @example beng
+             */
+            digits: string;
+            /** @description False while the translation has not passed review (shown as beta). */
+            reviewed: boolean;
+        };
+        LanguagesEnvelope: {
+            data: {
+                /** @example en */
+                default: string;
+                languages: components["schemas"]["Language"][];
             };
         };
         SystemInfoEnvelope: {
@@ -8325,6 +8402,8 @@ export interface components {
             editable: boolean;
             sort_order: number;
             group?: components["schemas"]["SettingsGroupRef"];
+            /** @description The accepted values when the setting has a fixed set (for example `general.default_locale`: the supported language codes); an empty string always means "not set". */
+            choices?: string[];
         };
         SettingsGroupSection: {
             group: components["schemas"]["SettingsGroupRef"];
@@ -10149,6 +10228,38 @@ export interface operations {
             };
         };
     };
+    listLanguages: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The offered languages. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LanguagesEnvelope"];
+                };
+            };
+        };
+    };
     systemEcho: {
         parameters: {
             query?: never;
@@ -10492,8 +10603,8 @@ export interface operations {
                     password: string;
                     organization_name: string;
                     phone?: string | null;
-                    /** @enum {string} */
-                    locale?: "en" | "bn";
+                    /** @description A supported language code (`GET /api/v1/languages`); becomes the new organization's language (`general.default_locale`). */
+                    locale?: string;
                     /** @description Must be true (terms of service and privacy policy). */
                     accept_terms: boolean;
                 };
@@ -13586,7 +13697,7 @@ export interface operations {
                     last_name?: string | null;
                     name?: string | null;
                     phone?: string | null;
-                    /** @description The user's language ("en", "bn"). An empty string clears it; leave it out to keep it. */
+                    /** @description The user's language, a supported language code (`GET /api/v1/languages`). An empty string clears it; leave it out to keep it. */
                     locale?: string;
                 };
             };
@@ -16168,7 +16279,7 @@ export interface operations {
                     last_name?: string | null;
                     name?: string | null;
                     phone?: string | null;
-                    /** @description The user's language ("en", "bn"). An empty string clears it; leave it out to keep it. */
+                    /** @description The user's language, a supported language code (`GET /api/v1/languages`). An empty string clears it; leave it out to keep it. */
                     locale?: string;
                 };
             };

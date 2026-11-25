@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { api, type Schemas } from '../api/client'
-import { useT, type MessageKey } from '../i18n'
+import { getLanguages, useT, type MessageKey } from '../i18n'
 import { Select } from './inputs'
 
 // Settings in words the people changing them use. A key the app does not
@@ -13,12 +13,13 @@ interface Known {
   label: MessageKey
   hint: MessageKey
   unit?: MessageKey
-  kind?: 'color' | 'url' | 'multiline' | 'package'
+  kind?: 'color' | 'url' | 'multiline' | 'package' | 'language'
   placeholder?: string
 }
 
 const knownSettings: Record<string, Known> = {
   'system.name': { label: 'policy.systemName', hint: 'policy.systemNameHint' },
+  'general.default_locale': { label: 'policy.orgLanguage', hint: 'policy.orgLanguageHint', kind: 'language' },
   'notification.enabled': { label: 'policy.notifications', hint: 'policy.notificationsHint' },
   'data_processing_job.cleanup_days': { label: 'policy.jobsKeep', hint: 'policy.jobsKeepHint', unit: 'policy.days' },
   'branding.name': { label: 'policy.brandName', hint: 'policy.brandNameHint' },
@@ -155,6 +156,25 @@ export function SettingRow({
         options={[
           { value: '0', label: t('policy.signupPlanAuto') },
           ...(packages.data ?? []).map((pkg) => ({ value: String(pkg.id), label: pkg.name, hint: pkg.is_active ? undefined : t('policy.inactive') })),
+        ]}
+      />
+    )
+  } else if (known?.kind === 'language') {
+    const offered = item.choices ?? getLanguages().map((language) => language.code)
+    control = (
+      <Select
+        value={draft}
+        ariaLabel={label}
+        disabled={disabled}
+        onChange={(value) => {
+          setDraft(value)
+          commit(value)
+        }}
+        options={[
+          { value: '', label: t('policy.orgLanguageNone') },
+          ...getLanguages()
+            .filter((language) => offered.includes(language.code))
+            .map((language) => ({ value: language.code, label: <span lang={language.code}>{language.label}</span>, text: language.label, hint: language.english })),
         ]}
       />
     )

@@ -170,7 +170,6 @@ export function useSession(): Session | undefined {
   return useQuery(sessionQuery).data
 }
 
-/** Whether the session holds a permission (UI hint only; the API enforces). */
 /**
  * Where the signed-in account saves its own profile: platform staff (no
  * organization) use the internal routes, organization members their own.
@@ -181,6 +180,7 @@ export function ownProfile(session: Session | undefined): { update: { path: stri
     : { update: { path: '/user/profile/update', method: 'POST' }, avatar: '/user/profile/update-avatar' }
 }
 
+/** Whether the session holds a permission (UI hint only; the API enforces). */
 export function can(session: Session | undefined, permission: string): boolean {
   return Boolean(session && (session.superAdmin || session.permissions.has(permission)))
 }

@@ -293,7 +293,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 	billingGuard := billingservice.NewGuard(billingSubscriptions, billingPackages)
 	filesService.WithStorageLimit(billingGuard)
 
-	deliveryService, err := newDelivery(cfg, delivery.NewRepository(txManager.Queries()), queueEngine, mailDriver,
+	deliveryService, err := newDelivery(cfg, delivery.NewRepository(txManager.Queries()), txManager.Queries(), queueEngine, mailDriver,
 		settingsService, billingGuard, storageRegistry, encrypter, logger)
 	if err != nil {
 		return nil, nil, err

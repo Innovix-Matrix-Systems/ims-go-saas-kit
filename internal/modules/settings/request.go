@@ -101,6 +101,9 @@ type SettingItem struct {
 	Editable    bool      `json:"editable"`
 	SortOrder   int       `json:"sort_order"`
 	Group       *GroupRef `json:"group,omitempty"`
+	// Choices lists the accepted values when the setting has a fixed set
+	// ("" always means not set).
+	Choices []string `json:"choices,omitempty"`
 }
 
 func newSettingItem(effective EffectiveSetting, editable, withGroup bool) SettingItem {
@@ -119,6 +122,9 @@ func newSettingItem(effective EffectiveSetting, editable, withGroup bool) Settin
 		Scope:       scope,
 		Editable:    editable,
 		SortOrder:   effective.Key.SortOrder,
+	}
+	if effective.Key.Choices != nil {
+		item.Choices = effective.Key.Choices()
 	}
 	if withGroup {
 		group := newGroupRef(effective.Group)

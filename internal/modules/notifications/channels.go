@@ -125,6 +125,9 @@ func (s *Service) deliver(ctx context.Context, notification Notification, userID
 	smsAllowed := opts.features == nil || tenantID == 0 || opts.features.Allows(ctx, tenantID, "sms.notifications")
 
 	for _, recipient := range recipients {
+		// Written in the recipient's language: their choice, then their
+		// organization's (the delivery system decides, as for every mail).
+		recipient.Locale = opts.delivery.LocaleFor(ctx, recipient)
 		var channels []delivery.Channel
 		for _, name := range notification.Channels[1:] {
 			channel := delivery.Channel(name)

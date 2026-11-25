@@ -42,5 +42,8 @@
   "policy.termsVersion": "Terms version",
   "policy.termsVersionHint": "Recorded when a new owner accepts the terms. Change it when you publish new terms.",
   "policy.paymentInstructions": "Bank transfer instructions",
-  "policy.paymentInstructionsHint": "Shown at checkout: the bank, account name and number, and branch."
+  "policy.paymentInstructionsHint": "Shown at checkout: the bank, account name and number, and branch.",
+  "policy.orgLanguage": "Language",
+  "policy.orgLanguageHint": "The screen language for members who haven't chosen their own, and the language of e-mails to them and to people you invite.",
+  "policy.orgLanguageNone": "Not set (each browser decides)"
 }

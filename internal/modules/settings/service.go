@@ -516,6 +516,9 @@ func (s *Service) writeTarget(ctx context.Context, name string, target Target, v
 		return err
 	}
 	coerced, err := key.Coerce(value)
+	if err == nil {
+		err = key.CheckChoice(coerced)
+	}
 	if err != nil {
 		return apperr.Validation(map[string][]string{"value": {err.Error()}})
 	}

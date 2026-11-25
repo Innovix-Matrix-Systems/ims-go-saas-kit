@@ -869,6 +869,9 @@ export interface MessageVars {
   'policy.jobsKeepHint': never
   'policy.notifications': never
   'policy.notificationsHint': never
+  'policy.orgLanguage': never
+  'policy.orgLanguageHint': never
+  'policy.orgLanguageNone': never
   'policy.paymentInstructions': never
   'policy.paymentInstructionsHint': never
   'policy.requireTwoFactor': never
@@ -907,6 +910,7 @@ export interface MessageVars {
   'profile.firstName': never
   'profile.language': never
   'profile.languageDefault': never
+  'profile.languageHint': never
   'profile.lastName': never
   'profile.newEmail': never
   'profile.sendLink': never

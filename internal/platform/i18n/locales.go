@@ -150,16 +150,42 @@ func (t *Translator) Localizer(locale Locale) *goi18n.Localizer {
 
 // Middleware resolves the request locale among the supported languages
 // (defaultCode when nothing matches) and stores its localizer (and the
-// locale itself) in the request context.
+// locale itself) in the request context. Whether Accept-Language matched is
+// kept (FromHeader): when it did not, a later step may choose the account's
+// or organization's language (Use).
 func (t *Translator) Middleware(defaultCode string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			locale := Locale(ParseLocale(r.Header.Get("Accept-Language"), t.supported, defaultCode))
+			header := r.Header.Get("Accept-Language")
+			matched := ParseLocale(header, t.supported, "")
+			locale := Locale(matched)
+			if matched == "" {
+				locale = Locale(ParseLocale("", t.supported, defaultCode))
+			}
 			ctx := WithLocale(r.Context(), locale)
 			ctx = context.WithValue(ctx, localizerKey, t.Localizer(locale))
+			ctx = context.WithValue(ctx, fromHeaderKey, matched != "")
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// FromHeader reports whether the request's language came from its
+// Accept-Language header (the client's explicit choice).
+func FromHeader(ctx context.Context) bool {
+	matched, _ := ctx.Value(fromHeaderKey).(bool)
+	return matched
+}
+
+// Use switches the context to a supported language (an unknown or
+// unsupported code changes nothing).
+func (t *Translator) Use(ctx context.Context, code string) context.Context {
+	if !t.IsSupported(code) {
+		return ctx
+	}
+	locale := Locale(strings.ToLower(code))
+	ctx = WithLocale(ctx, locale)
+	return context.WithValue(ctx, localizerKey, t.Localizer(locale))
 }
 
 func localizerFromContext(ctx context.Context) *goi18n.Localizer {

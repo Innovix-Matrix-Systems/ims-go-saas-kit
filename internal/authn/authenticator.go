@@ -175,6 +175,7 @@ func (a *OpaqueAuthenticator) Verify(ctx context.Context, raw string) (*Identity
 		IsActive:       record.IsActive,
 		TenantActive:   record.TenantActive,
 		SetupOnly:      setupOnly,
+		Locale:         record.Locale,
 	}, nil
 }
 

@@ -12,6 +12,7 @@ import (
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing"
 	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 	billingservice "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
@@ -31,7 +32,7 @@ import (
 // newDelivery builds the delivery system: mail through the
 // configured mail driver, SMS through the SMS driver, push to the log until
 // a provider is added; the e-mail brand from settings.
-func newDelivery(cfg *config.Config, repo delivery.Repository, engine queue.Engine, mailDriver mail.Driver,
+func newDelivery(cfg *config.Config, repo delivery.Repository, users *dbgen.Queries, engine queue.Engine, mailDriver mail.Driver,
 	settingsService *settings.Service, guard *billingservice.Guard, disks *storage.Registry, encrypter *crypto.Encrypter, logger *slog.Logger,
 ) (*delivery.Service, error) {
 	smsDriver, err := sms.New(cfg.SMS, logger, cfg.IsDebug())
@@ -49,6 +50,7 @@ func newDelivery(cfg *config.Config, repo delivery.Repository, engine queue.Engi
 		WithBrand(settingsBrand{settings: settingsService, guard: guard, logger: logger}).
 		WithAttachments(storageOpener{disks: disks}, int64(cfg.Mail.MaxAttachmentMB)<<20).
 		WithEncrypter(encrypter).
+		WithLocales(accountLocales{users: users, settings: settingsService, logger: logger}).
 		WithFallbackLocale(cfg.App.FallbackLocale), nil
 }
 
