@@ -1,0 +1,18 @@
+{
+  "privacy.exportTitle": "Télécharger vos données",
+  "privacy.exportBody": "Nous préparons un fichier avec les données de votre compte et vous envoyons un lien par e-mail. Un export par jour.",
+  "privacy.exportStart": "Préparer mes données",
+  "privacy.exportStarted": "Nous préparons vos données. Vous recevrez un e-mail quand elles seront prêtes.",
+  "privacy.exportReady": "Vos données sont prêtes.",
+  "privacy.download": "Télécharger",
+  "privacy.exportUntil": "Vous pouvez les télécharger jusqu'au {date}.",
+  "privacy.exportFailed": "La préparation de vos données a échoué. Réessayez.",
+  "privacy.exportGone": "Cet export n'est plus disponible : il a expiré ou a été supprimé. Préparez-en un nouveau.",
+  "privacy.deleteTitle": "Supprimer mon compte",
+  "privacy.deleteBody": "Votre compte est supprimé après un délai d'attente. Vous êtes déconnecté maintenant et pouvez vous reconnecter et annuler d'ici là.",
+  "privacy.deleteStart": "Supprimer mon compte",
+  "privacy.deleteConfirmLabel": "Saisissez DELETE pour confirmer",
+  "privacy.deleteScheduled": "Votre compte sera supprimé le {date}.",
+  "privacy.cancelDeletion": "Annuler la suppression",
+  "privacy.deletionCancelled": "Suppression annulée. Votre compte est conservé."
+}

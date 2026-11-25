@@ -1,0 +1,7 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+La suppression de votre compte est prévue le {{.Data.date}}. À cette date, vos données personnelles seront effacées de {{.Brand.Name}} et ne pourront plus être récupérées.
+
+Vous avez été déconnecté partout. Pour garder votre compte, connectez-vous avant cette date et annulez la suppression.
+
+Si vous n'êtes pas à l'origine de cette demande, connectez-vous maintenant, annulez la suppression et changez votre mot de passe.

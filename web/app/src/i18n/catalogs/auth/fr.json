@@ -1,0 +1,28 @@
+{
+  "auth.signIn": "Se connecter",
+  "auth.signInTitle": "Connectez-vous à votre compte",
+  "auth.signInSubtitle": "Utilisez l'adresse e-mail et le mot de passe du compte de votre organisation.",
+  "auth.email": "Adresse e-mail",
+  "auth.password": "Mot de passe",
+  "auth.remember": "Rester connecté sur cet appareil",
+  "auth.forgot": "Mot de passe oublié ?",
+  "auth.signingIn": "Connexion…",
+  "auth.otpTitle": "Saisissez votre code de vérification",
+  "auth.otpSubtitleTotp": "Ouvrez votre application d'authentification et saisissez le code à 6 chiffres.",
+  "auth.otpSubtitleEmail": "Nous avons envoyé un code à 6 chiffres à votre adresse e-mail.",
+  "auth.otpCode": "Code de vérification",
+  "auth.otpRecoveryHint": "Appareil perdu ? Saisissez plutôt l'un de vos codes de récupération.",
+  "auth.verify": "Vérifier",
+  "auth.useAnotherAccount": "Utiliser un autre compte",
+  "auth.signedOut": "Vous avez été déconnecté.",
+  "auth.sessionExpired": "Votre session est terminée. Veuillez vous reconnecter.",
+  "auth.throttled": {
+    "one": "Trop de tentatives. Réessayez dans {count} seconde.",
+    "many": "Trop de tentatives. Réessayez dans {count} secondes.",
+    "other": "Trop de tentatives. Réessayez dans {count} secondes."
+  },
+  "auth.noAccount": "Nouveau ici ?",
+  "auth.createOrganization": "Créer une organisation",
+  "auth.haveAccount": "Vous avez déjà un compte ?",
+  "auth.backToSignIn": "Retour à la connexion"
+}

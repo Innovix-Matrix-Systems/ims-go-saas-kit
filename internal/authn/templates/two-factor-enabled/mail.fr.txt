@@ -1,0 +1,7 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+La connexion en deux étapes a été activée pour votre compte le {{.Data.when}}, avec {{if eq .Data.method "totp"}}une application d'authentification{{else}}des codes envoyés à cette adresse e-mail{{end}}.
+
+Conservez vos codes de récupération en lieu sûr : chacun vous connecte une fois si vous perdez {{if eq .Data.method "totp"}}votre téléphone{{else}}votre boîte e-mail{{end}}.
+
+Si ce n'était pas vous, changez votre mot de passe maintenant et contactez votre administrateur.

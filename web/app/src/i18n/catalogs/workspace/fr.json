@@ -1,0 +1,7 @@
+{
+  "workspace.console": "Console de la plateforme",
+  "workspace.impersonating": "Agit en son nom",
+  "workspace.plan": "Offre {plan}",
+  "workspace.profile": "Profil de l'organisation",
+  "workspace.stopActing": "Arrêter d'agir en son nom"
+}

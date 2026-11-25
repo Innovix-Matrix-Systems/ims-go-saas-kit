@@ -1,0 +1,15 @@
+{
+  "inputs.select": "Sélectionner…",
+  "inputs.filter": "Filtrer…",
+  "inputs.noMatches": "Aucun résultat",
+  "inputs.pickDate": "Choisir une date",
+  "inputs.pickTime": "Choisir une heure",
+  "inputs.clearDate": "Effacer la date",
+  "inputs.chooseDate": "Choisissez une date",
+  "inputs.previousMonth": "Mois précédent",
+  "inputs.nextMonth": "Mois suivant",
+  "inputs.today": "Aujourd'hui",
+  "inputs.clear": "Effacer",
+  "inputs.hour": "Heure",
+  "inputs.minute": "Min"
+}

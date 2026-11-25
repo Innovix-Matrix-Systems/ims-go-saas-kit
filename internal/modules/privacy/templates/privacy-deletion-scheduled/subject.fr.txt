@@ -1,0 +1,1 @@
+Votre compte {{.Brand.Name}} sera supprimé le {{.Data.date}}

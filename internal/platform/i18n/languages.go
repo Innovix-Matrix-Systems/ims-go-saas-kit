@@ -47,6 +47,7 @@ func Builtin() []Language {
 		{Code: "de", Label: "Deutsch", English: "German", Intl: "de", Dir: LTR, Digits: "latn", Reviewed: true},
 		{Code: "ar", Label: "العربية", English: "Arabic", Intl: "ar", Dir: RTL, Digits: "latn", Reviewed: true},
 		{Code: "es", Label: "Español", English: "Spanish", Intl: "es", Dir: LTR, Digits: "latn", Reviewed: true},
+		{Code: "fr", Label: "Français", English: "French", Intl: "fr", Dir: LTR, Digits: "latn", Reviewed: true},
 	}
 }
 

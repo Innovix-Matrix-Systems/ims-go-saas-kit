@@ -1,0 +1,1 @@
+{{.Data.code}} est votre code de connexion {{.Brand.Name}}. Il expire dans {{duration .Data.minutes}}.

@@ -1,0 +1,7 @@
+{
+  "reset.title": "Choisissez un nouveau mot de passe",
+  "reset.subtitle": "Ensuite, tous les appareils connectés à votre compte sont déconnectés.",
+  "reset.submit": "Définir le nouveau mot de passe",
+  "reset.done": "Votre mot de passe a été modifié. Connectez-vous avec le nouveau.",
+  "reset.missing": "Cette page a besoin du lien reçu par e-mail. Demandez-en un nouveau."
+}

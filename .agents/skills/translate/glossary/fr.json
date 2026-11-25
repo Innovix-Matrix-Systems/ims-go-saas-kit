@@ -1,0 +1,41 @@
+{
+  "language": "fr",
+  "style": [
+    "Address the reader formally with vous, never tu.",
+    "French typography: a space before : ; ! ? and inside « » quotation marks; ellipsis …; sentence case.",
+    "French plural rules (browser) have one, many and other: one covers 0 and 1, many (large round numbers) uses the other text.",
+    "Prefer « e-mail » for the address, « téléverser » for upload, « offre » for a billing plan."
+  ],
+  "terms": {
+    "organization": "organisation",
+    "member": "membre",
+    "user": "utilisateur",
+    "role": "rôle",
+    "permission": "autorisation",
+    "branch": "agence",
+    "plan": "offre",
+    "subscription": "abonnement",
+    "payment": "paiement",
+    "invoice": "facture",
+    "billing": "facturation",
+    "settings": "paramètres",
+    "activity log": "journal d'activité",
+    "audit log": "journal d'audit",
+    "notification": "notification",
+    "announcement": "annonce",
+    "background job": "tâche en arrière-plan",
+    "endpoint": "point de terminaison",
+    "sign in": "se connecter / connexion",
+    "sign out": "se déconnecter",
+    "sign up": "s'inscrire / inscription",
+    "two-factor": "deux étapes",
+    "recovery code": "code de récupération",
+    "e-mail": "e-mail",
+    "password": "mot de passe",
+    "staff": "personnel",
+    "impersonate": "agir au nom de",
+    "trial": "essai",
+    "feature flags": "feature flags"
+  },
+  "keep": ["IMS Go SaaS Kit", "bKash", "Nagad", "MCP", "Google", "GitHub", "API", "OAuth", "webhook", "Claude", "ChatGPT", "Cursor", "Feature flags"]
+}

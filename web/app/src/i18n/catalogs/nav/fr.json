@@ -1,0 +1,19 @@
+{
+  "nav.group.workspace": "Espace de travail",
+  "nav.group.account": "Compte",
+  "nav.home": "Accueil",
+  "nav.profile": "Votre profil",
+  "nav.collapse": "Réduire",
+  "nav.expand": "Déplier la barre latérale",
+  "nav.openMenu": "Ouvrir le menu",
+  "nav.searchOrJump": "Rechercher ou aller à…",
+  "nav.shortcuts": "Raccourcis clavier",
+  "nav.group.organization": "Organisation",
+  "nav.group.console": "Console",
+  "nav.resize": "Faites glisser pour redimensionner la barre latérale",
+  "nav.orgSettings": "Paramètres de l'organisation",
+  "nav.jobs": "Tâches",
+  "nav.breadcrumb": "Vous êtes ici",
+  "nav.organization": "Organisation",
+  "nav.account": "Compte"
+}

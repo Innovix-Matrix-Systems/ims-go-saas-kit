@@ -1,0 +1,10 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+Votre compte vient d'être connecté depuis un nouvel endroit :
+
+  Quand :      {{.Data.when}}
+  Où :         {{.Data.ip}}
+  Navigateur : {{if .Data.browser}}{{.Data.browser}}{{else}}inconnu{{end}}
+  Appareil :   {{.Data.device}}
+
+Si c'était vous, vous n'avez rien à faire. Sinon, changez votre mot de passe maintenant et déconnectez vos autres sessions.

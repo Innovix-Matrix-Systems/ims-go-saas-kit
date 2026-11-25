@@ -1,0 +1,7 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+L'export de données personnelles que vous avez demandé est prêt. Ouvrez ce lien et téléchargez-le en étant connecté :
+
+{{.Data.url}}
+
+Le fichier est supprimé au bout de {{.Data.hours}} heures. Il contient des données personnelles : conservez-le en lieu sûr.

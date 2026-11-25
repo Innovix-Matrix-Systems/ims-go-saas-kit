@@ -1,0 +1,6 @@
+{
+  "emailChange.title": "Confirmez votre nouvelle adresse e-mail",
+  "emailChange.working": "Modification de votre adresse e-mail…",
+  "emailChange.done": "Votre adresse e-mail a été modifiée et tous les appareils ont été déconnectés. Connectez-vous avec la nouvelle adresse.",
+  "emailChange.failed": "Ce lien n'est pas valide ou a expiré. Demandez-en un nouveau depuis votre profil."
+}

@@ -1,0 +1,5 @@
+<p>Bonjour{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Nous avons reçu une demande de réinitialisation de votre mot de passe. Utilisez le bouton ci-dessous pour en choisir un nouveau.</p>
+<p style="margin:24px 0;"><a href="{{.Data.link}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Réinitialiser le mot de passe</a></p>
+<p style="font-size:13px;color:#6b7785;">Ou ouvrez ce lien : <a href="{{.Data.link}}">{{.Data.link}}</a></p>
+<p>Le lien expire dans {{duration .Data.minutes}}. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.</p>

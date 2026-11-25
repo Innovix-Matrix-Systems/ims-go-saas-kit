@@ -1,0 +1,25 @@
+{
+  "planBanner.today": "aujourd'hui",
+  "planBanner.tomorrow": "demain",
+  "planBanner.inDays": {
+    "one": "dans {count} jour",
+    "many": "dans {count} jours",
+    "other": "dans {count} jours"
+  },
+  "planBanner.none": "Votre organisation n'a pas d'offre.",
+  "planBanner.noneBody": "Choisissez une offre pour continuer à ajouter des membres et stocker des fichiers.",
+  "planBanner.ended": "Votre offre {plan} est terminée.",
+  "planBanner.endedBody": "Choisissez une offre pour que tout continue de fonctionner pour vos membres.",
+  "planBanner.pastDue": "Le paiement de votre offre {plan} est en retard.",
+  "planBanner.pastDueBody": "Payez ou changez d'offre avant que l'accès soit limité.",
+  "planBanner.pending": "Votre paiement pour {plan} attend une approbation.",
+  "planBanner.pendingBody": "L'offre démarre dès que le paiement est confirmé.",
+  "planBanner.cancelled": "Votre offre {plan} a été résiliée et se termine le {date}.",
+  "planBanner.renewBody": "Renouvelez ou choisissez une autre offre pour que rien ne s'arrête.",
+  "planBanner.trialEnds": "Votre essai se termine {when}.",
+  "planBanner.trialBody": "Choisissez une offre pour continuer à tout utiliser après l'essai.",
+  "planBanner.ends": "Votre offre {plan} se termine {when}.",
+  "planBanner.choose": "Voir les offres",
+  "planBanner.viewBilling": "Voir la facturation",
+  "planBanner.hide": "Masquer pour aujourd'hui"
+}

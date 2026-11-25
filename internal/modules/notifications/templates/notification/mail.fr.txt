@@ -1,0 +1,9 @@
+{{.Data.title}}
+{{if .Data.body}}
+{{.Data.body}}
+{{end}}{{if .Data.url}}
+Ouvrir : {{.Data.url}}
+{{end}}{{if .Data.unsubscribe}}
+--
+Vous recevez cet e-mail en raison de vos préférences de notification. Ne plus recevoir ces e-mails : {{.Data.unsubscribe}}
+{{end}}

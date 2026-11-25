@@ -1,0 +1,24 @@
+{
+  "roles.subtitle": "Ce que chaque rôle permet à ses membres.",
+  "roles.create": "Nouveau rôle",
+  "roles.createTitle": "Nouveau rôle",
+  "roles.name": "Nom",
+  "roles.description": "Description",
+  "roles.managed": "Géré",
+  "roles.managedHint": "Le rôle Admin détient toujours toutes les autorisations de l'organisation. Créez un autre rôle pour un accès plus restreint.",
+  "roles.permissions": "Autorisations",
+  "roles.permissionsHint": "Vous ne pouvez accorder que les autorisations que vous détenez.",
+  "roles.notGrantable": "Vous ne détenez pas cette autorisation, vous ne pouvez donc pas l'accorder.",
+  "roles.permissionCount": {
+    "one": "{count} autorisation",
+    "many": "{count} autorisations",
+    "other": "{count} autorisations"
+  },
+  "roles.save": "Enregistrer le rôle",
+  "roles.savePermissions": "Enregistrer les autorisations",
+  "roles.delete": "Supprimer le rôle",
+  "roles.deleteConfirm": "Supprimer le rôle {name} ? Les membres qui l'ont perdent ses autorisations.",
+  "roles.empty": "Aucun rôle pour l'instant.",
+  "roles.selectAll": "Tous",
+  "roles.selectNone": "Aucun"
+}

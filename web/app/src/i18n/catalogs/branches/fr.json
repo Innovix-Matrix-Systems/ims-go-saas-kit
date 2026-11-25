@@ -1,0 +1,22 @@
+{
+  "branches.subtitle": "Les lieux où travaille votre organisation. Les membres appartiennent à une agence et peuvent passer à d'autres.",
+  "branches.search": "Rechercher des agences",
+  "branches.create": "Nouvelle agence",
+  "branches.createTitle": "Nouvelle agence",
+  "branches.name": "Nom",
+  "branches.address": "Adresse",
+  "branches.phone": "Téléphone",
+  "branches.email": "E-mail",
+  "branches.description": "Description",
+  "branches.manager": "Responsable",
+  "branches.noManager": "Aucun responsable",
+  "branches.current": "Actuelle",
+  "branches.empty": "Aucune agence ne correspond.",
+  "branches.save": "Enregistrer l'agence",
+  "branches.delete": "Supprimer l'agence",
+  "branches.deleteConfirm": "Supprimer l'agence {name} ? Ses membres doivent d'abord être déplacés vers une autre agence.",
+  "branches.all": "Toutes les agences",
+  "branches.switchedAll": "Vous voyez maintenant toutes les agences.",
+  "branches.switch": "Changer d'agence",
+  "branches.switched": "Vous travaillez maintenant dans {name}."
+}

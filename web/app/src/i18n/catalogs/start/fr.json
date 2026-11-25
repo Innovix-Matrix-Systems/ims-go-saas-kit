@@ -1,0 +1,17 @@
+{
+  "start.title": "Préparez votre organisation",
+  "start.progress": "{done} sur {total} terminés",
+  "start.dismiss": "Masquer",
+  "start.done": "Terminé",
+  "start.go": "Configurer",
+  "start.email": "Vérifiez votre adresse e-mail",
+  "start.emailHint": "Pour recevoir les notifications et pouvoir réinitialiser votre mot de passe.",
+  "start.team": "Invitez votre équipe",
+  "start.teamHint": "Ajoutez les personnes qui travailleront avec vous.",
+  "start.twoFactor": "Activez la connexion en deux étapes",
+  "start.twoFactorHint": "Votre compte reste protégé même si votre mot de passe fuite.",
+  "start.plan": "Choisissez une offre",
+  "start.planHint": "Prenez l'offre adaptée à votre organisation.",
+  "start.brand": "Ajoutez votre logo",
+  "start.brandHint": "Il apparaît dans l'application et dans les e-mails envoyés à vos membres."
+}

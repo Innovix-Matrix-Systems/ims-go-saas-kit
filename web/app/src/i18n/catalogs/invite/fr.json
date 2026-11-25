@@ -1,0 +1,8 @@
+{
+  "invite.title": "Rejoindre {organization}",
+  "invite.subtitleWithInviter": "{inviter} vous a invité à rejoindre {organization}. Choisissez un mot de passe pour activer votre compte.",
+  "invite.subtitle": "Choisissez un mot de passe pour activer votre compte.",
+  "invite.submit": "Activer le compte",
+  "invite.done": "Votre compte est prêt. Connectez-vous avec votre adresse e-mail et votre nouveau mot de passe.",
+  "invite.invalid": "Ce lien d'invitation n'est pas valide, a expiré ou a déjà été utilisé. Demandez-en un nouveau à votre administrateur."
+}

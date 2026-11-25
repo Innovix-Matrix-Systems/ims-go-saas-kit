@@ -1,0 +1,9 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+{{if .Data.inviter}}{{.Data.inviter}} vous a invité{{else}}Vous avez été invité{{end}} à rejoindre {{.Brand.Name}}. Ouvrez ce lien pour choisir votre mot de passe et activer votre compte :
+
+{{.Data.link}}
+
+Le lien ne fonctionne qu'une fois et expire dans {{duration .Data.minutes}}. Ensuite, connectez-vous avec votre adresse e-mail et le mot de passe choisi.
+
+Si vous n'attendiez pas cette invitation, vous pouvez ignorer cet e-mail.

@@ -1,0 +1,5 @@
+Bonjour{{if .To.Name}} {{.To.Name}}{{end}},
+
+Votre compte utilise désormais une nouvelle adresse e-mail ({{.Data.new_email}}), et toutes les sessions ont été déconnectées. Cette adresse ne permet plus de se connecter.
+
+Si vous n'avez pas fait ce changement, contactez immédiatement votre administrateur ou notre équipe d'assistance.

@@ -1,0 +1,8 @@
+{
+  "verify.title": "Confirmez votre adresse e-mail",
+  "verify.working": "Confirmation de votre adresse…",
+  "verify.done": "Votre adresse e-mail est confirmée. Vous pouvez vous connecter.",
+  "verify.failed": "Ce lien n'est pas valide ou a expiré. Saisissez votre adresse e-mail pour en recevoir un nouveau.",
+  "verify.resend": "Envoyer un nouveau lien",
+  "verify.resent": "Si cette adresse doit être confirmée, un nouveau lien est en route."
+}
