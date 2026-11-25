@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { CursorPage, DevAction, DevJob, DevOverview, DevPackagesReport, DevTrafficMinute, SystemInfo } from '../api/types'
+import { poolsSummary, useDatabasePools } from '../components/DatabasePools'
 import { Sparkline } from '../components/Sparkline'
 import { TrafficChart } from '../components/TrafficChart'
 import { formatUptime } from '../components/SystemTab'
@@ -351,6 +352,8 @@ function RecentActivity({ actions, loading }: { actions: DevAction[]; loading: b
 
 /** Every health check, the ones that need a look first. */
 function HealthChecks({ health }: { health: DevOverview['health'] }) {
+  // Pool counts are dashboard-only (the public health report leaves them out).
+  const pools = useDatabasePools()
   return (
     <Card
       title="Health checks"
@@ -372,6 +375,11 @@ function HealthChecks({ health }: { health: DevOverview['health'] }) {
                 <span className="attention-title">{check.label}</span>
                 {check.status !== 'ok' || check.summary ? <span className="attention-sub">{check.summary}</span> : null}
               </span>
+              {check.name === 'Database' && pools.data && pools.data.pools.length > 0 ? (
+                <span className="small muted mono" title="Connections in use / pool maximum">
+                  {poolsSummary(pools.data.pools)}
+                </span>
+              ) : null}
               {check.advisory && check.status !== 'ok' ? <Badge tone="warn">advisory</Badge> : null}
               <Badge tone={tone === 'ok' ? 'neutral' : tone} mono>
                 {check.status}

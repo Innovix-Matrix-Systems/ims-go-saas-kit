@@ -857,7 +857,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Revoke the token for one device */
+        /**
+         * Revoke the token that made the request
+         * @description Signs this session out. The caller's other sessions stay signed in, even on a device with the same name. The body is optional; `device` is accepted for older clients.
+         */
         post: operations["authLogout"];
         delete?: never;
         options?: never;
@@ -5492,6 +5495,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dev/api/inspector/database": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Database connection pools
+         * @description Every named connection's pool, read live from memory (no query): connections in use, idle and opening, the maximum, and how often callers had to wait for one. A pool at `busy_share` of its maximum or more is busy, which also turns the Database health check into a warning. Only the dashboard shows these counts; `/api/health` names a busy pool without them.
+         */
+        get: operations["devInspectorDatabase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dev/api/deliveries": {
         parameters: {
             query?: never;
@@ -5505,6 +5528,26 @@ export interface paths {
          *     carry the template, the masked address, the status and the error; never a body or data.
          */
         get: operations["devListDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dev/api/deliveries/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Deliveries by status per day and channel
+         * @description Deliveries in the window by status (sent, failed, queued, skipped), per calendar day (UTC, every day present, oldest first) and per channel.
+         */
+        get: operations["devDeliveryStats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5866,6 +5909,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dev/api/requests/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Captured requests by status class and route
+         * @description Captured requests in the window by status class, the five busiest routes and the five with the highest p95 (each with its request count, errors and p95). Empty while HTTP capture is off.
+         */
+        get: operations["devRequestStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dev/api/requests/{id}": {
         parameters: {
             query?: never;
@@ -5926,6 +5989,26 @@ export interface paths {
         };
         /** Captured exceptions and panics */
         get: operations["devListExceptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dev/api/exceptions/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Exceptions per hour over the last day
+         * @description Captured exceptions per hour for the last 24 hours (every hour present, oldest first) and the six classes seen most recently.
+         */
+        get: operations["devExceptionStats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8493,6 +8576,143 @@ export interface components {
                 value: string;
                 masked: boolean;
             }[];
+        };
+        DevRequestStats: {
+            window_hours: number;
+            status: {
+                /**
+                 * Format: int64
+                 * @description 1xx and 2xx.
+                 */
+                success: number;
+                /**
+                 * Format: int64
+                 * @description 3xx.
+                 */
+                redirect: number;
+                /**
+                 * Format: int64
+                 * @description 4xx.
+                 */
+                client_errors: number;
+                /**
+                 * Format: int64
+                 * @description 5xx.
+                 */
+                server_errors: number;
+            };
+            busiest: components["schemas"]["DevRouteStat"][];
+            slowest: components["schemas"]["DevRouteStat"][];
+        };
+        DevRouteStat: {
+            method: string;
+            /** @description The route pattern (the path when no route matched). */
+            route: string;
+            /** Format: int64 */
+            requests: number;
+            /**
+             * Format: int64
+             * @description Answers with status 400 or above.
+             */
+            errors: number;
+            p95_ms: number;
+        };
+        DevExceptionStats: {
+            hours: {
+                /** Format: date-time */
+                hour: string;
+                /** Format: int64 */
+                occurrences: number;
+            }[];
+            classes: {
+                class: string;
+                /** Format: int64 */
+                occurrences: number;
+                /** Format: int64 */
+                latest_id: number;
+                latest_message: string;
+                /** Format: date-time */
+                first_seen: string;
+                /** Format: date-time */
+                last_seen: string;
+            }[];
+        };
+        DevDeliveryStats: {
+            window_days: number;
+            days: components["schemas"]["DevDeliveryCounts"][];
+            channels: components["schemas"]["DevDeliveryCounts"][];
+        };
+        DevDeliveryCounts: {
+            /**
+             * Format: date-time
+             * @description Set on a day row.
+             */
+            day?: string;
+            /** @description Set on a channel row. */
+            channel?: string;
+            /** Format: int64 */
+            sent: number;
+            /** Format: int64 */
+            failed: number;
+            /** Format: int64 */
+            queued: number;
+            /** Format: int64 */
+            skipped: number;
+        };
+        DevDatabasePools: {
+            /** Format: date-time */
+            checked_at: string;
+            /** @description Share of a pool's maximum in use at which it counts as busy (0.8). */
+            busy_share: number;
+            pools: components["schemas"]["DevDatabasePool"][];
+        };
+        DevDatabasePool: {
+            /** @example primary */
+            name: string;
+            /**
+             * Format: int32
+             * @description Connections in use right now.
+             */
+            active: number;
+            /**
+             * Format: int32
+             * @description Open connections nobody is using.
+             */
+            idle: number;
+            /**
+             * Format: int32
+             * @description Connections being opened.
+             */
+            constructing: number;
+            /**
+             * Format: int32
+             * @description active + idle + constructing.
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description The pool's maximum (DATABASE_MAX_CONNS, or DATABASE_<NAME>_MAX_CONNS).
+             */
+            max: number;
+            /**
+             * Format: int64
+             * @description Connections handed out since the process started.
+             */
+            acquires: number;
+            /**
+             * Format: int64
+             * @description Of those, how many found the pool empty and had to wait.
+             */
+            waited: number;
+            /**
+             * Format: int64
+             * @description Waits that gave up (the request was canceled).
+             */
+            canceled: number;
+            /** @description Mean time to get a connection, waits included. */
+            avg_acquire_ms: number;
+            /** @description active is at busy_share of max or more. */
+            busy: boolean;
         };
         DevPackagesReport: {
             go_version: string;
@@ -11738,10 +11958,10 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": {
-                    device: string;
+                    device?: string;
                 };
             };
         };
@@ -24382,6 +24602,55 @@ export interface operations {
             };
         };
     };
+    devInspectorDatabase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection pools. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DevDatabasePools"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     devListDeliveries: {
         parameters: {
             query?: {
@@ -24407,6 +24676,67 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DevDeliveryListEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    devDeliveryStats: {
+        parameters: {
+            query?: {
+                /** @description The window in days. */
+                days?: 7 | 14 | 30;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chart data. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DevDeliveryStats"];
+                    };
                 };
             };
             /** @description Missing, invalid or expired bearer token. */
@@ -25694,6 +26024,67 @@ export interface operations {
             };
         };
     };
+    devRequestStats: {
+        parameters: {
+            query?: {
+                /** @description The window in hours. */
+                hours?: 1 | 24 | 168;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chart data. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DevRequestStats"];
+                    };
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     devGetRequest: {
         parameters: {
             query?: never;
@@ -25866,6 +26257,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DevExceptionListEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Resource not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    devExceptionStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chart data. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DevExceptionStats"];
+                    };
                 };
             };
             /** @description Missing, invalid or expired bearer token. */

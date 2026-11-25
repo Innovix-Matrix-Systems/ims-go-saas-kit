@@ -26,6 +26,7 @@ import {
   Tabs,
 } from '../components/ui'
 import { formatDateTime, relativeTime } from '../format'
+import { QueueChart } from '../components/PanelCharts'
 
 type StateFilter = '' | JobStateName
 
@@ -292,6 +293,7 @@ function QueuePage() {
             ))}
           </Grid>
         )}
+        {queueRows.length > 0 ? <QueueChart queues={queueRows} /> : null}
 
         <div>
           <Tabs

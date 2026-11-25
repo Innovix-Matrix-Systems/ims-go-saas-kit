@@ -31,7 +31,7 @@ Send it as `Authorization: Bearer 42|q9…`. Tokens expire after `AUTH_TOKEN_EXP
 | `POST /api/v1/login` | e-mail + password (+ device) → token, or an OTP challenge |
 | `POST /api/v1/verify-otp` | completes an OTP login |
 | `POST /api/v1/social/{provider}/login` | a Google or GitHub sign-in → the same token ([social login](social-login.md)) |
-| `POST /api/v1/logout` | revokes the current token |
+| `POST /api/v1/logout` | revokes the token that made the request; other sessions stay signed in (body optional) |
 | `GET /api/v1/sessions` | the caller's own sessions ([below](#sessions)) |
 | `GET /api/v1/user/profile` | the signed-in user |
 

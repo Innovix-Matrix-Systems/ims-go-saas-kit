@@ -2,6 +2,7 @@ package dev
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
@@ -38,6 +39,8 @@ type Handler struct {
 	maintenance       *maintenance.Service
 	deliveries        *delivery.Service
 	overview          *OverviewService
+	pools             PoolSource
+	stats             *StatsService
 	scheduler         *scheduler.Runner
 	// auditRetentionDays is how long dev_actions rows are kept.
 	auditRetentionDays int
@@ -77,6 +80,8 @@ func NewHandler(deps Deps) *Handler {
 		maintenance:        deps.Maintenance,
 		deliveries:         deps.Deliveries,
 		overview:           newOverviewService(deps),
+		pools:              deps.Pools,
+		stats:              &StatsService{telemetry: deps.Telemetry, deliveries: deps.Deliveries, now: time.Now},
 		scheduler:          deps.Scheduler,
 		auditRetentionDays: deps.AuditRetentionDays,
 	}

@@ -22,6 +22,7 @@ import {
   type BadgeTone,
 } from '../components/ui'
 import { formatDateTime, relativeTime } from '../format'
+import { DeliveryCharts } from '../components/PanelCharts'
 
 /* Deliveries: the delivery log — every message sent by mail, SMS
  * or push, one row per channel, never a body — and template previews rendered
@@ -89,6 +90,8 @@ function DeliveriesPage() {
           ) : undefined
         }
       />
+
+      <DeliveryCharts />
       <Tabs
         tabs={[
           { id: 'log', label: 'Log' },

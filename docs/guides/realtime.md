@@ -23,6 +23,7 @@ service write ── pg_notify('ims_realtime') ──► pubsub.Listener ─► 
 | `event: ready` | Connected; `data: {"heartbeat": 25}` |
 | `event: notifications` | Refetch the notification feed and unread count |
 | `event: announcements` | Refetch `GET /api/v1/announcements/live` |
+| `event: billing` | Refetch the organization's plan and payments (staff: the payment approvals) |
 | `event: resync` | Refetch everything (the server may have missed events) |
 | `: ping` | Every `REALTIME_HEARTBEAT` while idle, so proxies keep it open |
 | `event: reconnect` | The server is closing the stream (after `REALTIME_MAX_STREAM`, or shutdown): open a new one |

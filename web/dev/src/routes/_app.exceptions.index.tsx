@@ -16,6 +16,7 @@ import {
   RefreshToggle,
 } from '../components/ui'
 import { formatDateTime, relativeTime } from '../format'
+import { ExceptionCharts } from '../components/PanelCharts'
 
 export const Route = createFileRoute('/_app/exceptions/')({
   component: ExceptionsPage,
@@ -90,6 +91,8 @@ function ExceptionsPage() {
           </>
         }
       />
+
+      <ExceptionCharts />
 
       {query.isLoading ? (
         <LoadingBlock label="Loading exceptions…" />

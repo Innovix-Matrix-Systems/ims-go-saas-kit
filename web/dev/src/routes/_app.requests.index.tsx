@@ -20,6 +20,7 @@ import {
   StatusChip,
 } from '../components/ui'
 import { formatBytes, formatDuration, relativeTime } from '../format'
+import { RequestCharts } from '../components/PanelCharts'
 
 export const Route = createFileRoute('/_app/requests/')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -155,6 +156,8 @@ function RequestsPage() {
           </>
         }
       />
+
+      <RequestCharts live={live} />
 
       <div className="filters">
         <label className="field grow">

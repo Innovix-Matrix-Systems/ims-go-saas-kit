@@ -383,6 +383,11 @@ func (s *Service) Preview(ctx context.Context, name string, channel Channel, loc
 }
 
 // List returns delivery log rows, newest first.
+// CountByDay counts deliveries since a time per UTC day, channel and status.
+func (s *Service) CountByDay(ctx context.Context, since time.Time) ([]DayCount, error) {
+	return s.repo.CountByDay(ctx, since)
+}
+
 func (s *Service) List(ctx context.Context, filter ListFilter) ([]Record, error) {
 	if filter.Limit <= 0 || filter.Limit > 100 {
 		filter.Limit = 50

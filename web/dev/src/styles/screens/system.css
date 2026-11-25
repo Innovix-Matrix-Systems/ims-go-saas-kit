@@ -17,3 +17,10 @@
 .health-name { font-weight: var(--fw-semibold); font-size: var(--fs-base); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .health-summary-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .health-card details summary { cursor: pointer; }
+
+/* Database pools: a usage bar per pool (warn colour once busy). */
+.pool-table td { white-space: nowrap; }
+.pool-usage { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+.pool-meter { position: relative; flex: 1; height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.pool-meter > span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--accent); }
+.pool-meter.busy > span { background: var(--warn-fg); }

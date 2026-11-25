@@ -31,7 +31,7 @@ Every module then removes its own data about the person, in one transaction:
 | Dashboard request captures | deleted |
 
 The super admin cannot be erased, and neither can a tenant's **last active Admin**: assign the
-Admin role to someone else first. Every erasure is a row in `privacy_requests` (ids and counts,
+Admin role to someone else first (a deleted tenant's last Admin can be erased). Every erasure is a row in `privacy_requests` (ids and counts,
 never values) and an id-only `user.erased` activity entry, deliverable as a
 [webhook](webhooks.md) so connected systems can erase their copies too. The person gets a last
 mail at the address the account had.

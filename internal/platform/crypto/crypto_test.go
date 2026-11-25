@@ -59,7 +59,13 @@ func TestRotation(t *testing.T) {
 func TestTamperedValuesAreRefused(t *testing.T) {
 	enc, _ := New(key(1))
 	sealed, _ := enc.EncryptString("secret")
-	tampered := sealed[:len(sealed)-2] + "AA"
+	// Change the last two characters; a value that already ends in "AA" would
+	// otherwise stay as it was and decrypt fine.
+	suffix := "AA"
+	if strings.HasSuffix(sealed, suffix) {
+		suffix = "BB"
+	}
+	tampered := sealed[:len(sealed)-2] + suffix
 	for _, value := range []string{tampered, "", "v1:abc", "v2:" + sealed[3:], "plain text"} {
 		if _, err := enc.Decrypt(value); !errors.Is(err, ErrUndecryptable) {
 			t.Errorf("Decrypt(%q) error = %v, want ErrUndecryptable", value, err)

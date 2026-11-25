@@ -28,20 +28,20 @@ and the environment badge is red, so a change is never made on the wrong instanc
 
 | Panel | Shows |
 | --- | --- |
-| **Overview** | whether anything needs you: health, migrations, the queue, errors in the last 24 hours, the last backup and settings or flags missing from the database (grey while all is well, each linking to its panel); every health check next to recent activity; the last hour of captured traffic as a per-minute chart (2xx/3xx, 4xx, 5xx) with the error rate and p95; errors and failed jobs when there are any; the environment and the Go packages it runs on |
-| **Requests** | every captured request with a pinned summary (method, status, duration, who, request ID) and tabs for the SQL it ran (total time, slowest and repeated statements), cache calls, jobs it queued, logs, exceptions, headers and bodies (redacted) |
+| **Overview** | whether anything needs you: health, migrations, the queue, errors in the last 24 hours, the last backup and settings or flags missing from the database (grey while all is well, each linking to its panel); every health check next to recent activity; connections in use per database pool next to the Database check; the last hour of captured traffic as a per-minute chart (2xx/3xx, 4xx, 5xx) with the error rate and p95; errors and failed jobs when there are any; the environment and the Go packages it runs on |
+| **Requests** | requests by status class (1 hour, 24 hours or 7 days) and the busiest or slowest routes as charts; every captured request with a pinned summary (method, status, duration, who, request ID) and tabs for the SQL it ran (total time, slowest and repeated statements), cache calls, jobs it queued, logs, exceptions, headers and bodies (redacted) |
 | **Logs** | warn-and-above log lines, the level as the row's edge, with search and a link to each line's request |
-| **Exceptions** | panics and 5xx, grouped by class and message with a count and first/last seen, each with its stack trace and request |
+| **Exceptions** | exceptions per hour over the last day and by class as charts; panics and 5xx, grouped by class and message with a count and first/last seen, each with its stack trace and request |
 
 ## Operate
 
 | Panel | Does |
 | --- | --- |
-| **Queue** | one tile per queue (waiting, failed, pause/resume) and jobs by state; retry, cancel or delete a job. Shows the job envelope, never the payload |
+| **Queue** | a chart of every queue's jobs (waiting or running, failed, done); one tile per queue (waiting, failed, pause/resume) and jobs by state; retry, cancel or delete a job. Shows the job envelope, never the payload |
 | **Commands** | runs the allowlisted maintenance commands in-process, with options, confirmation, background runs and output history |
 | **Scheduler** | every scheduled task with its cron expression in words, the next run and its last ten runs (ok, failed or interrupted, how long, the error); a **History** of every run, filtered by task and status; **Run now** (`dev.manage`, audited) does the same work as `ims schedule:run`; warns when no `ims schedule` process is checking in |
 | **Backups** | runs with size, checksum and destinations; run, clean, download (`dev.manage`) |
-| **Deliveries** | the [delivery log](../guides/delivery.md) (mail, SMS, push: template, masked address, status, error — never a body) with filters and a drawer per message, and a **Templates** tab that previews each template per channel and language with its sample data |
+| **Deliveries** | deliveries per day by outcome and by channel as charts (7, 14 or 30 days); the [delivery log](../guides/delivery.md) (mail, SMS, push: template, masked address, status, error — never a body) with filters and a drawer per message, and a **Templates** tab that previews each template per channel and language with its sample data |
 
 ## Configure
 
@@ -55,15 +55,15 @@ and the environment badge is red, so a change is never made on the wrong instanc
 | Panel | Does |
 | --- | --- |
 | **Tenants** | every tenant with its plan, usage against limits and override counts; deep links to its settings and flags |
-| **Sessions** | active tokens per user; revoke one, a user's, or all |
-| **Files** | every file across disks with thumbnails, previews (images, PDFs) and filters |
+| **Sessions** | active tokens by last use as a chart; active tokens per user; revoke one, a user's, or all |
+| **Files** | storage by type and by disk as charts (size or count); every file across disks with thumbnails, previews (images, PDFs) and filters |
 | **Developers** | who has dashboard access; grant or remove the Developer role |
 
 ## Diagnose
 
 | Panel | Does |
 | --- | --- |
-| **Inspector** | **System** (the [maintenance mode](../guides/maintenance-mode.md) toggle, health checks + runtime), **Routes** (every route with its middleware and permission; the same table as `ims route:list`), **Roles & permissions** (catalog vs database drift), **Config** (effective values, secrets masked), **Packages** (Go and npm dependencies) |
+| **Inspector** | **System** (the [maintenance mode](../guides/maintenance-mode.md) toggle, health checks + runtime, and the database connection pools read live), **Routes** (every route with its middleware and permission; the same table as `ims route:list`), **Roles & permissions** (catalog vs database drift), **Config** (effective values, secrets masked), **Packages** (Go and npm dependencies) |
 | **Audit log** | every dashboard action and sign-in (including failures — never the password) with IP and browser; filter by action, person, status and date |
 
 ## Sandbox (local only)

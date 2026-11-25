@@ -46,7 +46,9 @@ type Authenticator interface {
 	// two-factor authentication before working.
 	IssueSetup(ctx context.Context, userID int64, device string) (Token, error)
 	Verify(ctx context.Context, raw string) (*Identity, error)
-	Revoke(ctx context.Context, userID int64, device string) error
+	// Revoke deletes one of the user's tokens: logout passes the token that
+	// made the request.
+	Revoke(ctx context.Context, userID, tokenID int64) error
 	RevokeAll(ctx context.Context, userID int64) error
 	// RevokeOthers deletes every token of the user except keepTokenID
 	// (Laravel's logoutOtherDevices).
@@ -177,13 +179,16 @@ func (a *OpaqueAuthenticator) Verify(ctx context.Context, raw string) (*Identity
 }
 
 // Revoke deletes the token row for one device.
-func (a *OpaqueAuthenticator) Revoke(ctx context.Context, userID int64, device string) (err error) {
-	ctx, end := tracing.Begin(ctx, "authn.revoke_token", attribute.Int64("user.id", userID))
+func (a *OpaqueAuthenticator) Revoke(ctx context.Context, userID, tokenID int64) (err error) {
+	ctx, end := tracing.Begin(ctx, "authn.revoke_token",
+		attribute.Int64("user.id", userID),
+		attribute.Int64("token.id", tokenID),
+	)
 	defer end(&err)
-	if _, err := a.queries.DeleteTokenByDevice(ctx, dbgen.DeleteTokenByDeviceParams{
+	if _, err := a.queries.DeleteTokenForUser(ctx, dbgen.DeleteTokenForUserParams{
+		ID:            tokenID,
 		TokenableType: ModelTypeUser,
 		TokenableID:   userID,
-		Device:        device,
 	}); err != nil {
 		return database.MapError("authn.revoke_token", err)
 	}

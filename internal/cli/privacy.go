@@ -44,7 +44,7 @@ func newPrivacyEraseCommand(state *State) *cobra.Command {
 		Short: "Erase a user's personal data now",
 		Long: "Erase a user's personal data in every module and keep the users row as a tombstone " +
 			"(docs/design/account-deletion-and-export.md). It cannot be undone, so it needs --force. " +
-			"The super admin and a tenant's last active Admin are refused.",
+			"The super admin and a live tenant's last active Admin are refused.",
 		Example: "  ims privacy:erase --user=42 --force",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if userID < 1 {

@@ -24,6 +24,7 @@ import {
   type BadgeTone,
 } from '../components/ui'
 import { formatBytes, formatDateTime, localDayEnd, localDayStart, relativeTime } from '../format'
+import { FileCharts } from '../components/PanelCharts'
 
 export const Route = createFileRoute('/_app/files')({
   component: FilesPage,
@@ -375,6 +376,7 @@ function FilesPage() {
           hint={`${stats.data?.unattached_files ?? 0} library files`}
         />
       </div>
+      {stats.data ? <FileCharts stats={stats.data} /> : null}
 
       <Card className="mt-24">
         <CardHeader

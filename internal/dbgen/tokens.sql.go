@@ -184,21 +184,21 @@ func (q *Queries) DeleteSessionUserTokens(ctx context.Context, userID int64) (in
 	return result.RowsAffected(), nil
 }
 
-const deleteTokenByDevice = `-- name: DeleteTokenByDevice :execrows
+const deleteTokenForUser = `-- name: DeleteTokenForUser :execrows
 DELETE FROM personal_access_tokens
-WHERE tokenable_type = $1
-  AND tokenable_id = $2
-  AND device = $3
+WHERE id = $1
+  AND tokenable_type = $2
+  AND tokenable_id = $3
 `
 
-type DeleteTokenByDeviceParams struct {
+type DeleteTokenForUserParams struct {
+	ID            int64  `json:"id"`
 	TokenableType string `json:"tokenable_type"`
 	TokenableID   int64  `json:"tokenable_id"`
-	Device        string `json:"device"`
 }
 
-func (q *Queries) DeleteTokenByDevice(ctx context.Context, arg DeleteTokenByDeviceParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteTokenByDevice, arg.TokenableType, arg.TokenableID, arg.Device)
+func (q *Queries) DeleteTokenForUser(ctx context.Context, arg DeleteTokenForUserParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteTokenForUser, arg.ID, arg.TokenableType, arg.TokenableID)
 	if err != nil {
 		return 0, err
 	}

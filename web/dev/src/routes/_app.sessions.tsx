@@ -29,6 +29,7 @@ import {
   StatTile,
 } from '../components/ui'
 import { formatDateTime, relativeTime } from '../format'
+import { SessionChart } from '../components/PanelCharts'
 
 export const Route = createFileRoute('/_app/sessions')({
   component: SessionsPage,
@@ -297,6 +298,12 @@ function SessionsPage() {
           hint="active but idle 30d+"
         />
       </div>
+
+      {stats.data ? (
+        <Card className="mt-24" title="Token activity" description="Active tokens by when they were last used">
+          <SessionChart stats={stats.data} />
+        </Card>
+      ) : null}
 
       <div className="grid cols-2 mt-24">
         <Card>

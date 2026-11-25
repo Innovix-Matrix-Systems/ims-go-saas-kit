@@ -2,6 +2,7 @@ package onboarding_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -121,4 +122,30 @@ func TestSignUpRefusals(t *testing.T) {
 	if users != 0 {
 		t.Fatalf("a refused sign-up created a user (%d)", users)
 	}
+}
+
+// A sign-up package whose users.max is 0 could not hold the owner: it is
+// refused before anything is created, so no tenant or subscription is left
+// behind to keep the package from being deleted.
+func TestSignUpRefusesAPackageWithoutUsers(t *testing.T) {
+	app := testkit.New(t)
+	staff := app.SuperAdmin(t)
+	var created struct {
+		ID int64 `json:"id"`
+	}
+	app.As(staff).Post("/api/v1/packages", map[string]any{
+		"name": "No Seats", "price": 0, "billing_cycle": "monthly", "is_active": true,
+		"features": []map[string]any{{"feature_key": "users.max", "is_enabled": true, "limit_value": 0}},
+	}).Status(t, http.StatusCreated).Data(t, &created)
+	app.As(staff).Patch("/api/v1/internal/settings/signup.package_id", map[string]any{"value": created.ID}).Status(t, http.StatusOK)
+
+	app.Guest().Post("/api/v1/signup", signUpBody("noseats@acme.test")).Status(t, http.StatusServiceUnavailable)
+
+	var tenants, subscriptions int
+	_ = app.Pool.QueryRow(context.Background(), `SELECT count(*) FROM tenants WHERE email = 'noseats@acme.test'`).Scan(&tenants)
+	_ = app.Pool.QueryRow(context.Background(), `SELECT count(*) FROM subscriptions WHERE package_id = $1`, created.ID).Scan(&subscriptions)
+	if tenants != 0 || subscriptions != 0 {
+		t.Fatalf("a refused sign-up left %d tenants and %d subscriptions", tenants, subscriptions)
+	}
+	app.As(staff).Delete(fmt.Sprintf("/api/v1/packages/%d", created.ID)).Status(t, http.StatusNoContent)
 }

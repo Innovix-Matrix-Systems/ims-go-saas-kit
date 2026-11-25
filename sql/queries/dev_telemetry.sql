@@ -159,3 +159,47 @@ WITH requests AS (
     DELETE FROM dev_exceptions WHERE request_id IN (SELECT request_id FROM requests)
 )
 SELECT count(*)::bigint FROM requests;
+
+-- name: DevRequestStatusMix :one
+-- Requests panel: captured requests since @since by status class.
+SELECT (count(*) FILTER (WHERE status < 300))::bigint AS success,
+       (count(*) FILTER (WHERE status >= 300 AND status < 400))::bigint AS redirect,
+       (count(*) FILTER (WHERE status >= 400 AND status < 500))::bigint AS client_errors,
+       (count(*) FILTER (WHERE status >= 500))::bigint AS server_errors
+FROM dev_requests
+WHERE created_at >= @since::timestamptz;
+
+-- name: DevBusiestRoutes :many
+-- Requests panel: the routes with the most captured requests since @since.
+SELECT method,
+       (CASE WHEN route = '' THEN path ELSE route END)::text AS route,
+       count(*)::bigint AS requests,
+       (count(*) FILTER (WHERE status >= 400))::bigint AS errors,
+       (percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms))::double precision AS p95_ms
+FROM dev_requests
+WHERE created_at >= @since::timestamptz
+GROUP BY 1, 2
+ORDER BY requests DESC, route
+LIMIT @row_limit;
+
+-- name: DevSlowestRoutes :many
+-- Requests panel: the routes with the highest p95 since @since.
+SELECT method,
+       (CASE WHEN route = '' THEN path ELSE route END)::text AS route,
+       count(*)::bigint AS requests,
+       (count(*) FILTER (WHERE status >= 400))::bigint AS errors,
+       (percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms))::double precision AS p95_ms
+FROM dev_requests
+WHERE created_at >= @since::timestamptz
+GROUP BY 1, 2
+ORDER BY p95_ms DESC, route
+LIMIT @row_limit;
+
+-- name: DevExceptionsByHour :many
+-- Exceptions panel: captured exceptions per hour since @since.
+SELECT date_trunc('hour', created_at, 'UTC')::timestamptz AS hour,
+       count(*)::bigint AS occurrences
+FROM dev_exceptions
+WHERE created_at >= @since::timestamptz
+GROUP BY 1
+ORDER BY 1;

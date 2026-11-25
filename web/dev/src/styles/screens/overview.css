@@ -5,12 +5,10 @@
 
 /* Sparkline (components/Sparkline.tsx): one 2 px line, recessive baseline. */
 .sparkline { margin-top: 6px; }
-.sparkline svg { display: block; width: 100%; height: 44px; overflow: visible; }
-.sparkline-line { fill: none; stroke: var(--accent); stroke-width: 2px; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.sparkline-area { fill: var(--accent-subtle); stroke: none; }
-.sparkline-base { stroke: var(--border); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.sparkline-cursor { stroke: var(--text-3); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.sparkline-hit { fill: transparent; cursor: crosshair; }
+/* Recharts draws the SVG; the tokens colour it (CSS wins over its attributes). */
+.sparkline-plot { height: 44px; border-bottom: 1px solid var(--border); cursor: crosshair; }
+.sparkline-series .recharts-area-curve { stroke: var(--accent); stroke-linejoin: round; stroke-linecap: round; }
+.sparkline-series .recharts-area-area { fill: var(--accent-subtle); fill-opacity: 1; }
 .sparkline-readout { min-height: 18px; font-size: var(--fs-sm); color: var(--text-2); font-variant-numeric: tabular-nums; }
 
 .attention-list { list-style: none; margin: 0; padding: 0; }
@@ -38,15 +36,18 @@
 .traffic-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: var(--space-5); align-items: start; }
 .traffic-side { display: flex; flex-direction: column; gap: var(--space-4); }
 @media (max-width: 1100px) { .traffic-layout { grid-template-columns: minmax(0, 1fr); } .traffic-side { flex-direction: row; flex-wrap: wrap; } .traffic-side > * { flex: 1 1 180px; } }
-.traffic-chart svg { display: block; width: 100%; height: 200px; }
+.traffic-chart { cursor: crosshair; }
 .traffic-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-bottom: 6px; font-size: var(--fs-sm); color: var(--text-2); }
 .traffic-legend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 .traffic-readout { margin-left: auto; color: var(--text-1); font-variant-numeric: tabular-nums; }
-.swatch.ok-requests, .traffic-chart .ok-requests { background: var(--accent); fill: var(--accent); }
-.swatch.client, .traffic-chart .client { background: var(--warn-fg); fill: var(--warn-fg); }
-.swatch.server, .traffic-chart .server { background: var(--danger-fg); fill: var(--danger-fg); }
-.traffic-chart .bar { opacity: 0.85; }
-.traffic-chart .bar.active { opacity: 1; }
-.chart-grid { stroke: var(--border); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.chart-axis { fill: var(--text-3); font-size: var(--fs-xs); font-family: var(--sans); }
-.chart-hit { fill: transparent; cursor: crosshair; }
+.swatch.ok-requests { background: var(--accent); }
+.swatch.client { background: var(--warn-fg); }
+.swatch.server { background: var(--danger-fg); }
+.traffic-chart .ok-requests .recharts-rectangle { fill: var(--accent); }
+.traffic-chart .client .recharts-rectangle { fill: var(--warn-fg); }
+.traffic-chart .server .recharts-rectangle { fill: var(--danger-fg); }
+/* Recharts 3 draws ticks and grid lines in their own layers, so style its classes. */
+.traffic-chart .recharts-cartesian-grid line { stroke: var(--border); stroke-width: 1px; }
+.traffic-chart .recharts-cartesian-axis-tick-value { fill: var(--text-3); font-size: var(--fs-xs); font-family: var(--sans); }
+.traffic-chart .recharts-tooltip-cursor { fill: var(--surface-2); }
+.sparkline .recharts-tooltip-cursor { stroke: var(--text-3); stroke-width: 1px; }

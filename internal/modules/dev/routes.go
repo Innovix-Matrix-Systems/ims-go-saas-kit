@@ -22,10 +22,12 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.With(h.manage).Post("/playground/jobs", h.enqueuePlaygroundJobs)
 
 	r.Get("/requests", h.listRequests)
+	r.Get("/requests/stats", h.requestStats)
 	r.Get("/requests/{id}", h.getRequest)
 	r.Get("/logs", h.listLogs)
 	r.Get("/logs/{id}", h.getLog)
 	r.Get("/exceptions", h.listExceptions)
+	r.Get("/exceptions/stats", h.exceptionStats)
 	r.Get("/exceptions/{id}", h.getException)
 	r.With(h.manage).Post("/telemetry/prune", h.pruneTelemetry)
 
@@ -91,12 +93,14 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/inspector/access", h.inspectorAccess)
 	r.Get("/inspector/config", h.inspectorConfig)
 	r.Get("/inspector/packages", h.inspectorPackages)
+	r.Get("/inspector/database", h.inspectorDatabase)
 
 	r.Get("/maintenance", h.maintenanceStatus)
 	r.With(h.manage).Post("/maintenance/down", h.maintenanceDown)
 	r.With(h.manage).Post("/maintenance/up", h.maintenanceUp)
 
 	r.Get("/deliveries", h.listDeliveries)
+	r.Get("/deliveries/stats", h.deliveryStats)
 	r.Get("/deliveries/templates", h.listDeliveryTemplates)
 	r.Get("/deliveries/templates/{name}/preview", h.previewDeliveryTemplate)
 	r.Get("/deliveries/{id}", h.getDelivery)

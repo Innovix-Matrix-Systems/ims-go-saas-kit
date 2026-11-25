@@ -59,6 +59,176 @@ func (q *Queries) DeleteDevTelemetryForUser(ctx context.Context, arg DeleteDevTe
 	return column_1, err
 }
 
+const devBusiestRoutes = `-- name: DevBusiestRoutes :many
+SELECT method,
+       (CASE WHEN route = '' THEN path ELSE route END)::text AS route,
+       count(*)::bigint AS requests,
+       (count(*) FILTER (WHERE status >= 400))::bigint AS errors,
+       (percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms))::double precision AS p95_ms
+FROM dev_requests
+WHERE created_at >= $1::timestamptz
+GROUP BY 1, 2
+ORDER BY requests DESC, route
+LIMIT $2
+`
+
+type DevBusiestRoutesParams struct {
+	Since    pgtype.Timestamptz `json:"since"`
+	RowLimit int32              `json:"row_limit"`
+}
+
+type DevBusiestRoutesRow struct {
+	Method   string  `json:"method"`
+	Route    string  `json:"route"`
+	Requests int64   `json:"requests"`
+	Errors   int64   `json:"errors"`
+	P95Ms    float64 `json:"p95_ms"`
+}
+
+// Requests panel: the routes with the most captured requests since @since.
+func (q *Queries) DevBusiestRoutes(ctx context.Context, arg DevBusiestRoutesParams) ([]DevBusiestRoutesRow, error) {
+	rows, err := q.db.Query(ctx, devBusiestRoutes, arg.Since, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DevBusiestRoutesRow{}
+	for rows.Next() {
+		var i DevBusiestRoutesRow
+		if err := rows.Scan(
+			&i.Method,
+			&i.Route,
+			&i.Requests,
+			&i.Errors,
+			&i.P95Ms,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const devExceptionsByHour = `-- name: DevExceptionsByHour :many
+SELECT date_trunc('hour', created_at, 'UTC')::timestamptz AS hour,
+       count(*)::bigint AS occurrences
+FROM dev_exceptions
+WHERE created_at >= $1::timestamptz
+GROUP BY 1
+ORDER BY 1
+`
+
+type DevExceptionsByHourRow struct {
+	Hour        pgtype.Timestamptz `json:"hour"`
+	Occurrences int64              `json:"occurrences"`
+}
+
+// Exceptions panel: captured exceptions per hour since @since.
+func (q *Queries) DevExceptionsByHour(ctx context.Context, since pgtype.Timestamptz) ([]DevExceptionsByHourRow, error) {
+	rows, err := q.db.Query(ctx, devExceptionsByHour, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DevExceptionsByHourRow{}
+	for rows.Next() {
+		var i DevExceptionsByHourRow
+		if err := rows.Scan(&i.Hour, &i.Occurrences); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const devRequestStatusMix = `-- name: DevRequestStatusMix :one
+SELECT (count(*) FILTER (WHERE status < 300))::bigint AS success,
+       (count(*) FILTER (WHERE status >= 300 AND status < 400))::bigint AS redirect,
+       (count(*) FILTER (WHERE status >= 400 AND status < 500))::bigint AS client_errors,
+       (count(*) FILTER (WHERE status >= 500))::bigint AS server_errors
+FROM dev_requests
+WHERE created_at >= $1::timestamptz
+`
+
+type DevRequestStatusMixRow struct {
+	Success      int64 `json:"success"`
+	Redirect     int64 `json:"redirect"`
+	ClientErrors int64 `json:"client_errors"`
+	ServerErrors int64 `json:"server_errors"`
+}
+
+// Requests panel: captured requests since @since by status class.
+func (q *Queries) DevRequestStatusMix(ctx context.Context, since pgtype.Timestamptz) (DevRequestStatusMixRow, error) {
+	row := q.db.QueryRow(ctx, devRequestStatusMix, since)
+	var i DevRequestStatusMixRow
+	err := row.Scan(
+		&i.Success,
+		&i.Redirect,
+		&i.ClientErrors,
+		&i.ServerErrors,
+	)
+	return i, err
+}
+
+const devSlowestRoutes = `-- name: DevSlowestRoutes :many
+SELECT method,
+       (CASE WHEN route = '' THEN path ELSE route END)::text AS route,
+       count(*)::bigint AS requests,
+       (count(*) FILTER (WHERE status >= 400))::bigint AS errors,
+       (percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms))::double precision AS p95_ms
+FROM dev_requests
+WHERE created_at >= $1::timestamptz
+GROUP BY 1, 2
+ORDER BY p95_ms DESC, route
+LIMIT $2
+`
+
+type DevSlowestRoutesParams struct {
+	Since    pgtype.Timestamptz `json:"since"`
+	RowLimit int32              `json:"row_limit"`
+}
+
+type DevSlowestRoutesRow struct {
+	Method   string  `json:"method"`
+	Route    string  `json:"route"`
+	Requests int64   `json:"requests"`
+	Errors   int64   `json:"errors"`
+	P95Ms    float64 `json:"p95_ms"`
+}
+
+// Requests panel: the routes with the highest p95 since @since.
+func (q *Queries) DevSlowestRoutes(ctx context.Context, arg DevSlowestRoutesParams) ([]DevSlowestRoutesRow, error) {
+	rows, err := q.db.Query(ctx, devSlowestRoutes, arg.Since, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DevSlowestRoutesRow{}
+	for rows.Next() {
+		var i DevSlowestRoutesRow
+		if err := rows.Scan(
+			&i.Method,
+			&i.Route,
+			&i.Requests,
+			&i.Errors,
+			&i.P95Ms,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const devTrafficByMinute = `-- name: DevTrafficByMinute :many
 SELECT date_trunc('minute', created_at)::timestamptz AS minute,
        count(*)::bigint AS requests,

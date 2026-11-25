@@ -65,6 +65,8 @@ func TestRewrite(t *testing.T) {
 		{"keep markers", "ims serve\n<!-- rename:keep -->\nmake rename turns `ims` into yours\n<!-- rename:end -->\nims migrate",
 			"shop serve\n<!-- rename:keep -->\nmake rename turns `ims` into yours\n<!-- rename:end -->\nshop migrate"},
 		{"partial seeded e-mail stays", "/dev/api/actions?search=superadmin@ims", "/dev/api/actions?search=superadmin@ims"},
+		{"url-encoded titles", "otpauth://totp/IMS%20Go%20API:jane@acme.test?issuer=IMS+Go+API&period=30 IMS%20Go%20API%20Starter",
+			"otpauth://totp/Acme%20Shop:jane@acme.test?issuer=Acme+Shop&period=30 Acme%20Shop"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

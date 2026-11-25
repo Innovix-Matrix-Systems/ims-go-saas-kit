@@ -31,6 +31,8 @@ make skills-sync     # copies .agents/skills → .claude/skills
 make skills-check    # fails on drift (part of make gen-check and CI)
 ```
 
+Both run `go run ./cmd/skills`, so they work in PowerShell as well as a Unix shell.
+
 ## Keeping agents honest
 
 The same safety nets that protect human changes protect agent changes:

@@ -1,6 +1,8 @@
 package billing_test
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -34,4 +36,23 @@ func TestTenantAdminManagesOwnBilling(t *testing.T) {
 	app.As(member).Post("/api/v1/billing/subscribe", map[string]any{
 		"package_id": pkg.ID, "payment_method": "bank_transfer",
 	}).Status(t, http.StatusForbidden)
+}
+
+// A package that organizations are subscribed to cannot be deleted, and the
+// answer says why (it used to claim a missing record).
+func TestDeletingAPackageInUseSaysSo(t *testing.T) {
+	app := testkit.New(t)
+	var packageID int64
+	if err := app.Pool.QueryRow(context.Background(),
+		`SELECT package_id FROM subscriptions WHERE tenant_id = $1 LIMIT 1`, testkit.DefaultTenant).Scan(&packageID); err != nil {
+		t.Fatalf("the default tenant's package: %v", err)
+	}
+	var problem struct {
+		Detail string `json:"detail"`
+	}
+	app.As(app.SuperAdmin(t)).Delete(fmt.Sprintf("/api/v1/packages/%d", packageID)).
+		Status(t, http.StatusConflict).JSON(t, &problem)
+	if problem.Detail != "The record is still in use by other records." {
+		t.Fatalf("detail = %q", problem.Detail)
+	}
 }

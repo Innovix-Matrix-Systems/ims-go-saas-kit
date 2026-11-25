@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"go/format"
 	"io/fs"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -250,12 +251,19 @@ func Rewrite(text, oldModule string, names Names) (string, int) {
 	for _, pattern := range protectedPatterns {
 		text = pattern.ReplaceAllStringFunc(text, hold)
 	}
-	for _, pair := range [][2]string{
-		{OldTitle, names.Title},
-		{OldShortTitle, names.Title},
-		{OldRepoName, names.Name},
-		{OldDeployName, names.Name},
-	} {
+	pairs := [][2]string{}
+	for _, title := range []string{OldTitle, OldShortTitle} {
+		// Titles also appear URL-encoded (an otpauth:// example in the OpenAPI
+		// spec): replace those whole, encoded the same way, before the brand
+		// rule below would rewrite only their first word.
+		pairs = append(pairs,
+			[2]string{title, names.Title},
+			[2]string{strings.ReplaceAll(title, " ", "%20"), url.PathEscape(names.Title)},
+			[2]string{strings.ReplaceAll(title, " ", "+"), url.QueryEscape(names.Title)},
+		)
+	}
+	pairs = append(pairs, [2]string{OldRepoName, names.Name}, [2]string{OldDeployName, names.Name})
+	for _, pair := range pairs {
 		if n := strings.Count(text, pair[0]); n > 0 {
 			text = strings.ReplaceAll(text, pair[0], hold(pair[1]))
 			edits += n

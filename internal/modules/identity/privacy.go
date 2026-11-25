@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
 	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
@@ -94,7 +97,8 @@ func (PrivacyContributor) Erase(ctx context.Context, q *dbgen.Queries, s privacy
 }
 
 // CheckErasure implements privacy.Guard: a tenant keeps at least one active
-// Admin, so the last one cannot be erased.
+// Admin, so the last one cannot be erased. A deleted tenant has nothing left to
+// administer, so its last Admin can be.
 func (PrivacyContributor) CheckErasure(ctx context.Context, q *dbgen.Queries, s privacy.Subject) ([]string, error) {
 	// An organization's owner hands it over before their account can go.
 	owner, err := q.IsTenantOwner(ctx, s.UserIDPtr())
@@ -106,6 +110,11 @@ func (PrivacyContributor) CheckErasure(ctx context.Context, q *dbgen.Queries, s 
 	}
 	if s.TenantID == nil {
 		return nil, nil
+	}
+	if _, err := q.GetTenant(ctx, *s.TenantID); errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, database.MapError("identity.privacy_guard", err)
 	}
 	roles, err := q.UserRoleNames(ctx, dbgen.UserRoleNamesParams{ModelType: authz.ModelTypeUser, ModelID: s.UserID})
 	if err != nil {

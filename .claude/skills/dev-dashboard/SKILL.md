@@ -67,8 +67,10 @@ their output, and appear in Ctrl+K automatically. Keep the CLI command (`interna
   `Drawer` (`size` md/lg/fit), `Modal`, `ConfirmDialog`, `Tabs`, `EmptyState`, `LoadingBlock`,
   `ErrorBox` (`onRetry`), `JsonView`, `CodeBlock`, `CopyButton`, `Kbd`, `Icon`; job pieces in
   `components/Jobs.tsx`; form controls in `components/inputs.tsx` (`Select`, `DatePicker`,
-  `TimePicker`). Never a native `<select>` or `type="date"` input. Status tones come from
-  `format.ts` (`statusTone`, `stateTone`, `levelTone`, `sourceTone`).
+  `TimePicker`); charts in `components/charts.tsx` (Recharts: `DonutChart`, `HBarChart`,
+  `TimeBars`, coloured by `Tone` classes on the tokens, `--series-1…6` for categories; a panel's
+  chart data comes from a `/dev/api/<panel>/stats` endpoint that fills empty buckets). Never a native `<select>` or `type="date"` input. Status tones
+  come from `format.ts` (`statusTone`, `stateTone`, `levelTone`, `sourceTone`).
 - **Colour means something.** Green is healthy, red failed, amber needs a look; the accent marks
   what is selected or on (switches, active tabs and rows). A healthy screen looks grey.
 - Data: `api<T>(path, {query, method, body, unwrap})` from `api/client.ts` with TanStack Query;

@@ -223,7 +223,7 @@ effective values with secrets masked.
 | `DOCS_ENABLED` | — | Scalar API docs at /docs (default: on outside production) |
 | `METRICS_ENABLED` | `false` | Prometheus metrics at /metrics |
 | `METRICS_TOKEN` | — | *Optional.* bearer token for /metrics (unset = loopback only) |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | *Optional.* OpenTelemetry traces over OTLP/HTTP, e.g. http://localhost:4318 (set = tracing on) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | *Optional.* OpenTelemetry traces over OTLP/HTTP, e.g. http://127.0.0.1:4318 (set = tracing on) |
 | `OTEL_EXPORTER_OTLP_HEADERS` | — | *Optional.* backend auth, e.g. x-honeycomb-team=KEY or Authorization=Basic%20… |
 | `OTEL_TRACES_SAMPLER_ARG` | `0.1` | *Optional.* share of new traces kept (parent-based; a caller's sampled trace is always kept) |
 | `OTEL_SERVICE_NAME` | — | *Optional.* default: APP_NAME |

@@ -43,7 +43,7 @@ func (f *fakeLookup) TouchLogin(ctx context.Context, userID int64, device string
 
 type fakeAuthenticator struct {
 	issued   []int64
-	revoked  []string
+	revoked  []int64
 	issueErr error
 }
 
@@ -60,8 +60,8 @@ func (f *fakeAuthenticator) Verify(ctx context.Context, raw string) (*Identity, 
 	return nil, apperr.New(apperr.TokenInvalid, "invalid")
 }
 
-func (f *fakeAuthenticator) Revoke(ctx context.Context, userID int64, device string) error {
-	f.revoked = append(f.revoked, device)
+func (f *fakeAuthenticator) Revoke(ctx context.Context, userID, tokenID int64) error {
+	f.revoked = append(f.revoked, tokenID)
 	return nil
 }
 

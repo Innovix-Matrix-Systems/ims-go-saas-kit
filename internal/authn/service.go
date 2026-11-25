@@ -297,11 +297,12 @@ func (s *Service) recordLogin(ctx context.Context, method, email, device string,
 	s.audit.Login(ctx, event)
 }
 
-// Logout revokes the caller's token for one device.
-func (s *Service) Logout(ctx context.Context, userID int64, device string) (err error) {
+// Logout revokes the token that made the request; the user's other sessions,
+// even on a device with the same name, stay signed in.
+func (s *Service) Logout(ctx context.Context, userID, tokenID int64) (err error) {
 	ctx, end := tracing.Begin(ctx, "authn.logout", attribute.Int64("user.id", userID))
 	defer end(&err)
-	return s.auth.Revoke(ctx, userID, device)
+	return s.auth.Revoke(ctx, userID, tokenID)
 }
 
 func (s *Service) completeLogin(ctx context.Context, record *UserRecord, device, email, ip string) (*LoginResult, error) {

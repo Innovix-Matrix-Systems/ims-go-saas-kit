@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { fetchMe, getCachedMe } from '../api/client'
 import { AppearanceMenu } from '../components/AppearanceMenu'
+import { DonutChart, HBarChart, TimeBars } from '../components/charts'
 import { DatePicker, Select } from '../components/inputs'
 import {
   Badge,
@@ -33,6 +34,8 @@ import {
 // The component kit in every tone: the reference for new screens and the
 // page to check a theme or accent change against. Local environments only,
 // like the Playground.
+const sampleDays = Array.from({ length: 7 }, (_, index) => new Date(Date.UTC(2026, 0, 1 + index)).toISOString())
+
 export const Route = createFileRoute('/_app/kit')({
   component: KitPage,
 })
@@ -230,6 +233,48 @@ function KitPage() {
 
         <Card title="Empty state" flush>
           <EmptyState icon="queue" title="No jobs yet" description="Queued jobs appear here as they run." />
+        </Card>
+
+        <div className="chart-row">
+          <Card title="DonutChart" description="Parts of a whole; seriesTones by default, a meaning tone when it has one.">
+            <DonutChart
+              label="Sample donut"
+              totalLabel="files"
+              slices={[
+                { key: 'image', label: 'Images', value: 42 },
+                { key: 'document', label: 'Documents', value: 27 },
+                { key: 'video', label: 'Videos', value: 9 },
+                { key: 'other', label: 'Other', value: 4 },
+              ]}
+            />
+          </Card>
+          <Card title="HBarChart" description="One bar per row, stacked from parts.">
+            <HBarChart
+              label="Sample bars"
+              labelWidth={140}
+              parts={[
+                { key: 'ok', label: 'Succeeded', tone: 'accent' },
+                { key: 'errors', label: 'Failed', tone: 'danger' },
+              ]}
+              rows={[
+                { key: 'a', label: 'GET /api/v1/branch', values: { ok: 40, errors: 2 } },
+                { key: 'b', label: 'POST /api/v1/login', values: { ok: 22, errors: 6 } },
+                { key: 'c', label: 'GET /api/health', values: { ok: 15, errors: 0 } },
+              ]}
+            />
+          </Card>
+        </div>
+        <Card title="TimeBars" description="Stacked bars over time with a hover readout.">
+          <TimeBars
+            label="Sample time bars"
+            parts={[
+              { key: 'sent', label: 'Sent', tone: 'ok' },
+              { key: 'failed', label: 'Failed', tone: 'danger' },
+            ]}
+            points={sampleDays.map((day, index) => ({ at: day, values: { sent: [12, 18, 9, 22, 17, 0, 14][index], failed: [1, 0, 3, 1, 0, 0, 2][index] } }))}
+            tick={(at) => at.slice(5, 10)}
+            title={(at) => at.slice(0, 10)}
+          />
         </Card>
       </Stack>
 
