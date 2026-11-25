@@ -220,13 +220,13 @@ func devCommands(p *Platform, permissions *access.PermissionService, healthRegis
 		},
 		{
 			Name: "billing:expire-subscriptions", Label: "Expire subscriptions", Group: "Billing", Confirm: true,
-			Description: "Mark subscriptions past their end date as expired (the scheduler does this daily).",
+			Description: "Mark subscriptions past their end date as expired and start the scheduled ones whose turn came (the scheduler does this hourly).",
 			Run: func(ctx context.Context, _ map[string]string, out io.Writer) error {
-				expired, err := p.BillingSubs.ExpireOverdue(ctx)
+				expired, started, err := p.BillingSubs.ProcessPeriodEnds(ctx)
 				if err != nil {
 					return err
 				}
-				fmt.Fprintf(out, "Expired %d subscription(s).\n", expired)
+				fmt.Fprintf(out, "Expired %d subscription(s), started %d scheduled.\n", expired, started)
 				return nil
 			},
 		},

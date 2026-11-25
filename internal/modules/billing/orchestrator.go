@@ -137,3 +137,15 @@ func (o *Orchestrator) HandleCallback(ctx context.Context, method string, payloa
 	}
 	return driver.HandleCallback(ctx, payload)
 }
+
+// Refund gives money back through the payment's driver (bKash refunds at the
+// gateway; cash and bank transfer only record that staff paid it back).
+func (o *Orchestrator) Refund(ctx context.Context, payment *domain.Payment, amount int64) (_ bool, err error) {
+	ctx, end := tracing.Begin(ctx, "billing.gateway_refund", attribute.String("payment.method", payment.PaymentMethod))
+	defer end(&err)
+	driver, err := o.Driver(payment.PaymentMethod)
+	if err != nil {
+		return false, err
+	}
+	return driver.Refund(ctx, payment, amount)
+}

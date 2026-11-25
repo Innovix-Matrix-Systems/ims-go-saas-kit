@@ -142,6 +142,14 @@ func TestBillingIntegrity(t *testing.T) {
 		if after.Status != domain.PaymentPending {
 			t.Fatalf("cash payment status = %q, want pending", after.Status)
 		}
+		// Only one checkout may wait at a time: a bKash checkout is refused
+		// until the cash one is withdrawn.
+		if _, _, err := subscriptions.Subscribe(ctx, tenant.ID, pkg.ID, domain.MethodBkash, nil, 1); !apperr.Is(err, apperr.Conflict) {
+			t.Fatalf("second checkout error = %v, want CONFLICT", err)
+		}
+		if err := approvals.Withdraw(ctx, tenant.ID, payment.ID, 1); err != nil {
+			t.Fatalf("Withdraw() error = %v", err)
+		}
 	})
 
 	t.Run("bKash callbacks follow the gateway, not the callback body", func(t *testing.T) {

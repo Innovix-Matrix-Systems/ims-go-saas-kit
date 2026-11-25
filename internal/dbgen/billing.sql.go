@@ -11,19 +11,42 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const activateDueScheduledSubscriptions = `-- name: ActivateDueScheduledSubscriptions :execrows
+UPDATE subscriptions
+SET status     = 'active',
+    updated_at = now()
+WHERE status = 'scheduled'
+  AND starts_at <= now()
+  AND ($1::bigint IS NULL OR tenant_id = $1::bigint)
+  AND NOT EXISTS (
+    SELECT 1 FROM subscriptions a
+    WHERE a.tenant_id = subscriptions.tenant_id AND a.status IN ('active', 'trial') AND a.expires_at > now()
+  )
+`
+
+// Run after ExpireSubscriptions: a scheduled plan whose turn has come starts.
+func (q *Queries) ActivateDueScheduledSubscriptions(ctx context.Context, tenantID *int64) (int64, error) {
+	result, err := q.db.Exec(ctx, activateDueScheduledSubscriptions, tenantID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const activateSubscription = `-- name: ActivateSubscription :one
 UPDATE subscriptions
 SET status              = 'active',
-    starts_at           = COALESCE(starts_at, now()),
-    expires_at          = $1,
+    starts_at           = COALESCE($1::timestamptz, starts_at, now()),
+    expires_at          = $2,
     cancelled_at        = NULL,
     cancellation_reason = NULL,
     updated_at          = now()
-WHERE id = $2 AND status IN ('pending', 'trial', 'active', 'expired')
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at
+WHERE id = $3 AND status IN ('pending', 'scheduled', 'trial', 'active', 'expired')
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
 `
 
 type ActivateSubscriptionParams struct {
+	StartsAt  pgtype.Timestamptz `json:"starts_at"`
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
 	ID        int64              `json:"id"`
 }
@@ -31,7 +54,7 @@ type ActivateSubscriptionParams struct {
 // A cancelled subscription is final: a stale or replayed callback must not
 // bring it back (M8).
 func (q *Queries) ActivateSubscription(ctx context.Context, arg ActivateSubscriptionParams) (Subscription, error) {
-	row := q.db.QueryRow(ctx, activateSubscription, arg.ExpiresAt, arg.ID)
+	row := q.db.QueryRow(ctx, activateSubscription, arg.StartsAt, arg.ExpiresAt, arg.ID)
 	var i Subscription
 	err := row.Scan(
 		&i.ID,
@@ -46,13 +69,15 @@ func (q *Queries) ActivateSubscription(ctx context.Context, arg ActivateSubscrip
 		&i.Overrides,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
 	)
 	return i, err
 }
 
 const approvalDetailsByIDs = `-- name: ApprovalDetailsByIDs :many
-SELECT a.id, COALESCE(t.name, '')::text AS tenant_name, p.amount, p.currency, p.invoice_number,
-       COALESCE(k.name, '')::text AS package_name
+SELECT a.id, a.tenant_id, COALESCE(t.name, '')::text AS tenant_name, p.amount, p.currency, p.invoice_number,
+       COALESCE(k.name, '')::text AS package_name, p.kind, p.lines, p.replaces_subscription_id
 FROM payment_approval_requests a
 JOIN payments p ON p.id = a.payment_id
 LEFT JOIN tenants t ON t.id = a.tenant_id
@@ -62,12 +87,16 @@ WHERE a.id = ANY($1::bigint[])
 `
 
 type ApprovalDetailsByIDsRow struct {
-	ID            int64  `json:"id"`
-	TenantName    string `json:"tenant_name"`
-	Amount        int64  `json:"amount"`
-	Currency      string `json:"currency"`
-	InvoiceNumber string `json:"invoice_number"`
-	PackageName   string `json:"package_name"`
+	ID                     int64  `json:"id"`
+	TenantID               int64  `json:"tenant_id"`
+	TenantName             string `json:"tenant_name"`
+	Amount                 int64  `json:"amount"`
+	Currency               string `json:"currency"`
+	InvoiceNumber          string `json:"invoice_number"`
+	PackageName            string `json:"package_name"`
+	Kind                   string `json:"kind"`
+	Lines                  []byte `json:"lines"`
+	ReplacesSubscriptionID *int64 `json:"replaces_subscription_id"`
 }
 
 // What a reviewer needs beside each approval: who pays, how much, for which
@@ -83,11 +112,15 @@ func (q *Queries) ApprovalDetailsByIDs(ctx context.Context, ids []int64) ([]Appr
 		var i ApprovalDetailsByIDsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.TenantID,
 			&i.TenantName,
 			&i.Amount,
 			&i.Currency,
 			&i.InvoiceNumber,
 			&i.PackageName,
+			&i.Kind,
+			&i.Lines,
+			&i.ReplacesSubscriptionID,
 		); err != nil {
 			return nil, err
 		}
@@ -97,6 +130,67 @@ func (q *Queries) ApprovalDetailsByIDs(ctx context.Context, ids []int64) ([]Appr
 		return nil, err
 	}
 	return items, nil
+}
+
+const cancelScheduledSubscriptions = `-- name: CancelScheduledSubscriptions :many
+UPDATE subscriptions
+SET status              = 'cancelled',
+    cancelled_at        = now(),
+    cancellation_reason = $1,
+    updated_at          = now()
+WHERE tenant_id = $2 AND status = 'scheduled'
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+`
+
+type CancelScheduledSubscriptionsParams struct {
+	Reason   *string `json:"reason"`
+	TenantID int64   `json:"tenant_id"`
+}
+
+func (q *Queries) CancelScheduledSubscriptions(ctx context.Context, arg CancelScheduledSubscriptionsParams) ([]Subscription, error) {
+	rows, err := q.db.Query(ctx, cancelScheduledSubscriptions, arg.Reason, arg.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Subscription{}
+	for rows.Next() {
+		var i Subscription
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.PackageID,
+			&i.Status,
+			&i.StartsAt,
+			&i.TrialEndsAt,
+			&i.ExpiresAt,
+			&i.CancelledAt,
+			&i.CancellationReason,
+			&i.Overrides,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.NextPackageID,
+			&i.CancelAtPeriodEnd,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const countCreditsForTenant = `-- name: CountCreditsForTenant :one
+SELECT count(*) FROM billing_credits WHERE tenant_id = $1
+`
+
+func (q *Queries) CountCreditsForTenant(ctx context.Context, tenantID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countCreditsForTenant, tenantID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const countPaymentApprovals = `-- name: CountPaymentApprovals :one
@@ -200,9 +294,11 @@ func (q *Queries) CreatePackage(ctx context.Context, arg CreatePackageParams) (P
 }
 
 const createPayment = `-- name: CreatePayment :one
-INSERT INTO payments (tenant_id, subscription_id, payment_method, status, amount, currency, invoice_number, created_by)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at
+INSERT INTO payments (tenant_id, subscription_id, payment_method, status, amount, currency, invoice_number, created_by,
+                      kind, lines, gross)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+        $9, $10, $11)
+RETURNING id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount
 `
 
 type CreatePaymentParams struct {
@@ -214,6 +310,9 @@ type CreatePaymentParams struct {
 	Currency       string `json:"currency"`
 	InvoiceNumber  string `json:"invoice_number"`
 	CreatedBy      *int64 `json:"created_by"`
+	Kind           string `json:"kind"`
+	Lines          []byte `json:"lines"`
+	Gross          int64  `json:"gross"`
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
@@ -226,6 +325,9 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (P
 		arg.Currency,
 		arg.InvoiceNumber,
 		arg.CreatedBy,
+		arg.Kind,
+		arg.Lines,
+		arg.Gross,
 	)
 	var i Payment
 	err := row.Scan(
@@ -246,6 +348,12 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (P
 		&i.UpdatedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.Gross,
+		&i.BalanceApplied,
+		&i.ReplacesSubscriptionID,
+		&i.RefundedAmount,
 	)
 	return i, err
 }
@@ -299,7 +407,7 @@ func (q *Queries) CreatePaymentApproval(ctx context.Context, arg CreatePaymentAp
 const createSubscription = `-- name: CreateSubscription :one
 INSERT INTO subscriptions (tenant_id, package_id, status, starts_at, trial_ends_at, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
 `
 
 type CreateSubscriptionParams struct {
@@ -334,8 +442,28 @@ func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscription
 		&i.Overrides,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
 	)
 	return i, err
+}
+
+const creditBalance = `-- name: CreditBalance :one
+SELECT COALESCE(sum(amount), 0)::bigint AS balance
+FROM billing_credits
+WHERE tenant_id = $1 AND currency = $2
+`
+
+type CreditBalanceParams struct {
+	TenantID int64  `json:"tenant_id"`
+	Currency string `json:"currency"`
+}
+
+func (q *Queries) CreditBalance(ctx context.Context, arg CreditBalanceParams) (int64, error) {
+	row := q.db.QueryRow(ctx, creditBalance, arg.TenantID, arg.Currency)
+	var balance int64
+	err := row.Scan(&balance)
+	return balance, err
 }
 
 const deactivateActiveSubscriptions = `-- name: DeactivateActiveSubscriptions :exec
@@ -391,14 +519,16 @@ func (q *Queries) ExpireSubscriptions(ctx context.Context) (int64, error) {
 }
 
 const getActiveSubscriptionForTenant = `-- name: GetActiveSubscriptionForTenant :one
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at FROM subscriptions
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions
 WHERE tenant_id = $1
-  AND status IN ('active', 'trial')
+  AND (status IN ('active', 'trial') OR (status = 'scheduled' AND starts_at <= now()))
   AND expires_at > now()
 ORDER BY id DESC
 LIMIT 1
 `
 
+// The plan in force: active or trial, or a scheduled one whose turn has come
+// (the expiry task makes it active; until then it already counts).
 func (q *Queries) GetActiveSubscriptionForTenant(ctx context.Context, tenantID int64) (Subscription, error) {
 	row := q.db.QueryRow(ctx, getActiveSubscriptionForTenant, tenantID)
 	var i Subscription
@@ -415,18 +545,24 @@ func (q *Queries) GetActiveSubscriptionForTenant(ctx context.Context, tenantID i
 		&i.Overrides,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
 	)
 	return i, err
 }
 
 const getExpiringSubscriptions = `-- name: GetExpiringSubscriptions :many
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at FROM subscriptions
-WHERE status IN ('active', 'trial')
-  AND expires_at IS NOT NULL
-  AND expires_at <= $1
-ORDER BY expires_at
+SELECT s.id, s.tenant_id, s.package_id, s.status, s.starts_at, s.trial_ends_at, s.expires_at, s.cancelled_at, s.cancellation_reason, s.overrides, s.created_at, s.updated_at, s.next_package_id, s.cancel_at_period_end FROM subscriptions s
+WHERE s.status IN ('active', 'trial')
+  AND s.expires_at IS NOT NULL
+  AND s.expires_at <= $1
+  AND NOT s.cancel_at_period_end
+  AND NOT EXISTS (SELECT 1 FROM subscriptions n WHERE n.tenant_id = s.tenant_id AND n.status = 'scheduled')
+ORDER BY s.expires_at
 `
 
+// Subscriptions to remind about: not those the organization chose not to
+// renew, nor those whose next period is already paid (scheduled).
 func (q *Queries) GetExpiringSubscriptions(ctx context.Context, before pgtype.Timestamptz) ([]Subscription, error) {
 	rows, err := q.db.Query(ctx, getExpiringSubscriptions, before)
 	if err != nil {
@@ -449,6 +585,8 @@ func (q *Queries) GetExpiringSubscriptions(ctx context.Context, before pgtype.Ti
 			&i.Overrides,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.NextPackageID,
+			&i.CancelAtPeriodEnd,
 		); err != nil {
 			return nil, err
 		}
@@ -461,7 +599,7 @@ func (q *Queries) GetExpiringSubscriptions(ctx context.Context, before pgtype.Ti
 }
 
 const getLatestSubscriptionForTenant = `-- name: GetLatestSubscriptionForTenant :one
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at FROM subscriptions WHERE tenant_id = $1 ORDER BY id DESC LIMIT 1
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions WHERE tenant_id = $1 ORDER BY id DESC LIMIT 1
 `
 
 func (q *Queries) GetLatestSubscriptionForTenant(ctx context.Context, tenantID int64) (Subscription, error) {
@@ -480,6 +618,8 @@ func (q *Queries) GetLatestSubscriptionForTenant(ctx context.Context, tenantID i
 		&i.Overrides,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
 	)
 	return i, err
 }
@@ -507,7 +647,7 @@ func (q *Queries) GetPackage(ctx context.Context, id int64) (Package, error) {
 }
 
 const getPayment = `-- name: GetPayment :one
-SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at FROM payments WHERE id = $1
+SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount FROM payments WHERE id = $1
 `
 
 func (q *Queries) GetPayment(ctx context.Context, id int64) (Payment, error) {
@@ -531,6 +671,12 @@ func (q *Queries) GetPayment(ctx context.Context, id int64) (Payment, error) {
 		&i.UpdatedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.Gross,
+		&i.BalanceApplied,
+		&i.ReplacesSubscriptionID,
+		&i.RefundedAmount,
 	)
 	return i, err
 }
@@ -562,7 +708,7 @@ func (q *Queries) GetPaymentApproval(ctx context.Context, id int64) (PaymentAppr
 }
 
 const getPaymentByGatewayRef = `-- name: GetPaymentByGatewayRef :one
-SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at FROM payments WHERE gateway_ref = $1
+SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount FROM payments WHERE gateway_ref = $1
 `
 
 func (q *Queries) GetPaymentByGatewayRef(ctx context.Context, gatewayRef *string) (Payment, error) {
@@ -586,12 +732,18 @@ func (q *Queries) GetPaymentByGatewayRef(ctx context.Context, gatewayRef *string
 		&i.UpdatedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.Gross,
+		&i.BalanceApplied,
+		&i.ReplacesSubscriptionID,
+		&i.RefundedAmount,
 	)
 	return i, err
 }
 
 const getPendingCheckout = `-- name: GetPendingCheckout :one
-SELECT p.id, p.tenant_id, p.subscription_id, p.payment_method, p.status, p.amount, p.currency, p.gateway_ref, p.gateway_status, p.gateway_response, p.invoice_number, p.paid_at, p.recorded_by, p.created_by, p.updated_by, p.created_at, p.updated_at FROM payments p
+SELECT p.id, p.tenant_id, p.subscription_id, p.payment_method, p.status, p.amount, p.currency, p.gateway_ref, p.gateway_status, p.gateway_response, p.invoice_number, p.paid_at, p.recorded_by, p.created_by, p.updated_by, p.created_at, p.updated_at, p.kind, p.lines, p.gross, p.balance_applied, p.replaces_subscription_id, p.refunded_amount FROM payments p
 JOIN subscriptions s ON s.id = p.subscription_id
 WHERE s.tenant_id = $1
   AND s.package_id = $2
@@ -631,12 +783,80 @@ func (q *Queries) GetPendingCheckout(ctx context.Context, arg GetPendingCheckout
 		&i.UpdatedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.Gross,
+		&i.BalanceApplied,
+		&i.ReplacesSubscriptionID,
+		&i.RefundedAmount,
+	)
+	return i, err
+}
+
+const getPendingPaymentForTenant = `-- name: GetPendingPaymentForTenant :one
+SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount FROM payments WHERE tenant_id = $1 AND status = 'pending' ORDER BY id DESC LIMIT 1
+`
+
+// Any checkout of the organization still waiting (one at a time).
+func (q *Queries) GetPendingPaymentForTenant(ctx context.Context, tenantID int64) (Payment, error) {
+	row := q.db.QueryRow(ctx, getPendingPaymentForTenant, tenantID)
+	var i Payment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.SubscriptionID,
+		&i.PaymentMethod,
+		&i.Status,
+		&i.Amount,
+		&i.Currency,
+		&i.GatewayRef,
+		&i.GatewayStatus,
+		&i.GatewayResponse,
+		&i.InvoiceNumber,
+		&i.PaidAt,
+		&i.RecordedBy,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.Gross,
+		&i.BalanceApplied,
+		&i.ReplacesSubscriptionID,
+		&i.RefundedAmount,
+	)
+	return i, err
+}
+
+const getScheduledSubscriptionForTenant = `-- name: GetScheduledSubscriptionForTenant :one
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions WHERE tenant_id = $1 AND status = 'scheduled' LIMIT 1
+`
+
+func (q *Queries) GetScheduledSubscriptionForTenant(ctx context.Context, tenantID int64) (Subscription, error) {
+	row := q.db.QueryRow(ctx, getScheduledSubscriptionForTenant, tenantID)
+	var i Subscription
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.PackageID,
+		&i.Status,
+		&i.StartsAt,
+		&i.TrialEndsAt,
+		&i.ExpiresAt,
+		&i.CancelledAt,
+		&i.CancellationReason,
+		&i.Overrides,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
 	)
 	return i, err
 }
 
 const getSubscription = `-- name: GetSubscription :one
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at FROM subscriptions WHERE id = $1
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions WHERE id = $1
 `
 
 func (q *Queries) GetSubscription(ctx context.Context, id int64) (Subscription, error) {
@@ -655,12 +875,56 @@ func (q *Queries) GetSubscription(ctx context.Context, id int64) (Subscription, 
 		&i.Overrides,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
+	)
+	return i, err
+}
+
+const insertCredit = `-- name: InsertCredit :one
+INSERT INTO billing_credits (tenant_id, amount, currency, reason, payment_id, subscription_id, created_by)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, tenant_id, amount, currency, reason, payment_id, subscription_id, created_by, created_at
+`
+
+type InsertCreditParams struct {
+	TenantID       int64  `json:"tenant_id"`
+	Amount         int64  `json:"amount"`
+	Currency       string `json:"currency"`
+	Reason         string `json:"reason"`
+	PaymentID      *int64 `json:"payment_id"`
+	SubscriptionID *int64 `json:"subscription_id"`
+	CreatedBy      *int64 `json:"created_by"`
+}
+
+func (q *Queries) InsertCredit(ctx context.Context, arg InsertCreditParams) (BillingCredit, error) {
+	row := q.db.QueryRow(ctx, insertCredit,
+		arg.TenantID,
+		arg.Amount,
+		arg.Currency,
+		arg.Reason,
+		arg.PaymentID,
+		arg.SubscriptionID,
+		arg.CreatedBy,
+	)
+	var i BillingCredit
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Amount,
+		&i.Currency,
+		&i.Reason,
+		&i.PaymentID,
+		&i.SubscriptionID,
+		&i.CreatedBy,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const invoiceForPayment = `-- name: InvoiceForPayment :one
 SELECT p.id, p.invoice_number, p.status, p.payment_method, p.amount, p.currency, p.paid_at, p.created_at,
+       p.kind, p.lines, p.refunded_amount,
        COALESCE(p.gateway_ref, '')::text AS gateway_ref,
        t.name AS tenant_name, COALESCE(t.email, '')::text AS tenant_email, COALESCE(t.phone, '')::text AS tenant_phone,
        COALESCE(k.name, '')::text AS package_name, COALESCE(k.billing_cycle, '')::text AS billing_cycle,
@@ -678,22 +942,25 @@ type InvoiceForPaymentParams struct {
 }
 
 type InvoiceForPaymentRow struct {
-	ID            int64              `json:"id"`
-	InvoiceNumber string             `json:"invoice_number"`
-	Status        string             `json:"status"`
-	PaymentMethod string             `json:"payment_method"`
-	Amount        int64              `json:"amount"`
-	Currency      string             `json:"currency"`
-	PaidAt        pgtype.Timestamptz `json:"paid_at"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	GatewayRef    string             `json:"gateway_ref"`
-	TenantName    string             `json:"tenant_name"`
-	TenantEmail   string             `json:"tenant_email"`
-	TenantPhone   string             `json:"tenant_phone"`
-	PackageName   string             `json:"package_name"`
-	BillingCycle  string             `json:"billing_cycle"`
-	StartsAt      pgtype.Timestamptz `json:"starts_at"`
-	ExpiresAt     pgtype.Timestamptz `json:"expires_at"`
+	ID             int64              `json:"id"`
+	InvoiceNumber  string             `json:"invoice_number"`
+	Status         string             `json:"status"`
+	PaymentMethod  string             `json:"payment_method"`
+	Amount         int64              `json:"amount"`
+	Currency       string             `json:"currency"`
+	PaidAt         pgtype.Timestamptz `json:"paid_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	Kind           string             `json:"kind"`
+	Lines          []byte             `json:"lines"`
+	RefundedAmount int64              `json:"refunded_amount"`
+	GatewayRef     string             `json:"gateway_ref"`
+	TenantName     string             `json:"tenant_name"`
+	TenantEmail    string             `json:"tenant_email"`
+	TenantPhone    string             `json:"tenant_phone"`
+	PackageName    string             `json:"package_name"`
+	BillingCycle   string             `json:"billing_cycle"`
+	StartsAt       pgtype.Timestamptz `json:"starts_at"`
+	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
 }
 
 // Everything an invoice shows for one of a tenant's payments.
@@ -709,6 +976,9 @@ func (q *Queries) InvoiceForPayment(ctx context.Context, arg InvoiceForPaymentPa
 		&i.Currency,
 		&i.PaidAt,
 		&i.CreatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.RefundedAmount,
 		&i.GatewayRef,
 		&i.TenantName,
 		&i.TenantEmail,
@@ -745,6 +1015,49 @@ func (q *Queries) ListActivePackages(ctx context.Context) ([]Package, error) {
 			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCreditsForTenant = `-- name: ListCreditsForTenant :many
+SELECT id, tenant_id, amount, currency, reason, payment_id, subscription_id, created_by, created_at FROM billing_credits
+WHERE tenant_id = $1
+ORDER BY id DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListCreditsForTenantParams struct {
+	TenantID   int64 `json:"tenant_id"`
+	PageOffset int32 `json:"page_offset"`
+	PageLimit  int32 `json:"page_limit"`
+}
+
+func (q *Queries) ListCreditsForTenant(ctx context.Context, arg ListCreditsForTenantParams) ([]BillingCredit, error) {
+	rows, err := q.db.Query(ctx, listCreditsForTenant, arg.TenantID, arg.PageOffset, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BillingCredit{}
+	for rows.Next() {
+		var i BillingCredit
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Amount,
+			&i.Currency,
+			&i.Reason,
+			&i.PaymentID,
+			&i.SubscriptionID,
+			&i.CreatedBy,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -904,7 +1217,7 @@ func (q *Queries) ListPaymentApprovals(ctx context.Context, arg ListPaymentAppro
 }
 
 const listPayments = `-- name: ListPayments :many
-SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at FROM payments
+SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount FROM payments
 WHERE ($1::text IS NULL OR status = $1::text)
 ORDER BY id DESC
 LIMIT $3 OFFSET $2
@@ -943,6 +1256,12 @@ func (q *Queries) ListPayments(ctx context.Context, arg ListPaymentsParams) ([]P
 			&i.UpdatedBy,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Kind,
+			&i.Lines,
+			&i.Gross,
+			&i.BalanceApplied,
+			&i.ReplacesSubscriptionID,
+			&i.RefundedAmount,
 		); err != nil {
 			return nil, err
 		}
@@ -955,7 +1274,7 @@ func (q *Queries) ListPayments(ctx context.Context, arg ListPaymentsParams) ([]P
 }
 
 const listPaymentsForTenant = `-- name: ListPaymentsForTenant :many
-SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at FROM payments
+SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount FROM payments
 WHERE tenant_id = $1
 ORDER BY id DESC
 LIMIT $3 OFFSET $2
@@ -994,6 +1313,12 @@ func (q *Queries) ListPaymentsForTenant(ctx context.Context, arg ListPaymentsFor
 			&i.UpdatedBy,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Kind,
+			&i.Lines,
+			&i.Gross,
+			&i.BalanceApplied,
+			&i.ReplacesSubscriptionID,
+			&i.RefundedAmount,
 		); err != nil {
 			return nil, err
 		}
@@ -1006,7 +1331,7 @@ func (q *Queries) ListPaymentsForTenant(ctx context.Context, arg ListPaymentsFor
 }
 
 const listSubscriptions = `-- name: ListSubscriptions :many
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at FROM subscriptions
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions
 WHERE ($1::text IS NULL OR status = $1::text)
 ORDER BY id DESC
 LIMIT $3 OFFSET $2
@@ -1040,6 +1365,8 @@ func (q *Queries) ListSubscriptions(ctx context.Context, arg ListSubscriptionsPa
 			&i.Overrides,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.NextPackageID,
+			&i.CancelAtPeriodEnd,
 		); err != nil {
 			return nil, err
 		}
@@ -1079,12 +1406,166 @@ func (q *Queries) PendingApprovalForPayment(ctx context.Context, paymentID int64
 	return i, err
 }
 
+const refundPayment = `-- name: RefundPayment :one
+UPDATE payments
+SET refunded_amount = refunded_amount + $1::bigint,
+    status          = CASE WHEN refunded_amount + $1::bigint >= amount THEN 'refunded' ELSE status END,
+    updated_at      = now()
+WHERE id = $2
+  AND status = 'completed'
+  AND refunded_amount + $1::bigint <= amount
+RETURNING id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount
+`
+
+type RefundPaymentParams struct {
+	Refund int64 `json:"refund"`
+	ID     int64 `json:"id"`
+}
+
+func (q *Queries) RefundPayment(ctx context.Context, arg RefundPaymentParams) (Payment, error) {
+	row := q.db.QueryRow(ctx, refundPayment, arg.Refund, arg.ID)
+	var i Payment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.SubscriptionID,
+		&i.PaymentMethod,
+		&i.Status,
+		&i.Amount,
+		&i.Currency,
+		&i.GatewayRef,
+		&i.GatewayStatus,
+		&i.GatewayResponse,
+		&i.InvoiceNumber,
+		&i.PaidAt,
+		&i.RecordedBy,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.Gross,
+		&i.BalanceApplied,
+		&i.ReplacesSubscriptionID,
+		&i.RefundedAmount,
+	)
+	return i, err
+}
+
+const scheduleSubscription = `-- name: ScheduleSubscription :one
+UPDATE subscriptions
+SET status     = 'scheduled',
+    starts_at  = $1,
+    expires_at = $2,
+    overrides  = $3,
+    updated_at = now()
+WHERE id = $4 AND status = 'pending'
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+`
+
+type ScheduleSubscriptionParams struct {
+	StartsAt  pgtype.Timestamptz `json:"starts_at"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	Overrides []byte             `json:"overrides"`
+	ID        int64              `json:"id"`
+}
+
+// A paid renewal (or a free plan) waits for the current period to end.
+func (q *Queries) ScheduleSubscription(ctx context.Context, arg ScheduleSubscriptionParams) (Subscription, error) {
+	row := q.db.QueryRow(ctx, scheduleSubscription,
+		arg.StartsAt,
+		arg.ExpiresAt,
+		arg.Overrides,
+		arg.ID,
+	)
+	var i Subscription
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.PackageID,
+		&i.Status,
+		&i.StartsAt,
+		&i.TrialEndsAt,
+		&i.ExpiresAt,
+		&i.CancelledAt,
+		&i.CancellationReason,
+		&i.Overrides,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
+	)
+	return i, err
+}
+
+const setPaymentQuote = `-- name: SetPaymentQuote :one
+UPDATE payments
+SET kind                     = $1,
+    lines                    = $2,
+    gross                    = $3,
+    balance_applied          = $4,
+    replaces_subscription_id = $5,
+    updated_at               = now()
+WHERE id = $6
+RETURNING id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount
+`
+
+type SetPaymentQuoteParams struct {
+	Kind                   string `json:"kind"`
+	Lines                  []byte `json:"lines"`
+	Gross                  int64  `json:"gross"`
+	BalanceApplied         int64  `json:"balance_applied"`
+	ReplacesSubscriptionID *int64 `json:"replaces_subscription_id"`
+	ID                     int64  `json:"id"`
+}
+
+// Freezes the checkout quote on the payment: why, the invoice lines, the
+// value bought, the account credit reserved and the plan it replaces.
+func (q *Queries) SetPaymentQuote(ctx context.Context, arg SetPaymentQuoteParams) (Payment, error) {
+	row := q.db.QueryRow(ctx, setPaymentQuote,
+		arg.Kind,
+		arg.Lines,
+		arg.Gross,
+		arg.BalanceApplied,
+		arg.ReplacesSubscriptionID,
+		arg.ID,
+	)
+	var i Payment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.SubscriptionID,
+		&i.PaymentMethod,
+		&i.Status,
+		&i.Amount,
+		&i.Currency,
+		&i.GatewayRef,
+		&i.GatewayStatus,
+		&i.GatewayResponse,
+		&i.InvoiceNumber,
+		&i.PaidAt,
+		&i.RecordedBy,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.Gross,
+		&i.BalanceApplied,
+		&i.ReplacesSubscriptionID,
+		&i.RefundedAmount,
+	)
+	return i, err
+}
+
 const setSubscriptionOverrides = `-- name: SetSubscriptionOverrides :one
 UPDATE subscriptions
 SET overrides  = $1,
     updated_at = now()
 WHERE id = $2
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
 `
 
 type SetSubscriptionOverridesParams struct {
@@ -1108,8 +1589,64 @@ func (q *Queries) SetSubscriptionOverrides(ctx context.Context, arg SetSubscript
 		&i.Overrides,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
 	)
 	return i, err
+}
+
+const setSubscriptionPlanEnd = `-- name: SetSubscriptionPlanEnd :one
+UPDATE subscriptions
+SET next_package_id      = $1,
+    cancel_at_period_end = $2,
+    updated_at           = now()
+WHERE id = $3
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+`
+
+type SetSubscriptionPlanEndParams struct {
+	NextPackageID     *int64 `json:"next_package_id"`
+	CancelAtPeriodEnd bool   `json:"cancel_at_period_end"`
+	ID                int64  `json:"id"`
+}
+
+// What happens when the period ends: renew onto another plan
+// (next_package_id) or not at all (cancel_at_period_end).
+func (q *Queries) SetSubscriptionPlanEnd(ctx context.Context, arg SetSubscriptionPlanEndParams) (Subscription, error) {
+	row := q.db.QueryRow(ctx, setSubscriptionPlanEnd, arg.NextPackageID, arg.CancelAtPeriodEnd, arg.ID)
+	var i Subscription
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.PackageID,
+		&i.Status,
+		&i.StartsAt,
+		&i.TrialEndsAt,
+		&i.ExpiresAt,
+		&i.CancelledAt,
+		&i.CancellationReason,
+		&i.Overrides,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
+	)
+	return i, err
+}
+
+const subscriptionPaidValue = `-- name: SubscriptionPaidValue :one
+SELECT COALESCE(sum(gross - refunded_amount), 0)::bigint AS paid
+FROM payments
+WHERE subscription_id = $1 AND status IN ('completed', 'refunded')
+`
+
+// What the organization paid for a subscription's period: the value bought
+// (gross) less what was given back.
+func (q *Queries) SubscriptionPaidValue(ctx context.Context, subscriptionID *int64) (int64, error) {
+	row := q.db.QueryRow(ctx, subscriptionPaidValue, subscriptionID)
+	var paid int64
+	err := row.Scan(&paid)
+	return paid, err
 }
 
 const suspendLapsedTenants = `-- name: SuspendLapsedTenants :many
@@ -1125,7 +1662,7 @@ WHERE t.is_active
   )
   AND NOT EXISTS (
     SELECT 1 FROM subscriptions s
-    WHERE s.tenant_id = t.id AND s.status IN ('active', 'trial', 'pending', 'past_due')
+    WHERE s.tenant_id = t.id AND s.status IN ('active', 'trial', 'pending', 'scheduled', 'past_due')
   )
 RETURNING t.id, t.name, t.code
 `
@@ -1328,7 +1865,7 @@ WHERE id = $4
       OR (status = 'failed' AND $1::text = 'completed')
       OR (status = 'completed' AND $1::text = 'refunded')
   )
-RETURNING id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at
+RETURNING id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount
 `
 
 type UpdatePaymentStatusParams struct {
@@ -1366,6 +1903,12 @@ func (q *Queries) UpdatePaymentStatus(ctx context.Context, arg UpdatePaymentStat
 		&i.UpdatedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Kind,
+		&i.Lines,
+		&i.Gross,
+		&i.BalanceApplied,
+		&i.ReplacesSubscriptionID,
+		&i.RefundedAmount,
 	)
 	return i, err
 }
@@ -1377,7 +1920,7 @@ SET status              = $1,
     cancellation_reason = $3,
     updated_at          = now()
 WHERE id = $4
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
 `
 
 type UpdateSubscriptionStatusParams struct {
@@ -1408,6 +1951,8 @@ func (q *Queries) UpdateSubscriptionStatus(ctx context.Context, arg UpdateSubscr
 		&i.Overrides,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
 	)
 	return i, err
 }

@@ -53,8 +53,14 @@ type Subscription struct {
 	CancelledAt        *time.Time
 	CancellationReason *string
 	Overrides          map[string]any
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	// NextPackageID is the plan the organization renews onto (a downgrade
+	// chosen before the end of the period).
+	NextPackageID *int64
+	// CancelAtPeriodEnd: the organization will not renew; the plan runs
+	// until it expires.
+	CancelAtPeriodEnd bool
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // Payment is the domain representation of a payment attempt.
@@ -76,6 +82,33 @@ type Payment struct {
 	UpdatedBy       *int64
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	// Kind is why it was paid (ChangeNew, ChangeRenew, ChangeUpgrade, ...).
+	Kind string
+	// Lines are the invoice lines frozen at checkout (empty for old payments).
+	Lines []InvoiceLine
+	// Gross is the value of the period bought: the plan price before credits.
+	Gross int64
+	// BalanceApplied is the account credit this payment uses.
+	BalanceApplied int64
+	// ReplacesSubscriptionID is the plan an upgrade replaces (its unused time
+	// was credited).
+	ReplacesSubscriptionID *int64
+	// RefundedAmount is the money given back so far.
+	RefundedAmount int64
+}
+
+// Credit is one entry of an organization's account credit (positive: added,
+// negative: used).
+type Credit struct {
+	ID             int64
+	TenantID       int64
+	Amount         int64
+	Currency       string
+	Reason         string
+	PaymentID      *int64
+	SubscriptionID *int64
+	CreatedBy      *int64
+	CreatedAt      time.Time
 }
 
 // Approval is the domain representation of a manual payment review.
@@ -137,6 +170,8 @@ func mapSubscription(row dbgen.Subscription) Subscription {
 		CancelledAt:        timePtr(row.CancelledAt),
 		CancellationReason: row.CancellationReason,
 		Overrides:          overrides,
+		NextPackageID:      row.NextPackageID,
+		CancelAtPeriodEnd:  row.CancelAtPeriodEnd,
 		CreatedAt:          row.CreatedAt.Time,
 		UpdatedAt:          row.UpdatedAt.Time,
 	}
@@ -148,23 +183,36 @@ func mapPayment(row dbgen.Payment) Payment {
 		_ = json.Unmarshal(row.GatewayResponse, &response)
 	}
 	return Payment{
-		ID:              row.ID,
-		TenantID:        row.TenantID,
-		SubscriptionID:  row.SubscriptionID,
-		PaymentMethod:   row.PaymentMethod,
-		Status:          row.Status,
-		Amount:          row.Amount,
-		Currency:        row.Currency,
-		GatewayRef:      row.GatewayRef,
-		GatewayStatus:   row.GatewayStatus,
-		GatewayResponse: response,
-		InvoiceNumber:   row.InvoiceNumber,
-		PaidAt:          timePtr(row.PaidAt),
-		RecordedBy:      row.RecordedBy,
-		CreatedBy:       row.CreatedBy,
-		UpdatedBy:       row.UpdatedBy,
-		CreatedAt:       row.CreatedAt.Time,
-		UpdatedAt:       row.UpdatedAt.Time,
+		ID:                     row.ID,
+		TenantID:               row.TenantID,
+		SubscriptionID:         row.SubscriptionID,
+		PaymentMethod:          row.PaymentMethod,
+		Status:                 row.Status,
+		Amount:                 row.Amount,
+		Currency:               row.Currency,
+		GatewayRef:             row.GatewayRef,
+		GatewayStatus:          row.GatewayStatus,
+		GatewayResponse:        response,
+		InvoiceNumber:          row.InvoiceNumber,
+		PaidAt:                 timePtr(row.PaidAt),
+		RecordedBy:             row.RecordedBy,
+		CreatedBy:              row.CreatedBy,
+		UpdatedBy:              row.UpdatedBy,
+		CreatedAt:              row.CreatedAt.Time,
+		UpdatedAt:              row.UpdatedAt.Time,
+		Kind:                   row.Kind,
+		Lines:                  DecodeLines(row.Lines),
+		Gross:                  row.Gross,
+		BalanceApplied:         row.BalanceApplied,
+		ReplacesSubscriptionID: row.ReplacesSubscriptionID,
+		RefundedAmount:         row.RefundedAmount,
+	}
+}
+
+func mapCredit(row dbgen.BillingCredit) Credit {
+	return Credit{
+		ID: row.ID, TenantID: row.TenantID, Amount: row.Amount, Currency: row.Currency, Reason: row.Reason,
+		PaymentID: row.PaymentID, SubscriptionID: row.SubscriptionID, CreatedBy: row.CreatedBy, CreatedAt: row.CreatedAt.Time,
 	}
 }
 
@@ -238,6 +286,23 @@ type Invoice struct {
 	BillingCycle string
 	PeriodStart  *time.Time
 	PeriodEnd    *time.Time
+	// Lines are the invoice lines (one plan line for old payments).
+	Lines []InvoiceLine
+	// RefundedAmount is the money given back so far.
+	RefundedAmount int64
+	// Rows are the lines as printed (set by the invoice service).
+	Rows []InvoiceRow
+	// Refunded is RefundedAmount written in its currency (set by the
+	// invoice service; zero when nothing was refunded).
+	Refunded money.Amount
+}
+
+// InvoiceRow is one printed invoice line.
+type InvoiceRow struct {
+	Description string
+	PeriodStart *time.Time
+	PeriodEnd   *time.Time
+	Money       money.Amount
 }
 
 // TenantUsage is what a tenant holds of its plan's limits.
@@ -246,3 +311,6 @@ type TenantUsage struct {
 	Branches     int64
 	StorageBytes int64
 }
+
+// MapPayment maps a payments row (for services working on a transaction).
+func MapPayment(row dbgen.Payment) Payment { return mapPayment(row) }

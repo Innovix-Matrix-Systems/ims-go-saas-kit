@@ -23,6 +23,7 @@ type SubscriptionService struct {
 	packages      domain.PackageRepository
 	payments      domain.PaymentRepository
 	approvals     domain.ApprovalRepository
+	credits       domain.CreditRepository
 	orchestrator  Gateway
 	notifier      Notifier
 	tx            *database.TxManager
@@ -54,6 +55,7 @@ func (s *SubscriptionService) record(ctx context.Context, action string, subscri
 // same steps run without a transaction.
 func (s *SubscriptionService) WithTx(tx *database.TxManager) *SubscriptionService {
 	s.tx = tx
+	s.credits = domain.NewCreditRepository(tx.Queries())
 	return s
 }
 
@@ -81,6 +83,15 @@ type StatusResult struct {
 	Subscription *domain.Subscription `json:"subscription"`
 	Package      *domain.Package      `json:"package"`
 	Active       bool                 `json:"active"`
+	// Scheduled is the period arranged to follow (a renewal paid early or a
+	// free plan), with its plan.
+	Scheduled        *domain.Subscription `json:"scheduled"`
+	ScheduledPackage *domain.Package      `json:"scheduled_package"`
+	// NextPackage is the plan chosen for the renewal (a downgrade).
+	NextPackage *domain.Package `json:"next_package"`
+	// CreditBalance is the account credit, in Currency.
+	CreditBalance int64  `json:"credit_balance"`
+	Currency      string `json:"currency"`
 }
 
 // Status returns the tenant's active subscription, falling back to the latest
@@ -97,6 +108,16 @@ func (s *SubscriptionService) Status(ctx context.Context, tenantID int64) (*Stat
 		}
 	}
 	result := &StatusResult{}
+	if currency, err := s.currencies.DefaultCode(ctx); err == nil {
+		result.Currency = currency
+		if s.credits != nil {
+			if result.CreditBalance, err = s.credits.Balance(ctx, tenantID, currency); err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		return nil, err
+	}
 	if !found {
 		return result, nil
 	}
@@ -106,8 +127,27 @@ func (s *SubscriptionService) Status(ctx context.Context, tenantID int64) (*Stat
 		return nil, err
 	}
 	result.Package = pkg
-	result.Active = (subscription.Status == domain.StatusActive || subscription.Status == domain.StatusTrial) &&
-		subscription.ExpiresAt != nil && subscription.ExpiresAt.After(s.now())
+	inForce := subscription.Status == domain.StatusActive || subscription.Status == domain.StatusTrial ||
+		(subscription.Status == domain.StatusScheduled && subscription.StartsAt != nil && !subscription.StartsAt.After(s.now()))
+	result.Active = inForce && subscription.ExpiresAt != nil && subscription.ExpiresAt.After(s.now())
+	if !result.Active {
+		return result, nil
+	}
+	if subscription.NextPackageID != nil {
+		if result.NextPackage, err = s.packages.Get(ctx, *subscription.NextPackageID); err != nil {
+			return nil, err
+		}
+	}
+	scheduled, found, err := s.subscriptions.GetScheduledForTenant(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	if found && scheduled.ID != subscription.ID {
+		result.Scheduled = scheduled
+		if result.ScheduledPackage, err = s.packages.Get(ctx, scheduled.PackageID); err != nil {
+			return nil, err
+		}
+	}
 	return result, nil
 }
 
@@ -153,61 +193,94 @@ func (s *SubscriptionService) StartTrial(ctx context.Context, tenantID, packageI
 	})
 }
 
-// Subscribe creates a pending subscription, charges the selected gateway and
-// (for manual methods) creates the staff approval request. It is idempotent
-// per tenant + package + method: while a checkout is still pending, a retry
-// or double click returns that checkout instead of charging again (H11).
-func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (_ *domain.Subscription, _ *domain.Payment, err error) {
+// CheckoutResult is what a checkout did: the subscription (new, scheduled,
+// or the current one marked for a downgrade), the payment if one was made,
+// and the priced change.
+type CheckoutResult struct {
+	Subscription *domain.Subscription
+	Payment      *domain.Payment
+	Change       *Change
+}
+
+// Subscribe moves the organization to a plan (docs/guides/billing.md#changing-plans):
+// an upgrade or a new plan starts when paid, crediting the unused time of the
+// current one; a renewal is paid now and starts when the current period ends;
+// a downgrade is remembered and paid at the renewal; account credit is used
+// first. It is idempotent per tenant + package + method while a checkout is
+// pending (H11), and only one checkout can wait at a time (P-7).
+func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (*domain.Subscription, *domain.Payment, error) {
+	result, err := s.Checkout(ctx, tenantID, packageID, method, paymentData, actorID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result.Subscription, result.Payment, nil
+}
+
+// Checkout is Subscribe returning the priced change as well.
+func (s *SubscriptionService) Checkout(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (_ *CheckoutResult, err error) {
 	ctx, end := tracing.Begin(ctx, "billing.subscribe",
 		attribute.Int64("tenant.id", tenantID),
 		attribute.Int64("package.id", packageID),
 		attribute.String("payment.method", method),
 	)
 	defer end(&err)
-	// A free plan has nothing to pay or approve: it starts at once, the way
-	// staff assign a plan (no payment is recorded).
-	if pkg, err := s.packages.Get(ctx, packageID); err != nil {
-		return nil, nil, err
-	} else if pkg.Price == 0 {
-		if !pkg.IsActive {
-			return nil, nil, apperr.New(apperr.BusinessLogicError, "This package is not available.")
-		}
-		return s.Assign(ctx, AssignInput{TenantID: tenantID, PackageID: packageID, ActorID: actorID})
-	}
-	var (
-		subscription *domain.Subscription
-		payment      *domain.Payment
-	)
-	var created bool
-	run := func(scoped *SubscriptionService) error {
-		var err error
-		subscription, payment, created, err = scoped.subscribe(ctx, tenantID, packageID, method, paymentData, actorID)
-		return err
-	}
-	if s.tx == nil {
-		err = run(s)
-	} else {
-		// Every query runs on the locked transaction: a second pool
-		// connection here deadlocks once concurrent checkouts for one tenant
-		// hold the whole pool while waiting for the lock.
-		err = s.tx.WithTenantLock(ctx, "billing.subscribe", tenantID, func(q *dbgen.Queries) error {
-			return run(s.bound(q))
-		})
-	}
+	pkg, err := s.packages.Get(ctx, packageID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	tracing.Annotate(ctx, attribute.Int64("subscription.id", subscription.ID), attribute.Bool("subscription.created", created))
-	if created {
-		s.record(ctx, "subscription.created", subscription, map[string]any{
-			"package_id": packageID, "method": method, "status": subscription.Status,
+	var result *checkoutResult
+	// Every query runs on the locked transaction: a second pool connection
+	// here deadlocks once concurrent checkouts for one tenant hold the whole
+	// pool while waiting for the lock.
+	err = s.inTenantLock(ctx, "billing.subscribe", tenantID, func(scoped *SubscriptionService) error {
+		var err error
+		result, err = scoped.checkout(ctx, checkoutRequest{
+			TenantID: tenantID, ActorID: actorID, Package: pkg, Method: method, PaymentData: paymentData,
 		})
-		if s.payNotices != nil && domain.IsManualMethod(method) && payment != nil {
-			submitter := actorID
-			s.payNotices.PaymentSubmitted(ctx, PaymentNotice{TenantID: tenantID, PaymentID: payment.ID, SubmittedBy: &submitter})
-		}
+		return err
+	})
+	if err != nil {
+		return nil, err
 	}
-	return subscription, payment, nil
+	s.afterCheckout(ctx, tenantID, actorID, pkg, method, result)
+	return &CheckoutResult{Subscription: result.Subscription, Payment: result.Payment, Change: result.Change}, nil
+}
+
+// afterCheckout records the change and tells people about it (after commit).
+func (s *SubscriptionService) afterCheckout(ctx context.Context, tenantID, actorID int64, pkg *domain.Package, method string, result *checkoutResult) {
+	tracing.Annotate(ctx, attribute.Int64("subscription.id", result.Subscription.ID), attribute.Bool("subscription.created", result.Created))
+	if result.Change == nil {
+		return // an existing checkout was returned
+	}
+	quote := result.Change.Quote
+	if !result.Created {
+		// A downgrade remembered for the renewal.
+		s.record(ctx, "subscription.downgrade_scheduled", result.Subscription, map[string]any{
+			"package_id": pkg.ID, "starts_at": quote.PeriodStart, "due_at_renewal": quote.DueAtRenewal,
+		})
+		s.changed(ctx, tenantID)
+		return
+	}
+	changes := map[string]any{"package_id": pkg.ID, "kind": quote.Kind, "status": result.Subscription.Status}
+	if result.Payment != nil {
+		changes["method"] = result.Payment.PaymentMethod
+		changes["amount"] = result.Payment.Amount
+	}
+	s.record(ctx, "subscription.created", result.Subscription, changes)
+	if result.Payment == nil {
+		s.changed(ctx, tenantID)
+		return
+	}
+	if s.payNotices == nil {
+		return
+	}
+	switch {
+	case result.Payment.Status == domain.PaymentCompleted:
+		s.payNotices.PaymentReceived(ctx, PaymentNotice{TenantID: tenantID, PaymentID: result.Payment.ID, SubmittedBy: &actorID})
+	case domain.IsManualMethod(method):
+		submitter := actorID
+		s.payNotices.PaymentSubmitted(ctx, PaymentNotice{TenantID: tenantID, PaymentID: result.Payment.ID, SubmittedBy: &submitter})
+	}
 }
 
 // bound returns a copy whose repositories and gateway use q (a transaction).
@@ -217,77 +290,11 @@ func (s *SubscriptionService) bound(q *dbgen.Queries) *SubscriptionService {
 	scoped.packages = domain.NewPackageRepository(q)
 	scoped.payments = domain.NewPaymentRepository(q)
 	scoped.approvals = domain.NewApprovalRepository(q)
+	scoped.credits = domain.NewCreditRepository(q)
 	if gateway, ok := s.orchestrator.(boundGateway); ok {
 		scoped.orchestrator = gateway.WithPayments(scoped.payments)
 	}
 	return &scoped
-}
-
-func (s *SubscriptionService) subscribe(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (*domain.Subscription, *domain.Payment, bool, error) {
-	switch method {
-	case domain.MethodBkash, domain.MethodNagad, domain.MethodCash, domain.MethodBankTransfer:
-	default:
-		return nil, nil, false, apperr.Validation(map[string][]string{
-			"payment_method": {"The selected payment method is invalid."},
-		})
-	}
-
-	pkg, err := s.packages.Get(ctx, packageID)
-	if err != nil {
-		return nil, nil, false, err
-	}
-	if !pkg.IsActive {
-		return nil, nil, false, apperr.New(apperr.BusinessLogicError, "This package is not available.")
-	}
-
-	if existing, found, err := s.payments.PendingCheckout(ctx, tenantID, pkg.ID, method); err != nil {
-		return nil, nil, false, err
-	} else if found && existing.SubscriptionID != nil {
-		subscription, err := s.subscriptions.Get(ctx, *existing.SubscriptionID)
-		if err != nil {
-			return nil, nil, false, err
-		}
-		return subscription, existing, false, nil
-	}
-
-	now := s.now()
-	expires := nextExpiry(pkg.BillingCycle, now)
-	subscription, err := s.subscriptions.Create(ctx, domain.SubscriptionInput{
-		TenantID:  tenantID,
-		PackageID: pkg.ID,
-		Status:    domain.StatusPending,
-		StartsAt:  &now,
-		ExpiresAt: &expires,
-	})
-	if err != nil {
-		return nil, nil, false, err
-	}
-
-	payment, err := s.orchestrator.Charge(ctx, tenantID, &subscription.ID, method, pkg.Price, paymentData, &actorID)
-	if err != nil {
-		reason := "Payment initiation failed."
-		_, _ = s.subscriptions.UpdateStatus(ctx, subscription.ID, domain.StatusCancelled, &now, &reason)
-		return nil, nil, false, err
-	}
-
-	if domain.IsManualMethod(method) {
-		encoded, _ := json.Marshal(paymentData)
-		if _, err := s.approvals.Create(ctx, domain.ApprovalInput{
-			TenantID:       tenantID,
-			SubscriptionID: subscription.ID,
-			PaymentID:      payment.ID,
-			PaymentMethod:  method,
-			PaymentData:    encoded,
-			CreatedBy:      &actorID,
-		}); err != nil {
-			reason := "Payment approval could not be created."
-			_, _ = s.subscriptions.UpdateStatus(ctx, subscription.ID, domain.StatusCancelled, &now, &reason)
-			_, _ = s.payments.UpdateStatus(ctx, payment.ID, domain.PaymentFailed, nil, nil)
-			return nil, nil, false, err
-		}
-	}
-
-	return subscription, payment, true, nil
 }
 
 // Activate marks a subscription active (renewals, callbacks, approvals).
@@ -303,7 +310,7 @@ func (s *SubscriptionService) Activate(ctx context.Context, subscriptionID int64
 		if err := subscriptions.DeactivateActive(ctx, subscription.TenantID); err != nil {
 			return nil, err
 		}
-		return subscriptions.Activate(ctx, subscriptionID, expires)
+		return subscriptions.Activate(ctx, subscriptionID, nil, expires)
 	}
 	var activated *domain.Subscription
 	if s.tx == nil {
@@ -439,44 +446,41 @@ func (s *SubscriptionService) HandleGatewayCallback(ctx context.Context, payment
 		}
 		return completed, err
 	case result.IsFailed:
-		return s.payments.UpdateStatus(ctx, payment.ID, domain.PaymentFailed, nil, gatewayStatus)
+		failed, err := s.payments.UpdateStatus(ctx, payment.ID, domain.PaymentFailed, nil, gatewayStatus)
+		if err != nil {
+			return nil, err
+		}
+		if err := releaseCredit(ctx, s.credits, failed, "not paid"); err != nil {
+			return nil, err
+		}
+		return failed, nil
 	default:
 		// Not final yet (e.g. the payer has not finished): keep it pending.
 		return s.payments.Get(ctx, payment.ID)
 	}
 }
 
-// completeAndActivate marks the payment completed and activates its
+// completeAndActivate marks the payment completed and applies it to its
 // subscription in one transaction (M9/M11): there is never a completed
-// payment without an active plan, or the other way round.
+// payment without its plan, or the other way round.
 func (s *SubscriptionService) completeAndActivate(ctx context.Context, payment *domain.Payment, gatewayStatus *string) (*domain.Payment, error) {
-	steps := func(payments domain.PaymentRepository, subscriptions domain.SubscriptionRepository) (*domain.Payment, error) {
-		completed, err := payments.UpdateStatus(ctx, payment.ID, domain.PaymentCompleted, nil, gatewayStatus)
+	steps := func(st store) (*domain.Payment, error) {
+		completed, err := st.payments.UpdateStatus(ctx, payment.ID, domain.PaymentCompleted, nil, gatewayStatus)
 		if err != nil {
 			return nil, err
 		}
-		if payment.SubscriptionID != nil {
-			subscription, err := subscriptions.Get(ctx, *payment.SubscriptionID)
-			if err != nil {
-				return nil, err
-			}
-			expires := s.expiryForActivation(ctx, subscription)
-			if err := subscriptions.DeactivateActive(ctx, subscription.TenantID); err != nil {
-				return nil, err
-			}
-			if _, err := subscriptions.Activate(ctx, subscription.ID, expires); err != nil {
-				return nil, err
-			}
+		if _, err := fulfil(ctx, st, completed, s.now()); err != nil {
+			return nil, err
 		}
 		return completed, nil
 	}
 	if s.tx == nil {
-		return steps(s.payments, s.subscriptions)
+		return steps(s.store())
 	}
 	var completed *domain.Payment
-	err := s.tx.WithTx(ctx, func(q *dbgen.Queries) error {
+	err := s.tx.WithTenantLock(ctx, "billing.subscribe", payment.TenantID, func(q *dbgen.Queries) error {
 		var err error
-		completed, err = steps(domain.NewPaymentRepository(q), domain.NewSubscriptionRepository(q))
+		completed, err = steps(storeFor(q))
 		return err
 	})
 	return completed, err
@@ -487,11 +491,11 @@ func (s *SubscriptionService) List(ctx context.Context, status string, limit, of
 	return s.subscriptions.List(ctx, status, limit, offset)
 }
 
-// ExpireOverdue marks overdue subscriptions as expired.
-func (s *SubscriptionService) ExpireOverdue(ctx context.Context) (_ int64, err error) {
-	ctx, end := tracing.Begin(ctx, "billing.expire_overdue")
-	defer end(&err)
-	return s.subscriptions.ExpireOverdue(ctx)
+// ExpireOverdue marks overdue subscriptions as expired and starts the
+// scheduled ones whose turn came; it returns how many expired.
+func (s *SubscriptionService) ExpireOverdue(ctx context.Context) (int64, error) {
+	expired, _, err := s.ProcessPeriodEnds(ctx)
+	return expired, err
 }
 
 // SuspendLapsedTenants suspends every tenant whose subscription expired more
@@ -600,12 +604,5 @@ func (s *SubscriptionService) expiryForActivation(ctx context.Context, subscript
 }
 
 func nextExpiry(cycle string, from time.Time) time.Time {
-	switch cycle {
-	case domain.CycleYearly:
-		return from.AddDate(1, 0, 0)
-	case domain.CycleOneTime:
-		return from.AddDate(100, 0, 0)
-	default:
-		return from.AddDate(0, 1, 0)
-	}
+	return domain.PeriodEnd(cycle, from)
 }

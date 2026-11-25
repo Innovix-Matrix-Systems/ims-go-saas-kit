@@ -20,9 +20,20 @@ type AssignInput struct {
 	// PaymentMethod is "cash" or "bank_transfer" to record what the tenant
 	// paid; empty assigns the plan without a payment (complimentary).
 	PaymentMethod string
-	// Amount defaults to the package price when a payment method is given.
+	// Amount defaults to the package price when a payment method is given
+	// (AssignReplace), or to the amount due (AssignChange).
 	Amount *int64
+	// Mode is AssignReplace (the default: end the current plan now, no
+	// credit) or AssignChange (the customer's rules: unused-time credit,
+	// account credit, downgrades and renewals at the end of the period).
+	Mode string
 }
+
+// Assign modes.
+const (
+	AssignReplace = "replace"
+	AssignChange  = "change"
+)
 
 // WithCurrencies sets where the currency of payments recorded by Assign
 // comes from (the default currency; USD until set).
@@ -42,6 +53,9 @@ func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (_ 
 		attribute.Int64("package.id", input.PackageID),
 	)
 	defer end(&err)
+	if input.Mode == AssignChange {
+		return s.assignChange(ctx, input)
+	}
 	if input.PaymentMethod != "" && !domain.IsManualMethod(input.PaymentMethod) {
 		return nil, nil, apperr.Validation(map[string][]string{
 			"payment_method": {"Only cash and bank transfer payments can be recorded manually."},
@@ -132,4 +146,32 @@ func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (_ 
 	}
 	s.record(ctx, "subscription.assigned", subscription, changes)
 	return subscription, payment, nil
+}
+
+// assignChange applies the customer's rules for staff (P-15): the payment is
+// recorded as received at once.
+func (s *SubscriptionService) assignChange(ctx context.Context, input AssignInput) (*domain.Subscription, *domain.Payment, error) {
+	if input.PaymentMethod != "" && !domain.IsManualMethod(input.PaymentMethod) {
+		return nil, nil, apperr.Validation(map[string][]string{
+			"payment_method": {"Only cash and bank transfer payments can be recorded manually."},
+		})
+	}
+	pkg, err := s.packages.Get(ctx, input.PackageID)
+	if err != nil {
+		return nil, nil, err
+	}
+	var result *checkoutResult
+	err = s.inTenantLock(ctx, "billing.subscribe", input.TenantID, func(scoped *SubscriptionService) error {
+		var err error
+		result, err = scoped.checkout(ctx, checkoutRequest{
+			TenantID: input.TenantID, ActorID: input.ActorID, Package: pkg,
+			Method: input.PaymentMethod, Staff: true, Amount: input.Amount,
+		})
+		return err
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	s.afterCheckout(ctx, input.TenantID, input.ActorID, pkg, input.PaymentMethod, result)
+	return result.Subscription, result.Payment, nil
 }

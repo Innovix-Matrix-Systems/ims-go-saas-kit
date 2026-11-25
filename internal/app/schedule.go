@@ -76,15 +76,15 @@ func (p *Platform) schedule() []scheduler.Task {
 		},
 		{
 			ID:          "billing.expire-subscriptions",
-			Spec:        "0 */6 * * *",
-			Description: "Marks overdue subscriptions as expired (and suspends lapsed tenants with BILLING_SUSPEND_ON_EXPIRY).",
+			Spec:        "0 * * * *",
+			Description: "Marks overdue subscriptions as expired, starts scheduled ones whose turn came (and suspends lapsed tenants with BILLING_SUSPEND_ON_EXPIRY).",
 			Timeout:     10 * time.Minute,
 			Run: func(ctx context.Context) error {
-				expired, err := p.BillingSubs.ExpireOverdue(ctx)
+				expired, started, err := p.BillingSubs.ProcessPeriodEnds(ctx)
 				if err != nil {
 					return err
 				}
-				logger.Info("subscriptions expired", "count", expired)
+				logger.Info("subscriptions expired", "count", expired, "scheduled_started", started)
 				if !cfg.Billing.SuspendOnExpiry {
 					return nil
 				}

@@ -81,8 +81,11 @@ func (f Feature) IsKnown() bool {
 
 // Subscription statuses.
 const (
-	StatusTrial     = "trial"
-	StatusPending   = "pending"
+	StatusTrial   = "trial"
+	StatusPending = "pending"
+	// StatusScheduled waits for the current period to end (a renewal paid
+	// early, or a free plan chosen for the next period).
+	StatusScheduled = "scheduled"
 	StatusActive    = "active"
 	StatusPastDue   = "past_due"
 	StatusCancelled = "cancelled"

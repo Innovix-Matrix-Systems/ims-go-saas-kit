@@ -76,6 +76,18 @@ type BackupRun struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type BillingCredit struct {
+	ID             int64              `json:"id"`
+	TenantID       int64              `json:"tenant_id"`
+	Amount         int64              `json:"amount"`
+	Currency       string             `json:"currency"`
+	Reason         string             `json:"reason"`
+	PaymentID      *int64             `json:"payment_id"`
+	SubscriptionID *int64             `json:"subscription_id"`
+	CreatedBy      *int64             `json:"created_by"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Branch struct {
 	ID          int64              `json:"id"`
 	TenantID    int64              `json:"tenant_id"`
@@ -428,23 +440,29 @@ type PackageFeature struct {
 }
 
 type Payment struct {
-	ID              int64              `json:"id"`
-	TenantID        int64              `json:"tenant_id"`
-	SubscriptionID  *int64             `json:"subscription_id"`
-	PaymentMethod   string             `json:"payment_method"`
-	Status          string             `json:"status"`
-	Amount          int64              `json:"amount"`
-	Currency        string             `json:"currency"`
-	GatewayRef      *string            `json:"gateway_ref"`
-	GatewayStatus   *string            `json:"gateway_status"`
-	GatewayResponse []byte             `json:"gateway_response"`
-	InvoiceNumber   string             `json:"invoice_number"`
-	PaidAt          pgtype.Timestamptz `json:"paid_at"`
-	RecordedBy      *int64             `json:"recorded_by"`
-	CreatedBy       *int64             `json:"created_by"`
-	UpdatedBy       *int64             `json:"updated_by"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	ID                     int64              `json:"id"`
+	TenantID               int64              `json:"tenant_id"`
+	SubscriptionID         *int64             `json:"subscription_id"`
+	PaymentMethod          string             `json:"payment_method"`
+	Status                 string             `json:"status"`
+	Amount                 int64              `json:"amount"`
+	Currency               string             `json:"currency"`
+	GatewayRef             *string            `json:"gateway_ref"`
+	GatewayStatus          *string            `json:"gateway_status"`
+	GatewayResponse        []byte             `json:"gateway_response"`
+	InvoiceNumber          string             `json:"invoice_number"`
+	PaidAt                 pgtype.Timestamptz `json:"paid_at"`
+	RecordedBy             *int64             `json:"recorded_by"`
+	CreatedBy              *int64             `json:"created_by"`
+	UpdatedBy              *int64             `json:"updated_by"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt              pgtype.Timestamptz `json:"updated_at"`
+	Kind                   string             `json:"kind"`
+	Lines                  []byte             `json:"lines"`
+	Gross                  int64              `json:"gross"`
+	BalanceApplied         int64              `json:"balance_applied"`
+	ReplacesSubscriptionID *int64             `json:"replaces_subscription_id"`
+	RefundedAmount         int64              `json:"refunded_amount"`
 }
 
 type PaymentApprovalRequest struct {
@@ -578,6 +596,8 @@ type Subscription struct {
 	Overrides          []byte             `json:"overrides"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	NextPackageID      *int64             `json:"next_package_id"`
+	CancelAtPeriodEnd  bool               `json:"cancel_at_period_end"`
 }
 
 type Tenant struct {

@@ -57,3 +57,37 @@ func (s *UsageService) For(ctx context.Context, tenantID int64) (*Usage, error) 
 	}
 	return out, nil
 }
+
+// OverLimits lists the limits of a plan's features the tenant already
+// exceeds (a downgrade keeps what is over, but nothing more can be added).
+func (s *UsageService) OverLimits(ctx context.Context, tenantID int64, features []domain.PackageFeature) ([]UsageItem, error) {
+	row, err := s.reports.Usage(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	const mb = 1 << 20
+	used := map[domain.Feature]int64{
+		domain.FeatureUsersMax:    row.Users,
+		domain.FeatureBranchesMax: row.Branches,
+		domain.FeatureStorageMB:   (row.StorageBytes + mb - 1) / mb,
+	}
+	limits := map[domain.Feature]int64{}
+	for _, feature := range features {
+		if !feature.IsEnabled {
+			limits[domain.Feature(feature.FeatureKey)] = 0
+			continue
+		}
+		limits[domain.Feature(feature.FeatureKey)] = feature.LimitValue
+	}
+	out := []UsageItem{}
+	for _, feature := range domain.Features {
+		if !feature.IsLimit() {
+			continue
+		}
+		limit := limits[feature] // absent: 0, not in the plan
+		if limit >= 0 && used[feature] > limit {
+			out = append(out, UsageItem{Feature: feature, Limit: limit, Used: used[feature]})
+		}
+	}
+	return out, nil
+}

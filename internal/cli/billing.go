@@ -24,14 +24,14 @@ func registerBillingCommands(registry *Registry, state *State) error {
 func newBillingExpireCommand(state *State) *cobra.Command {
 	return &cobra.Command{
 		Use:   "billing:expire-subscriptions",
-		Short: "Mark overdue subscriptions as expired",
+		Short: "Mark overdue subscriptions as expired and start scheduled ones",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return withPlatform(state, func(platform *app.Platform) error {
-				expired, err := platform.BillingSubs.ExpireOverdue(cmd.Context())
+				expired, started, err := platform.BillingSubs.ProcessPeriodEnds(cmd.Context())
 				if err != nil {
 					return err
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Expired %d subscription(s).\n", expired)
+				fmt.Fprintf(cmd.OutOrStdout(), "Expired %d subscription(s), started %d scheduled.\n", expired, started)
 				return nil
 			})
 		},
