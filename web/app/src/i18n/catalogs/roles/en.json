@@ -1,0 +1,23 @@
+{
+  "roles.subtitle": "What each role lets its members do.",
+  "roles.create": "New role",
+  "roles.createTitle": "New role",
+  "roles.name": "Name",
+  "roles.description": "Description",
+  "roles.managed": "Managed",
+  "roles.managedHint": "The Admin role always holds every organization permission. Create another role for narrower access.",
+  "roles.permissions": "Permissions",
+  "roles.permissionsHint": "You can grant only the permissions you hold yourself.",
+  "roles.notGrantable": "You do not hold this permission, so you cannot grant it.",
+  "roles.permissionCount": {
+    "one": "{count} permission",
+    "other": "{count} permissions"
+  },
+  "roles.save": "Save role",
+  "roles.savePermissions": "Save permissions",
+  "roles.delete": "Delete role",
+  "roles.deleteConfirm": "Delete the role {name}? Members who have it lose its permissions.",
+  "roles.empty": "No roles yet.",
+  "roles.selectAll": "All",
+  "roles.selectNone": "None"
+}

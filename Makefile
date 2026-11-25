@@ -41,7 +41,7 @@ endif
         vet format format-check lint lint-fix tidy check \
         sqlc openapi openapi-gen openapi-check generate gen-check skills-sync skills-check \
         db-up db-down migrate migrate-status migrate-rollback seed fresh \
-        health config version web-build web-typecheck dev-web app-build app-typecheck app-style-check app-openapi-check dev-app \
+        health config version web-build web-typecheck dev-web app-build app-typecheck app-style-check app-i18n-check app-openapi-check dev-app \
         docs docs-build docs-gen clean clean-all
 
 # ── Help ─────────────────────────────────────────────────────────────────────
@@ -63,6 +63,7 @@ help:
 	@echo   make dev-app           Run the client app SPA on :8082
 	@echo   make app-build         Build the client app into web/app/dist
 	@echo   make app-typecheck     Type-check the client app
+	@echo   make app-i18n-check    Check the client app's translations (every language complete)
 	@echo --- Quality ---
 	@echo   make test              Unit tests, integration tests skip without a DSN
 	@echo   make test-race         Unit tests with the race detector
@@ -156,6 +157,9 @@ app-typecheck: ## Type-check the client app.
 
 app-style-check: ## Check the client app's design tokens: WCAG AA contrast, type scale, no raw colours.
 	npm --prefix web/app run check:style
+
+app-i18n-check: ## Fail if a client-app language lacks a key, a placeholder or a plural form (or the key types are stale).
+	npm --prefix web/app run i18n:check
 
 app-openapi-check: ## Fail if the client app's generated API types are stale.
 	npm --prefix web/app run openapi:check

@@ -1,0 +1,15 @@
+{
+  "inputs.select": "বেছে নিন…",
+  "inputs.filter": "খুঁজুন…",
+  "inputs.noMatches": "কিছু মেলেনি",
+  "inputs.pickDate": "তারিখ বাছুন",
+  "inputs.pickTime": "সময় বাছুন",
+  "inputs.clearDate": "তারিখ মুছুন",
+  "inputs.chooseDate": "একটি তারিখ বাছুন",
+  "inputs.previousMonth": "আগের মাস",
+  "inputs.nextMonth": "পরের মাস",
+  "inputs.today": "আজ",
+  "inputs.clear": "মুছুন",
+  "inputs.hour": "ঘণ্টা",
+  "inputs.minute": "মিনিট"
+}

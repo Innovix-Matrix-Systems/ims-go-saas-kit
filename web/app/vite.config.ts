@@ -18,6 +18,15 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: false,
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        // One chunk per language (its catalogs and overrides), loaded when it is chosen.
+        manualChunks(id: string) {
+          const match = /\/i18n\/(?:catalogs|overrides)\/[^/]+\/([a-z]{2})\.json$/.exec(id.replaceAll('\\', '/'))
+          return match && match[1] !== 'en' ? `i18n-${match[1]}` : undefined
+        },
+      },
+    },
   },
   server: {
     host: '127.0.0.1',

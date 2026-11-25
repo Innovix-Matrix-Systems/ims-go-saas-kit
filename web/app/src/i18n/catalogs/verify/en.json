@@ -1,0 +1,8 @@
+{
+  "verify.title": "Confirm your e-mail address",
+  "verify.working": "Confirming your address…",
+  "verify.done": "Your e-mail address is confirmed. You can sign in now.",
+  "verify.failed": "This link is invalid or has expired. Enter your e-mail address to get a new one.",
+  "verify.resend": "Send a new link",
+  "verify.resent": "If that address needs confirming, a new link is on its way."
+}

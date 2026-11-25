@@ -2,7 +2,7 @@ import { Command } from 'cmdk'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback } from 'react'
 import { signOut, useSession } from '../auth/session'
-import { getLocale, setLocale, useT } from '../i18n'
+import { getLanguages, getLocale, setLocale, useT } from '../i18n'
 import { nextTheme, setAppearance, useAppearance } from './appearance'
 import { visiblePages } from './navigation'
 import { Icon, Kbd, useEscape } from './ui'
@@ -65,9 +65,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                 {t('palette.toggleTheme')}
               </Command.Item>
               <Command.Item
-                value="language bangla english বাংলা"
+                value={`language ${getLanguages().map((item) => `${item.english} ${item.label}`).join(' ')}`}
                 className="command-item"
-                onSelect={() => select(() => setLocale(getLocale() === 'en' ? 'bn' : 'en'))}
+                onSelect={() => select(() => void setLocale(nextLanguage()))}
               >
                 <Icon name="globe" />
                 {t('palette.switchLanguage')}
@@ -90,4 +90,11 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       </div>
     </div>
   )
+}
+
+/** The language after the current one, for the palette's switch entry. */
+function nextLanguage(): string {
+  const list = getLanguages()
+  const index = list.findIndex((item) => item.code === getLocale())
+  return list[(index + 1) % list.length].code
 }

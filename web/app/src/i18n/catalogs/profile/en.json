@@ -1,0 +1,12 @@
+{
+  "profile.firstName": "First name",
+  "profile.lastName": "Last name",
+  "profile.displayName": "Display name",
+  "profile.language": "Language",
+  "profile.languageDefault": "Follow my browser",
+  "profile.email": "E-mail address",
+  "profile.changeEmail": "Change e-mail address",
+  "profile.newEmail": "New e-mail address",
+  "profile.changeEmailSent": "We sent a confirmation link to {email}. Your address changes when you open it.",
+  "profile.sendLink": "Send confirmation link"
+}

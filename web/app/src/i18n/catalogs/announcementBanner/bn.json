@@ -1,0 +1,7 @@
+{
+  "announcementBanner.more": {
+    "one": "আরও {count}টি",
+    "other": "আরও {count}টি"
+  },
+  "announcementBanner.dismiss": "পঠিত হিসেবে চিহ্নিত করুন"
+}

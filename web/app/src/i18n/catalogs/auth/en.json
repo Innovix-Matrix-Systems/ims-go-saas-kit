@@ -1,0 +1,27 @@
+{
+  "auth.signIn": "Sign in",
+  "auth.signInTitle": "Sign in to your account",
+  "auth.signInSubtitle": "Use the e-mail address and password for your organization account.",
+  "auth.email": "E-mail address",
+  "auth.password": "Password",
+  "auth.remember": "Keep me signed in on this device",
+  "auth.forgot": "Forgot your password?",
+  "auth.signingIn": "Signing in…",
+  "auth.otpTitle": "Enter your verification code",
+  "auth.otpSubtitleTotp": "Open your authenticator app and enter the 6-digit code.",
+  "auth.otpSubtitleEmail": "We sent a 6-digit code to your e-mail address.",
+  "auth.otpCode": "Verification code",
+  "auth.otpRecoveryHint": "Lost your device? Enter one of your recovery codes instead.",
+  "auth.verify": "Verify",
+  "auth.useAnotherAccount": "Use another account",
+  "auth.signedOut": "You have been signed out.",
+  "auth.sessionExpired": "Your session has ended. Please sign in again.",
+  "auth.throttled": {
+    "one": "Too many attempts. Try again in {count} second.",
+    "other": "Too many attempts. Try again in {count} seconds."
+  },
+  "auth.noAccount": "New here?",
+  "auth.createOrganization": "Create an organization",
+  "auth.haveAccount": "Already have an account?",
+  "auth.backToSignIn": "Back to sign in"
+}

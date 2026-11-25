@@ -1,0 +1,7 @@
+{
+  "workspace.console": "Platform console",
+  "workspace.impersonating": "Impersonating",
+  "workspace.plan": "{plan} plan",
+  "workspace.profile": "Organization profile",
+  "workspace.stopActing": "Stop impersonating"
+}

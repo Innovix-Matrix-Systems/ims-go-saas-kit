@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { locales, setLocale, useLocale, useT, type MessageKey } from '../i18n'
+import { getLanguages, setLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { accents, densities, setAppearance, themes, useAppearance, type Density, type ThemePreference } from './appearance'
 import { useDismiss } from './inputs'
 import { Icon, type IconName } from './ui'
@@ -84,7 +84,7 @@ export function AppearanceMenu() {
           </div>
           <div className="field-label">{t('common.language')}</div>
           <div className="segmented">
-            {locales.map((item) => (
+            {getLanguages().map((item) => (
               <button
                 key={item.code}
                 type="button"

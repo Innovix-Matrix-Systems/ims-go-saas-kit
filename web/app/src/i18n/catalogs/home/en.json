@@ -1,0 +1,12 @@
+{
+  "home.greeting": "Welcome, {name}",
+  "home.subtitle": "Here is an overview of your organization.",
+  "home.organization": "Organization",
+  "home.branch": "Active branch",
+  "home.roles": "Your roles",
+  "home.permissions": "Permissions",
+  "home.lastSignIn": "Last sign-in",
+  "home.never": "Never",
+  "home.staffSubtitle": "Here is what is happening on the platform.",
+  "home.paymentsToReview": "Payments to review"
+}

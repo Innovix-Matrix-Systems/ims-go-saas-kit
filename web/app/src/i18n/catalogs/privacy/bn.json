@@ -1,0 +1,18 @@
+{
+  "privacy.exportTitle": "আপনার তথ্য ডাউনলোড করুন",
+  "privacy.exportBody": "আমরা আপনার অ্যাকাউন্টের তথ্য দিয়ে একটি ফাইল তৈরি করে আপনাকে লিংক ই-মেইল করব। দিনে একবার।",
+  "privacy.exportStart": "আমার তথ্য প্রস্তুত করুন",
+  "privacy.exportStarted": "আমরা আপনার তথ্য প্রস্তুত করছি। প্রস্তুত হলে ই-মেইল পাবেন।",
+  "privacy.exportReady": "আপনার তথ্য প্রস্তুত।",
+  "privacy.download": "ডাউনলোড",
+  "privacy.exportUntil": "{date} পর্যন্ত ডাউনলোড করতে পারবেন।",
+  "privacy.exportFailed": "আপনার তথ্য প্রস্তুত করা যায়নি। আবার চেষ্টা করুন।",
+  "privacy.exportGone": "এই এক্সপোর্টটি আর পাওয়া যাচ্ছে না: মেয়াদ শেষ হয়েছে বা মুছে ফেলা হয়েছে। নতুন একটি প্রস্তুত করুন।",
+  "privacy.deleteTitle": "আমার অ্যাকাউন্ট মুছে ফেলুন",
+  "privacy.deleteBody": "একটি অপেক্ষার সময় পরে আপনার অ্যাকাউন্ট মুছে ফেলা হবে। এখনই সাইন আউট হবেন, এবং ততক্ষণ সাইন ইন করে বাতিল করতে পারবেন।",
+  "privacy.deleteStart": "আমার অ্যাকাউন্ট মুছে ফেলুন",
+  "privacy.deleteConfirmLabel": "নিশ্চিত করতে DELETE লিখুন",
+  "privacy.deleteScheduled": "{date} তারিখে আপনার অ্যাকাউন্ট মুছে ফেলা হবে।",
+  "privacy.cancelDeletion": "মুছে ফেলা বাতিল করুন",
+  "privacy.deletionCancelled": "মুছে ফেলা বাতিল হয়েছে। আপনার অ্যাকাউন্ট থাকছে।"
+}

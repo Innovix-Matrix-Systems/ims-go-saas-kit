@@ -1,0 +1,12 @@
+{
+  "signup.title": "Create your organization",
+  "signup.subtitle": "Set up your organization and your own account. You will confirm your e-mail address next.",
+  "signup.name": "Your name",
+  "signup.organization": "Organization name",
+  "signup.phone": "Phone",
+  "signup.acceptTerms": "I accept the terms of service and the privacy policy.",
+  "signup.submit": "Create organization",
+  "signup.checkEmailTitle": "Check your e-mail",
+  "signup.checkEmailBody": "We sent a link to {email}. Open it to confirm your address, then sign in to finish setting up your organization.",
+  "signup.closed": "Sign-up is closed. Contact us to open an organization."
+}

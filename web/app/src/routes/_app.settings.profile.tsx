@@ -8,7 +8,7 @@ import { Select } from '../components/inputs'
 import { useToast } from '../components/Toasts'
 import { Card, Icon, Spinner } from '../components/ui'
 import { PhotoField } from '../components/PhotoUpload'
-import { locales, setLocale, useT, type Locale } from '../i18n'
+import { getLanguages, isLocale, setLocale, useT } from '../i18n'
 
 export const Route = createFileRoute('/_app/settings/profile')({
   component: ProfilePage,
@@ -53,7 +53,7 @@ function ProfileForm({ user }: { user: User }) {
           locale,
         },
       })
-      if (locale === 'en' || locale === 'bn') setLocale(locale as Locale)
+      if (isLocale(locale)) void setLocale(locale)
       await queryClient.invalidateQueries({ queryKey: ['session'] })
       push(t('form.saved'), 'success')
     } catch (cause) {
@@ -89,7 +89,7 @@ function ProfileForm({ user }: { user: User }) {
             onChange={setLocaleChoice}
             options={[
               { value: '', label: t('profile.languageDefault') },
-              ...locales.map((item) => ({ value: item.code, label: <span lang={item.code}>{item.label}</span>, text: item.label })),
+              ...getLanguages().map((item) => ({ value: item.code, label: <span lang={item.code}>{item.label}</span>, text: item.label })),
             ]}
           />
         </Field>

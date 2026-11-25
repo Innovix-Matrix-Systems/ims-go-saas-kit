@@ -1,0 +1,6 @@
+{
+  "forgot.title": "Reset your password",
+  "forgot.subtitle": "Enter your e-mail address and we will send you a link to choose a new password.",
+  "forgot.submit": "Send reset link",
+  "forgot.sent": "If that address belongs to an account, a reset link is on its way. Check your inbox."
+}

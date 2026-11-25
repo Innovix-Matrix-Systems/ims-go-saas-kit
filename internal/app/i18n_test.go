@@ -1,9 +1,11 @@
 package app
 
 import (
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -44,6 +46,22 @@ func TestTranslationsCoverEveryLanguage(t *testing.T) {
 	}
 	for _, report := range reports {
 		t.Errorf("template %s (%s): missing variants of %v; problems %v", report.Template, report.Language, report.Missing, report.Problems)
+	}
+}
+
+// TestAppLanguagesMatchTheAPI keeps the client app's built-in language list
+// (its offline fallback) equal to the API's.
+func TestAppLanguagesMatchTheAPI(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "web", "app", "src", "i18n", "languages.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var app []i18n.Language
+	if err := json.Unmarshal(raw, &app); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(app, languages()) {
+		t.Errorf("web/app/src/i18n/languages.json = %+v\nwant the API's list (internal/app/i18n.go) = %+v", app, languages())
 	}
 }
 

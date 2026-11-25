@@ -72,7 +72,7 @@ function PeriodPicker({ days, onChange }: { days: Days; onChange: (days: Days) =
     <div className="segmented" role="group" aria-label={t('dashboard.period')}>
       {periods.map((value) => (
         <button key={value} type="button" className={days === value ? 'active' : ''} aria-pressed={days === value} onClick={() => onChange(value)}>
-          {t('dashboard.days', { days: value })}
+          {t('dashboard.days', { count: value })}
         </button>
       ))}
     </div>
@@ -412,7 +412,7 @@ function OrganizationHome({ session }: { session: Session }) {
                 label={t('dashboard.events')}
                 value={n.plain(data.activity.events.total)}
                 delta={<Delta current={data.activity.events.total} previous={data.activity.events.previous_total} />}
-                sub={t('dashboard.inPeriod', { days })}
+                sub={t('dashboard.inPeriod', { count: days })}
                 points={data.activity.events.points}
                 to="/org/activity"
               />
@@ -479,7 +479,7 @@ function OrganizationHome({ session }: { session: Session }) {
                 </Card>
               ) : null}
               {data.activity ? (
-                <Card title={t('dashboard.topActors')} description={t('dashboard.inPeriod', { days })}>
+                <Card title={t('dashboard.topActors')} description={t('dashboard.inPeriod', { count: days })}>
                   <RankedBarChart
                     label={t('dashboard.topActors')}
                     items={data.activity.top_actors.map((row) => ({
@@ -499,7 +499,7 @@ function OrganizationHome({ session }: { session: Session }) {
 
           <div className="dash-row">
             {data.activity ? (
-              <Card title={t('dashboard.topActions')} description={t('dashboard.inPeriod', { days })}>
+              <Card title={t('dashboard.topActions')} description={t('dashboard.inPeriod', { count: days })}>
                 <RankedBarChart
                   label={t('dashboard.topActions')}
                   items={data.activity.top_actions.map((row) => ({

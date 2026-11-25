@@ -1,0 +1,14 @@
+{
+  "orgPage.since": "{date} থেকে",
+  "orgPage.edit": "বিবরণ সম্পাদনা",
+  "orgPage.editHint": "আপনার সংস্থার নাম ও যোগাযোগের উপায়।",
+  "orgPage.about": "পরিচিতি",
+  "orgPage.created": "তৈরি",
+  "orgPage.id": "সংস্থার আইডি",
+  "orgPage.people": "সদস্যরা",
+  "orgPage.peopleCount": {
+    "one": "{count} জন সদস্য",
+    "other": "{count} জন সদস্য"
+  },
+  "orgPage.transferHint": "সংস্থাটি অন্য কাউকে হস্তান্তর করতে যান"
+}

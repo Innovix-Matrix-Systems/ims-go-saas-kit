@@ -1,0 +1,6 @@
+{
+  "acting.tenant": "You are impersonating {name}. You work with your own staff permissions, and changes are recorded under your name.",
+  "acting.user": "You are logged in as {name} ({email}). Everything you do runs as them and is recorded as done by staff.",
+  "acting.stop": "Stop impersonating",
+  "acting.return": "Return to my account"
+}

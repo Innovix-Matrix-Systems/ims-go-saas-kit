@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PageSkeleton } from './components/Skeleton'
 import { ToastProvider } from './components/Toasts'
+import { startI18n } from './i18n'
 import { queryClient } from './query'
 import { routeTree } from './routeTree.gen'
 import './styles.css'
@@ -25,12 +26,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
-    </QueryClientProvider>
-  </StrictMode>,
+// The starting language's text arrives before the first render, so the screen
+// never shows one language and then another.
+void startI18n().finally(() =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </QueryClientProvider>
+    </StrictMode>,
+  ),
 )

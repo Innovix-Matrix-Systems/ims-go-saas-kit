@@ -24,6 +24,7 @@ and docs site), so they work the same on Windows, macOS and Linux. `make help` p
 | `make app-build` | Build the client app into web/app/dist (embedded by Go, served at /). |
 | `make app-typecheck` | Type-check the client app. |
 | `make app-style-check` | Check the client app's design tokens: WCAG AA contrast, type scale, no raw colours. |
+| `make app-i18n-check` | Fail if a client-app language lacks a key, a placeholder or a plural form (or the key types are stale). |
 | `make app-openapi-check` | Fail if the client app's generated API types are stale. |
 | `make dev-app` | Run the client app dev server on :8082 with /api proxied to :8081. |
 | `make dev` | Run the SPA dev server (:8080, HMR) and the API (:8081, air). |

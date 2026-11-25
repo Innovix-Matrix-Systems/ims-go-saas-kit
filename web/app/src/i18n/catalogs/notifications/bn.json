@@ -1,0 +1,17 @@
+{
+  "notifications.title": "নোটিফিকেশন",
+  "notifications.preferences": "আমরা আপনাকে যা পাঠাই",
+  "notifications.mandatory": "সবসময় পাঠানো হয়",
+  "notifications.channel.mail": "ই-মেইল",
+  "notifications.channel.sms": "এসএমএস",
+  "notifications.channel.push": "পুশ",
+  "notifications.empty": "আপনার কোনো নোটিফিকেশন নেই।",
+  "notifications.markAllRead": "সব পড়া হয়েছে হিসেবে চিহ্নিত করুন",
+  "notifications.unreadLabel": {
+    "one": "{count}টি অপঠিত",
+    "other": "{count}টি অপঠিত"
+  },
+  "notifications.unreadOnly": "শুধু অপঠিত",
+  "notifications.viewAll": "সব নোটিফিকেশন দেখুন",
+  "notifications.loadMore": "আরও দেখুন"
+}

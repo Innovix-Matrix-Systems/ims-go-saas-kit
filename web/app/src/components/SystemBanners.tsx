@@ -211,7 +211,7 @@ export function PlanBanner() {
     const expires = sub?.expires_at ? new Date(sub.expires_at) : null
     const daysLeft = expires ? Math.ceil((expires.getTime() - Date.now()) / 86_400_000) : null
     const date = expires ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(expires) : ''
-    const when = daysLeft === null ? '' : daysLeft <= 0 ? t('planBanner.today') : daysLeft === 1 ? t('planBanner.tomorrow') : t('planBanner.inDays', { days: daysLeft })
+    const when = daysLeft === null ? '' : daysLeft <= 0 ? t('planBanner.today') : daysLeft === 1 ? t('planBanner.tomorrow') : t('planBanner.inDays', { count: daysLeft })
     if (!sub) {
       notice = { kind: 'none', tone: 'warn', title: t('planBanner.none'), body: t('planBanner.noneBody') }
     } else if (sub.status === 'expired' || (!data.active && sub.status !== 'pending' && sub.status !== 'past_due')) {

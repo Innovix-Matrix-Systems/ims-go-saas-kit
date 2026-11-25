@@ -1,0 +1,12 @@
+{
+  "home.greeting": "স্বাগতম, {name}",
+  "home.subtitle": "আপনার প্রতিষ্ঠানের একটি সারসংক্ষেপ।",
+  "home.organization": "প্রতিষ্ঠান",
+  "home.branch": "সক্রিয় শাখা",
+  "home.roles": "আপনার রোল",
+  "home.permissions": "অনুমতি",
+  "home.lastSignIn": "শেষ সাইন-ইন",
+  "home.never": "কখনো না",
+  "home.staffSubtitle": "প্ল্যাটফর্মে কী ঘটছে তা এখানে দেখুন।",
+  "home.paymentsToReview": "পর্যালোচনার অপেক্ষায় পেমেন্ট"
+}

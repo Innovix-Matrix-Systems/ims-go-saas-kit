@@ -1,0 +1,33 @@
+{
+  "twoFactor.setupTitle": "টু-ফ্যাক্টর অথেনটিকেশন চালু করুন",
+  "twoFactor.setupSubtitle": "আপনার প্রতিষ্ঠান সাইন ইনের সময় একটি দ্বিতীয় ধাপ বাধ্যতামূলক করেছে। পাসওয়ার্ড ফাঁস হলেও এটি আপনার অ্যাকাউন্ট নিরাপদ রাখে।",
+  "twoFactor.methodApp": "অথেনটিকেটর অ্যাপ",
+  "twoFactor.methodAppHint": "প্রস্তাবিত। ইন্টারনেট ছাড়াই কাজ করে (Google Authenticator, Microsoft Authenticator, 1Password…)।",
+  "twoFactor.methodEmail": "ই-মেইল কোড",
+  "twoFactor.methodEmailHint": "প্রতিবার সাইন ইনের সময় আপনাকে একটি কোড ই-মেইল করা হবে।",
+  "twoFactor.passwordPrompt": "চালিয়ে যেতে আপনার পাসওয়ার্ড দিয়ে নিশ্চিত করুন।",
+  "twoFactor.start": "এগিয়ে যান",
+  "twoFactor.scan": "আপনার অথেনটিকেটর অ্যাপ দিয়ে এই কোডটি স্ক্যান করুন, তারপর অ্যাপে দেখানো ৬ অঙ্কের কোডটি দিন।",
+  "twoFactor.manual": "স্ক্যান করতে পারছেন না? এর বদলে এই কি-টি দিন:",
+  "twoFactor.emailSent": "আমরা আপনাকে একটি ৬ অঙ্কের কোড ই-মেইল করেছি। নিচে সেটি দিন।",
+  "twoFactor.code": "৬ অঙ্কের কোড",
+  "twoFactor.confirm": "চালু করুন",
+  "twoFactor.codesTitle": "আপনার রিকভারি কোড সংরক্ষণ করুন",
+  "twoFactor.codesBody": "ফোন বা মেইলবক্স হারালে প্রতিটি কোড দিয়ে একবার সাইন ইন করা যায়। এগুলো শুধু এখনই দেখানো হচ্ছে।",
+  "twoFactor.copyCodes": "কোড কপি করুন",
+  "twoFactor.downloadCodes": "ডাউনলোড",
+  "twoFactor.savedCodes": "আমি আমার রিকভারি কোড সংরক্ষণ করেছি",
+  "twoFactor.finish": "শেষ",
+  "twoFactor.status": "টু-ফ্যাক্টর অথেনটিকেশন",
+  "twoFactor.on": "চালু",
+  "twoFactor.off": "বন্ধ",
+  "twoFactor.required": "আপনার প্রতিষ্ঠানে বাধ্যতামূলক",
+  "twoFactor.codesLeft": {
+    "one": "{count}টি রিকভারি কোড বাকি",
+    "other": "{count}টি রিকভারি কোড বাকি"
+  },
+  "twoFactor.enable": "টু-ফ্যাক্টর চালু করুন",
+  "twoFactor.disable": "বন্ধ করুন",
+  "twoFactor.regenerate": "নতুন রিকভারি কোড",
+  "twoFactor.disableConfirm": "টু-ফ্যাক্টর অথেনটিকেশন বন্ধ করবেন? আপনার অন্যান্য ডিভাইস থেকে সাইন আউট হয়ে যাবে।"
+}

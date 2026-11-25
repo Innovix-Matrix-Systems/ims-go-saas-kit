@@ -1,0 +1,6 @@
+{
+  "emailChange.title": "Confirm your new e-mail address",
+  "emailChange.working": "Changing your e-mail address…",
+  "emailChange.done": "Your e-mail address has been changed and every device was signed out. Sign in with the new address.",
+  "emailChange.failed": "This link is invalid or has expired. Ask for a new one from your profile."
+}

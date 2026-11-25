@@ -1,0 +1,7 @@
+{
+  "chart.summary": {
+    "one": "{label}, {count} দিনের প্রতিদিনের মান",
+    "other": "{label}, {count} দিনের প্রতিদিনের মান"
+  },
+  "chart.other": "অন্যান্য"
+}

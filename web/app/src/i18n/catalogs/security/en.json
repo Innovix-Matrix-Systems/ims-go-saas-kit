@@ -1,0 +1,11 @@
+{
+  "security.changePassword": "Change password",
+  "security.changePasswordHint": "Other devices are signed out when you change your password.",
+  "security.passwordChanged": "Your password has been changed.",
+  "security.sessions": "Signed-in devices",
+  "security.sessionsHint": "Sign out any device you do not recognize.",
+  "security.thisDevice": "This device",
+  "security.lastUsed": "Last used {when}",
+  "security.signOutDevice": "Sign out",
+  "security.signOutOthers": "Sign out all other devices"
+}
