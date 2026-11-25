@@ -6,6 +6,75 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-25
+
+**Six languages, right to left, and a language system that isn't tied to any language.** The kit
+speaks English, Bangla, German, Arabic, Spanish and French everywhere a person reads: the app, API
+messages, notifications, e-mails and SMS, and the OAuth sign-in pages. Arabic reads right to left.
+Adding another language is a descriptor and catalog files, with no code changes, and checks fail
+until it is complete. See [Languages](docs/guides/languages.md).
+
+**Upgrading from 0.2.0:** no migrations. Things to check:
+
+- **`APP_SUPPORTED_LOCALES`** empty now offers every registered language, and an unknown code stops
+  the start. A `.env` that still says `en,bn` keeps offering only those two: remove the line (or
+  list the codes you want) to offer German, Arabic, Spanish and French.
+- **`APP_LOCALE`** is now the default language for requests that match nothing (it was unused);
+  `APP_FALLBACK_LOCALE` stays the e-mail fallback.
+- **API:** the sign-up `locale` is a supported code instead of `en`/`bn` (and becomes the new
+  organization's language); `users.locale` is validated against the offered languages. New: public
+  `GET /api/v1/languages`; `GET /organization` returns `language`; settings items may carry
+  `choices`. Feed items of system notifications are in the reader's language.
+- **Delivery templates moved** out of `internal/platform/delivery/templates/` into the packages that
+  send them (`internal/authn/templates/`, `internal/modules/*/templates/`,
+  `internal/app/templates/`). A project that registered its own folder under a kit template's name
+  still overrides it. `Registry.Layout` takes the language.
+- **The app's catalogs** moved from `src/i18n/en.ts`/`bn.ts` to
+  `src/i18n/catalogs/<namespace>/<code>.json`; `Locale` is a plain string and `locales` is
+  `getLanguages()`. A screen you added needs its keys moved and translated into every language
+  (`npm run i18n:check` lists them). The `right` and `align-right` CSS classes are `end` and
+  `align-end`.
+- The 46 `messages.*` API keys from the Laravel port were never used and are gone.
+
+### Added
+
+- **German, Arabic (right to left, Western digits), Spanish and French** for the app, the API and
+  every e-mail and SMS template, each translated and reviewed with a glossary.
+- **A language menu** in the top bar and on the signed-out screens; a pick is saved to the account.
+  Ctrl+K lists "Change language…".
+- **The organization's language** (`general.default_locale`, organization settings → General). One
+  lookup order: the account's language → the organization's → the default, for the screen, API
+  answers and e-mails. Sign-up sets it.
+- **Stackable, module-owned translations:** each module registers its own catalog bundle and
+  templates; a project changes wording in an overrides folder without editing kit files.
+- **Plurals** (CLDR forms) on both sides: no more "1 permissions"; durations in e-mails read
+  "1 Stunde 30 Minuten", "ساعة واحدة و30 دقيقة".
+- **Checks:** `ims i18n:coverage`, `ims i18n:missing --locale <code> [--json]`, `npm run i18n:check`
+  and `npm run i18n:types` (typed keys and placeholders), `npm run check:logical`, and Go tests for
+  coverage, template variants, hard-coded language codes and the app/API language lists. All run in
+  CI.
+- **The `translate` skill** and glossaries for every language; **Inspector → Translations** in the
+  developer dashboard; `ims gen module` writes the module's catalog.
+- **Activity log** actions and subjects have labels in every language.
+- **Settings `Choices`:** a setting can list its accepted values (checked on write, shown in the API).
+
+### Changed
+
+- The app loads only English up front and fetches another language when it is chosen (one chunk
+  per language).
+- System notifications (payment notices, renewal reminders, disabled webhooks) carry a message key
+  and are rendered in each reader's language, in the feed and in e-mail.
+- The app's stylesheets use logical properties only, so every screen mirrors right to left.
+- "Mail and translations" became the **Languages** guide; the mail transport moved to the Delivery
+  guide.
+
+### Fixed
+
+- Platform staff could not save their own profile, photo or language from the app (the
+  organization route answered 403).
+- Three Bangla template variants that never existed (invitation SMS; notification subject, SMS and
+  push now read the same in every language).
+
 ## [0.2.0] - 2026-11-25
 
 The project is now **IMS Go SaaS Kit**: the multi-tenant API, the app for organizations and staff,
@@ -357,7 +426,8 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.0...v0.2.3
 [0.2.0]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.6...v0.1.8
 [0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.5...v0.1.6
