@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Locale is a normalized language tag ("en", "bn").
+// Locale is a normalized language code (a registered Language.Code).
 type Locale string
 
 type contextKey string

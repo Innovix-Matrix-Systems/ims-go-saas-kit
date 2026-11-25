@@ -53,8 +53,9 @@ type ProfileUpdateRequest struct {
 	LastName  *string `json:"last_name" validate:"omitempty,max=100"`
 	Name      *string `json:"name" validate:"omitempty,min=2,max=255"`
 	Phone     *string `json:"phone" validate:"omitempty,max=50"`
-	// Locale is the user's language ("en", "bn"); "" clears it, absent keeps it.
-	Locale *string `json:"locale" validate:"omitempty,max=10"`
+	// Locale is the user's language (a supported language code); "" clears
+	// it, absent keeps it.
+	Locale *string `json:"locale" validate:"omitempty,locale"`
 }
 
 // ProfileChangePasswordRequest changes the own password.

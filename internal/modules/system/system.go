@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 )
 
 // Service provides system-module business behavior. It is the template for
@@ -17,6 +18,8 @@ type Service struct {
 	version   string
 	timezone  string
 	startedAt time.Time
+	languages func() []i18n.Language
+	locale    string
 }
 
 // NewService creates the system service.
@@ -27,7 +30,28 @@ func NewService(name, env, buildVersion, timezone string) *Service {
 		version:   buildVersion,
 		timezone:  timezone,
 		startedAt: time.Now(),
+		languages: func() []i18n.Language { return i18n.Default().Supported() },
+		locale:    i18n.Reference,
 	}
+}
+
+// WithLanguages sets where the offered languages come from and the default
+// language (APP_LOCALE).
+func (s *Service) WithLanguages(languages func() []i18n.Language, defaultCode string) *Service {
+	s.languages, s.locale = languages, defaultCode
+	return s
+}
+
+// LanguagesResponse lists the languages a client may offer.
+type LanguagesResponse struct {
+	// Default is the language used when nothing else is chosen.
+	Default   string          `json:"default"`
+	Languages []i18n.Language `json:"languages"`
+}
+
+// Languages returns the offered languages, the reference first.
+func (s *Service) Languages() LanguagesResponse {
+	return LanguagesResponse{Default: s.locale, Languages: s.languages()}
 }
 
 // InfoResponse is the public representation of the system status.
@@ -84,6 +108,11 @@ func NewModule(service *Service, kit httpx.Kit) *Module {
 
 func (m *Module) info(w http.ResponseWriter, r *http.Request) {
 	m.Data(w, r, http.StatusOK, m.service.Info())
+}
+
+func (m *Module) languages(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "public, max-age=300")
+	m.Data(w, r, http.StatusOK, m.service.Languages())
 }
 
 func (m *Module) echo(w http.ResponseWriter, r *http.Request) {

@@ -74,6 +74,7 @@ func TestResponsesValidateAgainstSpec(t *testing.T) {
 		contentType string
 	}{
 		{"system info", http.MethodGet, "/api/v1/system/info", "", http.StatusOK, "SystemInfoEnvelope", "application/json"},
+		{"languages", http.MethodGet, "/api/v1/languages", "", http.StatusOK, "LanguagesEnvelope", "application/json"},
 		{"system echo", http.MethodPost, "/api/v1/system/echo", `{"message":"hello"}`, http.StatusOK, "EchoEnvelope", "application/json"},
 		{"echo validation", http.MethodPost, "/api/v1/system/echo", `{"message":"x"}`, http.StatusUnprocessableEntity, "Problem", "application/problem+json"},
 		{"unauthenticated", http.MethodGet, "/api/v1/user", "", http.StatusUnauthorized, "Problem", "application/problem+json"},

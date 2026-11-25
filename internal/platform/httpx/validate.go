@@ -22,6 +22,12 @@ type Validator struct {
 // NewValidator creates a validator that reports JSON field names.
 func NewValidator() *Validator {
 	v := validator.New(validator.WithRequiredStructEnabled())
+	// locale: a language the application offers (the language registry).
+	// "" passes (it means "no choice"); add required where one is needed.
+	_ = v.RegisterValidation("locale", func(fl validator.FieldLevel) bool {
+		code := fl.Field().String()
+		return code == "" || i18n.IsSupported(code)
+	})
 	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
 		if name == "-" {
@@ -84,6 +90,8 @@ func messageSpec(fe validator.FieldError, attribute string) (string, map[string]
 		return "validation." + fe.Tag() + "." + kindSuffix(fe.Kind()), params
 	case "oneof":
 		return "validation.in", params
+	case "locale":
+		return "validation.locale", params
 	default:
 		return "validation.invalid", params
 	}

@@ -344,6 +344,7 @@
     "validation.ipv6": "{{.Attribute}} টি একটি বৈধ IPv6 address হতে হবে।",
     "validation.json": "{{.Attribute}} একটি বৈধ JSON স্ট্রিং হতে হবে।",
     "validation.list": "{{.Attribute}} ক্ষেত্র অবশ্যই একটি তালিকা হতে হবে।",
+    "validation.locale": "{{.Attribute}} একটি সমর্থিত ভাষা হতে হবে।",
     "validation.lowercase": "{{.Attribute}} অবশ্যই ছোট হাতের হতে হবে।",
     "validation.lt.array": "{{.Attribute}} এর থেকে কম {{.Value}} আইটেম থাকতে হবে।",
     "validation.lt.file": "{{.Attribute}} অবশ্যই {{.Value}} কিলোবাইটের চেয়ে কম হতে হবে।",

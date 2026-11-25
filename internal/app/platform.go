@@ -36,6 +36,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/crypto"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/i18n"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/mail"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/maintenance"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/pubsub"
@@ -108,6 +109,9 @@ type Platform struct {
 	// Realtime tells open live-update streams that something changed
 	// (pubsub.Discard when REALTIME_ENABLED is off).
 	Realtime pubsub.Publisher
+	// I18n holds the registered languages and their catalogs (the process
+	// default for i18n.T outside a request).
+	I18n *i18n.Translator
 }
 
 // NewPlatform constructs the platform dependencies. Pools connect lazily, so
@@ -126,6 +130,11 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 			closeAll()
 		}
 	}()
+
+	translator, err := newTranslator(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// OpenTelemetry: a no-op until an OTLP endpoint is set.
 	shutdownTracing, err := tracing.Setup(context.Background(), tracing.Settings{
@@ -375,6 +384,7 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		WithRunLog(scheduler.NewRunLog(txManager.Queries()))
 
 	platform := &Platform{
+		I18n:             translator,
 		Activity:         activityRecorder,
 		Config:           cfg,
 		Logger:           logger,

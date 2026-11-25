@@ -344,6 +344,7 @@
     "validation.ipv6": "The {{.Attribute}} field must be a valid IPv6 address.",
     "validation.json": "The {{.Attribute}} field must be a valid JSON string.",
     "validation.list": "The {{.Attribute}} field must be a list.",
+    "validation.locale": "The {{.Attribute}} must be a supported language.",
     "validation.lowercase": "The {{.Attribute}} field must be lowercase.",
     "validation.lt.array": "The {{.Attribute}} field must have less than {{.Value}} items.",
     "validation.lt.file": "The {{.Attribute}} field must be less than {{.Value}} kilobytes.",

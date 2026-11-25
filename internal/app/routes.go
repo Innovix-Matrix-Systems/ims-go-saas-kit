@@ -70,7 +70,7 @@ func (d *Dependencies) Router() http.Handler {
 	r.Use(httpx.Timeout(d.Config.HTTP.RequestTimeout, d.Responder, realtime.StreamPath))
 	// Health probes and metrics scrapes never spend the per-IP budget.
 	r.Use(ratelimit.Middleware(d.Limiter, ratelimit.KeyByIP, d.Responder, "/up", "/api/health", "/metrics"))
-	r.Use(d.I18n.Middleware(d.Config.App.SupportedLocales, d.Config.App.FallbackLocale))
+	r.Use(d.I18n.Middleware(d.Config.App.Locale))
 
 	r.Get("/up", d.up)
 	r.Get("/api/health", d.HealthHandler.ServeHTTP)

@@ -22,7 +22,8 @@ info:
     Authenticated routes are resolved to a tenant/branch from the caller's identity.
     Impersonators may send the optional headers `X-Acting-Tenant` and `X-Acting-Branch`;
     sends on tenant-resolved write routes without acting headers are rejected with 403.
-    Request locale is negotiated from `Accept-Language` (`en`, `bn`).
+    Request locale is negotiated from `Accept-Language` against the supported languages
+    (`GET /api/v1/languages`).
 
 servers:
   - url: http://localhost:8080
@@ -241,6 +242,26 @@ paths:
             application/json:
               schema: {$ref: "#/components/schemas/SystemInfoEnvelope"}
 
+  /api/v1/languages:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+    get:
+      tags: [System]
+      summary: Supported languages
+      description: |
+        The languages this server offers (`APP_SUPPORTED_LOCALES`, or every registered language),
+        the reference language (English) first, and the default (`APP_LOCALE`). Clients build their
+        language menu from it and send one of the codes as `Accept-Language` or a user's `locale`.
+      operationId: listLanguages
+      security: []
+      responses:
+        "200":
+          description: The offered languages.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/LanguagesEnvelope"}
+
   /api/v1/system/echo:
     parameters:
       - {$ref: "#/components/parameters/ActingTenant"}
@@ -425,7 +446,7 @@ paths:
                 password: {type: string, minLength: 8, maxLength: 72}
                 organization_name: {type: string, minLength: 2, maxLength: 100}
                 phone: {type: string, maxLength: 50, nullable: true}
-                locale: {type: string, enum: [en, bn]}
+                locale: {type: string, maxLength: 10, description: 'A supported language code (`GET /api/v1/languages`); the new account''s language.'}
                 accept_terms:
                   type: boolean
                   description: Must be true (terms of service and privacy policy).
@@ -1789,7 +1810,7 @@ paths:
                 locale:
                   type: string
                   maxLength: 10
-                  description: The user's language ("en", "bn"). An empty string clears it; leave it out to keep it.
+                  description: The user's language, a supported language code (`GET /api/v1/languages`). An empty string clears it; leave it out to keep it.
       responses:
         "200":
           description: Updated profile.
@@ -2671,7 +2692,7 @@ paths:
                 locale:
                   type: string
                   maxLength: 10
-                  description: The user's language ("en", "bn"). An empty string clears it; leave it out to keep it.
+                  description: The user's language, a supported language code (`GET /api/v1/languages`). An empty string clears it; leave it out to keep it.
       responses:
         "200":
           description: Updated profile.
@@ -7708,6 +7729,29 @@ components:
             message: {type: string}
             retry_after: {type: integer}
 
+    Language:
+      type: object
+      required: [code, label, english, intl, dir, digits, reviewed]
+      properties:
+        code: {type: string, example: bn, description: Two-letter language code.}
+        label: {type: string, example: বাংলা, description: The language's own name.}
+        english: {type: string, example: Bangla, description: Its English name.}
+        intl: {type: string, example: bn-BD, description: BCP 47 tag for formatting dates and numbers.}
+        dir: {type: string, enum: [ltr, rtl]}
+        digits: {type: string, example: beng, description: 'Numbering system for generated numbers (`latn`, `beng`, `arab`).'}
+        reviewed: {type: boolean, description: False while the translation has not passed review (shown as beta).}
+    LanguagesEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [default, languages]
+          properties:
+            default: {type: string, example: en}
+            languages:
+              type: array
+              items: {$ref: "#/components/schemas/Language"}
     SystemInfoEnvelope:
       type: object
       required: [data]

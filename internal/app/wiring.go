@@ -138,11 +138,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 		realtimeHub = pubsub.NewHub(cfg.Realtime.MaxStreamsPerUser)
 		realtimeListener = pubsub.NewListener(cfg.Realtime.ListenDSN, realtimeHub, logger)
 	}
-	translator, err := i18n.Load()
-	if err != nil {
-		platformCleanup()
-		return nil, nil, err
-	}
+	translator := platform.I18n
 
 	queries := platform.Tx.Queries()
 	store := platform.Cache
@@ -222,7 +218,8 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 
 	// Handlers and modules
 	systemModule := system.NewModule(
-		system.NewService(cfg.App.Name, cfg.App.Env, version.Version, cfg.App.Timezone),
+		system.NewService(cfg.App.Name, cfg.App.Env, version.Version, cfg.App.Timezone).
+			WithLanguages(translator.Supported, cfg.App.Locale),
 		kit,
 	)
 

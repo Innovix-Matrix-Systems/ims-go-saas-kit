@@ -70,6 +70,7 @@ var routesWithoutPermission = map[string]bool{
 	"PATCH /api/v1/user/switch-branch/{id}":               true,
 	"GET /api/v1/permission/user":                         true,
 	"GET /api/v1/system/info":                             true,
+	"GET /api/v1/languages":                               true, // public: the offered languages
 	"GET /api/v1/system/echo":                             true,
 	"POST /api/v1/system/echo":                            true,
 	"GET /api/v1/settings":                                true, // resolved, non-secret settings for clients
