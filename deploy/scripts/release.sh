@@ -202,16 +202,21 @@ do_release() {
   log "building release $version -> $release_dir"
   run mkdir -p "$release_dir"
 
-  if [[ "$DRY_RUN" == "1" ]]; then
-    printf '   [dry-run] (cd %s/web/dev && npm ci && npm run build)\n' "$workdir"
-  else
-    log "building developer dashboard SPA"
-    (
-      cd "$workdir/web/dev"
-      npm ci
-      npm run build
-    )
-  fi
+  # Both web apps are embedded in the binary: the developer dashboard (/dev)
+  # and the client app (/). Without a build, the binary serves an empty app.
+  local web
+  for web in web/dev web/app; do
+    if [[ "$DRY_RUN" == "1" ]]; then
+      printf '   [dry-run] (cd %s/%s && npm ci && npm run build)\n' "$workdir" "$web"
+    else
+      log "building $web"
+      (
+        cd "$workdir/$web"
+        npm ci
+        npm run build
+      )
+    fi
+  done
 
   local ldflags="-X ${BUILD_MODULE}/internal/version.Version=${version}"
   if [[ "$DRY_RUN" == "1" ]]; then
