@@ -31,6 +31,20 @@ ims health:check      # the same checks from the CLI
 The dashboard's **Inspector → System** tab shows every check, the runtime (version, Go, uptime)
 and re-runs them on demand.
 
+### Connection pools
+
+The database check also warns (the API stays ready) when a connection pool has 80% or more of its
+`MAX_CONNS` in use, before requests start waiting for a connection: the summary reads
+`primary: busy`. The public report never shows how many connections are in use. The dashboard
+does: **Inspector → System → Database pools** reads every pool live (in use, idle, opening, the
+maximum, how many requests had to wait and the average time to get a connection), and the
+Overview shows `3/20 active` next to the Database check. Both come from
+`GET /dev/api/inspector/database`, which reads the pools from memory without a query.
+
+A pool that is often busy or makes requests wait needs a higher `DATABASE_MAX_CONNS` (or
+`DATABASE_<NAME>_MAX_CONNS`), within the server's `max_connections` across every process that
+connects, or fewer slow queries holding connections.
+
 ### Maintenance mode
 
 While the app is down for [maintenance](maintenance-mode.md) (`ims down`), `/up` and

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { HealthCheck, HealthResults, SystemInfo } from '../api/types'
 import { relativeTime } from '../format'
+import { DatabasePoolsCard } from './DatabasePools'
 import { MaintenanceCard } from './Maintenance'
 import { Badge, Button, Card, EmptyState, ErrorBox, JsonView, LoadingBlock, type BadgeTone } from './ui'
 
@@ -131,6 +132,7 @@ export function SystemTab({ needle }: { needle: string }) {
           ))}
         </div>
       )}
+      <DatabasePoolsCard />
     </>
   )
 }

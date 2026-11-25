@@ -3,6 +3,8 @@
 //   - every text/surface pair, the accent, and every status colour on its
 //     subtle background pass WCAG 2.2 AA (4.5:1) in both themes and with
 //     every accent preset; the accent passes 3:1 as a focus indicator;
+//   - every chart series colour stands out from the card (2:1; the figures
+//     are always in text too, so colour never carries them alone);
 //   - styles use the six type-scale tokens only (none below 11 px);
 //   - uppercase only on table headers and sidebar section titles;
 //   - no raw colour outside tokens.css (a declaration that must stay fixed,
@@ -87,6 +89,7 @@ const pairs = [
     [`--${tone}-fg`, `--${tone}-subtle`, 4.5],
     [`--${tone}-fg`, '--surface-1', 4.5],
   ]),
+  ...[1, 2, 3, 4, 5, 6].map((n) => [`--series-${n}`, '--surface-1', 2]),
 ]
 
 let checked = 0

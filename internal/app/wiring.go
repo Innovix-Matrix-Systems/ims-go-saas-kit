@@ -311,6 +311,7 @@ func NewDependencies(cfg *config.Config, logger *slog.Logger) (*Dependencies, fu
 			Maintenance: platform.Maintenance,
 			Deliveries:  platform.Delivery,
 			Health:      healthHandler,
+			Pools:       platform.DB,
 			Scheduler:   platform.ScheduleRunner,
 			Commands:    dev.NewCommandService(queries, logger, devCommands(platform, permissionService, healthRegistry)...),
 			Kit:         kit,

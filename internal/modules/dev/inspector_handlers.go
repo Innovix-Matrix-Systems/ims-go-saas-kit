@@ -4,11 +4,13 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
 )
 
 // Inspector panel: routes, roles & permissions, config and packages.
@@ -37,6 +39,27 @@ func (h *Handler) inspectorConfig(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) inspectorPackages(w http.ResponseWriter, r *http.Request) {
 	h.Data(w, r, http.StatusOK, h.inspector.Packages())
+}
+
+// PoolSource is the database registry's pool state (database.Registry).
+type PoolSource interface {
+	PoolStats() []database.PoolStats
+}
+
+// DatabasePools is the GET /dev/api/inspector/database payload: every
+// connection pool, read live (not the cached health report).
+type DatabasePools struct {
+	CheckedAt time.Time            `json:"checked_at"`
+	BusyShare float64              `json:"busy_share"`
+	Pools     []database.PoolStats `json:"pools"`
+}
+
+func (h *Handler) inspectorDatabase(w http.ResponseWriter, r *http.Request) {
+	out := DatabasePools{CheckedAt: time.Now(), BusyShare: database.PoolBusyShare, Pools: []database.PoolStats{}}
+	if h.pools != nil {
+		out.Pools = h.pools.PoolStats()
+	}
+	h.Data(w, r, http.StatusOK, out)
 }
 
 // Commands panel: allowlisted maintenance commands and their run history.

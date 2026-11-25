@@ -4,6 +4,7 @@
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 @import "./styles/components.css";
+@import "./styles/screens/charts.css";
 @import "./styles/screens/overview.css";
 @import "./styles/screens/logs.css";
 @import "./styles/screens/queue.css";

@@ -235,6 +235,9 @@ type TelemetryRepository interface {
 	Traffic(ctx context.Context, since time.Time) ([]TrafficMinute, TrafficTotals, error)
 	CountExceptionsSince(ctx context.Context, since time.Time) (int64, error)
 	ExceptionGroups(ctx context.Context, since time.Time, limit int32) ([]ExceptionGroup, error)
+	// RequestStats and ExceptionsByHour feed the panels' charts.
+	RequestStats(ctx context.Context, since time.Time, limit int32) (RequestStats, error)
+	ExceptionsByHour(ctx context.Context, since time.Time) ([]HourCount, error)
 }
 
 type telemetryRepository struct {
@@ -456,6 +459,48 @@ func (r *telemetryRepository) Traffic(ctx context.Context, since time.Time) ([]T
 		ServerErrors: totals.ServerErrors,
 		P95Ms:        totals.P95Ms,
 	}, nil
+}
+
+func (r *telemetryRepository) RequestStats(ctx context.Context, since time.Time, limit int32) (RequestStats, error) {
+	mix, err := r.queries.DevRequestStatusMix(ctx, timestamp(since))
+	if err != nil {
+		return RequestStats{}, database.MapError("dev.request_status_mix", err)
+	}
+	busiest, err := r.queries.DevBusiestRoutes(ctx, dbgen.DevBusiestRoutesParams{Since: timestamp(since), RowLimit: limit})
+	if err != nil {
+		return RequestStats{}, database.MapError("dev.busiest_routes", err)
+	}
+	slowest, err := r.queries.DevSlowestRoutes(ctx, dbgen.DevSlowestRoutesParams{Since: timestamp(since), RowLimit: limit})
+	if err != nil {
+		return RequestStats{}, database.MapError("dev.slowest_routes", err)
+	}
+	out := RequestStats{
+		Status: StatusMix{
+			Success: mix.Success, Redirect: mix.Redirect,
+			ClientErrors: mix.ClientErrors, ServerErrors: mix.ServerErrors,
+		},
+		Busiest: make([]RouteStat, 0, len(busiest)),
+		Slowest: make([]RouteStat, 0, len(slowest)),
+	}
+	for _, row := range busiest {
+		out.Busiest = append(out.Busiest, RouteStat{Method: row.Method, Route: row.Route, Requests: row.Requests, Errors: row.Errors, P95Ms: row.P95Ms})
+	}
+	for _, row := range slowest {
+		out.Slowest = append(out.Slowest, RouteStat{Method: row.Method, Route: row.Route, Requests: row.Requests, Errors: row.Errors, P95Ms: row.P95Ms})
+	}
+	return out, nil
+}
+
+func (r *telemetryRepository) ExceptionsByHour(ctx context.Context, since time.Time) ([]HourCount, error) {
+	rows, err := r.queries.DevExceptionsByHour(ctx, timestamp(since))
+	if err != nil {
+		return nil, database.MapError("dev.exceptions_by_hour", err)
+	}
+	out := make([]HourCount, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, HourCount{Hour: row.Hour.Time, Occurrences: row.Occurrences})
+	}
+	return out, nil
 }
 
 func (r *telemetryRepository) CountExceptionsSince(ctx context.Context, since time.Time) (int64, error) {

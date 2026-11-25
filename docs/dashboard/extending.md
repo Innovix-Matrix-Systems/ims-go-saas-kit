@@ -59,7 +59,11 @@ Every panel follows the same template, so a new one fits without a redesign:
 4. Build the page from the kit in `components/ui.tsx`: `PageHeader` (title, one-line description,
    actions, meta), then an optional filter row, then content in `Card`s; `StatTile`, `Badge`,
    `StatusDot`, `LiveDot` (running work only), `Drawer`, `Modal`, `Tabs`, `DetailStrip`; layout
-   with `Stack`, `Cluster`, `Split` and `Grid`. Use **`Select`, `DatePicker`, `TimePicker`** from
+   with `Stack`, `Cluster`, `Split` and `Grid`. Charts come from `components/charts.tsx`
+   (Recharts): `DonutChart` for parts of a whole, `HBarChart` for one bar per row, `TimeBars`
+   for counts over time. Colour them with tones (`series-1`…`series-6` for categories, or
+   `accent`, `ok`, `warn`, `danger`, `muted` for a meaning), never a colour value; the figures
+   always appear in text too (legend, readout or tooltip). Use **`Select`, `DatePicker`, `TimePicker`** from
    `components/inputs.tsx`, never the browser's native `<select>` or date input.
 5. No inline `style={{…}}` for layout and no raw colours: styles use the tokens in
    `src/styles/tokens.css`, and a panel's own rules go in `src/styles/screens/<name>.css`.

@@ -69,6 +69,50 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 	return i, err
 }
 
+const deliveryStatsByDay = `-- name: DeliveryStatsByDay :many
+SELECT date_trunc('day', created_at, 'UTC')::timestamptz AS day,
+       channel,
+       status,
+       count(*)::bigint AS deliveries
+FROM deliveries
+WHERE created_at >= $1::timestamptz
+GROUP BY 1, 2, 3
+ORDER BY 1, 2, 3
+`
+
+type DeliveryStatsByDayRow struct {
+	Day        pgtype.Timestamptz `json:"day"`
+	Channel    string             `json:"channel"`
+	Status     string             `json:"status"`
+	Deliveries int64              `json:"deliveries"`
+}
+
+// Developer dashboard: deliveries per day, channel and status since @since.
+func (q *Queries) DeliveryStatsByDay(ctx context.Context, since pgtype.Timestamptz) ([]DeliveryStatsByDayRow, error) {
+	rows, err := q.db.Query(ctx, deliveryStatsByDay, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeliveryStatsByDayRow{}
+	for rows.Next() {
+		var i DeliveryStatsByDayRow
+		if err := rows.Scan(
+			&i.Day,
+			&i.Channel,
+			&i.Status,
+			&i.Deliveries,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getDelivery = `-- name: GetDelivery :one
 SELECT id, tenant_id, user_id, channel, address, template, status, attempts, error, provider_message_id, created_at, updated_at, sent_at FROM deliveries WHERE id = $1
 `

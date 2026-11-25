@@ -11,7 +11,9 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/health"
 )
 
-// HealthCheck pings every configured connection.
+// HealthCheck pings every configured connection and warns when a pool is
+// nearly full. The report is public (/api/health), so it names the busy pool
+// but never its connection counts; the dashboard reads those from PoolStats.
 type HealthCheck struct {
 	Registry *Registry
 }
@@ -22,6 +24,7 @@ func (c HealthCheck) Name() string { return "Database" }
 // Run implements health.Check.
 func (c HealthCheck) Run(ctx context.Context) health.CheckResult {
 	healthy := true
+	var busy []string
 	meta := map[string]any{}
 	summaries := make([]string, 0, len(c.Registry.Names()))
 
@@ -32,6 +35,8 @@ func (c HealthCheck) Run(ctx context.Context) health.CheckResult {
 			summaries = append(summaries, name+": unknown")
 			continue
 		}
+		// Read before the ping, which takes a connection itself.
+		poolBusy := conn.PoolStats().Busy
 		start := time.Now()
 		pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		pingErr := conn.Pool.Ping(pingCtx)
@@ -44,6 +49,12 @@ func (c HealthCheck) Run(ctx context.Context) health.CheckResult {
 			summaries = append(summaries, name+": failed")
 			continue
 		}
+		if poolBusy {
+			busy = append(busy, name)
+			meta[name] = map[string]any{"status": "busy", "duration_ms": durationMS}
+			summaries = append(summaries, name+": busy")
+			continue
+		}
 		meta[name] = map[string]any{"status": "ok", "duration_ms": durationMS}
 		summaries = append(summaries, name+": ok")
 	}
@@ -52,6 +63,13 @@ func (c HealthCheck) Run(ctx context.Context) health.CheckResult {
 		return health.CheckResult{
 			Status:       health.StatusFailed,
 			ShortSummary: "Database connection failed (" + strings.Join(summaries, ", ") + ").",
+			Meta:         meta,
+		}
+	}
+	if len(busy) > 0 {
+		return health.CheckResult{
+			Status:       health.StatusWarning,
+			ShortSummary: "Database connection pool is nearly full (" + strings.Join(summaries, ", ") + ").",
 			Meta:         meta,
 		}
 	}

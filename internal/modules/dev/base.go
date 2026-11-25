@@ -65,6 +65,9 @@ type Deps struct {
 	Deliveries *delivery.Service
 	// Health is the cached health report (Overview).
 	Health HealthSource
+	// Pools reads the database connection pools (Inspector → System). The
+	// counts are dashboard-only: /api/health never shows them.
+	Pools PoolSource
 	// Scheduler is the task runner (Scheduler panel); nil hides the panel.
 	Scheduler *scheduler.Runner
 	Kit       httpx.Kit

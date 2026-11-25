@@ -45,3 +45,14 @@ ORDER BY id;
 -- name: AnonymizeDeliveriesForUser :execrows
 UPDATE deliveries SET address = '', user_id = NULL, updated_at = now()
 WHERE user_id = @user_id;
+
+-- name: DeliveryStatsByDay :many
+-- Developer dashboard: deliveries per day, channel and status since @since.
+SELECT date_trunc('day', created_at, 'UTC')::timestamptz AS day,
+       channel,
+       status,
+       count(*)::bigint AS deliveries
+FROM deliveries
+WHERE created_at >= @since::timestamptz
+GROUP BY 1, 2, 3
+ORDER BY 1, 2, 3;

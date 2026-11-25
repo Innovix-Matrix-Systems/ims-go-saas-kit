@@ -21,7 +21,18 @@ type Repository interface {
 	MarkFailed(ctx context.Context, id int64, reason string) error
 	Get(ctx context.Context, id int64) (*Record, error)
 	List(ctx context.Context, filter ListFilter) ([]Record, error)
+	// CountByDay counts deliveries since a time per UTC day, channel and
+	// status (the dashboard's Deliveries charts).
+	CountByDay(ctx context.Context, since time.Time) ([]DayCount, error)
 	Prune(ctx context.Context, before time.Time) (int64, error)
+}
+
+// DayCount is the number of deliveries on one UTC day, channel and status.
+type DayCount struct {
+	Day     time.Time
+	Channel string
+	Status  string
+	Count   int64
 }
 
 // Entry is a new delivery log row.
@@ -113,6 +124,18 @@ func (r *sqlRepository) List(ctx context.Context, filter ListFilter) ([]Record, 
 		records = append(records, toRecord(row))
 	}
 	return records, nil
+}
+
+func (r *sqlRepository) CountByDay(ctx context.Context, since time.Time) ([]DayCount, error) {
+	rows, err := r.queries.DeliveryStatsByDay(ctx, pgtype.Timestamptz{Time: since, Valid: true})
+	if err != nil {
+		return nil, database.MapError("delivery.count_by_day", err)
+	}
+	counts := make([]DayCount, 0, len(rows))
+	for _, row := range rows {
+		counts = append(counts, DayCount{Day: row.Day.Time.UTC(), Channel: row.Channel, Status: row.Status, Count: row.Deliveries})
+	}
+	return counts, nil
 }
 
 func (r *sqlRepository) Prune(ctx context.Context, before time.Time) (int64, error) {

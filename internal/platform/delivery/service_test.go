@@ -64,6 +64,19 @@ func (m *memoryRepo) Get(_ context.Context, id int64) (*Record, error) {
 
 func (m *memoryRepo) List(context.Context, ListFilter) ([]Record, error) { return m.rows, nil }
 
+func (m *memoryRepo) CountByDay(_ context.Context, since time.Time) ([]DayCount, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var counts []DayCount
+	for _, row := range m.rows {
+		if row.CreatedAt.Before(since) {
+			continue
+		}
+		counts = append(counts, DayCount{Day: row.CreatedAt.UTC().Truncate(24 * time.Hour), Channel: string(row.Channel), Status: row.Status, Count: 1})
+	}
+	return counts, nil
+}
+
 func (m *memoryRepo) Prune(context.Context, time.Time) (int64, error) { return 0, nil }
 
 type recordingSender struct {

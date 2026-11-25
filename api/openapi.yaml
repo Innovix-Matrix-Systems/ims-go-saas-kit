@@ -5563,6 +5563,30 @@ paths:
         "403": *forbidden
         "404": *notFound
 
+  /dev/api/inspector/database:
+    get:
+      tags: [Dev]
+      summary: Database connection pools
+      description: >-
+        Every named connection's pool, read live from memory (no query): connections in use, idle
+        and opening, the maximum, and how often callers had to wait for one. A pool at `busy_share`
+        of its maximum or more is busy, which also turns the Database health check into a warning.
+        Only the dashboard shows these counts; `/api/health` names a busy pool without them.
+      operationId: devInspectorDatabase
+      responses:
+        "200":
+          description: Connection pools.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/DevDatabasePools"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
   /dev/api/deliveries:
     get:
       tags: [Dev]
@@ -5593,6 +5617,30 @@ paths:
         "403": *forbidden
         "404": *notFound
         "422": *validationFailed
+
+  /dev/api/deliveries/stats:
+    get:
+      tags: [Dev]
+      summary: Deliveries by status per day and channel
+      description: >-
+        Deliveries in the window by status (sent, failed, queued, skipped), per calendar day (UTC, every day present, oldest first) and per channel.
+      operationId: devDeliveryStats
+      parameters:
+        - {name: days, in: query, schema: {type: integer, enum: [7, 14, 30], default: 7}, description: The window in days.}
+      responses:
+        "200":
+          description: Chart data.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/DevDeliveryStats"}
+        "422": *validationFailed
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
 
   /dev/api/deliveries/templates:
     get:
@@ -6112,6 +6160,30 @@ paths:
         "404": *notFound
         "422": *validationFailed
 
+  /dev/api/requests/stats:
+    get:
+      tags: [Dev]
+      summary: Captured requests by status class and route
+      description: >-
+        Captured requests in the window by status class, the five busiest routes and the five with the highest p95 (each with its request count, errors and p95). Empty while HTTP capture is off.
+      operationId: devRequestStats
+      parameters:
+        - {name: hours, in: query, schema: {type: integer, enum: [1, 24, 168], default: 1}, description: The window in hours.}
+      responses:
+        "200":
+          description: Chart data.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/DevRequestStats"}
+        "422": *validationFailed
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
   /dev/api/requests/{id}:
     get:
       tags: [Dev]
@@ -6205,6 +6277,27 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/DevExceptionListEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "404": *notFound
+
+  /dev/api/exceptions/stats:
+    get:
+      tags: [Dev]
+      summary: Exceptions per hour over the last day
+      description: >-
+        Captured exceptions per hour for the last 24 hours (every hour present, oldest first) and the six classes seen most recently.
+      operationId: devExceptionStats
+      responses:
+        "200":
+          description: Chart data.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: "#/components/schemas/DevExceptionStats"}
         "401": *unauthorized
         "403": *forbidden
         "404": *notFound
@@ -9412,6 +9505,105 @@ components:
               value: {type: string}
               masked: {type: boolean}
 
+    DevRequestStats:
+      type: object
+      required: [window_hours, status, busiest, slowest]
+      properties:
+        window_hours: {type: integer}
+        status:
+          type: object
+          required: [success, redirect, client_errors, server_errors]
+          properties:
+            success: {type: integer, format: int64, description: 1xx and 2xx.}
+            redirect: {type: integer, format: int64, description: 3xx.}
+            client_errors: {type: integer, format: int64, description: 4xx.}
+            server_errors: {type: integer, format: int64, description: 5xx.}
+        busiest:
+          type: array
+          items: {$ref: "#/components/schemas/DevRouteStat"}
+        slowest:
+          type: array
+          items: {$ref: "#/components/schemas/DevRouteStat"}
+    DevRouteStat:
+      type: object
+      required: [method, route, requests, errors, p95_ms]
+      properties:
+        method: {type: string}
+        route: {type: string, description: "The route pattern (the path when no route matched)."}
+        requests: {type: integer, format: int64}
+        errors: {type: integer, format: int64, description: Answers with status 400 or above.}
+        p95_ms: {type: number}
+    DevExceptionStats:
+      type: object
+      required: [hours, classes]
+      properties:
+        hours:
+          type: array
+          items:
+            type: object
+            required: [hour, occurrences]
+            properties:
+              hour: {type: string, format: date-time}
+              occurrences: {type: integer, format: int64}
+        classes:
+          type: array
+          items:
+            type: object
+            required: [class, occurrences, latest_id, latest_message, first_seen, last_seen]
+            properties:
+              class: {type: string}
+              occurrences: {type: integer, format: int64}
+              latest_id: {type: integer, format: int64}
+              latest_message: {type: string}
+              first_seen: {type: string, format: date-time}
+              last_seen: {type: string, format: date-time}
+    DevDeliveryStats:
+      type: object
+      required: [window_days, days, channels]
+      properties:
+        window_days: {type: integer}
+        days:
+          type: array
+          items: {$ref: "#/components/schemas/DevDeliveryCounts"}
+        channels:
+          type: array
+          items: {$ref: "#/components/schemas/DevDeliveryCounts"}
+    DevDeliveryCounts:
+      type: object
+      required: [sent, failed, queued, skipped]
+      properties:
+        day: {type: string, format: date-time, description: Set on a day row.}
+        channel: {type: string, description: Set on a channel row.}
+        sent: {type: integer, format: int64}
+        failed: {type: integer, format: int64}
+        queued: {type: integer, format: int64}
+        skipped: {type: integer, format: int64}
+    DevDatabasePools:
+      type: object
+      required: [checked_at, busy_share, pools]
+      properties:
+        checked_at: {type: string, format: date-time}
+        busy_share:
+          type: number
+          description: Share of a pool's maximum in use at which it counts as busy (0.8).
+        pools:
+          type: array
+          items: {$ref: "#/components/schemas/DevDatabasePool"}
+    DevDatabasePool:
+      type: object
+      required: [name, active, idle, constructing, total, max, acquires, waited, canceled, avg_acquire_ms, busy]
+      properties:
+        name: {type: string, example: primary}
+        active: {type: integer, format: int32, description: Connections in use right now.}
+        idle: {type: integer, format: int32, description: Open connections nobody is using.}
+        constructing: {type: integer, format: int32, description: Connections being opened.}
+        total: {type: integer, format: int32, description: "active + idle + constructing."}
+        max: {type: integer, format: int32, description: "The pool's maximum (DATABASE_MAX_CONNS, or DATABASE_<NAME>_MAX_CONNS)."}
+        acquires: {type: integer, format: int64, description: "Connections handed out since the process started."}
+        waited: {type: integer, format: int64, description: "Of those, how many found the pool empty and had to wait."}
+        canceled: {type: integer, format: int64, description: "Waits that gave up (the request was canceled)."}
+        avg_acquire_ms: {type: number, description: "Mean time to get a connection, waits included."}
+        busy: {type: boolean, description: "active is at busy_share of max or more."}
     DevPackagesReport:
       type: object
       required: [go_version, module, packages]

@@ -8,17 +8,38 @@ All notable changes to this project are documented here. The format follows
 
 ## [0.1.8] - 2026-11-25
 
-Fixes: logging out no longer signs out your other browsers, sign-up refuses a plan it cannot
-finish on before creating anything, error messages say when a record is still in use, and the
-developer tooling works the same in PowerShell as in a Unix shell.
+The developer dashboard gets charts on its panels (Recharts) and shows database connection
+pools, and the health check warns before a pool runs out. Fixes: logging out no longer signs out
+your other browsers, sign-up refuses a plan it cannot finish on before creating anything, error
+messages say when a record is still in use, and the developer tooling works the same in
+PowerShell as in a Unix shell.
 
 **Upgrading from 0.1.6:** no migrations. `POST /api/v1/logout` now revokes only the token that
 made the request; `device` is optional. If you implement `authn.Authenticator` yourself, `Revoke`
 takes the token id instead of the device name. A `.env` copied from an older `.env.example` may
-still carry `KEY=   # comment` lines; move those comments to their own line.
+still carry `KEY=   # comment` lines; move those comments to their own line. A custom
+`delivery.Repository` implementation needs a `CountByDay` method (the Deliveries charts).
+
+### Added
+
+- Charts on the dashboard's panels, drawn with Recharts: **Requests** (status classes over 1 hour,
+  24 hours or 7 days; the busiest or slowest routes), **Exceptions** (per hour over the last day,
+  by class), **Queue** (each queue's jobs), **Deliveries** (per day by outcome, by channel),
+  **Files** (by type and disk, size or count) and **Sessions** (active tokens by last use). New
+  endpoints `GET /dev/api/requests/stats`, `/dev/api/exceptions/stats` and
+  `/dev/api/deliveries/stats`; the chart kit (`DonutChart`, `HBarChart`, `TimeBars`) and six
+  series colour tokens are on `/dev/kit`.
+- The dashboard shows database connection pools: **Inspector → System → Database pools** (in
+  use, idle, opening, maximum, requests that waited, average time to get a connection, read live
+  from `GET /dev/api/inspector/database`) and `3/20 active` next to the Database check on the
+  Overview. The public `/api/health` report never shows the counts.
 
 ### Changed
 
+- The Database health check warns when a pool has 80% or more of its connections in use
+  (`primary: busy`); the API stays ready.
+- The dashboard's charts (the Overview traffic chart and its sparklines) are drawn with Recharts,
+  as in the client app, instead of hand-drawn SVG. They look and behave as before.
 - `POST /api/v1/logout` revokes the calling token; the body is optional.
 - `make skills-sync` and `make skills-check` run `go run ./cmd/skills`, and `make gen-check`
   calls `git --no-pager diff`, so they work in PowerShell and in non-interactive shells.
