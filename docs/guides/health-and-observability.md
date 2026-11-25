@@ -182,7 +182,7 @@ Write `127.0.0.1`, not `localhost`: on Windows `localhost` resolves to `::1` fir
 binary listens on `127.0.0.1` only, so the exporter would drop every trace without an error. The
 container publishes on both, so `127.0.0.1` works for either.
 
-Open http://localhost:16686 and pick the service `ims-go-admin-starter` (your `APP_NAME`). The list shows
+Open http://localhost:16686 and pick the service `ims-go-saas-kit` (your `APP_NAME`). The list shows
 every request and scheduled task, with failed ones flagged; click one for its timeline.
 `ims about` (or the dashboard's **Commands → About**) reports whether tracing is on.
 

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
+	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/testkit"
 )
 
 func TestAssignPlanEndpoint(t *testing.T) {

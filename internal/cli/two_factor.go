@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/app"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/app"
 )
 
 func registerTwoFactorCommands(registry *Registry, state *State) error {

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/storage"
 )
 
 // bucketDisk stands in for an S3/R2/MinIO disk with a configurable visibility.

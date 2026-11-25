@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
 )
 
 // Two-factor enrolment. These are session routes: they run

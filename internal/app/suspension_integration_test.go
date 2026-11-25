@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/testkit"
 )
 
 // Suspended tenants: is_active false locks a tenant's users out

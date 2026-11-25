@@ -10,19 +10,19 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
-	billingservice "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/tenants"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/access"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
+	billingservice "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/tenants"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // Documents accepted at sign-up.

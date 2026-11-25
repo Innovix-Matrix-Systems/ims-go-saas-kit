@@ -2,7 +2,7 @@
 title: Architecture overview
 ---
 
-How the IMS Go Admin Starter actually works, subsystem by subsystem. For the short version read
+How the IMS Go SaaS Kit actually works, subsystem by subsystem. For the short version read
 [How it works](../getting-started/how-it-works.mdx); for *why* things are the way they are, read the
 [design decisions](./decisions.md). [`AGENTS.md`](../../AGENTS.md) is the working guide for humans
 and AI agents.

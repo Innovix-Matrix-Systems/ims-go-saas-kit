@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/featureflags"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/health"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/telemetry"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/backup"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/featureflags"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/health"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/telemetry"
 )
 
 // The Overview answers "is anything wrong right now?" in one call: health

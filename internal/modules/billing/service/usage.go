@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 )
 
 // UsageItem is one plan limit and how much of it a tenant uses.

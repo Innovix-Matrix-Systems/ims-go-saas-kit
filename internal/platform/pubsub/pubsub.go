@@ -15,7 +15,7 @@ import (
 	"errors"
 	"slices"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
 )
 
 // Channel is the Postgres notification channel every server process LISTENs on.

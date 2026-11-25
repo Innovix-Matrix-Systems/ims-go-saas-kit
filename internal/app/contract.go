@@ -9,7 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 
-	api "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/api"
+	api "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/api"
 )
 
 // ValidateSpec parses and structurally validates an OpenAPI document.

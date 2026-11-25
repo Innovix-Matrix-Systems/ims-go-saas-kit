@@ -304,8 +304,8 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.8...HEAD
-[0.1.8]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.6...v0.1.8
-[0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.5...v0.1.6
-[0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/compare/v0.1.0...v0.1.5
-[0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.6...v0.1.8
+[0.1.6]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.5...v0.1.6
+[0.1.5]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.1.0...v0.1.5
+[0.1.0]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/releases/tag/v0.1.0

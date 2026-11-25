@@ -4,10 +4,10 @@
 # optional: nothing in the app needs it. One image runs every role, chosen by
 # the command:
 #
-#   docker run ims-go-admin-starter serve          # HTTP API + dashboard (default)
-#   docker run ims-go-admin-starter queue:work     # River workers
-#   docker run ims-go-admin-starter schedule       # cron scheduler
-#   docker run ims-go-admin-starter migrate        # apply migrations (a release step)
+#   docker run ims-go-saas-kit serve          # HTTP API + dashboard (default)
+#   docker run ims-go-saas-kit queue:work     # River workers
+#   docker run ims-go-saas-kit schedule       # cron scheduler
+#   docker run ims-go-saas-kit migrate        # apply migrations (a release step)
 #
 # compose.yaml wires them together with PostgreSQL.
 
@@ -37,7 +37,7 @@ COPY . .
 COPY --from=web /src/web/dev/dist ./web/dev/dist
 COPY --from=app /src/web/app/dist ./web/app/dist
 RUN go build -trimpath \
-      -ldflags "-s -w -X github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version.Version=$(cat VERSION)" \
+      -ldflags "-s -w -X github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/version.Version=$(cat VERSION)" \
       -o /out/ims ./cmd/app
 
 # ── 3. Runtime ───────────────────────────────────────────────────────────────

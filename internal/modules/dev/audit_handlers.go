@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
 )
 
 // Audit log panel: every sign-in and every action taken in the dashboard,

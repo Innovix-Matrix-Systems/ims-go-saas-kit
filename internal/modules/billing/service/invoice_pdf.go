@@ -9,7 +9,7 @@ import (
 
 	"codeberg.org/go-pdf/fpdf"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 )
 
 // PDF returns the invoice of one of the tenant's payments as a PDF, the same

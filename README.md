@@ -1,9 +1,9 @@
-# IMS Go Admin Starter
+# IMS Go SaaS Kit
 
-[![CI](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/actions/workflows/ci.yml)
+[![CI](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-0.1.8-ff5c1a)
 [![API docs](https://img.shields.io/badge/API%20docs-website-ff5c1a)](https://ims-go-api-starter.innovixmatrixsystem.com)
-[![Use this template](https://img.shields.io/badge/use%20this-template-2ea44f?logo=github)](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/generate)
+[![Use this template](https://img.shields.io/badge/use%20this-template-2ea44f?logo=github)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate)
 <br>
 ![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-4169E1?logo=postgresql&logoColor=white)
@@ -14,7 +14,7 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![CGO free](https://img.shields.io/badge/CGO-free-00ADD8)
 
-**A multi-tenant SaaS admin, ready to build on.** IMS Go Admin Starter is the
+**A multi-tenant SaaS admin, ready to build on.** IMS Go SaaS Kit is the
 [IMS Go API Starter](https://github.com/Innovix-Matrix-Systems/ims-go-api-starter) with the app your
 customers and your staff actually use: an organization workspace (members, roles, billing, files,
 dashboards) and a staff console (organizations, plans, payments, announcements, audit), in English
@@ -96,7 +96,7 @@ density presets, and layouts that work on a phone.
 ## Quick start
 
 <!-- rename:keep -->
-Building a product on it? Press **[Use this template](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/generate)** on GitHub to get a repository of your own
+Building a product on it? Press **[Use this template](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate)** on GitHub to get a repository of your own
 (clean history, not a fork), clone it, and give it your names in one step:
 
 ```bash

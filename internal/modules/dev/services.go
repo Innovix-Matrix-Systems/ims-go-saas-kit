@@ -6,13 +6,13 @@ import (
 	"io"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
-	filesmod "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/files"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/access"
+	filesmod "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/files"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // The dashboard's service layer. Handlers parse the request, call one of

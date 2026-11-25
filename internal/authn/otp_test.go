@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	cachememory "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/memory"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	cachememory "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache/memory"
 )
 
 type recordingDeliverer struct {

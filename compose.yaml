@@ -7,7 +7,7 @@
 #   docker compose logs -f api
 #
 # Tracing (optional): Jaeger receives the app's OpenTelemetry traces; the UI is
-# at http://localhost:16686 (service ims-go-admin-starter).
+# at http://localhost:16686 (service ims-go-saas-kit).
 #
 #   OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 docker compose --profile otel up -d
 #
@@ -17,7 +17,7 @@
 
 x-app: &app
   build: .
-  image: ims-go-admin-starter:local
+  image: ims-go-saas-kit:local
   env_file:
     - path: .env
       required: false

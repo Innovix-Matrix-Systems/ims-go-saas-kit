@@ -7,7 +7,7 @@
 // mistaken for a release.
 package version
 
-import project "github.com/Innovix-Matrix-Systems/ims-go-admin-starter"
+import project "github.com/Innovix-Matrix-Systems/ims-go-saas-kit"
 
 // Version is the build version, e.g. "0.1.0" (release) or "0.1.0-dev".
 var Version = "dev"

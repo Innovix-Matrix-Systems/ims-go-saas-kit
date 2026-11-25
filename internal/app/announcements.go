@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/notifications"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/announcements"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/notifications"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // notifyAnnouncement delivers an announcement to one organization's members

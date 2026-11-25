@@ -5,13 +5,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dev"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/scheduler"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/announcements"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/backup"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/dataprocessing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/dev"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/scheduler"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // schedule lists the recurring tasks run by `ims schedule` (Laravel's

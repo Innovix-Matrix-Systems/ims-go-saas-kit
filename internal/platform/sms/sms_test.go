@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
 )
 
 func TestNewSelectsTheDriver(t *testing.T) {

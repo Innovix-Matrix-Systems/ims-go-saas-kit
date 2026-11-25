@@ -6,7 +6,7 @@ description: Erase a user's personal data in every module, or hand them a copy o
 A user can ask for their account to be deleted, or for a copy of everything the application
 holds about them. Admins and the CLI can do both for a user, so support can answer a
 data-subject request. The design and its reasons are in
-[`docs/design/account-deletion-and-export.md`](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/blob/main/docs/design/account-deletion-and-export.md).
+[`docs/design/account-deletion-and-export.md`](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/blob/main/docs/design/account-deletion-and-export.md).
 
 ## What erasure does
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	project "github.com/Innovix-Matrix-Systems/ims-go-admin-starter"
+	project "github.com/Innovix-Matrix-Systems/ims-go-saas-kit"
 )
 
 var semver = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?$`)

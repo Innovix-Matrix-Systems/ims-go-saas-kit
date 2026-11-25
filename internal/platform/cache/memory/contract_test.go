@@ -3,8 +3,8 @@ package memory
 import (
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/cachetest"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache/cachetest"
 )
 
 func TestContract(t *testing.T) {

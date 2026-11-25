@@ -4,7 +4,7 @@ import type { Messages } from './en'
 
 export const bn: Messages = {
   // Product names stay as they are in every language.
-  'app.name': 'IMS Go Admin Starter',
+  'app.name': 'IMS Go SaaS Kit',
   'appearance.theme': 'থিম',
   'appearance.accent': 'অ্যাকসেন্ট রং',
   'appearance.density': 'ঘনত্ব',

@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/announcements"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/notifications"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/realtime"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/pubsub"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/announcements"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/notifications"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/realtime"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/pubsub"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/testkit"
 )
 
 // live starts the app's listener and an HTTP server, as `ims serve` does.

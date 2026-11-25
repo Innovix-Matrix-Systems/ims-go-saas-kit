@@ -29,11 +29,11 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
 )
 
 // instrumentation names the tracer every span of the application uses.
-const instrumentation = "github.com/Innovix-Matrix-Systems/ims-go-admin-starter"
+const instrumentation = "github.com/Innovix-Matrix-Systems/ims-go-saas-kit"
 
 // Settings configure tracing.
 type Settings struct {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn/social"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn/social"
 )
 
 // SocialLoginRequest is a sign-in proven by an outside provider. Which

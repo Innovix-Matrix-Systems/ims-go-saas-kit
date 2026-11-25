@@ -14,7 +14,7 @@ func TestLoadDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if cfg.App.Name != "ims-go-admin-starter" {
+	if cfg.App.Name != "ims-go-saas-kit" {
 		t.Errorf("App.Name = %q, want default", cfg.App.Name)
 	}
 	if cfg.HTTP.ListenAddr != ":8080" {

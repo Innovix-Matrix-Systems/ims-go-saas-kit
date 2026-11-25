@@ -18,12 +18,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	project "github.com/Innovix-Matrix-Systems/ims-go-admin-starter"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
-	webdev "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/web/dev"
+	project "github.com/Innovix-Matrix-Systems/ims-go-saas-kit"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
+	webdev "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/web/dev"
 )
 
 // InspectorService answers "what is this app made of": its routes, roles and
@@ -58,7 +58,7 @@ type RouteReport struct {
 	Routes []RouteInfo `json:"routes"`
 }
 
-const modulePrefix = "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/"
+const modulePrefix = "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/"
 
 var funcSuffix = regexp.MustCompile(`(\.func\d+)+$|-fm$`)
 

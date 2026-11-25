@@ -4,7 +4,7 @@ import (
 	"os"
 	_ "time/tzdata"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/cli"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/cli"
 )
 
 func main() {

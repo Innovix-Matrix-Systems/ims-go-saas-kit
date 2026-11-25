@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"go.opentelemetry.io/otel"

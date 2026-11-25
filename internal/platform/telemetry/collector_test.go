@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
 )
 
 type recordingSink struct {

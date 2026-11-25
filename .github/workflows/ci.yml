@@ -172,7 +172,7 @@ jobs:
           CGO_ENABLED: "0"
           GOOS: linux
           GOARCH: ${{ matrix.goarch }}
-        run: go build -trimpath -ldflags "-X github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version.Version=ci" -o /tmp/ims-linux-${{ matrix.goarch }} ./cmd/app
+        run: go build -trimpath -ldflags "-X github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/version.Version=ci" -o /tmp/ims-linux-${{ matrix.goarch }} ./cmd/app
 
   integration:
     runs-on: ubuntu-latest

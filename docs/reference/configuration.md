@@ -18,7 +18,7 @@ effective values with secrets masked.
 | Variable | Example | Notes |
 | --- | --- | --- |
 | `APP_ENV` | `local` |  |
-| `APP_NAME` | `ims-go-admin-starter` |  |
+| `APP_NAME` | `ims-go-saas-kit` |  |
 | `APP_DEBUG` | `true` |  |
 | `APP_URL` | `http://localhost:8080` |  |
 | `APP_KEY` | — | `ims key:generate`; empty locally = a public dev key |
@@ -177,7 +177,7 @@ effective values with secrets masked.
 | `MAIL_PASSWORD` | — |  |
 | `MAIL_ENCRYPTION` | — | tls \| starttls \| "" (plain) |
 | `MAIL_FROM_ADDRESS` | `hello@example.com` |  |
-| `MAIL_FROM_NAME` | `IMS Go Admin Starter` |  |
+| `MAIL_FROM_NAME` | `IMS Go SaaS Kit` |  |
 | `MAIL_MAX_ATTACHMENT_MB` | `10` | *Optional.* total attachments per mail |
 | `SMS_DRIVER` | `log` | log \| twilio |
 | `TWILIO_ACCOUNT_SID` | `/ TWILIO_AUTH_TOKEN= / TWILIO_FROM=` | *Optional.* |
