@@ -1,4 +1,4 @@
-# <img src="docsite/src/assets/logo.svg" alt="" width="44" align="center"> IMS Go SaaS Kit
+# <img src="docsite/src/assets/logo.svg" alt="" width="40" align="top"> IMS Go SaaS Kit
 
 [![CI](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-0.2.3-ff5c1a)
