@@ -1,0 +1,1 @@
+{{if .Data.inviter}}{{.Data.inviter}} hat Sie{{else}}Sie wurden{{end}} zu {{.Brand.Name}} eingeladen: {{.Data.link}}

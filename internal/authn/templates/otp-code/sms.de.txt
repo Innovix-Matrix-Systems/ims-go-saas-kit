@@ -1,0 +1,1 @@
+{{.Data.code}} ist Ihr Anmeldecode für {{.Brand.Name}}. Er läuft in {{duration .Data.minutes}} ab.

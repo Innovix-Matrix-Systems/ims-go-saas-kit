@@ -1,0 +1,18 @@
+{
+  "privacy.exportTitle": "Ihre Daten herunterladen",
+  "privacy.exportBody": "Wir bereiten eine Datei mit Ihren Kontodaten vor und senden Ihnen einen Link per E-Mail. Ein Export pro Tag.",
+  "privacy.exportStart": "Meine Daten vorbereiten",
+  "privacy.exportStarted": "Wir bereiten Ihre Daten vor. Sie erhalten eine E-Mail, sobald sie bereit sind.",
+  "privacy.exportReady": "Ihre Daten sind bereit.",
+  "privacy.download": "Herunterladen",
+  "privacy.exportUntil": "Sie können sie bis {date} herunterladen.",
+  "privacy.exportFailed": "Die Vorbereitung Ihrer Daten ist fehlgeschlagen. Versuchen Sie es erneut.",
+  "privacy.exportGone": "Dieser Export ist nicht mehr verfügbar: Er ist abgelaufen oder wurde entfernt. Bereiten Sie einen neuen vor.",
+  "privacy.deleteTitle": "Mein Konto löschen",
+  "privacy.deleteBody": "Ihr Konto wird nach einer Wartezeit gelöscht. Sie werden jetzt abgemeldet und können sich bis dahin anmelden und die Löschung abbrechen.",
+  "privacy.deleteStart": "Mein Konto löschen",
+  "privacy.deleteConfirmLabel": "Geben Sie DELETE zur Bestätigung ein",
+  "privacy.deleteScheduled": "Ihr Konto wird am {date} gelöscht.",
+  "privacy.cancelDeletion": "Löschung abbrechen",
+  "privacy.deletionCancelled": "Löschung abgebrochen. Ihr Konto bleibt bestehen."
+}

@@ -1,0 +1,7 @@
+{
+    "notifications.renewal_reminder.title": {
+        "one": "Ihr Abonnement wird in {{.Count}} Tag verlängert",
+        "other": "Ihr Abonnement wird in {{.Count}} Tagen verlängert"
+    },
+    "notifications.renewal_reminder.body": "Das Abonnement läuft am {{.Date}} ab."
+}

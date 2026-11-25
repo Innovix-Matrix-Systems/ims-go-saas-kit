@@ -1,0 +1,7 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Der angeforderte Export Ihrer personenbezogenen Daten ist bereit. Öffnen Sie diesen Link und laden Sie ihn angemeldet herunter:
+
+{{.Data.url}}
+
+Die Datei wird nach {{.Data.hours}} Stunden gelöscht. Sie enthält personenbezogene Daten: Bewahren Sie sie sicher auf.

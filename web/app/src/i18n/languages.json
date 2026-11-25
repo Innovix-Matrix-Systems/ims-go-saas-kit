@@ -1,4 +1,5 @@
 [
   { "code": "en", "label": "English", "english": "English", "intl": "en", "dir": "ltr", "digits": "latn", "reviewed": true },
-  { "code": "bn", "label": "বাংলা", "english": "Bangla", "intl": "bn-BD", "dir": "ltr", "digits": "beng", "reviewed": true }
+  { "code": "bn", "label": "বাংলা", "english": "Bangla", "intl": "bn-BD", "dir": "ltr", "digits": "beng", "reviewed": true },
+  { "code": "de", "label": "Deutsch", "english": "German", "intl": "de", "dir": "ltr", "digits": "latn", "reviewed": true }
 ]

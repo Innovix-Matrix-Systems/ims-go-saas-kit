@@ -1,0 +1,11 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Jemand wollte mit dieser E-Mail-Adresse eine neue Organisation anlegen, aber Sie haben bereits ein Konto.
+
+Wenn Sie das waren, melden Sie sich stattdessen an:
+{{.Data.login_url}}
+
+Passwort vergessen? Setzen Sie es hier zurück:
+{{.Data.reset_url}}
+
+Wenn Sie das nicht waren, können Sie diese E-Mail ignorieren: Es wurde nichts geändert.

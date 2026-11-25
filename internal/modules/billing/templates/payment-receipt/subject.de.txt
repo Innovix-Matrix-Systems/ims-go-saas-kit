@@ -1,0 +1,1 @@
+Zahlung erhalten: Ihr Tarif {{.Data.plan}} ist aktiv

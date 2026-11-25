@@ -1,0 +1,17 @@
+{
+  "notifications.title": "Benachrichtigungen",
+  "notifications.preferences": "Was wir Ihnen senden",
+  "notifications.mandatory": "Wird immer gesendet",
+  "notifications.channel.mail": "E-Mail",
+  "notifications.channel.sms": "SMS",
+  "notifications.channel.push": "Push",
+  "notifications.empty": "Sie haben keine Benachrichtigungen.",
+  "notifications.markAllRead": "Alle als gelesen markieren",
+  "notifications.unreadLabel": {
+    "one": "{count} ungelesen",
+    "other": "{count} ungelesen"
+  },
+  "notifications.unreadOnly": "Nur ungelesene",
+  "notifications.viewAll": "Alle Benachrichtigungen anzeigen",
+  "notifications.loadMore": "Mehr laden"
+}

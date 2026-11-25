@@ -1,0 +1,14 @@
+{
+  "status.suspendedTitle": "Ihre Organisation ist gesperrt",
+  "status.suspendedBody": "Der Zugang zu dieser Organisation wurde angehalten. Wenden Sie sich an Ihre Administration oder unser Support-Team, um ihn wiederherzustellen.",
+  "status.maintenanceTitle": "Wir sind gleich wieder da",
+  "status.maintenanceBody": "Der Dienst wird gerade gewartet. Bitte versuchen Sie es in ein paar Minuten erneut.",
+  "status.twoFactorTitle": "Zwei-Faktor-Authentifizierung erforderlich",
+  "status.twoFactorBody": "Ihre Organisation verlangt die Zwei-Faktor-Authentifizierung. Richten Sie sie ein, um fortzufahren.",
+  "status.errorTitle": "Etwas ist schiefgelaufen",
+  "status.errorBody": "Diese Seite konnte nicht angezeigt werden. Sie können es erneut versuchen oder zur Startseite zurückkehren.",
+  "status.reference": "Referenz: {id}",
+  "status.notFoundTitle": "Seite nicht gefunden",
+  "status.notFoundBody": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+  "status.home": "Zur Startseite"
+}

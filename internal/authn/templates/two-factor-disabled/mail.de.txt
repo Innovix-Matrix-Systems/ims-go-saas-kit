@@ -1,0 +1,5 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Die Zwei-Faktor-Anmeldung wurde am {{.Data.when}}{{if .Data.reset}} von einer Administratorin oder einem Administrator{{end}} für Ihr Konto ausgeschaltet. Jetzt genügt Ihr Passwort zur Anmeldung.
+
+Wenn Sie das nicht erwartet haben, ändern Sie jetzt Ihr Passwort und schalten Sie die Zwei-Faktor-Anmeldung wieder ein.

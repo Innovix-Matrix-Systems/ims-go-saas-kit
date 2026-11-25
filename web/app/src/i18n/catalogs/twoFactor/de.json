@@ -1,0 +1,33 @@
+{
+  "twoFactor.setupTitle": "Zwei-Faktor-Authentifizierung einrichten",
+  "twoFactor.setupSubtitle": "Ihre Organisation verlangt bei der Anmeldung einen zweiten Schritt. Er schützt Ihr Konto, selbst wenn Ihr Passwort bekannt wird.",
+  "twoFactor.methodApp": "Authentifizierungs-App",
+  "twoFactor.methodAppHint": "Empfohlen. Funktioniert offline (Google Authenticator, Microsoft Authenticator, 1Password…).",
+  "twoFactor.methodEmail": "E-Mail-Code",
+  "twoFactor.methodEmailHint": "Bei jeder Anmeldung erhalten Sie einen Code per E-Mail.",
+  "twoFactor.passwordPrompt": "Bestätigen Sie mit Ihrem Passwort, um fortzufahren.",
+  "twoFactor.start": "Weiter",
+  "twoFactor.scan": "Scannen Sie diesen Code mit Ihrer Authentifizierungs-App und geben Sie dann den angezeigten 6-stelligen Code ein.",
+  "twoFactor.manual": "Scannen nicht möglich? Geben Sie stattdessen diesen Schlüssel ein:",
+  "twoFactor.emailSent": "Wir haben Ihnen einen 6-stelligen Code gesendet. Geben Sie ihn unten ein.",
+  "twoFactor.code": "6-stelliger Code",
+  "twoFactor.confirm": "Einschalten",
+  "twoFactor.codesTitle": "Speichern Sie Ihre Wiederherstellungscodes",
+  "twoFactor.codesBody": "Jeder Code meldet Sie einmal an, falls Sie Ihr Telefon oder Ihr Postfach verlieren. Sie werden nur jetzt angezeigt.",
+  "twoFactor.copyCodes": "Codes kopieren",
+  "twoFactor.downloadCodes": "Herunterladen",
+  "twoFactor.savedCodes": "Ich habe meine Wiederherstellungscodes gespeichert",
+  "twoFactor.finish": "Fertig",
+  "twoFactor.status": "Zwei-Faktor-Authentifizierung",
+  "twoFactor.on": "An",
+  "twoFactor.off": "Aus",
+  "twoFactor.required": "Von Ihrer Organisation verlangt",
+  "twoFactor.codesLeft": {
+    "one": "Noch {count} Wiederherstellungscode",
+    "other": "Noch {count} Wiederherstellungscodes"
+  },
+  "twoFactor.enable": "Zwei-Faktor einschalten",
+  "twoFactor.disable": "Ausschalten",
+  "twoFactor.regenerate": "Neue Wiederherstellungscodes",
+  "twoFactor.disableConfirm": "Zwei-Faktor-Authentifizierung ausschalten? Ihre anderen Geräte werden abgemeldet."
+}

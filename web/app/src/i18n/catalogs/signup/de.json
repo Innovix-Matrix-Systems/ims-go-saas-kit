@@ -1,0 +1,12 @@
+{
+  "signup.title": "Organisation anlegen",
+  "signup.subtitle": "Richten Sie Ihre Organisation und Ihr eigenes Konto ein. Als Nächstes bestätigen Sie Ihre E-Mail-Adresse.",
+  "signup.name": "Ihr Name",
+  "signup.organization": "Name der Organisation",
+  "signup.phone": "Telefon",
+  "signup.acceptTerms": "Ich akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung.",
+  "signup.submit": "Organisation anlegen",
+  "signup.checkEmailTitle": "Sehen Sie in Ihr Postfach",
+  "signup.checkEmailBody": "Wir haben einen Link an {email} gesendet. Öffnen Sie ihn, um Ihre Adresse zu bestätigen, und melden Sie sich dann an, um die Einrichtung abzuschließen.",
+  "signup.closed": "Die Registrierung ist geschlossen. Kontaktieren Sie uns, um eine Organisation zu eröffnen."
+}

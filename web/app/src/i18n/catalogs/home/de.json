@@ -1,0 +1,12 @@
+{
+  "home.greeting": "Willkommen, {name}",
+  "home.subtitle": "Hier ist ein Überblick über Ihre Organisation.",
+  "home.organization": "Organisation",
+  "home.branch": "Aktive Filiale",
+  "home.roles": "Ihre Rollen",
+  "home.permissions": "Berechtigungen",
+  "home.lastSignIn": "Letzte Anmeldung",
+  "home.never": "Nie",
+  "home.staffSubtitle": "Das passiert gerade auf der Plattform.",
+  "home.paymentsToReview": "Zu prüfende Zahlungen"
+}

@@ -1,0 +1,4 @@
+<p>Hallo{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Die Zwei-Faktor-Anmeldung wurde am <strong>{{.Data.when}}</strong> für Ihr Konto eingeschaltet, mit {{if eq .Data.method "totp"}}einer Authentifizierungs-App{{else}}Codes, die an diese E-Mail-Adresse gesendet werden{{end}}.</p>
+<p>Bewahren Sie Ihre Wiederherstellungscodes sicher auf: Jeder meldet Sie einmal an, falls Sie {{if eq .Data.method "totp"}}Ihr Telefon{{else}}Ihr Postfach{{end}} verlieren.</p>
+<p>Wenn Sie das nicht waren, ändern Sie jetzt Ihr Passwort und wenden Sie sich an Ihre Administration.</p>

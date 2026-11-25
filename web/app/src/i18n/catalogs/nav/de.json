@@ -1,0 +1,19 @@
+{
+  "nav.group.workspace": "Arbeitsbereich",
+  "nav.group.account": "Konto",
+  "nav.home": "Start",
+  "nav.profile": "Ihr Profil",
+  "nav.collapse": "Einklappen",
+  "nav.expand": "Seitenleiste ausklappen",
+  "nav.openMenu": "Menü öffnen",
+  "nav.searchOrJump": "Suchen oder springen zu…",
+  "nav.shortcuts": "Tastenkürzel",
+  "nav.group.organization": "Organisation",
+  "nav.group.console": "Konsole",
+  "nav.resize": "Ziehen, um die Seitenleiste anzupassen",
+  "nav.orgSettings": "Organisationseinstellungen",
+  "nav.jobs": "Aufträge",
+  "nav.breadcrumb": "Sie sind hier",
+  "nav.organization": "Organisation",
+  "nav.account": "Konto"
+}

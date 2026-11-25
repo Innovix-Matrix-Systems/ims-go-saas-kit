@@ -1,0 +1,1 @@
+Neue Anmeldung bei Ihrem {{.Brand.Name}}-Konto

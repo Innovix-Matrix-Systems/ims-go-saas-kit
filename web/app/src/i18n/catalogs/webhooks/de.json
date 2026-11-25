@@ -1,0 +1,42 @@
+{
+  "webhooks.subtitle": "Senden Sie Ereignisse in Echtzeit an Ihre eigenen Systeme.",
+  "webhooks.endpoint": "Endpunkt",
+  "webhooks.create": "Endpunkt hinzufügen",
+  "webhooks.createTitle": "Webhook-Endpunkt hinzufügen",
+  "webhooks.url": "URL",
+  "webhooks.urlHint": "Eine https-Adresse, die POST-Anfragen annimmt.",
+  "webhooks.description": "Beschreibung",
+  "webhooks.events": "Ereignisse",
+  "webhooks.allEvents": "Alle Ereignisse (auch künftige)",
+  "webhooks.active": "Aktiv",
+  "webhooks.disabled": "Deaktiviert",
+  "webhooks.failures": {
+    "one": "{count} Fehlschlag in Folge",
+    "other": "{count} Fehlschläge in Folge"
+  },
+  "webhooks.empty": "Noch keine Endpunkte.",
+  "webhooks.secretTitle": "Signaturgeheimnis",
+  "webhooks.secretHint": "Kopieren Sie es jetzt: Es wird nur einmal angezeigt. Prüfen Sie damit den Header webhook-signature.",
+  "webhooks.save": "Endpunkt speichern",
+  "webhooks.enable": "Einschalten",
+  "webhooks.disable": "Ausschalten",
+  "webhooks.test": "Testereignis senden",
+  "webhooks.testSent": "Der Endpunkt antwortete mit {status}.",
+  "webhooks.rotate": "Neues Geheimnis",
+  "webhooks.rotateConfirm": "Ein neues Signaturgeheimnis erzeugen? Zustellungen tragen 24 Stunden lang auch eine Signatur mit dem alten, damit Sie Zeit zum Umstellen haben.",
+  "webhooks.delete": "Endpunkt löschen",
+  "webhooks.deleteConfirm": "Diesen Endpunkt und sein Zustellprotokoll löschen?",
+  "webhooks.deliveries": "Letzte Zustellungen",
+  "webhooks.noDeliveries": "Noch keine Zustellungen.",
+  "webhooks.redeliver": "Erneut senden",
+  "webhooks.redelivered": "Erneut gesendet: Der Endpunkt antwortete mit {status}.",
+  "webhooks.status.pending": "Ausstehend",
+  "webhooks.status.succeeded": "Zugestellt",
+  "webhooks.status.abandoned": "Fehlgeschlagen",
+  "webhooks.attempts": {
+    "one": "{count} Versuch",
+    "other": "{count} Versuche"
+  },
+  "webhooks.response": "Antwort",
+  "webhooks.payload": "Nutzdaten"
+}

@@ -1,0 +1,1 @@
+Ein Wiederherstellungscode wurde zur Anmeldung bei {{.Brand.Name}} verwendet

@@ -1,0 +1,5 @@
+Hallo{{if .To.Name}} {{.To.Name}}{{end}},
+
+Am {{.Data.when}} wurde ein Wiederherstellungscode verwendet, um sich bei Ihrem Konto anzumelden. Sie haben noch {{.Data.left}} Wiederherstellungscode(s).
+
+Wenn Sie das waren, richten Sie die Zwei-Faktor-Anmeldung auf Ihrem neuen Gerät erneut ein und erzeugen Sie neue Wiederherstellungscodes. Wenn nicht, ändern Sie jetzt Ihr Passwort.

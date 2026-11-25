@@ -1,0 +1,42 @@
+{
+  "language": "de",
+  "style": [
+    "Address the reader formally with Sie (Ihr, Ihnen), never du.",
+    "Sentence case in buttons and headings; nouns keep their capital letter.",
+    "German quotation marks „…“; ellipsis …; no space before ! ? : ;.",
+    "Prefer short verb phrases in buttons (Speichern, Anmelden) and avoid long compound chains where a phrase reads better."
+  ],
+  "terms": {
+    "organization": "Organisation",
+    "tenant": "Mandant (only where English says tenant)",
+    "member": "Mitglied",
+    "user": "Benutzer",
+    "role": "Rolle",
+    "permission": "Berechtigung",
+    "branch": "Filiale",
+    "plan": "Tarif",
+    "subscription": "Abonnement",
+    "payment": "Zahlung",
+    "invoice": "Rechnung",
+    "billing": "Abrechnung",
+    "settings": "Einstellungen",
+    "activity log": "Aktivitätsprotokoll",
+    "audit log": "Prüfprotokoll",
+    "notification": "Benachrichtigung",
+    "announcement": "Ankündigung",
+    "background job": "Hintergrundauftrag",
+    "webhook": "Webhook",
+    "endpoint": "Endpunkt",
+    "sign in": "anmelden / Anmeldung",
+    "sign out": "abmelden",
+    "sign up": "registrieren / Registrierung",
+    "two-factor": "Zwei-Faktor",
+    "recovery code": "Wiederherstellungscode",
+    "e-mail": "E-Mail",
+    "password": "Passwort",
+    "staff": "Mitarbeitende / Mitarbeiter",
+    "impersonate": "im Namen handeln",
+    "trial": "Testphase"
+  },
+  "keep": ["IMS Go SaaS Kit", "bKash", "Nagad", "MCP", "Google", "GitHub", "API", "OAuth", "Webhook", "Push", "SMS"]
+}

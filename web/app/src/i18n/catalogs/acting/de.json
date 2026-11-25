@@ -1,0 +1,6 @@
+{
+  "acting.tenant": "Sie handeln im Namen von {name}. Sie arbeiten mit Ihren eigenen Mitarbeiterberechtigungen, und Änderungen werden unter Ihrem Namen protokolliert.",
+  "acting.user": "Sie sind als {name} ({email}) angemeldet. Alles, was Sie tun, läuft als diese Person und wird als vom Support erledigt protokolliert.",
+  "acting.stop": "Handeln beenden",
+  "acting.return": "Zurück zu meinem Konto"
+}

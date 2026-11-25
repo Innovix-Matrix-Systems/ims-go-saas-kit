@@ -1,0 +1,13 @@
+{
+  "profile.firstName": "Vorname",
+  "profile.lastName": "Nachname",
+  "profile.displayName": "Anzeigename",
+  "profile.language": "Sprache",
+  "profile.languageDefault": "Sprache der Organisation verwenden",
+  "profile.email": "E-Mail-Adresse",
+  "profile.changeEmail": "E-Mail-Adresse ändern",
+  "profile.newEmail": "Neue E-Mail-Adresse",
+  "profile.changeEmailSent": "Wir haben einen Bestätigungslink an {email} gesendet. Ihre Adresse ändert sich, wenn Sie ihn öffnen.",
+  "profile.sendLink": "Bestätigungslink senden",
+  "profile.languageHint": "E-Mails an Sie werden ebenfalls in dieser Sprache geschrieben."
+}

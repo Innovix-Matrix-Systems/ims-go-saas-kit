@@ -1,0 +1,9 @@
+{{.Data.title}}
+{{if .Data.body}}
+{{.Data.body}}
+{{end}}{{if .Data.url}}
+Öffnen: {{.Data.url}}
+{{end}}{{if .Data.unsubscribe}}
+--
+Sie erhalten diese E-Mail aufgrund Ihrer Benachrichtigungseinstellungen. Diese E-Mails abbestellen: {{.Data.unsubscribe}}
+{{end}}

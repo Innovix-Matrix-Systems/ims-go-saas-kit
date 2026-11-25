@@ -1,0 +1,17 @@
+{
+  "start.title": "Organisation startklar machen",
+  "start.progress": "{done} von {total} erledigt",
+  "start.dismiss": "Ausblenden",
+  "start.done": "Erledigt",
+  "start.go": "Einrichten",
+  "start.email": "E-Mail-Adresse bestätigen",
+  "start.emailHint": "Damit Sie Benachrichtigungen erhalten und Ihr Passwort zurücksetzen können.",
+  "start.team": "Team einladen",
+  "start.teamHint": "Fügen Sie die Personen hinzu, die mit Ihnen arbeiten.",
+  "start.twoFactor": "Zwei-Faktor-Anmeldung einschalten",
+  "start.twoFactorHint": "Schützt Ihr Konto, selbst wenn Ihr Passwort bekannt wird.",
+  "start.plan": "Tarif wählen",
+  "start.planHint": "Wählen Sie den Tarif, der zu Ihrer Organisation passt.",
+  "start.brand": "Logo hinzufügen",
+  "start.brandHint": "Es erscheint in der App und in E-Mails an Ihre Mitglieder."
+}

@@ -1,0 +1,5 @@
+<p>Hallo{{if .To.Name}} {{.To.Name}}{{end}},</p>
+<p>Bitte bestätigen Sie Ihre E-Mail-Adresse.</p>
+<p style="margin:24px 0;"><a href="{{.Data.link}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">E-Mail-Adresse bestätigen</a></p>
+<p style="font-size:13px;color:#6b7785;">Oder öffnen Sie diesen Link: <a href="{{.Data.link}}">{{.Data.link}}</a></p>
+<p>Der Link läuft in {{duration .Data.minutes}} ab.</p>

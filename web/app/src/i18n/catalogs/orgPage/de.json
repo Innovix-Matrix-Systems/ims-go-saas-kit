@@ -1,0 +1,14 @@
+{
+  "orgPage.since": "Seit {date}",
+  "orgPage.edit": "Details bearbeiten",
+  "orgPage.editHint": "Der Name und wie Ihre Organisation erreichbar ist.",
+  "orgPage.about": "Über",
+  "orgPage.created": "Erstellt",
+  "orgPage.id": "Organisations-ID",
+  "orgPage.people": "Personen",
+  "orgPage.peopleCount": {
+    "one": "{count} Mitglied",
+    "other": "{count} Mitglieder"
+  },
+  "orgPage.transferHint": "Um die Organisation an jemand anderen zu übergeben, gehen Sie zu"
+}
