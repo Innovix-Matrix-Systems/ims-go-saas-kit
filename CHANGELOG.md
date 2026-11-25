@@ -32,6 +32,9 @@ be approved. Now every change is priced first and works the way Stripe, Paddle a
   organization's rules. Invoices list their lines and any refund.
 - A paid plan now starts when the payment is confirmed, not when it was submitted, so days spent
   waiting for approval are not lost.
+- **Staff dashboard revenue** leads with the default currency (it used to be whichever currency had
+  the most payments, so a tie could show another one) and lists the other currencies' totals beside
+  it, each in its own currency.
 
 **Upgrading from 0.2.5:** run `ims migrate` (migration 00045) and `ims permission:sync`. Things to
 check:

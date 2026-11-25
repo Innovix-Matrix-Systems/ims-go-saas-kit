@@ -25,13 +25,27 @@ const topN = 5
 
 // Service computes dashboards.
 type Service struct {
-	repo Repository
-	now  func() time.Time
+	repo       Repository
+	now        func() time.Time
+	currencies CurrencySource
+}
+
+// CurrencySource names the default currency (implemented by the currencies
+// module).
+type CurrencySource interface {
+	DefaultCode(ctx context.Context) (string, error)
 }
 
 // NewService creates the dashboard service.
 func NewService(repo Repository) *Service {
 	return &Service{repo: repo, now: time.Now}
+}
+
+// WithCurrencies makes the default currency lead the revenue figures;
+// without it the currency with the most payments leads.
+func (s *Service) WithCurrencies(currencies CurrencySource) *Service {
+	s.currencies = currencies
+	return s
 }
 
 // Window is the period a dashboard covers: the last Days days up to now
@@ -206,8 +220,9 @@ func (s *Service) Platform(ctx context.Context, w Window, show PlatformSections)
 	return out, nil
 }
 
-// revenue is completed payments per currency (most payments first) and what
-// waits for approval.
+// revenue is completed payments per currency (the default currency first,
+// then most payments first) and what waits for approval. Amounts are never
+// converted: each currency is its own figure.
 func (s *Service) revenue(ctx context.Context, w Window) (*PlatformRevenue, error) {
 	rows, err := s.repo.Revenue(ctx, w.Previous, w.Location.String())
 	if err != nil {
@@ -236,7 +251,22 @@ func (s *Service) revenue(ctx context.Context, w Window) (*PlatformRevenue, erro
 		series := w.series(byCurrency[currency])
 		out.Currencies = append(out.Currencies, CurrencyRevenue{Currency: currency, Payments: payments[currency], Amount: series})
 	}
-	// The currency with the most completed payments leads.
-	sort.SliceStable(out.Currencies, func(i, j int) bool { return out.Currencies[i].Payments > out.Currencies[j].Payments })
+	// The default currency leads (the one prices are in), then the currency
+	// with the most completed payments.
+	lead := ""
+	if s.currencies != nil {
+		code, err := s.currencies.DefaultCode(ctx)
+		if err != nil {
+			return nil, err
+		}
+		lead = code
+	}
+	sort.SliceStable(out.Currencies, func(i, j int) bool {
+		a, b := out.Currencies[i], out.Currencies[j]
+		if (a.Currency == lead) != (b.Currency == lead) {
+			return a.Currency == lead
+		}
+		return a.Payments > b.Payments
+	})
 	return out, nil
 }
