@@ -41,6 +41,10 @@ export interface MessageVars {
   'activity.label.branch.deleted': never
   'activity.label.branch.updated': never
   'activity.label.command.run': never
+  'activity.label.currency.created': never
+  'activity.label.currency.default_changed': never
+  'activity.label.currency.deleted': never
+  'activity.label.currency.updated': never
   'activity.label.impersonation.denied': never
   'activity.label.impersonation.request': never
   'activity.label.impersonation.started': never
@@ -110,6 +114,7 @@ export interface MessageVars {
   'activity.showingAll': 'shown' | 'total'
   'activity.subject.announcement': never
   'activity.subject.branch': never
+  'activity.subject.currency': never
   'activity.subject.file': never
   'activity.subject.oauth_client': never
   'activity.subject.oauth_grant': never
