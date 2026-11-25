@@ -11,15 +11,15 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/access"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/branches"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/tenants"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/access"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/branches"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/tenants"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
 )
 
 // SuperAdminEmail is the seeded super-admin account e-mail.

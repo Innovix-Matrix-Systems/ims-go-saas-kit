@@ -1,6 +1,7 @@
 ---
 title: Activity log
 description: Record who changed what in a tenant, like spatie/laravel-activitylog, and read it back as a feed.
+layers: [database, api, app]
 ---
 
 The activity log is the tenant-facing audit trail: "Rahim created branch Dhaka", "Admin assigned
@@ -122,3 +123,7 @@ The `activity.prune` task deletes entries older than `ACTIVITY_RETENTION_DAYS` (
 | read at `/api/v1/activity`: tenant admins their tenant, `activity.view.all` everything | read in the dashboard's **Audit log** |
 | `activity_log` table | `dev_actions` table |
 | `ACTIVITY_RETENTION_DAYS` | `DEV_DASHBOARD_AUDIT_RETENTION_DAYS` |
+
+## In the app
+
+Organization members with `activity.view` read their organization's log under **Activity log** (`/org/activity`); staff read the system audit log, including every impersonation, under **Audit log** in the console (`/console/activity`). Both filter by person, action and date and export.

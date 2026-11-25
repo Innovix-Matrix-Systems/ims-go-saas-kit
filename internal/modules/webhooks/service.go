@@ -17,13 +17,13 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/crypto"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/crypto"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // KindDeliver is the delivery job: one attempt of one delivery.
@@ -67,7 +67,7 @@ type Service struct {
 }
 
 // NewService creates the webhook service. userAgent names the sender
-// ("ims-go-admin-starter-Webhooks/0.1.8").
+// ("ims-go-saas-kit-Webhooks/0.2.0").
 func NewService(repo Repository, encrypter *crypto.Encrypter, engine queue.Engine, cfg config.Webhooks, userAgent string, logger *slog.Logger) *Service {
 	return &Service{
 		repo: repo, encrypter: encrypter, queue: engine, cfg: cfg, userAgent: userAgent, logger: logger,

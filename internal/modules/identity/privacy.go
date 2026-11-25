@@ -9,10 +9,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/privacy"
 )
 
 // PrivacyContributor exports the profile and tombstones the users row

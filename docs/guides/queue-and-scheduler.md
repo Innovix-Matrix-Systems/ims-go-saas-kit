@@ -1,6 +1,7 @@
 ---
 title: Queue and scheduler
 description: Background jobs on River with transactional enqueue and tenant-aware envelopes, and cron tasks in one list.
+layers: [api, dashboard]
 ---
 
 ## Queue jobs

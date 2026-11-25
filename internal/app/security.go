@@ -5,13 +5,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // Account security that needs both authn and the settings module: the

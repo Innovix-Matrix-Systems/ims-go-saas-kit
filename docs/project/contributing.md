@@ -58,8 +58,8 @@ show real commands and real code from this codebase, and prefer a table to a par
 
 | You want to… | Do this |
 | --- | --- |
-| report a bug or suggest a change | [open an issue](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/issues/new) on GitHub, with steps to reproduce |
-| ask how to do something with the starter | [support@innovixmatrixsystem.com](mailto:support@innovixmatrixsystem.com) |
+| report a bug or suggest a change | [open an issue](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/issues/new) on GitHub, with steps to reproduce |
+| ask how to do something with the kit | [support@innovixmatrixsystem.com](mailto:support@innovixmatrixsystem.com) |
 | report a security problem | e-mail [support@innovixmatrixsystem.com](mailto:support@innovixmatrixsystem.com) privately; please don't open a public issue |
 | have the team build or extend your product on it | [hello@innovixmatrixsystem.com](mailto:hello@innovixmatrixsystem.com) |
 | anything else | [info@innovixmatrixsystem.com](mailto:info@innovixmatrixsystem.com) |

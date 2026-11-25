@@ -70,7 +70,7 @@ var Catalog = []Key{
 	{
 		Name:        "system.name",
 		Type:        TypeString,
-		Default:     "IMS Go Admin Starter",
+		Default:     "IMS Go SaaS Kit",
 		Description: "Display name used in notifications and the dashboard.",
 		Group:       "general",
 		SortOrder:   10,

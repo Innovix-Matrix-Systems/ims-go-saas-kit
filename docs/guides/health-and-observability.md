@@ -1,6 +1,7 @@
 ---
 title: Health and observability
 description: Liveness and readiness probes, Prometheus metrics, OpenTelemetry tracing, structured logs, request ids and dashboard telemetry.
+layers: [api, dashboard]
 ---
 
 ## Health checks
@@ -103,11 +104,18 @@ you look into something.
 | every service write | `identity.create`, `billing.approve_payment`, `privacy.erase` … | see below |
 | panics | an `exception` event with the stack | on the request's span |
 
-One request in Jaeger: the route-named server span, then every query it ran, timed. The sign-in
-check (`GetToken`, `GetAuthUser`, `UserPermissionNames`) comes before the handler's own
-`ListBranches` and `CountBranches`.
+One request in Jaeger, with `CACHE_DRIVER=redis`: the route-named server span, then everything it
+did, in order and timed. The rate limiter's Redis `set` and `incrby` come first, then the sign-in
+check (`GetToken`, `GetAuthUser`), cache reads, and the handler's own `ListDataProcessingJobs`,
+`CountDataProcessingJobs` and `ListDataProcessingJobActors`: 22 spans in 7.6 ms.
 
-![A GET /api/v1/branch trace in Jaeger: the request span and its nine SQL queries](../images/tracing-request.png)
+![A GET /api/v1/data-processing/jobs/user trace in Jaeger: the request span with its Redis commands and SQL queries, 22 spans in 7.6 ms](../images/tracing-request-redis.png)
+
+Open a span to see what it ran. A Redis span carries the command and the code that issued it; a
+SQL span carries the whole statement (named after its sqlc query) but never the arguments, so no
+personal data leaves the process. Each span also carries the service, version and environment.
+
+![Two spans opened in Jaeger: a Redis incrby with its command, address and calling function, and db GetAuthUser with its full SQL text](../images/tracing-span-attributes.png)
 
 **Every service write is a span.** Each exported write of a module service (create, update,
 delete, import, erase, sign in, approve a payment, deliver an announcement…) opens one, named
@@ -182,7 +190,7 @@ Write `127.0.0.1`, not `localhost`: on Windows `localhost` resolves to `::1` fir
 binary listens on `127.0.0.1` only, so the exporter would drop every trace without an error. The
 container publishes on both, so `127.0.0.1` works for either.
 
-Open http://localhost:16686 and pick the service `ims-go-admin-starter` (your `APP_NAME`). The list shows
+Open http://localhost:16686 and pick the service `ims-go-saas-kit` (your `APP_NAME`). The list shows
 every request and scheduled task, with failed ones flagged; click one for its timeline.
 `ims about` (or the dashboard's **Commands → About**) reports whether tracing is on.
 
@@ -203,7 +211,7 @@ Prefer Grafana? The compose file keeps a commented `otel-lgtm` service (Grafana 
 and Prometheus in one container, UI on :3000). Use it instead of Jaeger, not beside it: both take
 ports 4317 and 4318.
 
-**Sentry and others.** The starter sends nothing to an error tracker. Sentry, Honeycomb and
+**Sentry and others.** The kit sends nothing to an error tracker. Sentry, Honeycomb and
 Datadog all accept OTLP, so pointing the endpoint at them is usually enough. A vendor SDK can
 still be added in `internal/platform/tracing`.
 

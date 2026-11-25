@@ -10,7 +10,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/testkit"
 )
 
 // OpenTelemetry: with tracing on, a request is one trace — the

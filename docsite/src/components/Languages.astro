@@ -1,0 +1,96 @@
+---
+// The app in another language: the same screens in Bangla, to show that the
+// whole app (and the API's messages) is translated, not only its menus.
+import { Image } from 'astro:assets'
+import homeBn from '../../../docs/images/app-org-dashboard-bn.png'
+import billingBn from '../../../docs/images/app-billing-bn.png'
+---
+
+<section class="band not-content" aria-labelledby="languages-title">
+  <div class="copy">
+    <h2 id="languages-title">Every screen, in your customers' language</h2>
+    <p>
+      The app ships in English and Bangla: menus, charts, dates, numerals and prices, and the API's
+      own messages and e-mails, since every call carries the chosen language. Add a language by
+      translating one file; the build refuses a missing key.
+    </p>
+    <a href="/app/translations-and-theming/">Translations and theming →</a>
+  </div>
+  <div class="shots">
+    <span class="shot">
+      <Image src={homeBn} alt="The organization home in Bangla" widths={[560, 1120]} sizes="(min-width: 64rem) 380px, 92vw" />
+    </span>
+    <span class="shot">
+      <Image src={billingBn} alt="The billing page in Bangla" widths={[560, 1120]} sizes="(min-width: 64rem) 380px, 92vw" />
+    </span>
+  </div>
+</section>
+
+<style>
+  .band {
+    display: grid;
+    gap: 1.5rem;
+    padding-block: 2.5rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+    align-items: center;
+  }
+  .copy {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+    min-width: 0;
+  }
+  h2 {
+    margin: 0;
+    font-family: var(--ims-font-display);
+    font-size: clamp(1.4rem, 1.1rem + 1vw, 1.75rem);
+    font-weight: 700;
+    color: var(--sl-color-white);
+    letter-spacing: -0.015em;
+  }
+  p {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    max-width: 46ch;
+  }
+  a {
+    font: 0.8rem var(--sl-font-mono);
+    color: var(--sl-color-accent);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    min-width: 0;
+  }
+  .shot {
+    display: block;
+    aspect-ratio: 16 / 10;
+    border-radius: 9px;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-gray-6);
+  }
+  .shot :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    display: block;
+  }
+  @media (min-width: 64rem) {
+    .band {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: 2.5rem;
+    }
+  }
+  @media (max-width: 30rem) {
+    .shots {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

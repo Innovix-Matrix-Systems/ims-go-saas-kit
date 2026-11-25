@@ -15,7 +15,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/migrations"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/migrations"
 )
 
 const (

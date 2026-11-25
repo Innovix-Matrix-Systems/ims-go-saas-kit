@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 )
 
 // InvoiceService builds invoices for a tenant's own payments.

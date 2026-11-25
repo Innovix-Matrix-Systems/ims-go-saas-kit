@@ -1,0 +1,28 @@
+[Unit]
+Description=IMS Go SaaS Kit (HTTP server)
+Documentation=https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ims
+Group=ims
+WorkingDirectory=/opt/ims/ims-go-saas-kit/current
+EnvironmentFile=/etc/ims/ims-go-saas-kit/.env
+ExecStart=/opt/ims/ims-go-saas-kit/current/ims serve
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=35
+KillSignal=SIGTERM
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ims/ims-go-saas-kit /var/log/ims/ims-go-saas-kit
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

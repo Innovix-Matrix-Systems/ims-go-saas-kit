@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache/memory"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache/memory"
 )
 
 func testBkashConfig() config.Bkash {

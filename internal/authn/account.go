@@ -6,8 +6,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
 )
 
 // Account returns the signed-in user's record (for account changes such as

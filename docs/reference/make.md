@@ -53,6 +53,8 @@ and docs site), so they work the same on Windows, macOS and Linux. `make help` p
 | `make gen-check` | Verify generated code, docs and skill copies are current; fails on drift. |
 | `make skills-sync` | Copy the agent skills (.agents/skills, canonical) to .claude/skills for Claude Code. |
 | `make skills-check` | Fail when .claude/skills differs from .agents/skills (run `make skills-sync`). |
+| `make docs` | Preview the documentation site with hot reload at http://localhost:4321. |
+| `make docs-build` | Build the documentation site into docsite/dist and check every link. |
 | `make docs-gen` | Regenerate docs/reference (CLI, configuration, permissions, make) from the code. |
 | `make db-up` | Start the local Postgres via docker compose. |
 | `make db-down` | Stop the local Postgres. |

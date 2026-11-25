@@ -15,9 +15,9 @@ The image holds the same binary as a native release (dashboard embedded, version
 
 | Command | Role | Native equivalent |
 | --- | --- | --- |
-| `serve` (default) | HTTP API, dashboard, `/docs` | `ims-go-admin-starter.service` |
-| `queue:work` | River workers | `ims-go-admin-starter-worker.service` |
-| `schedule` | cron scheduler | `ims-go-admin-starter-scheduler.service` |
+| `serve` (default) | HTTP API, dashboard, `/docs` | `ims-go-saas-kit.service` |
+| `queue:work` | River workers | `ims-go-saas-kit-worker.service` |
+| `schedule` | cron scheduler | `ims-go-saas-kit-scheduler.service` |
 | `migrate` | apply migrations, then exit | the release step in `release.sh` |
 | any other command | `db:seed`, `backup:run`, `config:show`… | `ims <command>` |
 

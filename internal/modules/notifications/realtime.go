@@ -3,7 +3,7 @@ package notifications
 import (
 	"context"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/pubsub"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/pubsub"
 )
 
 // RealtimeKind is the live-update event the app answers by refetching the

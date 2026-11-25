@@ -3,7 +3,7 @@ package billing
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
 )
 
 // RegisterPublicRoutes mounts unauthenticated package and callback routes.

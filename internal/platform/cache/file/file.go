@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache"
 )
 
 type envelope struct {

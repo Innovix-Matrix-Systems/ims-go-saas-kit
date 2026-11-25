@@ -1,6 +1,7 @@
 ---
 title: Social login
 description: Sign existing users in with Google or GitHub — how it works, setting up each provider, the front-end and mobile side, production, troubleshooting and adding a provider.
+layers: [api, app]
 ---
 
 A user can sign in with their Google or GitHub account instead of a password, and gets **exactly
@@ -47,9 +48,9 @@ address it has verified. Everything after that is the same as a password login:
   and leave it unverified; signing in on it would hand them that person's account. Such attempts
   get 403 `ACCOUNT_UNVERIFIED`.
 
-### Two kinds of OAuth in this starter
+### Two kinds of OAuth in this kit
 
-They share the vocabulary, nothing else ([OAuth in this starter](oauth.md) explains both side by
+They share the vocabulary, nothing else ([OAuth in this kit](oauth.md) explains both side by
 side, with the terms):
 
 | | Social login (this page) | [MCP connector](mcp.md) |
@@ -308,3 +309,7 @@ The recipe:
 4. A section on this page: where to create the app and what the client sends.
 
 Nothing else changes: the endpoint, the rules, the activity log and the response are shared.
+
+## In the app
+
+The API flow is complete, but the app's sign-in page doesn't show **Continue with Google / GitHub** buttons yet. To add them, link each button to the provider's redirect endpoint and handle the callback on a route in `web/app/src/routes/` (see [Adding a screen](../app/adding-a-screen.md)); the [tutorial](../tutorial/sign-in-with-github.mdx) shows the calls.

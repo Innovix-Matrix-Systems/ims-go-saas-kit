@@ -8,13 +8,13 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/pubsub"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/pubsub"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 const (

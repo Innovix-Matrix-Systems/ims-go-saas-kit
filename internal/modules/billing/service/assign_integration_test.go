@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
-	service "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/service"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
+	service "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
 )
 
 func TestAssignPlan(t *testing.T) {

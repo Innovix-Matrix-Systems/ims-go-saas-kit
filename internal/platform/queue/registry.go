@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
 )
 
 // Registry maps job kinds to their definitions. Duplicate or empty kinds are

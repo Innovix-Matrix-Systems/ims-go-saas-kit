@@ -1,6 +1,6 @@
 ---
 title: Design decisions
-description: The deliberate trade-offs behind the starter — what was chosen, what was rejected, and why.
+description: The deliberate trade-offs behind the kit — what was chosen, what was rejected, and why.
 ---
 
 A starter is mostly decisions. These are the ones worth knowing before you change something,
@@ -59,11 +59,11 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     scoping is the only isolation boundary**: every tenant-scoped query MUST receive and filter on
     an explicit `tenant_id` (and `branch_id` when branch-scoped), and a missing filter is a
     security bug. Coverage is enforced by the per-module isolation tests, not by the database.
-19. **Deployment.** Single binary + systemd (units: `ims-go-admin-starter`, `-scheduler`,
+19. **Deployment.** Single binary + systemd (units: `ims-go-saas-kit`, `-scheduler`,
     `-worker`); a **build-on-server** `deploy/scripts/release.sh` (no container/artifact host) that
     builds a static binary, runs migrations as a gated release step, atomically switches the
     `current` symlink, restarts units and health-checks. Writable state lives under
-    `/var/lib/ims/ims-go-admin-starter` (never inside a release directory). Runbooks live in
+    `/var/lib/ims/ims-go-saas-kit` (never inside a release directory). Runbooks live in
     [Operations](../operations/deploy.md).
 20. **Trusted proxies.** Forwarded headers (`X-Forwarded-For`/`X-Real-IP`) are honoured
     **only** when the immediate peer is listed in `HTTP_TRUSTED_PROXIES`, and the client IP is
@@ -113,8 +113,8 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     builds stamp it with `-ldflags`; every other build reports `<version>-dev`, so a local binary is
     never mistaken for a release. See [Releases](../operations/releases.md).
 30. **Docs live in the repository.** `docs/` is plain Markdown that reads on GitHub, so code and
-    docs change in the same pull request. This repository publishes no site of its own: the
-    backend's guides are also on the API starter's site. Reference pages (CLI, configuration, permissions, Make targets) are generated from the
+    docs change in the same pull request. `docsite/` publishes the same files as a site (Astro
+    Starlight), and its build fails on a page missing from the sidebar or a broken link. Reference pages (CLI, configuration, permissions, Make targets) are generated from the
     code by `ims gen docs` and checked by `make gen-check`, like sqlc and OpenAPI output.
 31. **Act as a user, per request.** `X-Acting-User` swaps the identity inside `tenancy.Resolve`
     for one request instead of issuing a login-as token, so there is no second session to expire
@@ -132,7 +132,7 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     endpoints are not allowed; a new tool is a new REST operation first.
 34. **Our own OAuth server for the connector.** The API is its own OAuth 2.1 authorization server
     (authorization code + PKCE S256, rotating refresh tokens) instead of requiring an external
-    identity provider, so the starter works as a Claude connector out of the box. Clients connect
+    identity provider, so the kit works as a Claude connector out of the box. Clients connect
     with a Client ID Metadata Document (no registration) or a client an admin registered; Dynamic
     Client Registration is deprecated by the MCP spec and not built. An external IdP stays possible:
     the protected resource metadata can name any issuer.
@@ -174,7 +174,7 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     code, a mailed code or a recovery code. The check is bound to the password step by a cached
     marker (five minutes), because a TOTP code exists at any time and would otherwise be a
     password on its own. TOTP is the standard library's HMAC-SHA1 (RFC 6238, tested with the RFC's
-    vectors), so the starter adds no dependency; the API returns the `otpauth://` URL and the client
+    vectors), so the kit adds no dependency; the API returns the `otpauth://` URL and the client
     renders the QR. Requiring two-factor gives a setup-only token instead of refusing the sign-in,
     so a user can enrol without an admin.
 41. **`APP_KEY` encrypts, hashes compare.** Values the app must read back (TOTP secrets, the data
@@ -224,7 +224,7 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     (activity log, dashboard audit) are kept and scrubbed, not deleted, so the trail has no holes;
     the last active Admin of a tenant cannot be erased
     (`docs/design/account-deletion-and-export.md`).
-48. **The client app is embedded in the binary and served at `/`.** `web/app` builds into the binary
+48. **The app is embedded in the binary and served at `/`.** `web/app` builds into the binary
     like the developer dashboard, so one deploy carries the API, the app and both dashboards. Every
     path outside the API and tool prefixes (`/api`, `/dev`, `/docs`, `/storage`, `/mcp`, `/oauth`,
     `/.well-known`, `/metrics`, `/up`) serves the app, so its routes and links in e-mails open it,

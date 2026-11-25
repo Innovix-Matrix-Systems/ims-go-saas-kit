@@ -3,7 +3,7 @@ package billing
 import (
 	"net/http"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
 )
 
 // FeatureCatalogItem is one feature a package can grant.

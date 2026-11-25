@@ -3,8 +3,8 @@ package access
 import (
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
 )
 
 // Role is the domain representation of a role.

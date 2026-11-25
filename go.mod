@@ -1,8 +1,9 @@
-module github.com/Innovix-Matrix-Systems/ims-go-admin-starter
+module github.com/Innovix-Matrix-Systems/ims-go-saas-kit
 
 go 1.26.1
 
 require (
+	codeberg.org/go-pdf/fpdf v0.12.0
 	github.com/aws/aws-sdk-go-v2 v1.47.3
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.9
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.3
@@ -39,7 +40,6 @@ require (
 )
 
 require (
-	codeberg.org/go-pdf/fpdf v0.12.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.22 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.6 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.6 // indirect

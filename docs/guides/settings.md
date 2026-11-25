@@ -1,6 +1,7 @@
 ---
 title: Settings
 description: A typed, grouped settings catalog with global values and per-tenant overrides.
+layers: [api, app, dashboard]
 ---
 
 Settings are runtime-editable values — a display name, whether notifications fan out, how long to
@@ -62,3 +63,7 @@ rail into a group. Every change is audited.
 | grouped, documented options | per-user or per-tenant targeting |
 
 See [Feature flags](./feature-flags.md).
+
+## In the app
+
+Organization owners and admins change their organization's settings under **Org settings** (`/org/settings`), grouped by area; staff change platform settings under **Platform settings** (`/console/settings`). Each setting's catalog entry decides its input in the app (`src/components/SettingField.tsx`).

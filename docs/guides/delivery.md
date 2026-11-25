@@ -1,6 +1,7 @@
 ---
 title: Delivery (mail, SMS, push)
 description: One way to reach a person — templates in plain text or HTML, English and Bangla, mail, SMS and push channels, the queue, retries, the delivery log and how to add your own template or channel.
+layers: [api, dashboard]
 ---
 
 Every feature that contacts a person — one-time codes, password resets, e-mail verification and
@@ -84,7 +85,7 @@ if err := platform.Delivery.Templates().Register(sub); err != nil { … }
 ```
 
 Registering a folder with the name of a built-in replaces it, so you can restyle the OTP mail
-without touching the starter's code. A `_layout/mail.html` folder replaces the layout.
+without touching the kit's code. A `_layout/mail.html` folder replaces the layout.
 
 ## Branding
 

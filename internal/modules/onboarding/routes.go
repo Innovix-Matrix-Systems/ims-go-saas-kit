@@ -3,7 +3,7 @@ package onboarding
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
 )
 
 // RegisterPublicRoutes mounts sign-up (no authentication).

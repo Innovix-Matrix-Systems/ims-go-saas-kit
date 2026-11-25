@@ -12,10 +12,10 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/cache"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/cache"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
 )
 
 // AccountMessage is a message authn sends to a user: a one-time code or a

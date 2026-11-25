@@ -3,10 +3,10 @@ package access
 import (
 	"context"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authz"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/privacy"
 )
 
 // PrivacyContributor covers the user's role assignments.

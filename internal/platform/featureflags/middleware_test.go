@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 type fakeResolver struct {

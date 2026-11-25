@@ -1,6 +1,7 @@
 ---
 title: Validation and errors
 description: Structural validation on requests, business validation in services, and the one RFC 9457 error format.
+layers: [api, app]
 ---
 
 ## Two kinds of validation
@@ -95,3 +96,7 @@ Common codes: `VALIDATION_FAILED` (422), `UNAUTHORIZED` (401), `FORBIDDEN` (403)
 `SOCIAL_ACCOUNT_NOT_FOUND` (403, a social login for an e-mail no user has), `TENANT_SUSPENDED` (403, the user's tenant is [suspended](tenancy.md#suspending-a-tenant)), `MAINTENANCE_MODE` (503 with `Retry-After`, the app is down for [maintenance](maintenance-mode.md); its `detail` is the message given to `ims down`), `SUBSCRIPTION_REQUIRED` / `USAGE_LIMIT_EXCEEDED` (402),
 `RATE_LIMIT_EXCEEDED` (429), `TENANT_CONTEXT_NOT_RESOLVED`, `INTERNAL_SERVER_ERROR` (500). The
 full list is in `internal/apperr`.
+
+## In the app
+
+The app's API client turns every problem response into an `ApiError` with the same fields: `useApiErrors()` shows a 422's field errors under the matching inputs, and other errors in a box with the `trace_id` to quote. App-wide answers (401, two-factor required, suspended, maintenance) switch screens instead. See [The app](../app/overview.md#how-a-screen-talks-to-the-api).

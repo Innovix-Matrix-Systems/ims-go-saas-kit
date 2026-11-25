@@ -1,6 +1,7 @@
 ---
 title: Roles and permissions
 description: The permission catalog in Go, tenant roles, Super-Admin, and where permissions are checked.
+layers: [database, api, app]
 ---
 
 ## The catalog
@@ -95,3 +96,7 @@ notifications) are listed in that test's allowlist with a reason.
 
 The developer dashboard's **Inspector → Roles & permissions** shows the live catalog, every role
 and any drift between the catalog and the database.
+
+## In the app
+
+Organization admins edit roles under **Roles** (`/org/roles`), with permissions grouped by area; staff roles are managed from the console. The app reads the session's permissions to decide which pages (`navigation.ts`) and buttons (`can(session, '…')`) to show. That only hides actions; the route check is what protects them. See [Adding a screen](../app/adding-a-screen.md#5-permissions-in-the-ui).

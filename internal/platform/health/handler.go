@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/httpx"
 )
 
 // Handler serves the health endpoint with a cached result store; ?fresh=1

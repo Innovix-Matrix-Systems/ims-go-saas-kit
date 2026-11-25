@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"time"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	contracts "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	contracts "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/privacy"
 )
 
 // Request types.

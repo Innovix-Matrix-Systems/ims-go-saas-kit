@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/app"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/app"
 )
 
 // withPlatform validates the configuration, boots the application (database,

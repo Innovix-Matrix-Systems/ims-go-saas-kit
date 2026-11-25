@@ -1,0 +1,173 @@
+---
+// The path from the template to a working feature, then the closing call to
+// action. Commands are the real ones from the README and the tutorial.
+import { company } from '../company'
+
+const steps = [
+  {
+    label: 'Make it yours',
+    lines: [
+      { t: 'c', s: '# your module path and names, one commit' },
+      { t: '', s: 'make rename \\' },
+      { t: '', s: '  MODULE=github.com/acme/shop' },
+    ],
+    href: '/getting-started/quick-start/',
+  },
+  {
+    label: 'Add a module',
+    lines: [
+      { t: '', s: 'go run ./cmd/app gen module \\' },
+      { t: '', s: '  --name=product \\' },
+      { t: '', s: '  --fields="name:string,price:decimal"' },
+      { t: 'g', s: '✓ migration, queries, routes, tests' },
+    ],
+    href: '/tutorial/first-module/',
+  },
+  {
+    label: 'Give it a screen',
+    lines: [
+      { t: '', s: 'npm --prefix web/app run openapi:gen' },
+      { t: 'c', s: '# typed client → route → sidebar' },
+      { t: 'o', s: '/org/products' },
+    ],
+    href: '/app/adding-a-screen/',
+  },
+]
+---
+
+<section class="band not-content" aria-labelledby="steps-title">
+  <header>
+    <h2 id="steps-title">From template to your first feature</h2>
+    <p>The tutorial walks this path end to end. Each step links to its guide.</p>
+  </header>
+  <ol class="grid">
+    {
+      steps.map((step) => (
+        <li>
+          <a class="label" href={step.href}>{step.label} →</a>
+          <pre class="term">{step.lines.map((l) => <span class={l.t}>{l.s + '\n'}</span>)}</pre>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<section class="cta not-content">
+  <h2>Build your SaaS on it.</h2>
+  <div class="buttons">
+    <a class="button primary" href={`${company.repo}/generate`} rel="noopener">Use this template</a>
+    <a class="button" href="/getting-started/introduction/">Read the introduction</a>
+  </div>
+</section>
+
+<style>
+  .band {
+    display: grid;
+    gap: 1.4rem;
+    padding-block: 2.5rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: end;
+    gap: 0.5rem 1.5rem;
+  }
+  h2 {
+    margin: 0;
+    font-family: var(--ims-font-display);
+    font-size: clamp(1.4rem, 1.1rem + 1vw, 1.75rem);
+    font-weight: 700;
+    color: var(--sl-color-white);
+    letter-spacing: -0.015em;
+  }
+  header p {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    max-width: 52ch;
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: 1.25rem;
+  }
+  li {
+    display: grid;
+    gap: 0.6rem;
+    align-content: start;
+    min-width: 0;
+    margin: 0;
+  }
+  .label {
+    font: 500 0.8rem var(--sl-font-mono);
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+  }
+  .label:hover {
+    color: var(--sl-color-accent);
+  }
+  .term {
+    margin: 0;
+    background: var(--ims-terminal);
+    color: var(--ims-terminal-fg);
+    border: 0;
+    border-radius: 9px;
+    padding: 0.85rem 1rem;
+    font: 0.76rem/1.65 var(--sl-font-mono);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .term .c {
+    color: var(--ims-terminal-dim);
+  }
+  .term .g {
+    color: var(--ims-terminal-ok);
+  }
+  .term .o {
+    color: var(--ims-terminal-path);
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem 2rem;
+    padding-block: 2.5rem 1rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+  .cta h2 {
+    font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+    font-weight: 800;
+  }
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .button {
+    display: inline-block;
+    padding: 0.6rem 1.1rem;
+    border-radius: 8px;
+    border: 1px solid var(--sl-color-gray-5);
+    color: var(--sl-color-white);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: var(--sl-text-sm);
+  }
+  .button:hover {
+    border-color: var(--sl-color-accent);
+  }
+  .button.primary {
+    background: var(--ims-accent);
+    border-color: var(--ims-accent);
+    color: var(--ims-on-accent);
+  }
+  .button.primary:hover {
+    filter: brightness(1.08);
+  }
+</style>

@@ -1,10 +1,10 @@
 openapi: 3.0.3
 
 info:
-  title: IMS Go Admin Starter
+  title: IMS Go SaaS Kit
   version: 1.0.0
   description: |
-    Canonical HTTP contract for the IMS Go Admin Starter. It is the source of
+    Canonical HTTP contract for the IMS Go SaaS Kit. It is the source of
     truth for the API surface: success envelopes, pagination, the
     RFC 9457 `application/problem+json` error model, and the bearer security scheme.
 
@@ -9678,7 +9678,7 @@ components:
       properties:
         method: {type: string, enum: [totp, email]}
         secret: {type: string, description: "totp: the base32 secret, for typing into the app."}
-        otpauth_url: {type: string, description: "totp: render as a QR code for the authenticator app.", example: "otpauth://totp/IMS%20Go%20Admin%20Starter:jane@acme.test?algorithm=SHA1&digits=6&issuer=IMS+Go+Admin+Starter&period=30&secret=JBSWY3DPEHPK3PXP"}
+        otpauth_url: {type: string, description: "totp: render as a QR code for the authenticator app.", example: "otpauth://totp/IMS%20Go%20SaaS%20Kit:jane@acme.test?algorithm=SHA1&digits=6&issuer=IMS+Go+SaaS+Kit&period=30&secret=JBSWY3DPEHPK3PXP"}
 
     TwoFactorRecoveryCodes:
       type: object

@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"testing"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/seeder"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/testkit"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/seeder"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/testkit"
 )
 
 type settingItemJSON struct {

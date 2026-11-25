@@ -1,0 +1,251 @@
+---
+// The landing page hero: the pitch on the left, and on the right the one fact
+// that sets the kit apart: a single binary that answers on every path and runs
+// the background work too. Pages that set `hero.image` keep Starlight's hero.
+import Default from '@astrojs/starlight/components/Hero.astro'
+import { LinkButton } from '@astrojs/starlight/components'
+import versionFile from '../../../VERSION?raw'
+import { company } from '../company'
+import mark from '../assets/brand/innovix-mark.png'
+import markOnDark from '../assets/brand/innovix-mark-light.png'
+
+const version = versionFile.trim()
+const { data } = Astro.locals.starlightRoute.entry
+const hero = data.hero
+const { title = data.title, tagline, actions = [] } = hero || {}
+
+const routes = [
+  { path: '/', what: 'The app', detail: 'organization workspace and staff console', tag: 'React 19' },
+  { path: '/api/v1', what: 'HTTP API', detail: 'tenants, roles, billing, files, webhooks', tag: 'OpenAPI 3' },
+  { path: '/dev', what: 'Developer dashboard', detail: 'requests, jobs, logs, commands', tag: 'built in' },
+  { path: '/docs', what: 'API reference', detail: 'try every endpoint', tag: 'Scalar' },
+  { path: '/mcp', what: 'AI connector', detail: 'Claude, ChatGPT, Cursor', tag: 'OAuth 2.1' },
+]
+const processes = ['ims queue:work', 'ims schedule', 'ims migrate']
+---
+
+{
+  hero?.image ? (
+    <Default {...Astro.props} />
+  ) : (
+    <div class="hero not-content">
+      <div class="copy">
+        <a class="eyebrow" href={company.website} rel="noopener">
+          Open source, by
+          <img class="light:sl-hidden" src={markOnDark.src} width="16" height="16" alt="" />
+          <img class="dark:sl-hidden" src={mark.src} width="16" height="16" alt="" />
+          <strong>{company.name}</strong>
+        </a>
+        <h1 id="_top" data-page-title set:html={title} />
+        {tagline && <p class="tagline" set:html={tagline} />}
+        {actions.length > 0 && (
+          <div class="actions">
+            {actions.map(({ attrs: { class: className, ...attrs } = {}, icon, link: href, text, variant }) => (
+              <LinkButton href={href} variant={variant} icon={icon?.name} class:list={[className]} {...attrs}>
+                {text}
+                {icon?.html && <Fragment set:html={icon.html} />}
+              </LinkButton>
+            ))}
+          </div>
+        )}
+        <p class="facts">
+          <code>make migrate seed &amp;&amp; make dev</code>
+          <span>Go 1.26 · PostgreSQL 16+ · CGO-free · OpenTelemetry</span>
+        </p>
+      </div>
+
+      <figure class="binary" aria-label="One ims binary serves every path">
+        <figcaption>
+          <span><b>./ims serve</b> · :8080</span>
+          <span>v{version}</span>
+        </figcaption>
+        <ul>
+          {
+            routes.map((route) => (
+              <li>
+                <code class="path">{route.path}</code>
+                <span class="what">
+                  {route.what}
+                  <small>{route.detail}</small>
+                </span>
+                <span class="tag">{route.tag}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="procs">
+          {processes.map((p) => <code>{p}</code>)}
+        </div>
+      </figure>
+    </div>
+  )
+}
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: center;
+    padding-block: 1.5rem 2.5rem;
+  }
+  .copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.1rem;
+    min-width: 0;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+  }
+  .eyebrow strong {
+    color: var(--sl-color-white);
+    font-weight: 600;
+  }
+  .eyebrow:hover {
+    border-color: var(--sl-color-accent);
+  }
+  h1 {
+    margin: 0;
+    font-family: var(--ims-font-display);
+    font-size: clamp(2.4rem, 1.4rem + 4vw, 4rem);
+    line-height: 1.02;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--sl-color-white);
+  }
+  h1 :global(em) {
+    font-style: normal;
+    color: var(--ims-accent);
+  }
+  .tagline {
+    margin: 0;
+    max-width: 46ch;
+    font-size: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
+    color: var(--sl-color-gray-3);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    align-items: center;
+    margin-top: 0.4rem;
+  }
+  .facts {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.9rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+  .facts code {
+    color: var(--sl-color-white);
+    background: none;
+    padding: 0;
+  }
+
+  .binary {
+    margin: 0;
+    min-width: 0;
+    background: var(--ims-terminal);
+    color: var(--ims-terminal-fg);
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+    font: 0.82rem/1.5 var(--sl-font-mono);
+    box-shadow: 0 24px 60px -30px rgba(232, 81, 15, 0.45);
+  }
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    color: var(--ims-terminal-dim);
+    font-size: 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+  figcaption b {
+    color: #fff;
+    font-weight: 500;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li {
+    display: grid;
+    grid-template-columns: 4.6rem minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-top: 1px dashed var(--ims-terminal-line);
+    margin: 0;
+  }
+  .path {
+    color: var(--ims-terminal-path);
+    background: none;
+    padding: 0;
+    font-size: 0.82rem;
+  }
+  .what {
+    color: var(--ims-terminal-fg);
+  }
+  .what small {
+    display: block;
+    color: var(--ims-terminal-dim);
+    font-size: 0.72rem;
+  }
+  .tag {
+    font-size: 0.66rem;
+    color: var(--ims-terminal-dim);
+    border: 1px solid var(--ims-terminal-line);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    white-space: nowrap;
+  }
+  .procs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--ims-terminal-line);
+  }
+  .procs code {
+    font-size: 0.72rem;
+    background: #1c1c22;
+    color: #c9c9d1;
+    border-radius: 5px;
+    padding: 0.2rem 0.5rem;
+  }
+  .procs code::before {
+    content: '● ';
+    color: var(--ims-terminal-ok);
+  }
+
+  @media (min-width: 60rem) {
+    .hero {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      gap: 3rem;
+      padding-block: 3rem 3.5rem;
+    }
+  }
+  @media (max-width: 30rem) {
+    li {
+      grid-template-columns: 4rem minmax(0, 1fr);
+    }
+    .tag {
+      display: none;
+    }
+  }
+</style>

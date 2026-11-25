@@ -33,7 +33,7 @@ There are three pieces, and you only configure the second:
 | **MCP client** | the AI app: Claude Desktop, Claude Code, OpenCode, Cursor… You give it the address. It asks the server which **tools** exist and calls them when you chat. |
 | **Sign-in** | the first time, the app opens your browser on the API's own sign-in page. You sign in with your normal account and click **Allow**. From then on the agent acts **as you**: your permissions, your tenant, nothing more. |
 
-The starter ships five tools: `whoami`, `list_branches`, `create_branch`, `list_users` and
+The kit ships five tools: `whoami`, `list_branches`, `create_branch`, `list_users` and
 `create_user`. Each one runs the matching REST endpoint, so the same permission checks, tenant
 filter, validation and activity log apply. ([How a tool call runs](../guides/mcp.md#how-a-tool-call-runs).)
 

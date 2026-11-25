@@ -27,11 +27,11 @@ import (
 // The starter's own names. OldModule is read from go.mod instead, so the
 // tool reports clearly when it has already been run.
 const (
-	OldRepoName   = "ims-go-api-starter" // repository, docs site, worker
-	OldDeployName = "ims-go-api"         // systemd units, image, install paths
-	OldBinary     = "ims"                // binary, CLI, service user
-	OldTitle      = "IMS Go API Starter"
-	OldShortTitle = "IMS Go API"
+	OldRepoName   = "ims-go-saas-kit" // repository, docs site, worker, deploy name
+	OldDeployName = OldRepoName       // systemd units, image, install paths
+	OldBinary     = "ims"             // binary, CLI, service user
+	OldTitle      = "IMS Go SaaS Kit"
+	OldShortTitle = "IMS Go SaaS"
 	OldBrand      = "IMS"
 	OldEnvPrefix  = "IMS_"
 )

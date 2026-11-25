@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# release.sh — build-on-server release for the IMS Go Admin Starter.
+# release.sh — build-on-server release for the IMS Go SaaS Kit.
 #
 # Builds a static binary from source on the target host, runs the gated
 # migration step, atomically switches the `current` symlink, restarts the
@@ -15,14 +15,14 @@
 #
 set -euo pipefail
 
-BASE_DIR="${IMS_BASE_DIR:-/opt/ims/ims-go-admin-starter}"
+BASE_DIR="${IMS_BASE_DIR:-/opt/ims/ims-go-saas-kit}"
 RELEASES_DIR="$BASE_DIR/releases"
 CURRENT_LINK="$BASE_DIR/current"
-ENV_FILE="${IMS_ENV_FILE:-/etc/ims/ims-go-admin-starter/.env}"
-STATE_DIR="${IMS_STATE_DIR:-/var/lib/ims/ims-go-admin-starter}"
-SERVICE_PREFIX="${IMS_SERVICE_PREFIX:-ims-go-admin-starter}"
+ENV_FILE="${IMS_ENV_FILE:-/etc/ims/ims-go-saas-kit/.env}"
+STATE_DIR="${IMS_STATE_DIR:-/var/lib/ims/ims-go-saas-kit}"
+SERVICE_PREFIX="${IMS_SERVICE_PREFIX:-ims-go-saas-kit}"
 GO_BIN="${GO_BIN:-go}"
-BUILD_MODULE="${IMS_BUILD_MODULE:-github.com/Innovix-Matrix-Systems/ims-go-admin-starter}"
+BUILD_MODULE="${IMS_BUILD_MODULE:-github.com/Innovix-Matrix-Systems/ims-go-saas-kit}"
 
 REF=""
 REPO=""
@@ -202,16 +202,21 @@ do_release() {
   log "building release $version -> $release_dir"
   run mkdir -p "$release_dir"
 
-  if [[ "$DRY_RUN" == "1" ]]; then
-    printf '   [dry-run] (cd %s/web/dev && npm ci && npm run build)\n' "$workdir"
-  else
-    log "building developer dashboard SPA"
-    (
-      cd "$workdir/web/dev"
-      npm ci
-      npm run build
-    )
-  fi
+  # Both web apps are embedded in the binary: the developer dashboard (/dev)
+  # and the client app (/). Without a build, the binary serves an empty app.
+  local web
+  for web in web/dev web/app; do
+    if [[ "$DRY_RUN" == "1" ]]; then
+      printf '   [dry-run] (cd %s/%s && npm ci && npm run build)\n' "$workdir" "$web"
+    else
+      log "building $web"
+      (
+        cd "$workdir/$web"
+        npm ci
+        npm run build
+      )
+    fi
+  done
 
   local ldflags="-X ${BUILD_MODULE}/internal/version.Version=${version}"
   if [[ "$DRY_RUN" == "1" ]]; then

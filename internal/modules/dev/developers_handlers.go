@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/httpx"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/httpx"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // Developers panel: dedicated internal accounts that hold the hidden Developer

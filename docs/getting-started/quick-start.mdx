@@ -1,6 +1,6 @@
 ---
 title: Quick start
-description: Run the API, the developer dashboard and the API reference locally in about five minutes.
+description: Run the app, the API, the developer dashboard and the API reference locally in about five minutes.
 ---
 
 import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components'
@@ -12,7 +12,7 @@ import Terminal from '@components/Terminal.astro'
 | --- | --- | --- |
 | Go | 1.26.11 or newer | builds and runs the API |
 | PostgreSQL | 16 or newer | the only database (local install, Docker, or a managed one) |
-| Node.js | 20.19+ (22.23+ for the docs site) | builds the developer dashboard |
+| Node.js | 20.19+ (22.23+ for the docs site) | builds the app and the developer dashboard |
 | make | any GNU make | shortcuts; every target is also a plain `go` command |
 
 <Aside type="tip" title="Docker is optional">
@@ -27,14 +27,14 @@ import Terminal from '@components/Terminal.astro'
 
 <Steps>
 
-1. **Make it your repository.** On GitHub, press **[Use this template](https://github.com/Innovix-Matrix-Systems/ims-go-admin-starter/generate) → Create a new repository**.
+1. **Make it your repository.** On GitHub, press **[Use this template](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate) → Create a new repository**.
    You get your own repository with a clean history, not a fork that points back here. (Just
    trying it out? Clone this repository directly.)
 
 2. **Clone and configure.** Copy the example environment; every value has a working local default.
 
    ```bash
-   git clone <your-repository-url> ims-go-admin-starter && cd ims-go-admin-starter
+   git clone <your-repository-url> ims-go-saas-kit && cd ims-go-saas-kit
    cp .env.example .env
    make key-generate      # writes APP_KEY to .env
    ```
@@ -43,29 +43,31 @@ import Terminal from '@components/Terminal.astro'
    Locally an empty key falls back to a public development key with a warning; staging and
    production refuse to start without a real one.
 
-3. {/* rename:keep */}**Give it your names.** One command rewrites the starter's names everywhere: the Go module
+3. {/* rename:keep */}**Give it your names.** One command rewrites the kit's names everywhere: the Go module
    path, the binary and CLI (`ims` → `shop`), the deploy names and paths, the display title and
    the `IMS_` deploy variables. It also renames the systemd units and regenerates the code and docs.
-   It refuses to run with uncommitted changes, so the rename is one reviewable commit.
+   It refuses to run with uncommitted changes, so the rename is one reviewable commit. The full
+   story, including what it leaves alone, is in [Make it yours](./make-it-yours.md).
 
    ```bash
    make rename MODULE=github.com/acme/shop-api DRY=1                            # preview
    make rename MODULE=github.com/acme/shop-api BINARY=shop TITLE="Acme Shop"   # NAME, BINARY, TITLE are optional
-   git add -A && git commit -m "chore: rename the starter to shop-api"
+   git add -A && git commit -m "chore: rename the kit to shop-api"
    ```
 
    `NAME` defaults to the last part of the module (`shop-api`), `BINARY` to the name, and `TITLE`
    to the name in title case (`Shop API`). Left as they are: the seeded `@ims.com` accounts and the
    credit links. Run it once; it refuses a project that has already been renamed. The commands
-   below use the starter's names: substitute yours.
+   below use the kit's names: substitute yours.
    {/* rename:end */}
 
-4. **Install the tools once.** `air` (hot reload) and `golangci-lint`, then the dashboard's
-   packages.
+4. **Install the tools once.** `air` (hot reload) and `golangci-lint`, then the packages of the
+   two web apps: the developer dashboard and the app.
 
    ```bash
    make tools
    npm --prefix web/dev ci
+   npm --prefix web/app ci
    ```
 
 5. **Start Postgres** — skip this if you already have one running.
@@ -81,7 +83,9 @@ import Terminal from '@components/Terminal.astro'
    make migrate seed
    ```
 
-7. **Run everything with hot reload.**
+7. **Run everything with hot reload.** One command starts three processes: the developer
+   dashboard (:8080), the app (:8082), both with Vite hot reload, and the API (:8081), rebuilt by
+   `air` when you save a Go file. Both dev servers forward API calls to :8081.
 
    ```bash
    make dev
@@ -95,10 +99,11 @@ import Terminal from '@components/Terminal.astro'
     { cmd: 'make migrate seed' },
     { out: 'goose: successfully migrated database to version: 34', tone: 'dim' },
     { out: 'River schema: v8 (0 pending)', tone: 'dim' },
-    { out: 'seeded permissions, tenant "Default", roles Admin + Developer', tone: 'ok' },
+    { out: 'seeded permissions, tenant "Main Tenant", roles Admin + Developer', tone: 'ok' },
     { out: 'accounts: superadmin@ims.com, developer@ims.com', tone: 'ok' },
     { cmd: 'make dev' },
-    { out: 'vite  → http://localhost:8080/dev/', tone: 'accent' },
+    { out: "dashboard → http://localhost:8080/dev/", tone: "accent" },
+    { out: "app       → http://localhost:8082", tone: "accent" },
     { out: 'air   → building ./cmd/app … running on :8081', tone: 'dim' },
     { out: 'http server listening addr=:8081 env=local', tone: 'ok' },
   ]}
@@ -106,20 +111,35 @@ import Terminal from '@components/Terminal.astro'
 
 ## Look around
 
-Open **[localhost:8080/dev/](http://localhost:8080/dev/)** and sign in:
+Three addresses, one running kit:
 
-| Account | E-mail | Password | Can |
-| --- | --- | --- | --- |
-| Super Admin | `superadmin@ims.com` | `123456` | everything, every tenant |
-| Developer | `developer@ims.com` | `123456` | the developer dashboard |
+| Open | What it is | Sign in as |
+| --- | --- | --- |
+| **[localhost:8082](http://localhost:8082)** | the app: the organization workspace and the staff console | `superadmin@ims.com` for the console, or press **Create an organization** to sign up as a new customer |
+| **[localhost:8080/dev/](http://localhost:8080/dev/)** | the developer dashboard: requests, queue, logs, commands | `developer@ims.com` or `superadmin@ims.com` |
+| **[localhost:8080/docs](http://localhost:8080/docs)** | the API reference (Scalar, from `api/openapi.yaml`) | no sign-in to read; paste a token to try calls |
 
-The password comes from `AUTH_DEFAULT_PASSWORD`. The API reference (Scalar, from
-`api/openapi.yaml`) is at **[localhost:8080/docs](http://localhost:8080/docs)**.
+The seeded password is `123456` (`AUTH_DEFAULT_PASSWORD`).
 
-![The developer dashboard overview](../images/dev-dashboard.png)
+| Account | E-mail | Can |
+| --- | --- | --- |
+| Super Admin | `superadmin@ims.com` | everything: the staff console, every organization, the dashboard |
+| Developer | `developer@ims.com` | the developer dashboard |
 
-Call the API from a terminal. Sign in and use the system side with just the token, the way an
-admin panel does:
+**Try the app first.** Sign in as the super admin: you land in the staff console. Open
+**Organizations**, pick the seeded "Main Tenant" organization and press **Impersonate** to see its
+workspace the way its members do. Then sign out and press **Create an organization** on the
+sign-in page: you go through sign-up and the setup wizard like a new customer. The tour of every
+screen is in [The app](../app/overview.md).
+
+![The staff console home](../images/app-staff-console-light.png)
+
+![The developer dashboard overview](../images/dev-dashboard-light.png)
+
+### Call the API
+
+Everything the app does is an API call you can make yourself. Sign in and use the system side
+with just the token, the way the staff console does:
 
 <Tabs>
 <TabItem label="bash">
@@ -204,6 +224,7 @@ make schedule    # ims schedule
 
 - Understand the request path: [How it works](./how-it-works.mdx).
 - Find your way around the folders: [Project tour](./project-tour.mdx).
-- Build something: [Your first module](../tutorial/first-module.mdx).
+- See every screen: [The app](../app/overview.md).
+- Build something, from the table to the screen: [Your first feature](../tutorial/first-module.mdx).
 - Let an AI agent use your API: [Connect an AI agent](../tutorial/connect-an-ai-agent.mdx).
 - Something not working? [Local development & troubleshooting](../operations/local-development.md).

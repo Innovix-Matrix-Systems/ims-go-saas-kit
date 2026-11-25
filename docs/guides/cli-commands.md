@@ -1,11 +1,12 @@
 ---
 title: CLI commands
 description: How the ims command tree is built and registered, and how to add your own command — the constructor, the registrar, booting the app with withPlatform, flags, output, errors, tests, the generated reference, and the same task in the dashboard and the scheduler.
+layers: [api, dashboard]
 ---
 
 The binary is the CLI: `ims serve` starts the API, and every other `ims <command>` — `migrate`,
 `cache:clear`, `down` — runs in the same binary, like Laravel's `artisan`. The
-[CLI reference](../reference/cli.md) lists every command that ships with the starter. This page
+[CLI reference](../reference/cli.md) lists every command that ships with the kit. This page
 explains how commands are registered and how to add your own.
 
 ```bash

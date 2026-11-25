@@ -16,14 +16,14 @@ import (
 	"github.com/xuri/excelize/v2"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/storage"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/dataprocessing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/storage"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // Kind is the queue job that writes the export.

@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	api "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/api"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/mcp"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/oauth"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version"
+	api "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/api"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/mcp"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/oauth"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/version"
 )
 
 // mcpCatalog builds the MCP tools from the operations marked x-mcp in the

@@ -2,7 +2,7 @@
 // the same keys (the Messages type below enforces it at compile time).
 
 export const en = {
-  'app.name': 'IMS Go Admin Starter',
+  'app.name': 'IMS Go SaaS Kit',
   'appearance.theme': 'Theme',
   'appearance.accent': 'Accent',
   'appearance.density': 'Density',

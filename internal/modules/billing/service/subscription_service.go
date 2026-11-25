@@ -9,12 +9,12 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
 )
 
 // SubscriptionService implements the subscription lifecycle.

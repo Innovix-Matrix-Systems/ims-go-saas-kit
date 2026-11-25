@@ -30,13 +30,13 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/app"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/billing/domain"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database/dbtest"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/seeder"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/app"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	billingdomain "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database/dbtest"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/seeder"
 )
 
 // Password is the password of every account testkit creates (and of the

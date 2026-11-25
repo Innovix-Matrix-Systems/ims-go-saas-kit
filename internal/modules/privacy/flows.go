@@ -12,16 +12,16 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/activity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/dataprocessing"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
-	contracts "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/tenancy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/activity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/dataprocessing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
+	contracts "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/privacy"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/tenancy"
 )
 
 // Setting keys (modules/settings/registry.go, group "privacy").

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
 )
 
 // A run that failed before copying anywhere must still serialize its

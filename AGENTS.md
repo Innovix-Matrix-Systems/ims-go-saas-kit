@@ -1,6 +1,6 @@
 # AGENTS.md — Working Guide for This Repository
 
-Instructions for AI coding agents (and humans) working on the IMS Go Admin Starter. Read this before
+Instructions for AI coding agents (and humans) working on the IMS Go SaaS Kit. Read this before
 writing code. The human documentation lives in [`docs/`](docs/README.md) (Markdown, read on GitHub;
 the published site is the API starter's): start with the [tutorial](docs/tutorial/first-module.mdx), the
 [guides](docs/guides/modules.md) and the [design decisions](docs/architecture/decisions.md). Task
@@ -65,7 +65,7 @@ feature with a message that says what changed and why.
 
 `make rename MODULE=github.com/acme/shop-api [NAME=] [BINARY=] [TITLE=] [DRY=1]` (`cmd/rename`,
 logic in `internal/rename`) rewrites the module path, the `ims` binary/CLI/user, the
-`ims-go-api(-starter)` names, the `IMS Go API Starter`/`IMS` titles and the `IMS_` deploy
+`ims-go-saas-kit` repo and deploy name, the `IMS Go SaaS Kit`/`IMS` titles and the `IMS_` deploy
 variables in every tracked file, renames the systemd units, then runs `go mod tidy`, `make
 generate` and `make docs-gen`. It keeps `@ims.com` seed e-mails and Innovix credit links, refuses a
 dirty tree, and runs once. When you add a file or name that carries the starter's name, check it

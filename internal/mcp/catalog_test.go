@@ -9,7 +9,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
-	api "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/api"
+	api "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/api"
 )
 
 func load(t *testing.T, spec string) *openapi3.T {

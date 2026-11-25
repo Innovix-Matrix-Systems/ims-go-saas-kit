@@ -1,6 +1,7 @@
 ---
 title: Feature flags
 description: Boolean flags resolved per user, tenant and globally, with stable percentage rollouts.
+layers: [api, app, dashboard]
 ---
 
 Feature flags switch code paths on and off without a deploy. They are a separate, boolean-only
@@ -65,3 +66,7 @@ Requests where the flag is off get a problem response before the handler runs.
 | `DELETE /api/v1/internal/feature-flags/{key}` | reset a target's value |
 
 In the dashboard, **Feature Flags** shows every flag per target with a rollout slider.
+
+## In the app
+
+Staff manage flags and their rollout under **Feature flags** in the console (`/console/flags`). Screens read a flag through the API like any other value.

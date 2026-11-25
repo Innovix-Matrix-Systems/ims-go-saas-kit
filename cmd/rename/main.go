@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/rename"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/rename"
 )
 
 func main() {

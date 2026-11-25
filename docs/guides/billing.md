@@ -1,6 +1,7 @@
 ---
 title: Billing and plans
 description: Packages with features and limits, subscriptions, payments with bKash, cash and bank transfer, staff assignment and overrides.
+layers: [database, api, app]
 ---
 
 Billing answers one question for the rest of the code: **may this tenant do this?** Packages
@@ -156,3 +157,7 @@ add users right away; it is never listed publicly and seeding again changes noth
 `GET /api/v1/public/packages` lists active packages for your pricing page (no auth). Staff manage
 packages with `/api/v1/packages` (`package.*`); updating a package **replaces** its feature set
 in one transaction. Money is in minor units of `BILLING_CURRENCY` (default `BDT`).
+
+## In the app
+
+Organizations see their plan, usage and payments under **Billing** (`/org/billing`) and check out from there; a 402 from any action explains the limit and links to it. Staff manage the plan catalog under **Plans** and decide bank and cash payments under **Payment approvals**. See [Organization workspace](../app/organization-workspace.md#plan-limits) and [Staff console](../app/staff-console.md#payments-and-plans).

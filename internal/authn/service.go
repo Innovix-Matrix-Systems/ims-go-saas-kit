@@ -8,10 +8,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn/social"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/config"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/tracing"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn/social"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/tracing"
 )
 
 // Login status values returned by the login flow.
@@ -76,7 +76,7 @@ type Service struct {
 func NewService(users UserLookup, auth Authenticator, otp *OTPService, throttle *Throttle, cfg config.Auth) *Service {
 	// A throwaway hash at the configured cost: comparing against it on the
 	// unknown-email path equalises timing with the wrong-password path.
-	dummy, _ := bcrypt.GenerateFromPassword([]byte("ims-go-admin-starter:dummy:credentials"), cfg.BcryptRounds)
+	dummy, _ := bcrypt.GenerateFromPassword([]byte("ims-go-saas-kit:dummy:credentials"), cfg.BcryptRounds)
 	return &Service{users: users, auth: auth, otp: otp, throttle: throttle, cfg: cfg, dummyHash: dummy}
 }
 

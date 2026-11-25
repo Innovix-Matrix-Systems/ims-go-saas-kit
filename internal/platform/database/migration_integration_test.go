@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database/dbtest"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database/dbtest"
 )
 
 // TestSettingsMigrationRollbackAndReapply exercises the settings migration's down step

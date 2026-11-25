@@ -1,6 +1,7 @@
 ---
 title: Webhooks
 description: Send events to your customers' systems — subscribe a URL, Standard Webhooks signatures, retries and auto-disable, the delivery log, SSRF protection and how to add your own events.
+layers: [api, app]
 ---
 
 A tenant subscribes a URL to events; every matching event is POSTed to it, **signed**, **retried**
@@ -32,7 +33,7 @@ The secret is shown **once**. `"events": ["*"]` subscribes to every event.
 ```http
 POST /hooks/ims HTTP/1.1
 Content-Type: application/json
-User-Agent: ims-go-admin-starter-Webhooks/0.1.8
+User-Agent: ims-go-saas-kit-Webhooks/0.2.0
 webhook-id: evt_9f2c1a7b4e6d4f0a8c3b2d1e0f9a8b7c
 webhook-timestamp: 1795340000
 webhook-signature: v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=
@@ -108,7 +109,11 @@ s.activity.Record(ctx, activity.Entry{TenantID: t, Action: "invoice.paid", Subje
 ```
 
 The payload's `data.changes` are the activity entry's changes, already redacted (secrets never
-leave). The starter ships `user.created` and `branch.updated` as examples, plus `webhook.test`.
+leave). The kit ships `user.created` and `branch.updated` as examples, plus `webhook.test`.
 Sign-ins, impersonation and dashboard actions are never deliverable: only registered actions are.
 
 Secrets are encrypted with `APP_KEY` (see [deploy](../operations/deploy.md)).
+
+## In the app
+
+Organization admins manage endpoints under **Webhooks** (`/org/webhooks`): choose events, copy the signing secret (shown once), send a test event and read recent deliveries.

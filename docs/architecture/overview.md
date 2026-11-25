@@ -2,7 +2,7 @@
 title: Architecture overview
 ---
 
-How the IMS Go Admin Starter actually works, subsystem by subsystem. For the short version read
+How the IMS Go SaaS Kit actually works, subsystem by subsystem. For the short version read
 [How it works](../getting-started/how-it-works.mdx); for *why* things are the way they are, read the
 [design decisions](./decisions.md). [`AGENTS.md`](../../AGENTS.md) is the working guide for humans
 and AI agents.
@@ -28,6 +28,38 @@ cmd/app ──► internal/cli (Cobra tree, command registry, lazy dependency pr
 
 `NewPlatform` deliberately connects lazily: `serve` boots while the database is down and surfaces
 the outage through `/api/health`. `help`/`version` construct no infrastructure at all.
+
+What `serve` answers on one port:
+
+| Path | Served by | Built from |
+| --- | --- | --- |
+| `/` and every path not listed below | the app (`webui.NewClient`), with a strict CSP | `web/app` → `web/app/dist`, embedded (`web/app/embed.go`) |
+| `/api/v1/…` | the API: chi routes in `internal/app/routes.go` | `internal/modules/*` |
+| `/dev` | the developer dashboard | `web/dev` → `web/dev/dist`, embedded |
+| `/docs` | the API reference (Scalar) over `api/openapi.yaml` | `internal/platform/docs` |
+| `/mcp`, `/oauth`, `/.well-known` | the MCP connector and its OAuth server | `internal/mcp` |
+| `/storage`, `/up`, `/api/health`, `/metrics` | public files, probes, Prometheus | `internal/platform/*` |
+
+### The app (`web/app`)
+
+A React 19 single-page app, built with Vite, routed by TanStack Router (one file per screen in
+`src/routes/`, code-split) and fed by TanStack Query. It is a client of the public API like any
+other: it has no endpoints of its own and no privileged access.
+
+- **API client** (`src/api/client.ts`): adds the bearer token, `Accept-Language`, the acting
+  headers while staff impersonate, and an `Idempotency-Key` on creates; turns problem responses
+  into a typed `ApiError` and app-wide events (401, two-factor required, suspended, maintenance).
+- **Types** come from `api/openapi.yaml` (`npm run openapi:gen` → `src/api/schema.d.ts`), so a
+  contract change that breaks a screen fails its typecheck in CI.
+- **Session** (`src/auth/session.ts`): the profile and permissions load before any signed-in page
+  renders; `can()` hides what the role can't do. The API enforces it regardless.
+- **Navigation** (`src/components/navigation.ts`): one list feeds the sidebar, Ctrl+K, shortcuts
+  and titles, filtered by permission and by organization vs staff.
+- **Text and look**: typed message catalogs (English, Bangla) and design tokens with theme, accent
+  and density presets, checked for WCAG AA contrast in CI.
+
+In development the app runs on Vite (:8082) and proxies API paths to the API (:8081); see
+[The app](../app/overview.md).
 
 Module dependency direction: HTTP roots import `service/` and (for big modules) `domain/`, but
 never the other way around — a big module such as billing keeps routes/handler/request plus its

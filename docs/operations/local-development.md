@@ -2,12 +2,14 @@
 title: Local development
 ---
 
-Run the whole system locally: the HTTP API plus the queue worker and the scheduler. They are three
-processes started from the same binary, so a full local stack means three shells.
+Run the whole system locally: the app, the developer dashboard and the API, plus the queue worker
+and the scheduler. `make dev` starts the first three with hot reload; the worker and the scheduler
+are the same binary in two more shells.
 
 | Process | Command | Purpose |
 |---|---|---|
-| API | `ims serve` (or `make dev`) | HTTP on `:8080`; `make dev` puts Vite HMR on `:8080` and the API on `:8081` |
+| Web + API | `make dev` | developer dashboard (Vite, `:8080/dev`), app (Vite, `:8082`), API (air, `:8081`) |
+| API alone | `ims serve` (or `make dev-api`) | everything on `:8080` from the embedded builds, as in production |
 | Worker | `ims queue:work` | processes River jobs (`critical`/`default`/`heavy`) |
 | Scheduler | `ims schedule` | runs cron tasks (heartbeat, billing, cleanup) |
 
@@ -16,7 +18,7 @@ Exactly **one** scheduler and **one** (or more) worker per environment.
 ## Prerequisites
 
 - Go 1.26.11+ (older 1.26 patches have standard-library CVEs), PostgreSQL 16+, GNU Make
-- Node.js 20.19+ with npm (developer dashboard dev/build)
+- Node.js 20.19+ with npm (the app and the developer dashboard); 22.23+ for the docs site
 - Optional: Docker (throwaway Postgres); `air` + `golangci-lint` via `make tools`
 
 ## First-time setup
@@ -60,10 +62,11 @@ QUEUE_DRIVER=river        # river (durable, needs the worker) | sync (inline, no
 Three shells, same working directory:
 
 ```bash
-# Shell A — HTTP API + developer dashboard with hot reload
-make dev                  # = migrate + Vite HMR (:8080) + air API (:8081)
-# Open http://localhost:8080/dev/ for the dashboard (HMR). Vite proxies
-# /api, /dev/api, /storage and /docs to the API on :8081. `make dev-api`
+# Shell A — the app, the dashboard and the API, all with hot reload
+make dev                  # = migrate + dashboard (:8080) + app (:8082) + air API (:8081)
+# Open http://localhost:8082 for the app and http://localhost:8080/dev/ for the
+# dashboard. Both Vite servers proxy /api, /storage and /docs to the API on :8081.
+# The app starts only once `npm --prefix web/app ci` has run. `make dev-api`
 # still runs the API alone on :8080 with the embedded production build.
 
 # Shell B — queue worker
@@ -76,11 +79,12 @@ make schedule             # = go run ./cmd/app schedule
 ```
 
 After `make build-all` the same roles are `bin/ims serve`, `bin/ims queue:work`, `bin/ims schedule`.
-(`make build` alone assumes `web/dev/dist` was already built; use `build-all` for a release.)
+(`make build` alone embeds whatever is already in `web/dev/dist` and `web/app/dist`; `build-all`
+builds both first, so use it for a release.)
 
 `make dev` puts Vite on the canonical `:8080` so the dashboard, API docs and proxied API all share
-one origin and HMR works in the browser. Override the pair with `IMS_WEB_PORT` (default `8080`) and
-`IMS_API_PORT` (default `8081`).
+one origin and HMR works in the browser. Override the ports with `IMS_WEB_PORT` (default `8080`),
+`IMS_APP_PORT` (default `8082`) and `IMS_API_PORT` (default `8081`).
 
 For the standalone SPA dev server on `:5173`, run `make dev-api` (API on `:8080`) in one shell and
 `make dev-web` in another; `IMS_API_ORIGIN` defaults to `http://127.0.0.1:8080`. Do not combine

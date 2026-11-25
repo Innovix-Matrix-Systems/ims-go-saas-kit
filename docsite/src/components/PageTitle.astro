@@ -1,0 +1,52 @@
+---
+// Starlight's page title, plus a strip naming the parts of the kit the page
+// works in (front matter `layers`). A feature usually touches several, so the
+// reader sees at a glance where the work happens.
+import Default from '@astrojs/starlight/components/PageTitle.astro'
+
+const all = [
+  { key: 'database', label: 'database' },
+  { key: 'api', label: 'API' },
+  { key: 'app', label: 'app' },
+  { key: 'dashboard', label: 'dev dashboard' },
+] as const
+
+const layers = (Astro.locals.starlightRoute.entry.data as { layers?: string[] }).layers
+---
+
+<Default {...Astro.props}><slot /></Default>
+{
+  layers && layers.length > 0 && (
+    <ul class="layers not-content" aria-label="Parts of the kit this page covers">
+      {all.map((layer) => (
+        <li class:list={{ on: layers.includes(layer.key) }} aria-hidden={!layers.includes(layer.key)}>
+          {layer.label}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .layers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 0.85rem 0 0;
+  }
+  li {
+    margin: 0;
+    font: 0.72rem var(--sl-font-mono);
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    border: 1px solid var(--sl-color-gray-5);
+    color: var(--sl-color-gray-4);
+  }
+  li.on {
+    border-color: var(--sl-color-accent);
+    color: var(--sl-color-accent-high);
+    background: var(--sl-color-accent-low);
+  }
+</style>

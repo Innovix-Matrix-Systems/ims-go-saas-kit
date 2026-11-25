@@ -128,6 +128,27 @@ jobs:
           git diff --exit-code -- src/api/schema.d.ts src/routeTree.gen.ts
         working-directory: web/app
 
+  # The documentation site (docsite/, content in docs/): builds every page,
+  # fails on a page missing from the sidebar or a broken link or anchor.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: docsite/package-lock.json
+
+      - name: install
+        run: npm ci
+        working-directory: docsite
+
+      - name: build and check every link
+        run: npm run build
+        working-directory: docsite
+
   # Docker is optional, but it must keep working: build the image, bring the
   # whole compose stack up and probe it.
   docker:
@@ -172,7 +193,7 @@ jobs:
           CGO_ENABLED: "0"
           GOOS: linux
           GOARCH: ${{ matrix.goarch }}
-        run: go build -trimpath -ldflags "-X github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/version.Version=ci" -o /tmp/ims-linux-${{ matrix.goarch }} ./cmd/app
+        run: go build -trimpath -ldflags "-X github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/version.Version=ci" -o /tmp/ims-linux-${{ matrix.goarch }} ./cmd/app
 
   integration:
     runs-on: ubuntu-latest

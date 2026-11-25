@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
 )
 
 // SignIn and SignInOTP back the MCP authorization page: the same checks as

@@ -4,17 +4,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/apperr"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/authn"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/backup"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/featureflags"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/identity"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/modules/settings"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/delivery"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/maintenance"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/queue"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/scheduler"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/telemetry"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authn"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/backup"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/featureflags"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/identity"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/settings"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/delivery"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/maintenance"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/queue"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/scheduler"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/telemetry"
 )
 
 // Handler serves the developer dashboard JSON API at /dev/api.

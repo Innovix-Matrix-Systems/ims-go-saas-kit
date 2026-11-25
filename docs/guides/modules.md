@@ -1,6 +1,7 @@
 ---
 title: Modules and the generator
 description: How a module is organised, what `ims gen module` produces, and the recipes for adding endpoints and fields.
+layers: [database, api]
 ---
 
 Every business capability — users, branches, billing, your products — is a **module** under

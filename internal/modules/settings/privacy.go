@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	dbgen "github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/dbgen"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/platform/database"
-	"github.com/Innovix-Matrix-Systems/ims-go-admin-starter/internal/privacy"
+	dbgen "github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/dbgen"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/platform/database"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/privacy"
 )
 
 // PrivacyContributor covers settings stored for the user (target "user").
