@@ -41,7 +41,7 @@ Docker-ready when you want it.
 
 | Area | Highlights |
 | --- | --- |
-| The app | organization workspace and staff console, sign-up and a setup wizard, Ctrl+K and keyboard shortcuts, live updates, a jobs tray, accent and density presets, phone layouts, English and Bangla |
+| The app | organization workspace and staff console, sign-up and a setup wizard, Ctrl+K and keyboard shortcuts, live updates, a jobs tray, accent and density presets, phone layouts, six languages including Arabic right to left |
 | Identity | opaque tokens per device, OTP, two-factor by authenticator app or e-mail code, invitations, sessions users can see and revoke, login throttling, password reset, e-mail verification, Google and GitHub sign-in, every login in the activity log |
 | Tenancy | organizations and branches, explicit `tenant_id` filters that fail closed, staff impersonating an organization or logging in as a user (audited), public tenant routes |
 | Access | a permission catalog in Go, roles per organization, Super-Admin, a check on every route, an organization activity log and a system audit log |

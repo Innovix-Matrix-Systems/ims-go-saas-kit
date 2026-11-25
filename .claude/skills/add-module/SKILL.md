@@ -99,7 +99,12 @@ decimal bool date datetime json`; `?` = optional.
     route's permission and tenancy, and a DELETE must be marked `destructive: true`. Test the
     tool next to the REST test: `testkit.New(t, testkit.WithMCP())`, `app.Agent(t, user,
     testkit.AllowChanges()).Call(t, "list_x", nil).OK(t)` (see `docs/guides/testing.md`).
-12. **Tests** — service unit tests with fakes; an integration test with `testkit` in
+12. **Text** — the generator writes `locales/<name>/en.json` and `locales.go`; add
+    `<name>.Translations()` to `translationBundles` (`internal/app/i18n.go`) and translate the file
+    for every language (`ims i18n:missing --locale <code>`, the `translate` skill). A screen in the
+    app gets `web/app/src/i18n/catalogs/<name>/<code>.json`. Mails the module sends are a
+    `templates/` folder listed in `newTemplateRegistry`, with a variant per language.
+13. **Tests** — service unit tests with fakes; an integration test with `testkit` in
     `package <name>_test`, including cross-tenant isolation (read, update, delete denied):
 
     ```go
@@ -113,8 +118,8 @@ decimal bool date datetime json`; `?` = optional.
 
     A route without `can:` fails `route_permissions_integration_test.go` unless it is meant to be
     open to every authenticated user — then add it to that test's allowlist with a reason.
-13. **Verify** — the `verify-changes` skill.
-14. **Record** — add non-obvious decisions to `docs/architecture/decisions.md` (and `AGENTS.md`);
+14. **Verify** — the `verify-changes` skill.
+15. **Record** — add non-obvious decisions to `docs/architecture/decisions.md` (and `AGENTS.md`);
     update the developer guide if you introduced a new pattern.
 
 ## Gotchas

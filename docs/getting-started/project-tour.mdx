@@ -42,7 +42,7 @@ import { FileTree, Aside } from '@astrojs/starlight/components'
     - src/routes/ one file per screen
     - src/components/ the shell, navigation.ts, shared UI
     - src/api/ the fetch wrapper and **generated** API types
-    - src/i18n/ English and Bangla messages
+    - src/i18n/ catalogs per screen and language (six languages)
     - src/styles/ design tokens and stylesheets
   - dev/ the developer dashboard at /dev (React, embedded in the binary)
 - .agents/skills/ task recipes for AI agents
@@ -100,7 +100,7 @@ These files are generated and **committed**. CI regenerates them and fails on an
 | add a config setting | `internal/config/<section>.go` and `.env.example` |
 | add a recurring task | `internal/app/schedule.go` |
 | add a queue job | the module's `RegisterJobs`, registered in `platform.go` |
-| add a screen to the app | a file in `web/app/src/routes/`, an entry in `navigation.ts`, keys in `i18n/en.ts` and `bn.ts` ([Adding a screen](../app/adding-a-screen.md)) |
+| add a screen to the app | a file in `web/app/src/routes/`, an entry in `navigation.ts`, a catalog folder in `i18n/catalogs/` ([Adding a screen](../app/adding-a-screen.md)) |
 | change the app's colours or language | `web/app/src/styles/tokens.css`, `web/app/src/i18n/` ([Translations and theming](../app/translations-and-theming.md)) |
 | add a CLI command | `internal/cli` |
 | add a dashboard command | `internal/app/dev_commands.go` |

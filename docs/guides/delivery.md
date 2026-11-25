@@ -1,6 +1,6 @@
 ---
 title: Delivery (mail, SMS, push)
-description: One way to reach a person — templates in plain text or HTML, English and Bangla, mail, SMS and push channels, the queue, retries, the delivery log and how to add your own template or channel.
+description: One way to reach a person — templates in plain text or HTML in every language, mail, SMS and push channels, the queue, retries, the delivery log and how to add your own template or channel.
 layers: [api, dashboard]
 ---
 
@@ -56,36 +56,51 @@ templates/order-shipped/
 
 - **Plain text works alone.** With only `subject.txt` and `mail.txt` the mail is plain text.
   Add `mail.html` and it becomes multipart (text + HTML), wrapped in the layout.
-- **Languages.** A locale variant sits next to its file: `mail.bn.txt` is used for Bangla,
-  `mail.txt` for everything else. The locale is the recipient's `Locale`, then the request's
-  `Accept-Language`, then `APP_FALLBACK_LOCALE`.
+- **Languages.** A language variant sits next to its file: `mail.de.txt` is used for German,
+  `mail.txt` (English) for any language without one. The language is the recipient's `Locale`,
+  then their account's, then their organization's, then the request's, then `APP_FALLBACK_LOCALE`
+  (see [Languages](languages.md)). `ims i18n:coverage` reports a missing variant; a file made only
+  of data needs none. The layout sets `lang` and `dir`, so Arabic mail reads right to left.
 - **What a template sees:** `.To` (the recipient: `.To.Name`, `.To.Email`…), `.Data` (your data)
   and `.Brand` (`.Brand.Name`, `.Brand.Color`…). A missing data key is an error, so a typo fails
   at `Send` instead of mailing `<no value>`.
 - **Escaping.** HTML files use `html/template`: data is escaped. Text files use `text/template`.
-- **`{{duration .Data.minutes}}`** spells a number of minutes in the file's language:
-  `90` → `1 hour 30 minutes` / `১ ঘণ্টা ৩০ মিনিট`.
+- **`{{duration .Data.minutes}}`** spells a number of minutes in the file's language, with its
+  plural forms: `90` → `1 hour 30 minutes` / `1 Stunde 30 Minuten` / `১ ঘণ্টা ৩০ মিনিট`.
+  **`{{number .Data.n}}`** formats a number in the language's digits and grouping.
 
 **Raw messages** need no template: give `Subject` and `Text` (and optionally `HTML`, wrapped in
 the layout) instead of `Template`. The log shows them as `raw`.
 
-**Built-in templates:** `otp-code` (mail and SMS), `password-reset`, `email-verify`, in English
-and Bangla. They live in `internal/platform/delivery/templates/`.
+**The kit's templates** live with the code that sends them, in every language: account mails in
+`internal/authn/templates/` (`otp-code`, `password-reset`, `email-verify`, `invitation`, two-factor
+and e-mail-change notices), `notification` in the notifications module, `payment-receipt` in
+billing, the privacy notices in privacy, `signup-account-exists` in onboarding and `new-sign-in` in
+`internal/app/templates/`. They are registered in `newTemplateRegistry` (`internal/app/delivery.go`);
+the platform keeps only the mail layout.
 
 ### Adding a template
 
-Put the folder in your module and register it once at startup:
+Put the folder in your module with a `Templates()` function (copy `internal/modules/billing/templates.go`)
+and add it to the list in `newTemplateRegistry` (`internal/app/delivery.go`). Write the English files,
+then a variant per language (`subject.de.txt`, `mail.de.txt`, …).
 
-```go
-//go:embed templates
-var templates embed.FS
+A folder registered later with the same name replaces the earlier one, so a project can restyle
+the OTP mail without touching the kit's code. A `_layout/mail.html` folder replaces the layout.
 
-sub, _ := fs.Sub(templates, "templates")
-if err := platform.Delivery.Templates().Register(sub); err != nil { … }
-```
+## Mail transport
 
-Registering a folder with the name of a built-in replaces it, so you can restyle the OTP mail
-without touching the kit's code. A `_layout/mail.html` folder replaces the layout.
+Mail is one channel of the delivery system. Configure the transport with `MAIL_DRIVER`:
+
+| `MAIL_DRIVER` | Behaviour |
+| --- | --- |
+| `log` (default locally) | writes the mail to the log — nothing leaves your machine |
+| `smtp` | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION` (`tls`, `starttls`, empty) |
+
+`MAIL_FROM_ADDRESS` and `MAIL_FROM_NAME` set the sender. A stalled SMTP server times out instead
+of hanging the worker. For local SMTP testing, point the driver at [Mailpit](https://mailpit.axllent.org)
+(`MAIL_HOST=127.0.0.1`, `MAIL_PORT=1025`, the default) and send one with
+`ims delivery:test --to=you@example.com --template=otp-code --locale=de`.
 
 ## Branding
 

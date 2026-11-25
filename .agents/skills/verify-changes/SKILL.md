@@ -21,6 +21,19 @@ go test -count=1 -race -p 2 ./...   # -p 2 locally: race builds are memory-hungr
 
 make gen-check                   # sqlc, oapi-codegen, OpenAPI regions and skills are current
 make openapi-check               # spec valid + "no route drift"
+go run ./cmd/app i18n:coverage   # every language has every API key, plural form and template variant
+```
+
+Client app (`web/app`) when its screens, catalogs or styles changed:
+
+```bash
+cd web/app
+npm run i18n:types               # after adding or changing English keys
+npm run i18n:check               # every language complete, types current, no language codes in code
+npm run check:style              # tokens: WCAG AA contrast, type scale, no raw colours
+npm run check:logical            # no left/right CSS properties (right-to-left languages)
+npx tsc --noEmit
+npm run build
 ```
 
 Dashboard (`web/dev`) when the SPA, `api/openapi.yaml` or `/dev/api` changed:

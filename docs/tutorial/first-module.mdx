@@ -458,35 +458,44 @@ palette and the shortcuts sheet (`g t` opens it), and only for members whose rol
     keywords: 'catalogue inventory sku stock', permission: 'product.view', tenantOnly: true },
 ```
 
-**Write the text in both languages.** Add the keys to English, then to Bangla. The build fails
-until both have every key:
+**Write the text in every language.** Give the screen its own catalog folder, starting with the
+English reference:
 
-```ts title="web/app/src/i18n/en.ts"
-'products.title': 'Products',
-'products.subtitle': 'Your catalogue: names, SKUs, prices and stock.',
-'products.create': 'New product',
-'products.empty': 'No products yet.',
-'products.name': 'Name',
-'products.sku': 'SKU',
-'products.price': 'Price',
-'products.stock': 'In stock',
+```json title="web/app/src/i18n/catalogs/products/en.json"
+{
+  "products.title": "Products",
+  "products.subtitle": "Your catalogue: names, SKUs, prices and stock.",
+  "products.create": "New product",
+  "products.empty": "No products yet.",
+  "products.name": "Name",
+  "products.sku": "SKU",
+  "products.price": "Price",
+  "products.stock": "In stock"
+}
 ```
 
-```ts title="web/app/src/i18n/bn.ts"
-'products.title': 'পণ্য',
-'products.subtitle': 'আপনার ক্যাটালগ: নাম, SKU, দাম ও স্টক।',
-'products.create': 'নতুন পণ্য',
-'products.empty': 'এখনো কোনো পণ্য নেই।',
-'products.name': 'নাম',
-'products.sku': 'SKU',
-'products.price': 'দাম',
-'products.stock': 'স্টকে আছে',
+```json title="web/app/src/i18n/catalogs/products/bn.json"
+{
+  "products.title": "পণ্য",
+  "products.subtitle": "আপনার ক্যাটালগ: নাম, SKU, দাম ও স্টক।",
+  "products.create": "নতুন পণ্য",
+  "products.empty": "এখনো কোনো পণ্য নেই।",
+  "products.name": "নাম",
+  "products.sku": "SKU",
+  "products.price": "দাম",
+  "products.stock": "স্টকে আছে"
+}
 ```
+
+Add `de.json`, `ar.json`, `es.json` and `fr.json` the same way (`node web/app/scripts/i18n.mjs missing de`
+lists what each needs, and an AI agent can do it with the `translate` skill), then run
+`npm --prefix web/app run i18n:types`. `npm --prefix web/app run i18n:check` fails until every
+language has every key.
 
 **Try it.** Open [localhost:8082](http://localhost:8082) and sign in as the super admin, open
 **Organizations**, choose "Main Tenant" and press **Impersonate**. **Products** is in the sidebar,
-with the pen you created in step 7. Switch the language to বাংলা in the account menu: the page
-and the price follow.
+with the pen you created in step 7. Switch the language to বাংলা or العربية in the language menu: the page and the price follow,
+and Arabic turns the page right to left.
 
 <Aside type="tip" title="Create and edit from the screen">
   The **New product** button doesn't open anything yet. Add the editor drawer from
@@ -627,7 +636,7 @@ screen and the regenerated `schema.d.ts` and `routeTree.gen.ts` together: one fe
 | edited `wiring.go`, `routes.go` | everything is wired explicitly; tenant data goes in the resolved group |
 | added `_app.org.products.tsx` | a screen is a route file; its types come from the OpenAPI spec (`openapi:gen`) |
 | edited `navigation.ts` | one entry puts a page in the sidebar, Ctrl+K and shortcuts, behind a permission |
-| edited `en.ts` and `bn.ts` | every string is a key; the build fails if a language misses one |
+| added `catalogs/products/<code>.json` | every string is a key; `i18n:check` fails if a language misses one |
 | wrote a `testkit` test | prove isolation: another tenant gets 404 |
 
 Next, read the guides for the parts you'll use most: [Modules](../guides/modules.md),
