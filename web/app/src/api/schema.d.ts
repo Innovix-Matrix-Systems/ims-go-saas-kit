@@ -3276,7 +3276,7 @@ export interface paths {
         };
         /**
          * The enabled currencies and the default
-         * @description How clients write amounts. Cached for five minutes.
+         * @description How clients write amounts. Not cached by browsers, so a change by staff shows at once.
          */
         get: operations["listPublicCurrencies"];
         put?: never;

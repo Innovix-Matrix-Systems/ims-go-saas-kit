@@ -8,11 +8,15 @@ import { intlLocale } from './i18n'
 export type Currency = Schemas['PublicCurrency']
 export type CurrencyList = Schemas['PublicCurrenciesEnvelope']['data']
 
-/** The enabled currencies and the default (the currency of plan prices and new payments). */
+/**
+ * The enabled currencies and the default (the currency of plan prices and new payments). Read
+ * again after a minute, when the tab is focused again, so a change by staff reaches open tabs.
+ */
 export const currenciesQuery = {
   queryKey: ['public-currencies'],
   queryFn: () => api<CurrencyList>('/public/currencies', { token: null }),
-  staleTime: 300_000,
+  staleTime: 60_000,
+  refetchOnWindowFocus: true,
 }
 
 /** A currency without a row: its code as the symbol, two decimals. */
