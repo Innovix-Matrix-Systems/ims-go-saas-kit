@@ -3515,7 +3515,7 @@ paths:
     get:
       tags: [Currencies]
       summary: The enabled currencies and the default
-      description: How clients write amounts. Cached for five minutes.
+      description: How clients write amounts. Not cached by browsers, so a change by staff shows at once.
       operationId: listPublicCurrencies
       security: []
       responses:

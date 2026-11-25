@@ -54,7 +54,8 @@ an amount identically:
 
 ## API
 
-- `GET /api/v1/public/currencies` (no sign-in, cached five minutes): the enabled currencies, the
+- `GET /api/v1/public/currencies` (no sign-in; cached on the server, never in the browser, so a
+  change by staff shows at once): the enabled currencies, the
   default first, and `default`. The app loads it at start, with the language.
 - Staff: `GET/POST /api/v1/currencies`, `PATCH`/`DELETE /api/v1/currencies/{id}`,
   `POST /api/v1/currencies/{id}/default` (`currency.view.all`, `currency.create`,

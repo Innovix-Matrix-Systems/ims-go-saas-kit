@@ -25,14 +25,16 @@ func (h *Handler) can(permission string) func(http.Handler) http.Handler {
 }
 
 // public lists the enabled currencies and the default for clients that
-// write amounts (the app loads it at start).
+// write amounts (the app loads it at start). Browsers must ask again each
+// time (the list is cached on the server): a staff change shows everywhere at
+// once instead of after a browser's cache expires.
 func (h *Handler) public(w http.ResponseWriter, r *http.Request) {
 	items, err := h.service.Enabled(r.Context())
 	if err != nil {
 		h.Error(w, r, err)
 		return
 	}
-	w.Header().Set("Cache-Control", "public, max-age=300")
+	w.Header().Set("Cache-Control", "no-cache")
 	h.Data(w, r, http.StatusOK, NewPublicResponse(items))
 }
 
