@@ -11,7 +11,9 @@ currencies and no tax, so nothing depends on a rate being right.
 
 ## Currencies
 
-Each currency is a row in `currencies`, managed by staff under **Console → Currencies**:
+Each currency is a row in `currencies`, managed by staff under **Console → Currencies** (add,
+edit with a live preview, enable or disable, and **Make default** from the currency's row or the
+top of its drawer):
 
 | Field | Example | Meaning |
 | --- | --- | --- |
@@ -26,9 +28,11 @@ Each currency is a row in `currencies`, managed by staff under **Console → Cur
 A new install has **USD** (the default), **BDT** and **EUR**. An upgraded install with payments
 keeps its money: the currency its payments use becomes the default.
 
-**The default currency** is the currency of plan prices and of new payments. Each payment stores
-the code it was made in, so an old invoice still reads in its own currency after the default
-changes.
+**The default currency** is the currency of plan prices and of new payments. Plans have no
+currency of their own: switching the default from BDT to USD turns a plan priced `৳300.00` into
+`$300.00`, the same number with a new symbol, so re-enter the prices if you really change
+currency. Each payment stores the code it was made in, so old payments, invoices and receipts keep
+their own currency, and dashboard revenue stays grouped per currency.
 
 Guards that keep stored amounts meaningful:
 
@@ -56,7 +60,8 @@ an amount identically:
 
 - `GET /api/v1/public/currencies` (no sign-in; cached on the server, never in the browser, so a
   change by staff shows at once): the enabled currencies, the
-  default first, and `default`. The app loads it at start, with the language.
+  default first, and `default`. The app loads it at start, with the language, and reads it again
+  after a minute or when the tab is focused again.
 - Staff: `GET/POST /api/v1/currencies`, `PATCH`/`DELETE /api/v1/currencies/{id}`,
   `POST /api/v1/currencies/{id}/default` (`currency.view.all`, `currency.create`,
   `currency.update`, `currency.delete`; system permissions).
