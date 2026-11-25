@@ -1,0 +1,8 @@
+{
+    "notifications.renewal_reminder.title": {
+        "one": "Su suscripción se renueva en {{.Count}} día",
+        "many": "Su suscripción se renueva en {{.Count}} de días",
+        "other": "Su suscripción se renueva en {{.Count}} días"
+    },
+    "notifications.renewal_reminder.body": "La suscripción vence el {{.Date}}."
+}

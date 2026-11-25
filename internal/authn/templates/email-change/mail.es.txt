@@ -1,0 +1,7 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Solicitó usar esta dirección para su cuenta. Abra este enlace para confirmarla:
+
+{{.Data.link}}
+
+El enlace caduca en {{duration .Data.minutes}}. Hasta entonces, su cuenta conserva su dirección actual. Si no lo solicitó, ignore este correo.

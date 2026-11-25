@@ -1,0 +1,24 @@
+{
+  "roles.subtitle": "Lo que cada rol permite hacer a sus miembros.",
+  "roles.create": "Nuevo rol",
+  "roles.createTitle": "Nuevo rol",
+  "roles.name": "Nombre",
+  "roles.description": "Descripción",
+  "roles.managed": "Gestionado",
+  "roles.managedHint": "El rol Admin siempre tiene todos los permisos de la organización. Cree otro rol para un acceso más limitado.",
+  "roles.permissions": "Permisos",
+  "roles.permissionsHint": "Solo puede conceder los permisos que usted tiene.",
+  "roles.notGrantable": "No tiene este permiso, así que no puede concederlo.",
+  "roles.permissionCount": {
+    "one": "{count} permiso",
+    "many": "{count} permisos",
+    "other": "{count} permisos"
+  },
+  "roles.save": "Guardar rol",
+  "roles.savePermissions": "Guardar permisos",
+  "roles.delete": "Eliminar rol",
+  "roles.deleteConfirm": "¿Eliminar el rol {name}? Los miembros que lo tienen pierden sus permisos.",
+  "roles.empty": "Todavía no hay roles.",
+  "roles.selectAll": "Todos",
+  "roles.selectNone": "Ninguno"
+}

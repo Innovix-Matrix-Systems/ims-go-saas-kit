@@ -1,0 +1,19 @@
+{
+  "nav.group.workspace": "Espacio de trabajo",
+  "nav.group.account": "Cuenta",
+  "nav.home": "Inicio",
+  "nav.profile": "Su perfil",
+  "nav.collapse": "Contraer",
+  "nav.expand": "Expandir la barra lateral",
+  "nav.openMenu": "Abrir el menú",
+  "nav.searchOrJump": "Buscar o ir a…",
+  "nav.shortcuts": "Atajos de teclado",
+  "nav.group.organization": "Organización",
+  "nav.group.console": "Consola",
+  "nav.resize": "Arrastre para cambiar el tamaño de la barra lateral",
+  "nav.orgSettings": "Configuración de la organización",
+  "nav.jobs": "Tareas",
+  "nav.breadcrumb": "Usted está aquí",
+  "nav.organization": "Organización",
+  "nav.account": "Cuenta"
+}

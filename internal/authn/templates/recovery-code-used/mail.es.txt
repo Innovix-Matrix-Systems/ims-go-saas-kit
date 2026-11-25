@@ -1,0 +1,5 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Se usó un código de recuperación para iniciar sesión en su cuenta el {{.Data.when}}. Le quedan {{.Data.left}} código(s) de recuperación.
+
+Si fue usted, configure de nuevo el inicio de sesión en dos pasos en su nuevo dispositivo y genere nuevos códigos de recuperación. Si no fue usted, cambie su contraseña ahora.

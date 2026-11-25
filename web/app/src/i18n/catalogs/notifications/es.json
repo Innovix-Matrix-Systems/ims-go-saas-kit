@@ -1,0 +1,18 @@
+{
+  "notifications.title": "Notificaciones",
+  "notifications.preferences": "Lo que le enviamos",
+  "notifications.mandatory": "Siempre se envía",
+  "notifications.channel.mail": "Correo electrónico",
+  "notifications.channel.sms": "SMS",
+  "notifications.channel.push": "Push",
+  "notifications.empty": "No tiene notificaciones.",
+  "notifications.markAllRead": "Marcar todo como leído",
+  "notifications.unreadLabel": {
+    "one": "{count} sin leer",
+    "many": "{count} sin leer",
+    "other": "{count} sin leer"
+  },
+  "notifications.unreadOnly": "Solo sin leer",
+  "notifications.viewAll": "Ver todas las notificaciones",
+  "notifications.loadMore": "Cargar más"
+}

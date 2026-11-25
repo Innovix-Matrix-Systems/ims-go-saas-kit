@@ -1,0 +1,7 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+La exportación de datos personales que solicitó está lista. Abra este enlace y descárguela con la sesión iniciada:
+
+{{.Data.url}}
+
+El archivo se elimina pasadas {{.Data.hours}} horas. Contiene datos personales: guárdelo en un lugar seguro.

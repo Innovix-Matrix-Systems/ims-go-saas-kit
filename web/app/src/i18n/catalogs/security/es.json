@@ -1,0 +1,11 @@
+{
+  "security.changePassword": "Cambiar contraseña",
+  "security.changePasswordHint": "Al cambiar la contraseña se cierra la sesión en los demás dispositivos.",
+  "security.passwordChanged": "Se cambió su contraseña.",
+  "security.sessions": "Dispositivos con sesión iniciada",
+  "security.sessionsHint": "Cierre la sesión en cualquier dispositivo que no reconozca.",
+  "security.thisDevice": "Este dispositivo",
+  "security.lastUsed": "Último uso {when}",
+  "security.signOutDevice": "Cerrar sesión",
+  "security.signOutOthers": "Cerrar sesión en todos los demás dispositivos"
+}

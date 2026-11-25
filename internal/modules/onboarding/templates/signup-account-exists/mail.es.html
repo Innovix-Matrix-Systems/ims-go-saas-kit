@@ -1,0 +1,5 @@
+<p>Hola{{if .To.Name}} {{.To.Name}}{{end}}:</p>
+<p>Alguien intentó crear una nueva organización con esta dirección de correo electrónico, pero usted ya tiene una cuenta.</p>
+<p style="margin:24px 0;"><a href="{{.Data.login_url}}" style="background:{{.Brand.Color}};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Iniciar sesión</a></p>
+<p>¿Olvidó su contraseña? <a href="{{.Data.reset_url}}">Restablézcala</a>.</p>
+<p style="font-size:13px;color:#6b7785;">Si no fue usted, puede ignorar este correo: no se cambió nada.</p>

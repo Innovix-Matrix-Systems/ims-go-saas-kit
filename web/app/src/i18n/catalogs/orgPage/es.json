@@ -1,0 +1,15 @@
+{
+  "orgPage.since": "Desde el {date}",
+  "orgPage.edit": "Editar detalles",
+  "orgPage.editHint": "El nombre y cómo contactar con su organización.",
+  "orgPage.about": "Acerca de",
+  "orgPage.created": "Creada",
+  "orgPage.id": "ID de la organización",
+  "orgPage.people": "Personas",
+  "orgPage.peopleCount": {
+    "one": "{count} miembro",
+    "many": "{count} miembros",
+    "other": "{count} miembros"
+  },
+  "orgPage.transferHint": "Para entregar la organización a otra persona, vaya a"
+}

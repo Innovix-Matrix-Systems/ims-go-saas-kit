@@ -1,0 +1,22 @@
+{
+  "branches.subtitle": "Dónde trabaja su organización. Los miembros pertenecen a una sucursal y pueden cambiar a otras.",
+  "branches.search": "Buscar sucursales",
+  "branches.create": "Nueva sucursal",
+  "branches.createTitle": "Nueva sucursal",
+  "branches.name": "Nombre",
+  "branches.address": "Dirección",
+  "branches.phone": "Teléfono",
+  "branches.email": "Correo electrónico",
+  "branches.description": "Descripción",
+  "branches.manager": "Responsable",
+  "branches.noManager": "Sin responsable",
+  "branches.current": "Actual",
+  "branches.empty": "Ninguna sucursal coincide.",
+  "branches.save": "Guardar sucursal",
+  "branches.delete": "Eliminar sucursal",
+  "branches.deleteConfirm": "¿Eliminar la sucursal {name}? Antes hay que mover a sus miembros a otra sucursal.",
+  "branches.all": "Todas las sucursales",
+  "branches.switchedAll": "Ahora ve todas las sucursales.",
+  "branches.switch": "Cambiar de sucursal",
+  "branches.switched": "Ahora trabaja en {name}."
+}

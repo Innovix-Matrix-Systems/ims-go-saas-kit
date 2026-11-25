@@ -1,0 +1,15 @@
+{
+  "form.showPassword": "Mostrar contraseña",
+  "form.hidePassword": "Ocultar contraseña",
+  "form.passwordTooShort": "Use al menos 8 caracteres.",
+  "form.passwordTooLong": "Esta contraseña es demasiado larga.",
+  "form.passwordHint": "Al menos 8 caracteres. Una frase corta es fácil de recordar y difícil de adivinar.",
+  "form.passwordsDiffer": "Las contraseñas no coinciden.",
+  "form.confirmPassword": "Confirmar contraseña",
+  "form.newPassword": "Nueva contraseña",
+  "form.currentPassword": "Contraseña actual",
+  "form.save": "Guardar",
+  "form.saving": "Guardando…",
+  "form.saved": "Guardado.",
+  "form.optional": "opcional"
+}

@@ -159,7 +159,7 @@ func isSnake(s string) bool {
 func pluralize(name string) string {
 	switch {
 	case strings.HasSuffix(name, "s"), strings.HasSuffix(name, "x"), strings.HasSuffix(name, "ch"), strings.HasSuffix(name, "sh"):
-		return name + "es"
+		return name + "es" // English plural suffix, not a language code
 	case strings.HasSuffix(name, "y") && len(name) > 1:
 		return name[:len(name)-1] + "ies"
 	default:

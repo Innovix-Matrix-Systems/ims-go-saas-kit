@@ -113,7 +113,8 @@ func TestDurationsSpeakTheLanguage(t *testing.T) {
 // TestNoHardCodedLanguageCodes keeps the code free of language codes: a
 // language is a descriptor plus catalog files, so a quoted code ("bn") in Go
 // source is a bug waiting for the next language. The registry is the one
-// place allowed to name them.
+// place allowed to name them; a string that only looks like a code says so on
+// its line ("not a language code").
 func TestNoHardCodedLanguageCodes(t *testing.T) {
 	translator := testTranslator(t)
 	codes := translator.Codes()[1:] // the reference language is named by i18n.Reference
@@ -140,7 +141,7 @@ func TestNoHardCodedLanguageCodes(t *testing.T) {
 			return err
 		}
 		for i, line := range strings.Split(string(source), "\n") {
-			if pattern.MatchString(line) {
+			if pattern.MatchString(line) && !strings.Contains(line, "not a language code") {
 				t.Errorf("%s:%d names a language code: %s (read it from the language registry)", rel, i+1, strings.TrimSpace(line))
 			}
 		}

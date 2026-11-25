@@ -1,0 +1,5 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Su código de inicio de sesión es: {{.Data.code}}
+
+Caduca en {{duration .Data.minutes}}. Si no intentó iniciar sesión, puede ignorar este correo y le recomendamos cambiar su contraseña.

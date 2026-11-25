@@ -1,0 +1,7 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+El inicio de sesión en dos pasos se activó en su cuenta el {{.Data.when}}, con {{if eq .Data.method "totp"}}una aplicación de autenticación{{else}}códigos enviados a esta dirección de correo{{end}}.
+
+Guarde sus códigos de recuperación en un lugar seguro: cada uno le permite iniciar sesión una vez si pierde {{if eq .Data.method "totp"}}su teléfono{{else}}su buzón{{end}}.
+
+Si no lo hizo usted, cambie su contraseña ahora y contacte con su administrador.

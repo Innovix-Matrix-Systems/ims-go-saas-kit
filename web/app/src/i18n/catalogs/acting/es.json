@@ -1,0 +1,6 @@
+{
+  "acting.tenant": "Está actuando en nombre de {name}. Trabaja con sus propios permisos de personal y los cambios se registran a su nombre.",
+  "acting.user": "Ha iniciado sesión como {name} ({email}). Todo lo que hace se ejecuta como esa persona y se registra como hecho por el personal.",
+  "acting.stop": "Dejar de actuar en su nombre",
+  "acting.return": "Volver a mi cuenta"
+}

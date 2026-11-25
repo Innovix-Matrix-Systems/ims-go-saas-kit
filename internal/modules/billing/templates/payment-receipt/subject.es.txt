@@ -1,0 +1,1 @@
+Pago recibido: su plan {{.Data.plan}} está activo

@@ -1,0 +1,12 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+Recibimos {{.Data.amount}} de {{.Data.organization}} por el plan {{.Data.plan}}, y el plan ya está activo.
+
+Factura: {{.Data.invoice}}
+Pagada el: {{.Data.paid_on}}
+
+La factura va adjunta en PDF. También puede descargarla en cualquier momento desde la página de facturación:
+
+{{.Data.url}}
+
+Gracias.

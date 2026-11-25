@@ -1,0 +1,40 @@
+{
+  "language": "es",
+  "style": [
+    "Neutral Spanish for Spain and Latin America; address the reader formally with usted (su, le), never tú.",
+    "Sentence case in buttons and headings; opening ¿ and ¡; quotation marks « ».",
+    "Spanish plural rules have one, many and other: many (large round numbers) uses the other text.",
+    "Prefer «correo electrónico» over «e-mail»; keep endpoint and webhook as they are."
+  ],
+  "terms": {
+    "organization": "organización",
+    "member": "miembro",
+    "user": "usuario",
+    "role": "rol",
+    "permission": "permiso",
+    "branch": "sucursal",
+    "plan": "plan",
+    "subscription": "suscripción",
+    "payment": "pago",
+    "invoice": "factura",
+    "billing": "facturación",
+    "settings": "configuración",
+    "activity log": "registro de actividad",
+    "audit log": "registro de auditoría",
+    "notification": "notificación",
+    "announcement": "anuncio",
+    "background job": "tarea en segundo plano",
+    "endpoint": "endpoint",
+    "sign in": "iniciar sesión",
+    "sign out": "cerrar sesión",
+    "sign up": "registrarse / registro",
+    "two-factor": "dos pasos",
+    "recovery code": "código de recuperación",
+    "e-mail": "correo electrónico",
+    "password": "contraseña",
+    "staff": "personal",
+    "impersonate": "actuar en nombre de",
+    "trial": "prueba"
+  },
+  "keep": ["IMS Go SaaS Kit", "bKash", "Nagad", "MCP", "Google", "GitHub", "API", "OAuth", "webhook", "endpoint", "Claude", "ChatGPT", "Cursor"]
+}

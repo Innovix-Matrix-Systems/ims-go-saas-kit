@@ -1,0 +1,9 @@
+Hola{{if .To.Name}} {{.To.Name}}{{end}}:
+
+{{if .Data.inviter}}{{.Data.inviter}} le ha invitado{{else}}Le han invitado{{end}} a {{.Brand.Name}}. Abra este enlace para elegir su contraseña y activar su cuenta:
+
+{{.Data.link}}
+
+El enlace funciona una sola vez y caduca en {{duration .Data.minutes}}. Después, inicie sesión con su correo electrónico y la contraseña que eligió.
+
+Si no esperaba esta invitación, puede ignorar este correo.

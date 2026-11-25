@@ -1,0 +1,1 @@
+Su exportación de datos de {{.Brand.Name}} está lista
