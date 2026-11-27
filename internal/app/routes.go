@@ -14,6 +14,7 @@ import (
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/authz"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/config"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/mcp"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/dev"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/oauth"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/realtime"
@@ -150,6 +151,12 @@ func (d *Dependencies) Router() http.Handler {
 
 			r.Group(func(r chi.Router) {
 				r.Use(tenancy.Resolve(d.TenancyOpts))
+				// A paid plan that lapsed beyond its grace period leaves the
+				// organization read-only: writes are refused except paying,
+				// the caller's own account, exports and removing members.
+				if d.Platform != nil && d.Platform.BillingGuard != nil {
+					r.Use(billing.ReadOnly(d.Platform.BillingGuard, d.Responder, billing.ReadOnlyOptions{Allow: readOnlyAllowed}))
+				}
 				d.Users.RegisterRoutesResolve(r)
 				d.Privacy.RegisterRoutesResolve(r)
 				d.Branches.RegisterRoutes(r)
@@ -243,6 +250,38 @@ func (l *lateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { l.h.Se
 // dedupeOptions is where duplicate-request protection is tuned: routes where
 // identical repeats are normal skip it; routes that move money keep a
 // succeeded request's fingerprint longer.
+// readOnlyAllowed are the organization writes still allowed while a lapsed
+// plan leaves it read-only (docs/guides/billing.md#grace-and-read-only):
+// paying, the caller's own account, exports and removing members. Every
+// entry must name a real route (TestReadOnlyAllowlistNamesRoutes).
+var readOnlyAllowed = []string{
+	// Pay, change or withdraw a plan.
+	"POST /api/v1/billing/subscribe",
+	"POST /api/v1/billing/payments/{id}/cancel",
+	"POST /api/v1/billing/subscription/cancel",
+	"POST /api/v1/billing/subscription/keep",
+	// The caller's own account and notifications.
+	"POST /api/v1/user/profile/update",
+	"POST /api/v1/user/profile/update-avatar",
+	"POST /api/v1/user/profile/change-password",
+	"POST /api/v1/user/change-password",
+	"PATCH /api/v1/user/switch-branch/{id}",
+	"DELETE /api/v1/user/switch-branch",
+	"PUT /api/v1/notification/preferences",
+	"POST /api/v1/notification/read-all",
+	"POST /api/v1/notification/{id}/read",
+	"POST /api/v1/onboarding/complete",
+	"POST /api/v1/announcements/{id}/events",
+	// Exports and their jobs.
+	"POST /api/v1/user/export-background",
+	"POST /api/v1/activity/export",
+	"POST /api/v1/user/{id}/privacy-export",
+	"DELETE /api/v1/data-processing/job/{jobId}",
+	"POST /api/v1/data-processing/job/{jobId}/retry",
+	// Offboarding: removing a member.
+	"DELETE /api/v1/user/{id}",
+}
+
 func dedupeOptions(cfg *config.Config, logger *slog.Logger) dedupe.Options {
 	const money = 30 * time.Second
 	return dedupe.Options{

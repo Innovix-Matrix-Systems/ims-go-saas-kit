@@ -2,6 +2,8 @@ package billing
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -101,7 +103,10 @@ func (h *Handler) status(w http.ResponseWriter, r *http.Request) {
 		h.Error(w, r, err)
 		return
 	}
-	response := StatusResponse{Active: status.Active, CreditBalance: status.CreditBalance, Currency: status.Currency}
+	response := StatusResponse{
+		Active: status.Active, CreditBalance: status.CreditBalance, Currency: status.Currency,
+		InGrace: status.InGrace, GraceEndsAt: status.GraceEndsAt, ReadOnly: status.ReadOnly,
+	}
 	if status.Scheduled != nil {
 		scheduled := NewSubscriptionResponse(*status.Scheduled)
 		response.Scheduled = &scheduled
@@ -121,6 +126,10 @@ func (h *Handler) status(w http.ResponseWriter, r *http.Request) {
 	if status.Package != nil {
 		pkg := NewPackageResponse(*status.Package)
 		response.Package = &pkg
+		if status.Subscription != nil {
+			offered := status.Subscription.PlanFor(*status.Package)
+			response.BillingCycle, response.Price = offered.BillingCycle, offered.Price
+		}
 	}
 	h.Data(w, r, http.StatusOK, response)
 }
@@ -147,7 +156,7 @@ func (h *Handler) subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	scope := tenancy.From(r)
-	result, err := h.subscriptions.Checkout(r.Context(), scope.EffectiveTenantID(), req.PackageID, req.PaymentMethod, req.PaymentData, authn.UserID(r))
+	result, err := h.subscriptions.CheckoutAt(r.Context(), scope.EffectiveTenantID(), req.PackageID, req.BillingCycle, req.PaymentMethod, req.PaymentData, authn.UserID(r))
 	if err != nil {
 		h.Error(w, r, err)
 		return
@@ -275,19 +284,58 @@ func (h *Handler) destroyPackage(w http.ResponseWriter, r *http.Request) {
 	h.NoContent(w)
 }
 
+// listSubscriptions is the staff subscriptions panel: every organization's
+// subscriptions with names, price and standing, by view and filters
+// (docs/guides/billing.md#the-staff-subscriptions-panel).
 func (h *Handler) listSubscriptions(w http.ResponseWriter, r *http.Request) {
 	page, perPage, offset := httpx.PageParams(r)
-	items, total, err := h.subscriptions.List(r.Context(), r.URL.Query().Get("status"), int32(perPage), int32(offset))
+	orderBy, orderDir := httpx.OrderParams(r, "id", "expires_at", "created_at")
+	query := r.URL.Query()
+	input := service.StaffListInput{
+		View: query.Get("view"), Status: query.Get("status"), Search: strings.TrimSpace(query.Get("search")),
+		BillingCycle: query.Get("billing_cycle"), OrderBy: orderBy, OrderDir: orderDir,
+		Limit: int32(perPage), Offset: int32(offset),
+	}
+	if raw := query.Get("package_id"); raw != "" {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || id <= 0 {
+			h.Error(w, r, apperr.Validation(map[string][]string{"package_id": {"The package_id must be a positive number."}}))
+			return
+		}
+		input.PackageID = &id
+	}
+	if raw := query.Get("expires_within_days"); raw != "" {
+		days, err := strconv.Atoi(raw)
+		if err != nil {
+			h.Error(w, r, apperr.Validation(map[string][]string{"expires_within_days": {"The number of days must be a whole number."}}))
+			return
+		}
+		input.ExpiresWithinDays = &days
+	}
+	items, total, err := h.subscriptions.ListForStaff(r.Context(), input)
 	if err != nil {
 		h.Error(w, r, err)
 		return
 	}
-	data := make([]SubscriptionResponse, 0, len(items))
+	data := make([]StaffSubscriptionResponse, 0, len(items))
 	for _, item := range items {
-		data = append(data, NewSubscriptionResponse(item))
+		data = append(data, NewStaffSubscriptionResponse(item))
 	}
 	meta, links := httpx.NewPagination(r, page, perPage, total)
 	h.Paginated(w, r, http.StatusOK, data, meta, links)
+}
+
+// subscriptionSummary counts the staff panel's views (its tabs).
+func (h *Handler) subscriptionSummary(w http.ResponseWriter, r *http.Request) {
+	counts, err := h.subscriptions.CountForStaff(r.Context())
+	if err != nil {
+		h.Error(w, r, err)
+		return
+	}
+	h.Data(w, r, http.StatusOK, StaffSubscriptionCountsResponse{
+		Current: counts.Current(), Active: counts.Active, Trial: counts.Trial, Grace: counts.Grace,
+		ReadOnly: counts.ReadOnly, Pending: counts.Pending, Scheduled: counts.Scheduled, All: counts.All,
+	})
 }
 
 func (h *Handler) cancelSubscription(w http.ResponseWriter, r *http.Request) {
@@ -342,6 +390,7 @@ func (h *Handler) assignPlan(w http.ResponseWriter, r *http.Request) {
 		PaymentMethod: req.PaymentMethod,
 		Amount:        req.Amount,
 		Mode:          req.Mode,
+		Cycle:         req.BillingCycle,
 	})
 	if err != nil {
 		h.Error(w, r, err)
@@ -360,7 +409,18 @@ func (h *Handler) assignPlan(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) listAllPayments(w http.ResponseWriter, r *http.Request) {
 	page, perPage, offset := httpx.PageParams(r)
-	items, total, err := h.payments.List(r.Context(), r.URL.Query().Get("status"), int32(perPage), int32(offset))
+	filter := domain.PaymentFilter{Status: r.URL.Query().Get("status"), Limit: int32(perPage), Offset: int32(offset)}
+	// One organization's payments (the console links here from an
+	// organization), as the platform activity log narrows by tenant_id.
+	if raw := r.URL.Query().Get("tenant_id"); raw != "" {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || id < 1 {
+			h.Error(w, r, apperr.Validation(map[string][]string{"tenant_id": {"The tenant_id must be a tenant id."}}))
+			return
+		}
+		filter.TenantID = &id
+	}
+	items, total, err := h.payments.List(r.Context(), filter)
 	if err != nil {
 		h.Error(w, r, err)
 		return

@@ -46,7 +46,11 @@ func (s *UsageService) For(ctx context.Context, tenantID int64) (*Usage, error) 
 	}
 	out := &Usage{StorageBytes: row.StorageBytes, Items: make([]UsageItem, 0, len(used))}
 	for _, feature := range domain.Features {
-		if !feature.IsLimit() {
+		// Only limits with a count: a limit nothing counts yet (collections,
+		// share links before the vault exists) or that is not a quantity
+		// (audit.retention_days) would show a meaningless "0 of N". A module
+		// that starts counting a limit adds it to used.
+		if _, counted := used[feature]; !counted || !feature.IsLimit() {
 			continue
 		}
 		limit, err := s.guard.Limit(ctx, tenantID, feature)

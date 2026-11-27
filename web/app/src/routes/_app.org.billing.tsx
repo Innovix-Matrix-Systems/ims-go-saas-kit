@@ -4,7 +4,23 @@ import { useState } from 'react'
 import { api, apiBlob, saveBlob, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { formatBytes } from '../format'
-import { featureName, formatMB, PlanChange, publicPackagesQuery, subscriptionStatusQuery, useMoney, usePrice, type Change, type Package, PricingCard } from '../components/billing'
+import {
+  atCycle,
+  visibleLimits,
+  CycleSwitch,
+  featureName,
+  formatMB,
+  offersYearly,
+  PlanChange,
+  publicPackagesQuery,
+  subscriptionStatusQuery,
+  useMoney,
+  usePrice,
+  type Change,
+  type Cycle,
+  type Package,
+  PricingCard,
+} from '../components/billing'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Icon, Modal, PageHeader, type BadgeTone } from '../components/ui'
@@ -128,7 +144,10 @@ function PlanCard({ status, canManage, waiting }: { status?: Schemas['Subscripti
   const ends = subscription?.expires_at ? new Date(subscription.expires_at).getTime() : Infinity
   const starts = subscription?.starts_at ? new Date(subscription.starts_at).getTime() : ends - 30 * day
   const renewWindow = Math.min(RENEW_WINDOW_DAYS, (ends - starts) / day / 2)
-  const renewTo = status.next_package ?? pkg
+  // The plan and cycle the next period renews onto: a chosen downgrade, or the current ones.
+  const renewTo = status.next_package
+    ? atCycle(status.next_package, subscription?.next_billing_cycle ?? status.next_package.billing_cycle)
+    : pkg && atCycle(pkg, status.billing_cycle)
   const canRenew =
     live &&
     canManage &&
@@ -152,7 +171,7 @@ function PlanCard({ status, canManage, waiting }: { status?: Schemas['Subscripti
             <span className="plan-name">{pkg.name}</span>
             <Badge tone={subscriptionTones[subscription.status]}>{t(`billing.status.${subscription.status}` as MessageKey)}</Badge>
           </div>
-          <div className="plan-price">{price(pkg)}</div>
+          <div className="plan-price">{price(atCycle(pkg, status.billing_cycle))}</div>
           <dl className="kv billing-kv">
             <dt>{t('billing.started')}</dt>
             <dd>{date(subscription.starts_at ?? subscription.created_at)}</dd>
@@ -251,7 +270,7 @@ function UsageCard({ usage }: { usage?: Usage }) {
         <ListSkeleton rows={3} />
       ) : (
         <div className="stack">
-          {usage.limits.map((item) => {
+          {visibleLimits(usage.limits).map((item) => {
             const storage = item.feature_key === 'storage.mb'
             const used = storage ? formatBytes(usage.storage_bytes) : String(item.used)
             const ratio = item.limit > 0 ? Math.min(1, item.used / item.limit) : 0
@@ -290,8 +309,12 @@ function PlansCard({ status, canManage, waiting }: { status?: Schemas['Subscript
   const date = useDate()
   const packages = useQuery(publicPackagesQuery)
   const [chosen, setChosen] = useState<Package | null>(null)
+  // Monthly or yearly: starts on the cycle the organization pays.
+  const [cycle, setCycle] = useState<Cycle>(status?.billing_cycle === 'yearly' ? 'yearly' : 'monthly')
   const currentId = status?.active ? status.package?.id : undefined
+  const currentCycle = status?.billing_cycle
   const nextId = status?.active ? (status.next_package?.id ?? status.scheduled_package?.id) : undefined
+  const nextCycle = status?.active ? (status.subscription?.next_billing_cycle ?? status.scheduled?.billing_cycle ?? null) : null
 
   const done = (pkg: Package, change: Change) => {
     setChosen(null)
@@ -312,38 +335,44 @@ function PlansCard({ status, canManage, waiting }: { status?: Schemas['Subscript
       {!packages.data ? (
         <CardsSkeleton count={3} />
       ) : (
-        <div className="plan-grid">
-          {packages.data.map((pkg) => {
-            const current = pkg.id === currentId
-            return (
-              <PricingCard
-                key={pkg.id}
-                pkg={pkg}
-                current={current}
-                chosen={pkg.id === nextId}
-                action={
-                  canManage ? (
-                    current ? (
-                      <span className="plan-current-note">
-                        <Icon name="check" />
-                        {t('billing.yourPlan')}
-                      </span>
-                    ) : pkg.id === nextId ? (
-                      <span className="plan-current-note">{t('billing.fromDate', { date: date(status?.subscription?.expires_at) })}</span>
-                    ) : (
-                      <Button variant="primary" disabled={waiting} title={waiting ? t('billing.waitingHint') : undefined} onClick={() => setChosen(pkg)}>
-                        {t('billing.switch')}
-                      </Button>
-                    )
-                  ) : undefined
-                }
-              />
-            )
-          })}
+        <div className="stack">
+          {offersYearly(packages.data) ? <CycleSwitch value={cycle} onChange={setCycle} packages={packages.data} /> : null}
+          <div className="plan-grid">
+            {packages.data.map((base) => {
+              // The plan at the chosen cycle; a plan without a yearly price stays as it is.
+              const pkg = atCycle(base, cycle)
+              const current = pkg.id === currentId && (pkg.billing_cycle === currentCycle || !currentCycle)
+              const next = pkg.id === nextId && (!nextCycle || pkg.billing_cycle === nextCycle)
+              return (
+                <PricingCard
+                  key={pkg.id}
+                  pkg={pkg}
+                  current={current}
+                  chosen={next}
+                  action={
+                    canManage ? (
+                      current ? (
+                        <span className="plan-current-note">
+                          <Icon name="check" />
+                          {t('billing.yourPlan')}
+                        </span>
+                      ) : next ? (
+                        <span className="plan-current-note">{t('billing.fromDate', { date: date(status?.subscription?.expires_at) })}</span>
+                      ) : (
+                        <Button variant="primary" disabled={waiting} title={waiting ? t('billing.waitingHint') : undefined} onClick={() => setChosen(pkg)}>
+                          {t('billing.switch')}
+                        </Button>
+                      )
+                    ) : undefined
+                  }
+                />
+              )
+            })}
+          </div>
         </div>
       )}
       <Modal open={chosen != null} title={chosen ? t('billing.checkoutTitle', { name: chosen.name }) : ''} onClose={() => setChosen(null)}>
-        {chosen ? <PlanChange key={chosen.id} pkg={chosen} onDone={(change) => done(chosen, change)} /> : null}
+        {chosen ? <PlanChange key={`${chosen.id}-${chosen.billing_cycle}`} pkg={chosen} onDone={(change) => done(chosen, change)} /> : null}
       </Modal>
     </Card>
   )

@@ -17,12 +17,15 @@ type Package struct {
 	Description  *string
 	Price        int64
 	BillingCycle string
-	TrialDays    int32
-	IsActive     bool
-	SortOrder    int32
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	Features     []PackageFeature
+	// YearlyPrice offers a monthly plan yearly too, at this price (nil:
+	// monthly only). See ForCycle.
+	YearlyPrice *int64
+	TrialDays   int32
+	IsActive    bool
+	SortOrder   int32
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Features    []PackageFeature
 }
 
 // PackageFeature is one feature flag/limit of a package.
@@ -59,8 +62,12 @@ type Subscription struct {
 	// CancelAtPeriodEnd: the organization will not renew; the plan runs
 	// until it expires.
 	CancelAtPeriodEnd bool
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	// BillingCycle is the cycle the organization chose (nil: the plan's own
+	// cycle); NextBillingCycle goes with NextPackageID. See Cycle.
+	BillingCycle     *string
+	NextBillingCycle *string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 // Payment is the domain representation of a payment attempt.
@@ -136,6 +143,7 @@ func mapPackage(row dbgen.Package) Package {
 		Description:  row.Description,
 		Price:        row.Price,
 		BillingCycle: row.BillingCycle,
+		YearlyPrice:  row.YearlyPrice,
 		TrialDays:    row.TrialDays,
 		IsActive:     row.IsActive,
 		SortOrder:    row.SortOrder,
@@ -172,6 +180,8 @@ func mapSubscription(row dbgen.Subscription) Subscription {
 		Overrides:          overrides,
 		NextPackageID:      row.NextPackageID,
 		CancelAtPeriodEnd:  row.CancelAtPeriodEnd,
+		BillingCycle:       row.BillingCycle,
+		NextBillingCycle:   row.NextBillingCycle,
 		CreatedAt:          row.CreatedAt.Time,
 		UpdatedAt:          row.UpdatedAt.Time,
 	}
@@ -314,3 +324,88 @@ type TenantUsage struct {
 
 // MapPayment maps a payments row (for services working on a transaction).
 func MapPayment(row dbgen.Payment) Payment { return mapPayment(row) }
+
+// StaffSubscription is a subscription as the staff panel lists it: with its
+// organization, its plan and its standing
+// (docs/guides/billing.md#the-staff-subscriptions-panel).
+type StaffSubscription struct {
+	Subscription
+	TenantName string
+	TenantCode string
+	// Package is the plan without its features: id, name, price, cycle and
+	// yearly price, enough to price it at the subscription's cycle.
+	Package  Package
+	InGrace  bool
+	ReadOnly bool
+}
+
+// StaffSubscriptionFilter narrows the staff list. Empty strings and nil
+// pointers do not filter.
+type StaffSubscriptionFilter struct {
+	View          string
+	Status        string
+	Search        string
+	PackageID     *int64
+	BillingCycle  string
+	ExpiresBefore *time.Time
+	// OrderBy is id, expires_at or created_at; OrderDir asc or desc
+	// (httpx.OrderParams whitelists them).
+	OrderBy  string
+	OrderDir string
+	// GraceSince is now minus BILLING_GRACE_DAYS: a paid plan that lapsed
+	// after it is in grace.
+	GraceSince time.Time
+	Limit      int32
+	Offset     int32
+}
+
+// StaffSubscriptionCounts is the number of subscriptions in each view of the
+// staff list.
+type StaffSubscriptionCounts struct {
+	Active    int64
+	Trial     int64
+	Grace     int64
+	ReadOnly  int64
+	Pending   int64
+	Scheduled int64
+	All       int64
+}
+
+// Current is one row per organization: the plan in force, in grace or
+// read-only.
+func (c StaffSubscriptionCounts) Current() int64 { return c.Active + c.Trial + c.Grace + c.ReadOnly }
+
+// Views of the staff subscriptions list.
+const (
+	ViewCurrent   = "current"
+	ViewActive    = "active"
+	ViewTrial     = "trial"
+	ViewGrace     = "grace"
+	ViewReadOnly  = "read_only"
+	ViewPending   = "pending"
+	ViewScheduled = "scheduled"
+	ViewAll       = "all"
+)
+
+// StaffViews lists the views in the order the panel shows them.
+var StaffViews = []string{ViewCurrent, ViewActive, ViewTrial, ViewGrace, ViewReadOnly, ViewPending, ViewScheduled, ViewAll}
+
+func mapStaffSubscription(row dbgen.ListStaffSubscriptionsRow) StaffSubscription {
+	return StaffSubscription{
+		Subscription: mapSubscription(dbgen.Subscription{
+			ID: row.ID, TenantID: row.TenantID, PackageID: row.PackageID, Status: row.Status,
+			StartsAt: row.StartsAt, TrialEndsAt: row.TrialEndsAt, ExpiresAt: row.ExpiresAt,
+			CancelledAt: row.CancelledAt, CancellationReason: row.CancellationReason, Overrides: row.Overrides,
+			CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, NextPackageID: row.NextPackageID,
+			CancelAtPeriodEnd: row.CancelAtPeriodEnd, BillingCycle: row.BillingCycle, NextBillingCycle: row.NextBillingCycle,
+		}),
+		TenantName: row.TenantName,
+		TenantCode: row.TenantCode,
+		Package: Package{
+			ID: row.PackageID, Name: row.PackageName, Price: row.PackagePrice,
+			BillingCycle: row.PackageBillingCycle, YearlyPrice: row.PackageYearlyPrice,
+		},
+		InGrace:  row.InGrace,
+		ReadOnly: row.ReadOnly,
+	}
+}

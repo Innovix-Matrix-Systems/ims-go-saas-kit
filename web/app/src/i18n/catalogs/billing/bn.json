@@ -111,5 +111,9 @@
   "billing.change.confirm": "নিশ্চিত করুন",
   "billing.change.confirmLater": "মেয়াদ শেষে বদলান",
   "billing.change.later": "{date} তারিখে {name} শুরু হবে।",
-  "billing.waitingHint": "অন্য প্ল্যান বেছে নেওয়ার আগে অপেক্ষমাণ পেমেন্টটি প্রত্যাহার করুন বা নিশ্চিত হওয়া পর্যন্ত অপেক্ষা করুন।"
+  "billing.waitingHint": "অন্য প্ল্যান বেছে নেওয়ার আগে অপেক্ষমাণ পেমেন্টটি প্রত্যাহার করুন বা নিশ্চিত হওয়া পর্যন্ত অপেক্ষা করুন।",
+  "billing.cycle.label": "বিলিং চক্র",
+  "billing.cycle.monthly": "মাসিক",
+  "billing.cycle.yearly": "বার্ষিক",
+  "billing.cycle.save": "{amount} পর্যন্ত সাশ্রয়"
 }

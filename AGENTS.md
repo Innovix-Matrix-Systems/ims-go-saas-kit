@@ -367,7 +367,12 @@ file gets a URL; private files go through the authorized download route.
 read the limit with `LimitChecker.QuotaFor` before `WithTenantLock`, then count and compare inside it. Gateway callbacks
 are always confirmed with the gateway. Staff move a tenant onto a plan with `SubscriptionService.Assign`
 (`POST /billing/internal/tenants/{tenant_id}/subscription`); an override set to `null` is removed.
-Billing management belongs in the product's admin app, not the developer dashboard.
+Billing management belongs in the product's admin app, not the developer dashboard. A monthly plan
+may also be sold yearly (`yearly_price`); price a plan at a subscription's cycle with
+`Subscription.PlanFor(pkg)` or `Package.ForCycle(cycle)`, never with `pkg.Price` alone. A lapsed
+plan applies for `BILLING_GRACE_DAYS`, then `billing.ReadOnly` refuses organization writes except
+`readOnlyAllowed` (`internal/app/routes.go`): a new write that must stay open while unpaid (an
+export, the caller's own account) goes on that list.
 
 ## Database workflow (critical rules — details in the `db-change` skill)
 
@@ -416,6 +421,9 @@ Keep this list accurate; add to it when you make a non-obvious choice (also upda
   (`403 TENANT_SUSPENDED`) and at sign-in, from the per-request user lookup (`Identity.TenantActive`,
   no cache); logout stays open and platform accounts can still act inside it. Billing suspends lapsed
   tenants only with `BILLING_SUSPEND_ON_EXPIRY` (`docs/guides/tenancy.md#suspending-a-tenant`).
+- A lapsed plan never locks anyone out: it applies for `BILLING_GRACE_DAYS`, then the organization
+  is read-only (writes refused except an allowlist of routes); monthly and yearly are prices of one
+  plan (`docs/architecture/decisions.md` #58–#60).
 - Act as a user per request (`X-Acting-User`), not with login-as tokens; act-as is written to the
   system audit log (start is fail-closed, every request is logged).
 - MCP tools are REST operations marked `x-mcp`, served through the `/api/v1` router (no MCP-only

@@ -20,5 +20,9 @@
   "planBanner.ends": "Your {plan} plan ends {when}.",
   "planBanner.choose": "Review plans",
   "planBanner.viewBilling": "View billing",
-  "planBanner.hide": "Hide for today"
+  "planBanner.hide": "Hide for today",
+  "planBanner.readOnly": "Your {plan} plan has lapsed: your organization is read-only.",
+  "planBanner.readOnlyBody": "Everyone can still sign in, view, copy and export. Choose a plan to make changes again.",
+  "planBanner.grace": "Payment for your {plan} plan is overdue. Changes stop on {date}.",
+  "planBanner.graceBody": "Everything keeps working until then. After that your organization is read-only until you pay."
 }

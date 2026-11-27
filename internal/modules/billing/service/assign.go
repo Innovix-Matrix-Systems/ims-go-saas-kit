@@ -27,6 +27,8 @@ type AssignInput struct {
 	// credit) or AssignChange (the customer's rules: unused-time credit,
 	// account credit, downgrades and renewals at the end of the period).
 	Mode string
+	// Cycle is the billing cycle ("" is the plan's own).
+	Cycle string
 }
 
 // Assign modes.
@@ -66,10 +68,15 @@ func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (_ 
 			"payment_method": {"A payment method is required when an amount is given."},
 		})
 	}
-	pkg, err := s.packages.Get(ctx, input.PackageID)
+	base, err := s.packages.Get(ctx, input.PackageID)
 	if err != nil {
 		return nil, nil, err
 	}
+	offered, err := base.ForCycle(input.Cycle)
+	if err != nil {
+		return nil, nil, err
+	}
+	pkg := &offered
 	amount := pkg.Price
 	if input.Amount != nil {
 		amount = *input.Amount
@@ -100,6 +107,8 @@ func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (_ 
 			Status:    domain.StatusActive,
 			StartsAt:  &now,
 			ExpiresAt: &expires,
+			// The cycle chosen, so renewals and invoices follow it.
+			BillingCycle: pkg.BillingCycle,
 		})
 		if err != nil {
 			return err
@@ -139,7 +148,7 @@ func (s *SubscriptionService) Assign(ctx context.Context, input AssignInput) (_ 
 		return nil, nil, err
 	}
 
-	changes := map[string]any{"package_id": pkg.ID, "assigned_by": input.ActorID}
+	changes := map[string]any{"package_id": pkg.ID, "billing_cycle": pkg.BillingCycle, "assigned_by": input.ActorID}
 	if payment != nil {
 		changes["payment_method"] = payment.PaymentMethod
 		changes["amount"] = payment.Amount
@@ -164,7 +173,7 @@ func (s *SubscriptionService) assignChange(ctx context.Context, input AssignInpu
 	err = s.inTenantLock(ctx, "billing.subscribe", input.TenantID, func(scoped *SubscriptionService) error {
 		var err error
 		result, err = scoped.checkout(ctx, checkoutRequest{
-			TenantID: input.TenantID, ActorID: input.ActorID, Package: pkg,
+			TenantID: input.TenantID, ActorID: input.ActorID, Package: pkg, Cycle: input.Cycle,
 			Method: input.PaymentMethod, Staff: true, Amount: input.Amount,
 		})
 		return err

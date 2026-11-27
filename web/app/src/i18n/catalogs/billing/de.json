@@ -111,5 +111,9 @@
   "billing.change.confirm": "Bestätigen",
   "billing.change.confirmLater": "Zum Ende des Zeitraums wechseln",
   "billing.change.later": "{name} beginnt am {date}.",
-  "billing.waitingHint": "Ziehen Sie die wartende Zahlung zurück oder warten Sie auf sie, bevor Sie einen anderen Tarif wählen."
+  "billing.waitingHint": "Ziehen Sie die wartende Zahlung zurück oder warten Sie auf sie, bevor Sie einen anderen Tarif wählen.",
+  "billing.cycle.label": "Abrechnungszeitraum",
+  "billing.cycle.monthly": "Monatlich",
+  "billing.cycle.yearly": "Jährlich",
+  "billing.cycle.save": "Bis zu {amount} sparen"
 }

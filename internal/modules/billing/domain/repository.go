@@ -30,6 +30,16 @@ type SubscriptionRepository interface {
 	Get(ctx context.Context, id int64) (*Subscription, error)
 	GetActiveForTenant(ctx context.Context, tenantID int64) (*Subscription, bool, error)
 	GetLatestForTenant(ctx context.Context, tenantID int64) (*Subscription, bool, error)
+	// GetLapsedForTenant is the paid plan that expired after since (its grace
+	// period still runs); callers use it only when nothing is current.
+	GetLapsedForTenant(ctx context.Context, tenantID int64, since time.Time) (*Subscription, bool, error)
+	// HadSubscription reports whether the tenant ever had a plan that started.
+	HadSubscription(ctx context.Context, tenantID int64) (bool, error)
+	// ListForStaff is the staff subscriptions panel: every organization's
+	// rows with names, plan and standing (platform staff only; all tenants).
+	ListForStaff(ctx context.Context, filter StaffSubscriptionFilter) ([]StaffSubscription, int64, error)
+	// CountForStaff counts the staff panel's views.
+	CountForStaff(ctx context.Context, graceSince time.Time) (StaffSubscriptionCounts, error)
 	List(ctx context.Context, status string, limit, offset int32) ([]Subscription, int64, error)
 	Create(ctx context.Context, input SubscriptionInput) (*Subscription, error)
 	UpdateStatus(ctx context.Context, id int64, status string, cancelledAt *time.Time, reason *string) (*Subscription, error)
@@ -43,8 +53,8 @@ type SubscriptionRepository interface {
 	// CancelScheduled withdraws the tenant's scheduled subscription (if any).
 	CancelScheduled(ctx context.Context, tenantID int64, reason string) ([]Subscription, error)
 	// SetPlanEnd says what happens when the period ends: renew onto another
-	// plan (nextPackageID) or not at all (cancelAtPeriodEnd).
-	SetPlanEnd(ctx context.Context, id int64, nextPackageID *int64, cancelAtPeriodEnd bool) (*Subscription, error)
+	// plan (nextPackageID, at nextCycle) or not at all (cancelAtPeriodEnd).
+	SetPlanEnd(ctx context.Context, id int64, nextPackageID *int64, nextCycle *string, cancelAtPeriodEnd bool) (*Subscription, error)
 	// ActivateDueScheduled starts scheduled subscriptions whose turn came
 	// (one tenant's, or every tenant's for nil).
 	ActivateDueScheduled(ctx context.Context, tenantID *int64) (int64, error)
@@ -68,7 +78,8 @@ type PaymentRepository interface {
 	UpdateGateway(ctx context.Context, id int64, gatewayRef, gatewayStatus *string, response []byte) error
 	UpdateStatus(ctx context.Context, id int64, status string, recordedBy *int64, gatewayStatus *string) (*Payment, error)
 	ListForTenant(ctx context.Context, tenantID int64, limit, offset int32) ([]Payment, int64, error)
-	List(ctx context.Context, status string, limit, offset int32) ([]Payment, int64, error)
+	// List is every organization's payments (staff), narrowed by filter.
+	List(ctx context.Context, filter PaymentFilter) ([]Payment, int64, error)
 	// PendingForTenant returns any checkout of the tenant still waiting.
 	PendingForTenant(ctx context.Context, tenantID int64) (*Payment, bool, error)
 	// PaidValue is the value paid for a subscription's period (gross less
@@ -86,6 +97,15 @@ type CreditRepository interface {
 	Balance(ctx context.Context, tenantID int64, currency string) (int64, error)
 	Add(ctx context.Context, input CreditInput) (*Credit, error)
 	ListForTenant(ctx context.Context, tenantID int64, limit, offset int32) ([]Credit, int64, error)
+}
+
+// PaymentFilter narrows the staff payments list. Empty values do not filter.
+type PaymentFilter struct {
+	Status string
+	// TenantID keeps one organization's payments.
+	TenantID *int64
+	Limit    int32
+	Offset   int32
 }
 
 // PaymentQuote is what a checkout froze on its payment.
@@ -122,9 +142,11 @@ type PackageInput struct {
 	Description  *string
 	Price        int64
 	BillingCycle string
-	TrialDays    int32
-	IsActive     bool
-	SortOrder    int32
+	// YearlyPrice offers a monthly plan yearly too (nil: monthly only).
+	YearlyPrice *int64
+	TrialDays   int32
+	IsActive    bool
+	SortOrder   int32
 }
 
 // FeatureInput is one package feature definition.
@@ -142,6 +164,10 @@ type SubscriptionInput struct {
 	StartsAt    *time.Time
 	TrialEndsAt *time.Time
 	ExpiresAt   *time.Time
+	// BillingCycle is the cycle chosen. New rows always name it (the plan as
+	// offered, Package.ForCycle); "" stores NULL, which reads as the plan's own
+	// cycle (rows from before plans had two cycles).
+	BillingCycle string
 }
 
 // PaymentInput carries payment creation input.
@@ -215,6 +241,7 @@ func (r *packageRepository) Create(ctx context.Context, input PackageInput) (*Pa
 		Description:  input.Description,
 		Price:        input.Price,
 		BillingCycle: input.BillingCycle,
+		YearlyPrice:  input.YearlyPrice,
 		TrialDays:    input.TrialDays,
 		IsActive:     input.IsActive,
 		SortOrder:    input.SortOrder,
@@ -233,6 +260,7 @@ func (r *packageRepository) Update(ctx context.Context, id int64, input PackageI
 		Description:  input.Description,
 		Price:        input.Price,
 		BillingCycle: input.BillingCycle,
+		YearlyPrice:  input.YearlyPrice,
 		TrialDays:    input.TrialDays,
 		IsActive:     input.IsActive,
 		SortOrder:    input.SortOrder,
@@ -341,6 +369,75 @@ func (r *subscriptionRepository) GetLatestForTenant(ctx context.Context, tenantI
 	return &sub, true, nil
 }
 
+func (r *subscriptionRepository) GetLapsedForTenant(ctx context.Context, tenantID int64, since time.Time) (*Subscription, bool, error) {
+	row, err := r.queries.GetLapsedSubscriptionForTenant(ctx, dbgen.GetLapsedSubscriptionForTenantParams{
+		TenantID: tenantID, Since: timestamptz(since),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, database.MapError("billing.lapsed_subscription", err)
+	}
+	sub := mapSubscription(row)
+	return &sub, true, nil
+}
+
+func (r *subscriptionRepository) HadSubscription(ctx context.Context, tenantID int64) (bool, error) {
+	had, err := r.queries.TenantHadSubscription(ctx, tenantID)
+	if err != nil {
+		return false, database.MapError("billing.had_subscription", err)
+	}
+	return had, nil
+}
+
+func (r *subscriptionRepository) ListForStaff(ctx context.Context, filter StaffSubscriptionFilter) ([]StaffSubscription, int64, error) {
+	rows, err := r.queries.ListStaffSubscriptions(ctx, dbgen.ListStaffSubscriptionsParams{
+		View:          filter.View,
+		Status:        optionalString(filter.Status),
+		Search:        optionalString(filter.Search),
+		PackageID:     filter.PackageID,
+		BillingCycle:  optionalString(filter.BillingCycle),
+		ExpiresBefore: timestamptzPtr(filter.ExpiresBefore),
+		OrderBy:       filter.OrderBy,
+		OrderDir:      filter.OrderDir,
+		GraceSince:    timestamptz(filter.GraceSince),
+		PageLimit:     filter.Limit,
+		PageOffset:    filter.Offset,
+	})
+	if err != nil {
+		return nil, 0, database.MapError("billing.list_staff_subscriptions", err)
+	}
+	total, err := r.queries.CountStaffSubscriptions(ctx, dbgen.CountStaffSubscriptionsParams{
+		View:          filter.View,
+		Status:        optionalString(filter.Status),
+		Search:        optionalString(filter.Search),
+		PackageID:     filter.PackageID,
+		BillingCycle:  optionalString(filter.BillingCycle),
+		ExpiresBefore: timestamptzPtr(filter.ExpiresBefore),
+		GraceSince:    timestamptz(filter.GraceSince),
+	})
+	if err != nil {
+		return nil, 0, database.MapError("billing.count_staff_subscriptions", err)
+	}
+	out := make([]StaffSubscription, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, mapStaffSubscription(row))
+	}
+	return out, total, nil
+}
+
+func (r *subscriptionRepository) CountForStaff(ctx context.Context, graceSince time.Time) (StaffSubscriptionCounts, error) {
+	row, err := r.queries.StaffSubscriptionCounts(ctx, timestamptz(graceSince))
+	if err != nil {
+		return StaffSubscriptionCounts{}, database.MapError("billing.count_staff_subscriptions", err)
+	}
+	return StaffSubscriptionCounts{
+		Active: row.Active, Trial: row.Trial, Grace: row.Grace, ReadOnly: row.ReadOnly,
+		Pending: row.Pending, Scheduled: row.Scheduled, All: row.AllRows,
+	}, nil
+}
+
 func (r *subscriptionRepository) List(ctx context.Context, status string, limit, offset int32) ([]Subscription, int64, error) {
 	rows, err := r.queries.ListSubscriptions(ctx, dbgen.ListSubscriptionsParams{
 		Status:     optionalString(status),
@@ -363,12 +460,13 @@ func (r *subscriptionRepository) List(ctx context.Context, status string, limit,
 
 func (r *subscriptionRepository) Create(ctx context.Context, input SubscriptionInput) (*Subscription, error) {
 	row, err := r.queries.CreateSubscription(ctx, dbgen.CreateSubscriptionParams{
-		TenantID:    input.TenantID,
-		PackageID:   input.PackageID,
-		Status:      input.Status,
-		StartsAt:    timestamptzPtr(input.StartsAt),
-		TrialEndsAt: timestamptzPtr(input.TrialEndsAt),
-		ExpiresAt:   timestamptzPtr(input.ExpiresAt),
+		TenantID:     input.TenantID,
+		PackageID:    input.PackageID,
+		Status:       input.Status,
+		StartsAt:     timestamptzPtr(input.StartsAt),
+		TrialEndsAt:  timestamptzPtr(input.TrialEndsAt),
+		ExpiresAt:    timestamptzPtr(input.ExpiresAt),
+		BillingCycle: optionalString(input.BillingCycle),
 	})
 	if err != nil {
 		return nil, database.MapError("billing.create_subscription", err)
@@ -451,9 +549,9 @@ func (r *subscriptionRepository) CancelScheduled(ctx context.Context, tenantID i
 	return items, nil
 }
 
-func (r *subscriptionRepository) SetPlanEnd(ctx context.Context, id int64, nextPackageID *int64, cancelAtPeriodEnd bool) (*Subscription, error) {
+func (r *subscriptionRepository) SetPlanEnd(ctx context.Context, id int64, nextPackageID *int64, nextCycle *string, cancelAtPeriodEnd bool) (*Subscription, error) {
 	row, err := r.queries.SetSubscriptionPlanEnd(ctx, dbgen.SetSubscriptionPlanEndParams{
-		ID: id, NextPackageID: nextPackageID, CancelAtPeriodEnd: cancelAtPeriodEnd,
+		ID: id, NextPackageID: nextPackageID, NextBillingCycle: nextCycle, CancelAtPeriodEnd: cancelAtPeriodEnd,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -659,16 +757,17 @@ func (r *paymentRepository) ListForTenant(ctx context.Context, tenantID int64, l
 	return items, total, nil
 }
 
-func (r *paymentRepository) List(ctx context.Context, status string, limit, offset int32) ([]Payment, int64, error) {
+func (r *paymentRepository) List(ctx context.Context, filter PaymentFilter) ([]Payment, int64, error) {
 	rows, err := r.queries.ListPayments(ctx, dbgen.ListPaymentsParams{
-		Status:     optionalString(status),
-		PageLimit:  limit,
-		PageOffset: offset,
+		Status:     optionalString(filter.Status),
+		TenantID:   filter.TenantID,
+		PageLimit:  filter.Limit,
+		PageOffset: filter.Offset,
 	})
 	if err != nil {
 		return nil, 0, database.MapError("billing.list_payments_all", err)
 	}
-	total, err := r.queries.CountPayments(ctx, optionalString(status))
+	total, err := r.queries.CountPayments(ctx, dbgen.CountPaymentsParams{Status: optionalString(filter.Status), TenantID: filter.TenantID})
 	if err != nil {
 		return nil, 0, database.MapError("billing.count_payments_all", err)
 	}

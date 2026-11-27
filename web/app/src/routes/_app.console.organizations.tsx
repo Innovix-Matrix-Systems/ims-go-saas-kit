@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, ApiError, type Schemas, type User } from '../api/client'
 import { can, useSession } from '../auth/session'
-import { featureName, formatMB, useDefaultCurrency, useMoney, usePrice, type Package, type SubscriptionStatus } from '../components/billing'
+import { atCycle, CycleSwitch, featureName, formatMB, useDefaultCurrency, useMoney, usePrice, visibleLimits, type Package, type SubscriptionStatus } from '../components/billing'
 import { useStartActing, type Tenant } from '../components/console'
 import { Field, useApiErrors } from '../components/form'
 import { MoneyInput, Select } from '../components/inputs'
@@ -15,7 +15,15 @@ import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { ListSkeleton, TableSkeleton } from '../components/Skeleton'
 import { OrgMark } from '../components/WorkspaceMenu'
 
+interface OrganizationsSearch {
+  /** An organization to open on arrival (the subscriptions panel links here). */
+  org?: number
+}
+
 export const Route = createFileRoute('/_app/console/organizations')({
+  validateSearch: (search: Record<string, unknown>): OrganizationsSearch => ({
+    org: Number(search.org) > 0 ? Number(search.org) : undefined,
+  }),
   component: OrganizationsPage,
 })
 
@@ -26,6 +34,13 @@ interface TenantPage {
 interface Organization {
   owner: { id: number; name: string; email: string } | null
 }
+interface Paged<T> {
+  data: T[]
+  meta: Schemas['PaginationMeta']
+}
+
+/** How many payments and members the drawer shows; "See all" opens the full list, filtered. */
+const DRAWER_ROWS = 5
 
 function useDate() {
   const locale = useLocale()
@@ -42,6 +57,21 @@ function OrganizationsPage() {
   const [perPage, setPerPage] = useState(20)
   const [creating, setCreating] = useState(false)
   const [selected, setSelected] = useState<Tenant | null>(null)
+  const { org: linked } = Route.useSearch()
+  const navigate = useNavigate()
+  const linkedTenant = useQuery({
+    queryKey: ['console', 'tenant', linked],
+    queryFn: () => api<Tenant>(`/tenant/${linked}`, { asStaff: true }),
+    enabled: linked != null,
+  })
+  // A linked organization opens once it has loaded.
+  useEffect(() => {
+    if (linkedTenant.data) setSelected(linkedTenant.data)
+  }, [linkedTenant.data])
+  const close = () => {
+    setSelected(null)
+    if (linked != null) void navigate({ to: '/console/organizations', search: {}, replace: true })
+  }
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -124,7 +154,7 @@ function OrganizationsPage() {
         ) : null}
       </Card>
       {creating ? <CreateOrganization onClose={() => setCreating(false)} onCreated={setSelected} /> : null}
-      {selected ? <OrganizationDrawer tenant={selected} onClose={() => setSelected(null)} onChanged={setSelected} /> : null}
+      {selected ? <OrganizationDrawer tenant={selected} onClose={close} onChanged={setSelected} /> : null}
     </>
   )
 }
@@ -205,14 +235,17 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
   const organization = useQuery({ queryKey: ['console', 'tenant', tenant.id, 'org'], queryFn: () => api<Organization>('/organization', inTenant) })
   const status = useQuery({ queryKey: ['console', 'tenant', tenant.id, 'status'], queryFn: () => api<SubscriptionStatus>('/billing/subscription/status', inTenant) })
   const usage = useQuery({ queryKey: ['console', 'tenant', tenant.id, 'usage'], queryFn: () => api<Schemas['BillingUsage']>('/billing/usage', inTenant) })
+  // The latest few only, with the total: the full history is on the Payments and Users pages.
   const payments = useQuery({
     queryKey: ['console', 'tenant', tenant.id, 'payments'],
-    queryFn: () => api<Schemas['Payment'][]>('/billing/payments', { ...inTenant, query: { per_page: 10 } }),
+    queryFn: () => api<Paged<Schemas['Payment']>>('/billing/payments', { ...inTenant, envelope: true, query: { per_page: DRAWER_ROWS } }),
   })
   const members = useQuery({
     queryKey: ['console', 'tenant', tenant.id, 'members'],
-    queryFn: () => api<User[]>('/user', { ...inTenant, query: { per_page: 50, order_by: 'name', order_direction: 'asc' } }),
+    queryFn: () => api<Paged<User>>('/user', { ...inTenant, envelope: true, query: { per_page: DRAWER_ROWS, order_by: 'name', order_direction: 'asc' } }),
   })
+  const shown = (list?: Paged<unknown>) =>
+    list && list.meta.total > list.data.length ? t('console.shownOf', { shown: list.data.length, total: list.meta.total }) : undefined
 
   const setActive = async (active: boolean) => {
     setBusy(true)
@@ -279,7 +312,7 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
           <dd>
             {pkg && subscription ? (
               <span className="flex wrap">
-                {pkg.name} · {price(pkg)}
+                {pkg.name} · {price(atCycle(pkg, status.data?.billing_cycle))}
                 <Badge tone={subscription.status === 'active' ? 'ok' : 'warn'}>{t(`billing.status.${subscription.status}` as MessageKey)}</Badge>
               </span>
             ) : (
@@ -311,7 +344,7 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
 
         {usage.data ? (
           <div className="usage-grid">
-            {usage.data.limits.map((item) => (
+            {visibleLimits(usage.data.limits).map((item) => (
               <div key={item.feature_key} className="stat-card">
                 <div className="stat-label">{featureName(t, item.feature_key)}</div>
                 <div className="stat-value">{item.feature_key === 'storage.mb' ? formatMB(item.used) : item.used}</div>
@@ -323,14 +356,25 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
           </div>
         ) : null}
 
-        <Card title={t('billing.payments')} flush>
+        <Card
+          title={t('billing.payments')}
+          description={shown(payments.data)}
+          actions={
+            can(session, 'payment.view.all') && payments.data?.meta.total ? (
+              <Link to="/console/payments" search={{ org: tenant.id }} className="link-btn">
+                {t('dashboard.seeAll')}
+              </Link>
+            ) : undefined
+          }
+          flush
+        >
           {!payments.data ? (
             <ListSkeleton rows={2} />
-          ) : payments.data.length === 0 ? (
+          ) : payments.data.data.length === 0 ? (
             <EmptyState icon="list" title={t('billing.noPayments')} />
           ) : (
             <ul className="role-list">
-              {payments.data.map((payment) => (
+              {payments.data.data.map((payment) => (
                 <li key={payment.id} className="console-member">
                   <span className="member-meta">
                     <span className="member-name">
@@ -352,14 +396,25 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
           )}
         </Card>
 
-        <Card title={t('console.members')} flush>
+        <Card
+          title={t('console.members')}
+          description={shown(members.data)}
+          actions={
+            can(session, 'user.view.all') && members.data?.meta.total ? (
+              <Link to="/console/users" search={{ org: tenant.id }} className="link-btn">
+                {t('dashboard.seeAll')}
+              </Link>
+            ) : undefined
+          }
+          flush
+        >
           {!members.data ? (
             <ListSkeleton rows={3} avatar />
-          ) : members.data.length === 0 ? (
+          ) : members.data.data.length === 0 ? (
             <EmptyState icon="users" title={t('members.empty')} />
           ) : (
             <ul className="role-list">
-              {members.data.map((user) => (
+              {members.data.data.map((user) => (
                 <li key={user.id} className="console-member">
                   <span className="member-meta">
                     <span className="member-name">
@@ -436,6 +491,7 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
         <AssignPlan
           tenant={tenant}
           currentId={pkg?.id}
+          currentCycle={status.data?.billing_cycle}
           onClose={() => setAssigning(false)}
           onDone={() => {
             setAssigning(false)
@@ -447,7 +503,19 @@ function OrganizationDrawer({ tenant, onClose, onChanged }: { tenant: Tenant; on
   )
 }
 
-function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; currentId?: number; onClose: () => void; onDone: () => void }) {
+function AssignPlan({
+  tenant,
+  currentId,
+  currentCycle,
+  onClose,
+  onDone,
+}: {
+  tenant: Tenant
+  currentId?: number
+  currentCycle?: string
+  onClose: () => void
+  onDone: () => void
+}) {
   const t = useT()
   const money = useMoney()
   const currency = useDefaultCurrency()
@@ -461,7 +529,11 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
   const [method, setMethod] = useState<'cash' | 'bank_transfer'>('bank_transfer')
   const [amount, setAmount] = useState('')
   const [busy, setBusy] = useState(false)
-  const chosen = packages.data?.find((pkg) => String(pkg.id) === packageId)
+  // Monthly or yearly, for a monthly plan that has a yearly price.
+  const [cycle, setCycle] = useState<'monthly' | 'yearly'>(currentCycle === 'yearly' ? 'yearly' : 'monthly')
+  const base = packages.data?.find((pkg) => String(pkg.id) === packageId)
+  const yearlyOffered = base?.billing_cycle === 'monthly' && base.yearly_price != null
+  const chosen = base ? atCycle(base, yearlyOffered ? cycle : null) : undefined
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -474,7 +546,7 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
     }
     setBusy(true)
     try {
-      const body: Record<string, unknown> = { package_id: Number(packageId), mode: rules ? 'change' : 'replace' }
+      const body: Record<string, unknown> = { package_id: Number(packageId), billing_cycle: chosen?.billing_cycle, mode: rules ? 'change' : 'replace' }
       if (record) {
         body.payment_method = method
         if (minor !== null) body.amount = minor
@@ -505,6 +577,11 @@ function AssignPlan({ tenant, currentId, onClose, onDone }: { tenant: Tenant; cu
             }))}
           />
         </Field>
+        {yearlyOffered ? (
+          <Field label={t('console.cycle')} error={errors.field('billing_cycle')}>
+            <CycleSwitch value={cycle} onChange={(next) => setCycle(next === 'yearly' ? 'yearly' : 'monthly')} packages={base ? [base] : []} />
+          </Field>
+        ) : null}
         <label className="check-row">
           <input type="checkbox" checked={rules} onChange={(e) => setRules(e.target.checked)} />
           {t('console.assignChange')}

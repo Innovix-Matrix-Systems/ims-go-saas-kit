@@ -113,5 +113,9 @@
   "billing.change.confirm": "Confirmer",
   "billing.change.confirmLater": "Changer à la fin de la période",
   "billing.change.later": "{name} démarre le {date}.",
-  "billing.waitingHint": "Retirez le paiement en attente ou attendez sa confirmation avant de choisir une autre offre."
+  "billing.waitingHint": "Retirez le paiement en attente ou attendez sa confirmation avant de choisir une autre offre.",
+  "billing.cycle.label": "Cycle de facturation",
+  "billing.cycle.monthly": "Mensuel",
+  "billing.cycle.yearly": "Annuel",
+  "billing.cycle.save": "Économisez jusqu’à {amount}"
 }

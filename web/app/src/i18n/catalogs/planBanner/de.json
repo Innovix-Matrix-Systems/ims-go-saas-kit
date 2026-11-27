@@ -20,5 +20,9 @@
   "planBanner.ends": "Ihr Tarif {plan} endet {when}.",
   "planBanner.choose": "Tarife ansehen",
   "planBanner.viewBilling": "Abrechnung ansehen",
-  "planBanner.hide": "Für heute ausblenden"
+  "planBanner.hide": "Für heute ausblenden",
+  "planBanner.readOnly": "Ihr Tarif {plan} ist abgelaufen: Ihre Organisation ist schreibgeschützt.",
+  "planBanner.readOnlyBody": "Alle können sich weiterhin anmelden, ansehen, kopieren und exportieren. Wählen Sie einen Tarif, um wieder Änderungen vorzunehmen.",
+  "planBanner.grace": "Die Zahlung für Ihren Tarif {plan} ist überfällig. Ab dem {date} sind keine Änderungen mehr möglich.",
+  "planBanner.graceBody": "Bis dahin funktioniert alles weiter. Danach ist Ihre Organisation schreibgeschützt, bis Sie bezahlen."
 }

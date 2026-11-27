@@ -15,9 +15,12 @@ type Billing struct {
 	// pending. Off by default: suspending customers is a business decision.
 	SuspendOnExpiry bool
 	SuspendGrace    time.Duration
-	Bkash           Bkash
-	Nagad           Nagad
-	Bank            BankTransfer
+	// Grace is how long a lapsed paid plan keeps applying before the
+	// organization becomes read-only (docs/guides/billing.md#grace-and-read-only).
+	Grace time.Duration
+	Bkash Bkash
+	Nagad Nagad
+	Bank  BankTransfer
 }
 
 // Bkash holds bKash gateway credentials.
@@ -59,9 +62,17 @@ func (c *Config) loadBilling() error {
 	if graceDays < 0 {
 		return fmt.Errorf("BILLING_SUSPEND_GRACE_DAYS must be zero or more, got %d", graceDays)
 	}
+	graceDaysReadOnly, err := getInt("BILLING_GRACE_DAYS", 14)
+	if err != nil {
+		return err
+	}
+	if graceDaysReadOnly < 0 {
+		return fmt.Errorf("BILLING_GRACE_DAYS must be zero or more, got %d", graceDaysReadOnly)
+	}
 	c.Billing = Billing{
 		SuspendOnExpiry: suspend,
 		SuspendGrace:    time.Duration(graceDays) * 24 * time.Hour,
+		Grace:           time.Duration(graceDaysReadOnly) * 24 * time.Hour,
 		Bkash: Bkash{
 			BaseURL:     getString("BKASH_BASE_URL", ""),
 			AppKey:      getString("BKASH_APP_KEY", ""),

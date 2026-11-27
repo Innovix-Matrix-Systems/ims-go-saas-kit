@@ -21,5 +21,9 @@
   "planBanner.ends": "Su plan {plan} termina {when}.",
   "planBanner.choose": "Ver planes",
   "planBanner.viewBilling": "Ver facturación",
-  "planBanner.hide": "Ocultar por hoy"
+  "planBanner.hide": "Ocultar por hoy",
+  "planBanner.readOnly": "Su plan {plan} ha vencido: su organización está en modo de solo lectura.",
+  "planBanner.readOnlyBody": "Todos pueden seguir iniciando sesión, viendo, copiando y exportando. Elija un plan para volver a hacer cambios.",
+  "planBanner.grace": "El pago de su plan {plan} está vencido. Los cambios se detienen el {date}.",
+  "planBanner.graceBody": "Hasta entonces todo sigue funcionando. Después, su organización quedará en solo lectura hasta que pague."
 }

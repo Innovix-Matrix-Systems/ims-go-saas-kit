@@ -29,9 +29,10 @@ func (s *PaymentService) ListForTenant(ctx context.Context, tenantID int64, limi
 	return s.payments.ListForTenant(ctx, tenantID, limit, offset)
 }
 
-// List returns all payments (admin surface).
-func (s *PaymentService) List(ctx context.Context, status string, limit, offset int32) ([]domain.Payment, int64, error) {
-	return s.payments.List(ctx, status, limit, offset)
+// List returns every organization's payments (admin surface), narrowed by
+// filter (status, one organization).
+func (s *PaymentService) List(ctx context.Context, filter domain.PaymentFilter) ([]domain.Payment, int64, error) {
+	return s.payments.List(ctx, filter)
 }
 
 // GetForTenant returns one payment scoped to the tenant.

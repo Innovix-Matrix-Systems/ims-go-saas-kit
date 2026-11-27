@@ -38,7 +38,7 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help tools rename env key-generate build build-all dev dev-api run serve queue schedule test test-race test-cover test-integration \
-        vet format format-check lint lint-fix tidy check \
+        vet format format-check lint lint-fix tidy check hooks pre-push \
         sqlc openapi openapi-gen openapi-check generate gen-check skills-sync skills-check \
         db-up db-down migrate migrate-status migrate-rollback seed fresh \
         health config version web-build web-typecheck dev-web app-build app-typecheck app-style-check app-i18n-check app-openapi-check dev-app \
@@ -75,6 +75,8 @@ help:
 	@echo   make format-check      Fail if any file is not gofmt-clean
 	@echo   make vet               Run go vet
 	@echo   make check             format-check + vet + lint + test
+	@echo   make hooks             Enable the git hooks: gofmt before commit, build + CI checks before push
+	@echo   make pre-push          Build everything and run the CI checks, as the pre-push hook does
 	@echo --- Code generation ---
 	@echo   make sqlc              Regenerate internal/dbgen from sql/ and migrations/
 	@echo   make openapi           Regenerate internal/contract from api/openapi.yaml
@@ -225,6 +227,12 @@ tidy: ## Tidy go.mod and go.sum.
 	go mod tidy
 
 check: format-check vet lint test ## Format check + vet + lint + unit tests.
+
+hooks: ## Enable the git hooks in .githooks: gofmt before a commit, the build and CI checks before a push.
+	git config core.hooksPath .githooks
+
+pre-push: ## Build everything and run the checks CI runs on a pull request (what the pre-push hook runs).
+	sh .githooks/pre-push
 
 # ── Code generation ──────────────────────────────────────────────────────────
 sqlc: ## Regenerate sqlc output in internal/dbgen.

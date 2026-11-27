@@ -16,10 +16,12 @@ them. The seeded `superadmin@ims.com` is a staff account.
 | --- | --- | --- | --- |
 | Home | `/` | organizations, members, revenue, payments to review, plans, organization status and platform activity | — |
 | Organizations | `/console/organizations` | search, open, suspend or reactivate, change plan, impersonate | `tenant.view.all` |
-| Users | `/console/users` | every account on the platform; open one and log in as them | `user.view.all` |
+| Users | `/console/users` | every account on the platform, or one organization's (`?org=<id>`); open one and log in as them | `user.view.all` |
 | Audit log | `/console/activity` | the system audit log across organizations, including every impersonation, with export | `activity.view.all` |
 | Payment approvals | `/console/approvals` | bank transfers and cash payments waiting for a decision | `payment_approval.view.all` |
 | Plans | `/console/plans` | the plan catalog: prices, features and limits | `package.view.all` |
+| Subscriptions | `/console/subscriptions` | every organization's plan, cycle and price, when it renews or ends, who is in grace or read-only; tabs, search and filters; a row opens the organization | `subscription.view.all` |
+| Payments | `/console/payments` | every organization's payments, or one organization's (`?org=<id>`), by status; a row opens the organization (refunds, credit) | `payment.view.all` |
 | Currencies | `/console/currencies` | how amounts are written (symbol, position, decimals, separators) and the default currency | `currency.view.all` |
 | Staff accounts | `/console/staff` | your team's accounts and their roles | `user.internal.create` |
 | Announcements | `/console/announcements` | messages to every organization or chosen ones | `announcement.view` |
@@ -54,7 +56,14 @@ date** badge means the plan the price was based on changed since the organizatio
 In an organization's drawer staff see its **account credit** (and adjust it), its payments with a
 **Refund** action (to account credit, or money back), and **Change plan**, which can follow the
 organization's own rules (credit for unused days, cheaper plans at the end of the period) or
-replace the plan at once. See [Billing](../guides/billing.md#changing-plans).
+replace the plan at once. See [Billing](../guides/billing.md#changing-plans). The drawer lists
+only the latest five payments and members, with the total; **See all** opens the Payments or
+Users page filtered to that organization (`?org=<id>`), with pagination.
+
+In **Plans**, a plan opens as a summary (monthly and yearly price, trial, position in plan lists,
+status, limits and the features it includes); **Edit plan** switches to a form grouped into Plan,
+Pricing, Limits and Features. A monthly plan can have a **yearly price**, which organizations pick
+with the Monthly/Yearly switch. See [Billing](../guides/billing.md#monthly-and-yearly).
 
 Prices are typed in the default currency, which staff choose under **Currencies** together with how
 each currency is written. Changing the default changes the symbol, never the amounts. See

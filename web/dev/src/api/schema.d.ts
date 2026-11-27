@@ -3878,8 +3878,43 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List subscriptions (system) */
+        /**
+         * List subscriptions (system)
+         * @description The staff subscriptions panel: every organization's subscriptions with the organization and plan names, what a period costs at the subscription's cycle, and its standing (in grace, read-only). `view=current` is one row per organization (the plan in force, else the lapsed one); the default `all` lists every row. Deleted organizations are left out.
+         */
         get: operations["listSubscriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/internal/subscriptions/summary": {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count subscriptions per view (system)
+         * @description The number of subscriptions in each view of the staff panel, for its tabs.
+         */
+        get: operations["subscriptionSummary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7955,6 +7990,11 @@ export interface components {
             price: number;
             /** @enum {string} */
             billing_cycle: "monthly" | "yearly" | "one_time";
+            /**
+             * Format: int64
+             * @description A monthly plan can also be bought yearly at this price (minor units); null: monthly only.
+             */
+            yearly_price?: number | null;
             trial_days: number;
             is_active: boolean;
             sort_order: number;
@@ -8007,6 +8047,11 @@ export interface components {
             price: number;
             /** @enum {string} */
             billing_cycle: "monthly" | "yearly" | "one_time";
+            /**
+             * Format: int64
+             * @description Offers a monthly plan yearly too, at this price. Only with billing_cycle monthly.
+             */
+            yearly_price?: number | null;
             trial_days?: number;
             is_active?: boolean | null;
             sort_order?: number;
@@ -8107,6 +8152,16 @@ export interface components {
              * @description The plan chosen for the renewal (a downgrade).
              */
             next_package_id?: number | null;
+            /**
+             * @description The cycle chosen; null: the plan's own.
+             * @enum {string|null}
+             */
+            billing_cycle?: "monthly" | "yearly" | "one_time" | null;
+            /**
+             * @description The cycle chosen for the renewal (goes with next_package_id).
+             * @enum {string|null}
+             */
+            next_billing_cycle?: "monthly" | "yearly" | "one_time" | null;
             /** @description The organization will not renew; the plan runs until it expires. */
             cancel_at_period_end: boolean;
             /** Format: date-time */
@@ -8116,6 +8171,60 @@ export interface components {
         };
         SubscriptionEnvelope: {
             data: components["schemas"]["Subscription"];
+        };
+        StaffSubscription: components["schemas"]["Subscription"] & {
+            organization: {
+                /** Format: int64 */
+                id: number;
+                name: string;
+                code: string;
+            };
+            package: {
+                /** Format: int64 */
+                id: number;
+                name: string;
+            };
+            /**
+             * Format: int64
+             * @description What one period costs at price_cycle (minor units).
+             */
+            price: number;
+            /** @enum {string} */
+            price_cycle: "monthly" | "yearly" | "one_time";
+            /** @description The paid plan lapsed and still applies until grace_ends_at. */
+            in_grace: boolean;
+            /** Format: date-time */
+            grace_ends_at?: string | null;
+            /** @description The organization is read-only and this is its latest plan. */
+            read_only: boolean;
+        };
+        StaffSubscriptionPageEnvelope: {
+            data: components["schemas"]["StaffSubscription"][];
+            links: components["schemas"]["PaginationLinks"];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        StaffSubscriptionCountsEnvelope: {
+            data: {
+                /**
+                 * Format: int64
+                 * @description One per organization: active + trial + grace + read_only.
+                 */
+                current: number;
+                /** Format: int64 */
+                active: number;
+                /** Format: int64 */
+                trial: number;
+                /** Format: int64 */
+                grace: number;
+                /** Format: int64 */
+                read_only: number;
+                /** Format: int64 */
+                pending: number;
+                /** Format: int64 */
+                scheduled: number;
+                /** Format: int64 */
+                all: number;
+            };
         };
         SubscriptionPageEnvelope: {
             data: components["schemas"]["Subscription"][];
@@ -8138,6 +8247,19 @@ export interface components {
                  */
                 credit_balance: number;
                 currency: string;
+                /** @description The subscription's cycle (empty without a plan). */
+                billing_cycle?: string;
+                /**
+                 * Format: int64
+                 * @description What the plan costs at that cycle (minor units).
+                 */
+                price?: number;
+                /** @description The paid plan lapsed and still applies until grace_ends_at. */
+                in_grace?: boolean;
+                /** Format: date-time */
+                grace_ends_at?: string | null;
+                /** @description The plan lapsed beyond its grace period: writes answer 402 SUBSCRIPTION_REQUIRED (meta.reason read_only) until a plan is paid. */
+                read_only?: boolean;
             };
         };
         AnnouncementRequest: {
@@ -8539,6 +8661,11 @@ export interface components {
             /** Format: int64 */
             package_id: number;
             /**
+             * @description The cycle to buy (default the plan's own); yearly needs a plan with a yearly price.
+             * @enum {string}
+             */
+            billing_cycle?: "monthly" | "yearly" | "one_time";
+            /**
              * @description Required when there is something to pay now (see `GET /billing/change-preview`).
              * @enum {string}
              */
@@ -8578,6 +8705,11 @@ export interface components {
              * @enum {string}
              */
             mode: "replace" | "change";
+            /**
+             * @description The cycle to assign (default the plan's own).
+             * @enum {string}
+             */
+            billing_cycle?: "monthly" | "yearly" | "one_time";
         };
         AssignPlanEnvelope: {
             data: {
@@ -14049,6 +14181,8 @@ export interface operations {
                 order_direction?: components["parameters"]["OrderDirection"];
                 /** @description Only invited users who have not (or have) set their password. */
                 invitation?: "pending" | "accepted";
+                /** @description One organization's members, for a reader of every tenant (staff without acting headers); an organization's own members always see only theirs. */
+                tenant_id?: number;
             };
             header?: {
                 /**
@@ -20254,6 +20388,8 @@ export interface operations {
         parameters: {
             query: {
                 package_id: number;
+                /** @description The cycle to price (default the plan's own); yearly needs a plan with a yearly price. */
+                billing_cycle?: "monthly" | "yearly" | "one_time";
             };
             header?: {
                 /**
@@ -20633,6 +20769,17 @@ export interface operations {
             query?: {
                 page?: components["parameters"]["Page"];
                 per_page?: components["parameters"]["PerPage"];
+                view?: "current" | "active" | "trial" | "grace" | "read_only" | "pending" | "scheduled" | "all";
+                status?: "trial" | "pending" | "scheduled" | "active" | "past_due" | "cancelled" | "expired";
+                search?: components["parameters"]["Search"];
+                package_id?: number;
+                /** @description The subscription's cycle (the plan's own when it chose none). */
+                billing_cycle?: "monthly" | "yearly" | "one_time";
+                /** @description Rows whose period ends within this many days from now (ended ones included). */
+                expires_within_days?: number;
+                /** @description `id` (default, with `order_direction` desc: the newest first), `expires_at` (the end of the period) or `created_at`. */
+                order_by?: "id" | "expires_at" | "created_at";
+                order_direction?: components["parameters"]["OrderDirection"];
             };
             header?: {
                 /**
@@ -20658,7 +20805,66 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionPageEnvelope"];
+                    "application/json": components["schemas"]["StaffSubscriptionPageEnvelope"];
+                };
+            };
+            /** @description Missing, invalid or expired bearer token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Authenticated but not permitted, or tenant context missing. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    subscriptionSummary: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional super-admin impersonation tenant id. Omit both acting headers for a
+                 *     read-only global view; set them before a write on a tenant-resolved route.
+                 *     Sent only when impersonating — there is no default.
+                 */
+                "X-Acting-Tenant"?: components["parameters"]["ActingTenant"];
+                /**
+                 * @description Optional super-admin impersonation branch id; paired with X-Acting-Tenant. Sent
+                 *     only when impersonating — there is no default.
+                 */
+                "X-Acting-Branch"?: components["parameters"]["ActingBranch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A count per view. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffSubscriptionCountsEnvelope"];
                 };
             };
             /** @description Missing, invalid or expired bearer token. */
@@ -20932,6 +21138,9 @@ export interface operations {
             query?: {
                 page?: components["parameters"]["Page"];
                 per_page?: components["parameters"]["PerPage"];
+                status?: "pending" | "processing" | "awaiting_approval" | "completed" | "failed" | "cancelled" | "refunded";
+                /** @description One organization's payments. */
+                tenant_id?: number;
             };
             header?: {
                 /**
@@ -20971,6 +21180,15 @@ export interface operations {
             };
             /** @description Authenticated but not permitted, or tenant context missing. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed; `errors` carries field messages. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -175,7 +175,7 @@ func TestUpgradeCreditsTheUnusedTimeAndStartsWhenApproved(t *testing.T) {
 	tenant := h.tenant("upgrade")
 	basic := h.paidPlan(tenant, h.basic, 1000, 15, 30)
 
-	preview, err := h.subscriptions.Preview(h.ctx, tenant, h.pro.ID)
+	preview, err := h.subscriptions.Preview(h.ctx, tenant, h.pro.ID, "")
 	if err != nil {
 		t.Fatalf("Preview: %v", err)
 	}
@@ -644,11 +644,11 @@ func TestAHiddenPlanCanOnlyBeRenewedByItsSubscribers(t *testing.T) {
 	if _, err := h.pool.Exec(h.ctx, `UPDATE packages SET is_active = false WHERE id = $1`, h.basic.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.subscriptions.Preview(h.ctx, tenant, h.basic.ID); err != nil {
+	if _, err := h.subscriptions.Preview(h.ctx, tenant, h.basic.ID, ""); err != nil {
 		t.Fatalf("renewing a hidden plan: %v", err)
 	}
 	other := h.tenant("hidden-other")
-	_, err := h.subscriptions.Preview(h.ctx, other, h.basic.ID)
+	_, err := h.subscriptions.Preview(h.ctx, other, h.basic.ID, "")
 	wantCode(t, err, apperr.BusinessLogicError)
 }
 

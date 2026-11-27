@@ -180,8 +180,12 @@ func QuoteChange(in QuoteInput) (Quote, error) {
 	currentPkg := in.CurrentPackage
 	periodEnd := *current.ExpiresAt
 
-	renewing := target.ID == current.PackageID ||
-		(current.NextPackageID != nil && *current.NextPackageID == target.ID)
+	// The same plan at the same cycle (or the plan and cycle already chosen
+	// for the renewal) renews. CurrentPackage is the plan at the current
+	// subscription's cycle (Subscription.PlanFor).
+	renewing := (target.ID == current.PackageID && target.BillingCycle == currentPkg.BillingCycle) ||
+		(current.NextPackageID != nil && *current.NextPackageID == target.ID &&
+			(current.NextBillingCycle == nil || *current.NextBillingCycle == target.BillingCycle))
 	if renewing {
 		if target.ID == current.PackageID && target.BillingCycle == CycleOneTime && current.Status != StatusTrial {
 			return Quote{}, apperr.New(apperr.InvalidState, "This plan is already yours for good.")
@@ -209,7 +213,11 @@ func QuoteChange(in QuoteInput) (Quote, error) {
 		return quote, nil
 	}
 
-	if isHigher(target, *currentPkg) {
+	// The same plan on a shorter cycle (yearly → monthly) is a downgrade even
+	// though the shorter cycle costs more per day: it waits for the period
+	// end, as a cancellation would.
+	sameOnShorter := target.ID == current.PackageID && CycleDays(target.BillingCycle) < CycleDays(currentPkg.BillingCycle)
+	if !sameOnShorter && isHigher(target, *currentPkg) {
 		quote.Kind = ChangeUpgrade
 		quote.Effective = EffectiveNow
 		quote.PeriodStart = in.Now

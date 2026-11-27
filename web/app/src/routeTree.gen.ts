@@ -32,9 +32,11 @@ import { Route as AppConsoleApprovalsRouteImport } from './routes/_app.console.a
 import { Route as AppConsoleCurrenciesRouteImport } from './routes/_app.console.currencies'
 import { Route as AppConsoleFlagsRouteImport } from './routes/_app.console.flags'
 import { Route as AppConsoleOrganizationsRouteImport } from './routes/_app.console.organizations'
+import { Route as AppConsolePaymentsRouteImport } from './routes/_app.console.payments'
 import { Route as AppConsolePlansRouteImport } from './routes/_app.console.plans'
 import { Route as AppConsoleSettingsRouteImport } from './routes/_app.console.settings'
 import { Route as AppConsoleStaffRouteImport } from './routes/_app.console.staff'
+import { Route as AppConsoleSubscriptionsRouteImport } from './routes/_app.console.subscriptions'
 import { Route as AppConsoleUsersRouteImport } from './routes/_app.console.users'
 import { Route as AppOrgIndexRouteImport } from './routes/_app.org.index'
 import { Route as AppOrgActivityRouteImport } from './routes/_app.org.activity'
@@ -165,6 +167,11 @@ const AppConsoleOrganizationsRoute = AppConsoleOrganizationsRouteImport.update({
   path: '/console/organizations',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConsolePaymentsRoute = AppConsolePaymentsRouteImport.update({
+  id: '/console/payments',
+  path: '/console/payments',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppConsolePlansRoute = AppConsolePlansRouteImport.update({
   id: '/console/plans',
   path: '/console/plans',
@@ -178,6 +185,11 @@ const AppConsoleSettingsRoute = AppConsoleSettingsRouteImport.update({
 const AppConsoleStaffRoute = AppConsoleStaffRouteImport.update({
   id: '/console/staff',
   path: '/console/staff',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleSubscriptionsRoute = AppConsoleSubscriptionsRouteImport.update({
+  id: '/console/subscriptions',
+  path: '/console/subscriptions',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConsoleUsersRoute = AppConsoleUsersRouteImport.update({
@@ -280,9 +292,11 @@ export interface FileRoutesByFullPath {
   '/console/currencies': typeof AppConsoleCurrenciesRoute
   '/console/flags': typeof AppConsoleFlagsRoute
   '/console/organizations': typeof AppConsoleOrganizationsRoute
+  '/console/payments': typeof AppConsolePaymentsRoute
   '/console/plans': typeof AppConsolePlansRoute
   '/console/settings': typeof AppConsoleSettingsRoute
   '/console/staff': typeof AppConsoleStaffRoute
+  '/console/subscriptions': typeof AppConsoleSubscriptionsRoute
   '/console/users': typeof AppConsoleUsersRoute
   '/org/activity': typeof AppOrgActivityRoute
   '/org/billing': typeof AppOrgBillingRoute
@@ -322,9 +336,11 @@ export interface FileRoutesByTo {
   '/console/currencies': typeof AppConsoleCurrenciesRoute
   '/console/flags': typeof AppConsoleFlagsRoute
   '/console/organizations': typeof AppConsoleOrganizationsRoute
+  '/console/payments': typeof AppConsolePaymentsRoute
   '/console/plans': typeof AppConsolePlansRoute
   '/console/settings': typeof AppConsoleSettingsRoute
   '/console/staff': typeof AppConsoleStaffRoute
+  '/console/subscriptions': typeof AppConsoleSubscriptionsRoute
   '/console/users': typeof AppConsoleUsersRoute
   '/org/activity': typeof AppOrgActivityRoute
   '/org/billing': typeof AppOrgBillingRoute
@@ -366,9 +382,11 @@ export interface FileRoutesById {
   '/_app/console/currencies': typeof AppConsoleCurrenciesRoute
   '/_app/console/flags': typeof AppConsoleFlagsRoute
   '/_app/console/organizations': typeof AppConsoleOrganizationsRoute
+  '/_app/console/payments': typeof AppConsolePaymentsRoute
   '/_app/console/plans': typeof AppConsolePlansRoute
   '/_app/console/settings': typeof AppConsoleSettingsRoute
   '/_app/console/staff': typeof AppConsoleStaffRoute
+  '/_app/console/subscriptions': typeof AppConsoleSubscriptionsRoute
   '/_app/console/users': typeof AppConsoleUsersRoute
   '/_app/org/activity': typeof AppOrgActivityRoute
   '/_app/org/billing': typeof AppOrgBillingRoute
@@ -410,9 +428,11 @@ export interface FileRouteTypes {
     | '/console/currencies'
     | '/console/flags'
     | '/console/organizations'
+    | '/console/payments'
     | '/console/plans'
     | '/console/settings'
     | '/console/staff'
+    | '/console/subscriptions'
     | '/console/users'
     | '/org/activity'
     | '/org/billing'
@@ -452,9 +472,11 @@ export interface FileRouteTypes {
     | '/console/currencies'
     | '/console/flags'
     | '/console/organizations'
+    | '/console/payments'
     | '/console/plans'
     | '/console/settings'
     | '/console/staff'
+    | '/console/subscriptions'
     | '/console/users'
     | '/org/activity'
     | '/org/billing'
@@ -495,9 +517,11 @@ export interface FileRouteTypes {
     | '/_app/console/currencies'
     | '/_app/console/flags'
     | '/_app/console/organizations'
+    | '/_app/console/payments'
     | '/_app/console/plans'
     | '/_app/console/settings'
     | '/_app/console/staff'
+    | '/_app/console/subscriptions'
     | '/_app/console/users'
     | '/_app/org/activity'
     | '/_app/org/billing'
@@ -692,6 +716,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConsoleOrganizationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/console/payments': {
+      id: '/_app/console/payments'
+      path: '/console/payments'
+      fullPath: '/console/payments'
+      preLoaderRoute: typeof AppConsolePaymentsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/console/plans': {
       id: '/_app/console/plans'
       path: '/console/plans'
@@ -711,6 +742,13 @@ declare module '@tanstack/react-router' {
       path: '/console/staff'
       fullPath: '/console/staff'
       preLoaderRoute: typeof AppConsoleStaffRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/console/subscriptions': {
+      id: '/_app/console/subscriptions'
+      path: '/console/subscriptions'
+      fullPath: '/console/subscriptions'
+      preLoaderRoute: typeof AppConsoleSubscriptionsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/console/users': {
@@ -854,9 +892,11 @@ interface AppRouteChildren {
   AppConsoleCurrenciesRoute: typeof AppConsoleCurrenciesRoute
   AppConsoleFlagsRoute: typeof AppConsoleFlagsRoute
   AppConsoleOrganizationsRoute: typeof AppConsoleOrganizationsRoute
+  AppConsolePaymentsRoute: typeof AppConsolePaymentsRoute
   AppConsolePlansRoute: typeof AppConsolePlansRoute
   AppConsoleSettingsRoute: typeof AppConsoleSettingsRoute
   AppConsoleStaffRoute: typeof AppConsoleStaffRoute
+  AppConsoleSubscriptionsRoute: typeof AppConsoleSubscriptionsRoute
   AppConsoleUsersRoute: typeof AppConsoleUsersRoute
   AppOrgActivityRoute: typeof AppOrgActivityRoute
   AppOrgBillingRoute: typeof AppOrgBillingRoute
@@ -882,9 +922,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppConsoleCurrenciesRoute: AppConsoleCurrenciesRoute,
   AppConsoleFlagsRoute: AppConsoleFlagsRoute,
   AppConsoleOrganizationsRoute: AppConsoleOrganizationsRoute,
+  AppConsolePaymentsRoute: AppConsolePaymentsRoute,
   AppConsolePlansRoute: AppConsolePlansRoute,
   AppConsoleSettingsRoute: AppConsoleSettingsRoute,
   AppConsoleStaffRoute: AppConsoleStaffRoute,
+  AppConsoleSubscriptionsRoute: AppConsoleSubscriptionsRoute,
   AppConsoleUsersRoute: AppConsoleUsersRoute,
   AppOrgActivityRoute: AppOrgActivityRoute,
   AppOrgBillingRoute: AppOrgBillingRoute,

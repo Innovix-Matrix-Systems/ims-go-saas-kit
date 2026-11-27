@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 import { api, type Schemas } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
-import { featureName, formatMB, subscriptionStatusQuery } from './billing'
+import { featureName, formatMB, subscriptionStatusQuery, visibleLimits } from './billing'
 import { MeterList } from './MeterList'
 import { useDismiss } from './inputs'
 import { Badge, Icon } from './ui'
@@ -29,7 +29,7 @@ export function PlanTray() {
   const usage = useQuery({ ...usageQuery, enabled: allowed })
   if (!allowed) return null
 
-  const limits = usage.data?.limits ?? []
+  const limits = visibleLimits(usage.data?.limits)
   const nearlyFull = limits.some((limit) => limit.limit > 0 && limit.used / limit.limit >= 0.8)
   const pkg = status.data?.package
   const sub = status.data?.subscription

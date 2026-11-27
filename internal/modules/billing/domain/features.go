@@ -92,6 +92,9 @@ const (
 	StatusExpired   = "expired"
 )
 
+// SubscriptionStatuses lists every subscription status.
+var SubscriptionStatuses = []string{StatusTrial, StatusPending, StatusScheduled, StatusActive, StatusPastDue, StatusCancelled, StatusExpired}
+
 // Payment statuses.
 const (
 	PaymentPending   = "pending"

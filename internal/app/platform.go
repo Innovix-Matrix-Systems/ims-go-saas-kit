@@ -296,11 +296,12 @@ func NewPlatform(cfg *config.Config, logger *slog.Logger) (_ *Platform, _ func()
 		WithNotifier(notificationsService).
 		WithCurrencies(currencyService).
 		WithTx(txManager).
-		WithActivity(activityRecorder)
+		WithActivity(activityRecorder).
+		WithGrace(cfg.Billing.Grace)
 	billingPaymentService := billingservice.NewPaymentService(billingPayments, currencyService)
 	billingApprovalService := billingservice.NewApprovalService(billingApprovals, billingPayments, billingSubscriptions, txManager).
 		WithActivity(activityRecorder)
-	billingGuard := billingservice.NewGuard(billingSubscriptions, billingPackages)
+	billingGuard := billingservice.NewGuard(billingSubscriptions, billingPackages).WithGrace(cfg.Billing.Grace)
 	filesService.WithStorageLimit(billingGuard)
 
 	deliveryService, err := newDelivery(cfg, translator, delivery.NewRepository(txManager.Queries()), txManager.Queries(), queueEngine, mailDriver,

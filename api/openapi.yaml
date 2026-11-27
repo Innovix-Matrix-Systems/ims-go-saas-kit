@@ -1716,6 +1716,7 @@ paths:
         - $ref: "#/components/parameters/OrderByUser"
         - $ref: "#/components/parameters/OrderDirection"
         - {name: invitation, in: query, schema: {type: string, enum: [pending, accepted]}, description: Only invited users who have not (or have) set their password.}
+        - {name: tenant_id, in: query, schema: {type: integer, format: int64, minimum: 1}, description: "One organization's members, for a reader of every tenant (staff without acting headers); an organization's own members always see only theirs."}
       responses:
         "200":
           description: Paginated users.
@@ -3791,6 +3792,11 @@ paths:
           in: query
           required: true
           schema: {type: integer, format: int64, minimum: 1}
+        - name: billing_cycle
+          in: query
+          required: false
+          description: The cycle to price (default the plan's own); yearly needs a plan with a yearly price.
+          schema: {type: string, enum: [monthly, yearly, one_time]}
       responses:
         "200":
           description: The priced change.
@@ -3913,16 +3919,63 @@ paths:
     get:
       tags: [Billing]
       summary: List subscriptions (system)
+      description: >-
+        The staff subscriptions panel: every organization's subscriptions with the organization and
+        plan names, what a period costs at the subscription's cycle, and its standing (in grace,
+        read-only). `view=current` is one row per organization (the plan in force, else the lapsed
+        one); the default `all` lists every row. Deleted organizations are left out.
       operationId: listSubscriptions
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - name: view
+          in: query
+          schema: {type: string, enum: [current, active, trial, grace, read_only, pending, scheduled, all], default: all}
+        - name: status
+          in: query
+          schema: {type: string, enum: [trial, pending, scheduled, active, past_due, cancelled, expired]}
+        - $ref: "#/components/parameters/Search"
+        - name: package_id
+          in: query
+          schema: {type: integer, format: int64, minimum: 1}
+        - name: billing_cycle
+          in: query
+          description: "The subscription's cycle (the plan's own when it chose none)."
+          schema: {type: string, enum: [monthly, yearly, one_time]}
+        - name: expires_within_days
+          in: query
+          description: Rows whose period ends within this many days from now (ended ones included).
+          schema: {type: integer, minimum: 0, maximum: 3650}
+        - name: order_by
+          in: query
+          description: "`id` (default, with `order_direction` desc: the newest first), `expires_at` (the end of the period) or `created_at`."
+          schema: {type: string, enum: [id, expires_at, created_at], default: id}
+        - $ref: "#/components/parameters/OrderDirection"
       responses:
         "200":
           description: Paginated subscriptions.
           content:
             application/json:
-              schema: {$ref: "#/components/schemas/SubscriptionPageEnvelope"}
+              schema: {$ref: "#/components/schemas/StaffSubscriptionPageEnvelope"}
+        "401": *unauthorized
+        "403": *forbidden
+        "422": *validationFailed
+
+  /api/v1/billing/internal/subscriptions/summary:
+    parameters:
+      - {$ref: "#/components/parameters/ActingTenant"}
+      - {$ref: "#/components/parameters/ActingBranch"}
+    get:
+      tags: [Billing]
+      summary: Count subscriptions per view (system)
+      description: The number of subscriptions in each view of the staff panel, for its tabs.
+      operationId: subscriptionSummary
+      responses:
+        "200":
+          description: A count per view.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/StaffSubscriptionCountsEnvelope"}
         "401": *unauthorized
         "403": *forbidden
 
@@ -4046,6 +4099,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PerPage"
+        - {name: status, in: query, schema: {type: string, enum: [pending, processing, awaiting_approval, completed, failed, cancelled, refunded]}}
+        - {name: tenant_id, in: query, schema: {type: integer, format: int64, minimum: 1}, description: One organization's payments.}
       responses:
         "200":
           description: Paginated payments.
@@ -4054,6 +4109,7 @@ paths:
               schema: {$ref: "#/components/schemas/PaymentPageEnvelope"}
         "401": *unauthorized
         "403": *forbidden
+        "422": *validationFailed
     post:
       tags: [Billing]
       summary: Record a manual payment (cash/bank)
@@ -8683,6 +8739,7 @@ components:
         description: {type: string, nullable: true}
         price: {type: integer, format: int64, description: Minor units (paisa).}
         billing_cycle: {type: string, enum: [monthly, yearly, one_time]}
+        yearly_price: {type: integer, format: int64, nullable: true, description: "A monthly plan can also be bought yearly at this price (minor units); null: monthly only."}
         trial_days: {type: integer}
         is_active: {type: boolean}
         sort_order: {type: integer}
@@ -8712,6 +8769,7 @@ components:
         description: {type: string, maxLength: 500, nullable: true}
         price: {type: integer, format: int64, minimum: 0}
         billing_cycle: {type: string, enum: [monthly, yearly, one_time]}
+        yearly_price: {type: integer, format: int64, minimum: 0, nullable: true, description: "Offers a monthly plan yearly too, at this price. Only with billing_cycle monthly."}
         trial_days: {type: integer, minimum: 0}
         is_active: {type: boolean, nullable: true}
         sort_order: {type: integer}
@@ -8836,6 +8894,8 @@ components:
           type: object
           additionalProperties: true
         next_package_id: {type: integer, format: int64, nullable: true, description: The plan chosen for the renewal (a downgrade).}
+        billing_cycle: {type: string, enum: [monthly, yearly, one_time], nullable: true, description: "The cycle chosen; null: the plan's own."}
+        next_billing_cycle: {type: string, enum: [monthly, yearly, one_time], nullable: true, description: The cycle chosen for the renewal (goes with next_package_id).}
         cancel_at_period_end: {type: boolean, description: "The organization will not renew; the plan runs until it expires."}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
@@ -8845,6 +8905,58 @@ components:
       required: [data]
       properties:
         data: {$ref: "#/components/schemas/Subscription"}
+
+    StaffSubscription:
+      allOf:
+        - {$ref: "#/components/schemas/Subscription"}
+        - type: object
+          required: [organization, package, price, price_cycle, in_grace, read_only]
+          properties:
+            organization:
+              type: object
+              required: [id, name, code]
+              properties:
+                id: {type: integer, format: int64}
+                name: {type: string}
+                code: {type: string}
+            package:
+              type: object
+              required: [id, name]
+              properties:
+                id: {type: integer, format: int64}
+                name: {type: string}
+            price: {type: integer, format: int64, description: "What one period costs at price_cycle (minor units)."}
+            price_cycle: {type: string, enum: [monthly, yearly, one_time]}
+            in_grace: {type: boolean, description: The paid plan lapsed and still applies until grace_ends_at.}
+            grace_ends_at: {type: string, format: date-time, nullable: true}
+            read_only: {type: boolean, description: "The organization is read-only and this is its latest plan."}
+
+    StaffSubscriptionPageEnvelope:
+      type: object
+      required: [data, links, meta]
+      properties:
+        data:
+          type: array
+          items: {$ref: "#/components/schemas/StaffSubscription"}
+        links: {$ref: "#/components/schemas/PaginationLinks"}
+        meta: {$ref: "#/components/schemas/PaginationMeta"}
+
+    StaffSubscriptionCountsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [current, active, trial, grace, read_only, pending, scheduled, all]
+          properties:
+            current: {type: integer, format: int64, description: "One per organization: active + trial + grace + read_only."}
+            active: {type: integer, format: int64}
+            trial: {type: integer, format: int64}
+            grace: {type: integer, format: int64}
+            read_only: {type: integer, format: int64}
+            pending: {type: integer, format: int64}
+            scheduled: {type: integer, format: int64}
+            all: {type: integer, format: int64}
 
     SubscriptionPageEnvelope:
       type: object
@@ -8880,6 +8992,11 @@ components:
               description: The plan chosen for the renewal (a downgrade).
             credit_balance: {type: integer, format: int64, description: Account credit in minor units.}
             currency: {type: string}
+            billing_cycle: {type: string, description: "The subscription's cycle (empty without a plan)."}
+            price: {type: integer, format: int64, description: What the plan costs at that cycle (minor units).}
+            in_grace: {type: boolean, description: The paid plan lapsed and still applies until grace_ends_at.}
+            grace_ends_at: {type: string, format: date-time, nullable: true}
+            read_only: {type: boolean, description: "The plan lapsed beyond its grace period: writes answer 402 SUBSCRIPTION_REQUIRED (meta.reason read_only) until a plan is paid."}
 
     AnnouncementRequest:
       type: object
@@ -9272,6 +9389,7 @@ components:
       required: [package_id]
       properties:
         package_id: {type: integer, format: int64}
+        billing_cycle: {type: string, enum: [monthly, yearly, one_time], description: "The cycle to buy (default the plan's own); yearly needs a plan with a yearly price."}
         payment_method: {type: string, enum: [bkash, nagad, cash, bank_transfer], description: "Required when there is something to pay now (see `GET /billing/change-preview`)."}
         payment_data:
           type: object
@@ -9311,6 +9429,7 @@ components:
           minimum: 0
           description: Defaults to the package price (replace) or the amount due (change). Requires payment_method.
         mode: {type: string, enum: [replace, change], default: replace}
+        billing_cycle: {type: string, enum: [monthly, yearly, one_time], description: "The cycle to assign (default the plan's own)."}
       example:
         package_id: 2
         payment_method: cash

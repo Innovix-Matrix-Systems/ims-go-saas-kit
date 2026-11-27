@@ -1,11 +1,13 @@
 name: CI
 
+# Pull requests only: a merge to main does not run CI again (the pull request
+# already checked it, and a fork on a private repository pays for Actions
+# minutes). The pre-push hook (.githooks/pre-push) runs the same build and
+# checks locally before every push.
 on:
-  push:
-    branches: [main]
   pull_request:
 
-# One run per branch/PR: a new push cancels the outdated run.
+# One run per pull request: a new push cancels the outdated run.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

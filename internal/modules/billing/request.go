@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
+	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/service"
 )
 
 // FeatureRequest defines one package feature in create/update payloads.
@@ -15,14 +16,16 @@ type FeatureRequest struct {
 
 // PackageInsertRequest is the package create/update payload.
 type PackageInsertRequest struct {
-	Name         string           `json:"name" validate:"required,min=2,max=150"`
-	Description  *string          `json:"description" validate:"omitempty,max=500"`
-	Price        int64            `json:"price" validate:"gte=0"`
-	BillingCycle string           `json:"billing_cycle" validate:"required,oneof=monthly yearly one_time"`
-	TrialDays    int32            `json:"trial_days" validate:"gte=0"`
-	IsActive     *bool            `json:"is_active"`
-	SortOrder    int32            `json:"sort_order"`
-	Features     []FeatureRequest `json:"features" validate:"omitempty,dive"`
+	Name         string  `json:"name" validate:"required,min=2,max=150"`
+	Description  *string `json:"description" validate:"omitempty,max=500"`
+	Price        int64   `json:"price" validate:"gte=0"`
+	BillingCycle string  `json:"billing_cycle" validate:"required,oneof=monthly yearly one_time"`
+	// YearlyPrice offers a monthly plan yearly too (null: monthly only).
+	YearlyPrice *int64           `json:"yearly_price" validate:"omitempty,gte=0"`
+	TrialDays   int32            `json:"trial_days" validate:"gte=0"`
+	IsActive    *bool            `json:"is_active"`
+	SortOrder   int32            `json:"sort_order"`
+	Features    []FeatureRequest `json:"features" validate:"omitempty,dive"`
 }
 
 func (r PackageInsertRequest) toInput() domain.PackageInput {
@@ -35,6 +38,7 @@ func (r PackageInsertRequest) toInput() domain.PackageInput {
 		Description:  r.Description,
 		Price:        r.Price,
 		BillingCycle: r.BillingCycle,
+		YearlyPrice:  r.YearlyPrice,
 		TrialDays:    r.TrialDays,
 		IsActive:     isActive,
 		SortOrder:    r.SortOrder,
@@ -58,7 +62,9 @@ func (r PackageInsertRequest) toFeatures() []domain.FeatureInput {
 
 // SubscribeRequest starts a subscription.
 type SubscribeRequest struct {
-	PackageID     int64          `json:"package_id" validate:"required,gt=0"`
+	PackageID int64 `json:"package_id" validate:"required,gt=0"`
+	// BillingCycle is the cycle to buy (default: the plan's own).
+	BillingCycle  string         `json:"billing_cycle" validate:"omitempty,oneof=monthly yearly one_time"`
 	PaymentMethod string         `json:"payment_method" validate:"omitempty,oneof=bkash nagad cash bank_transfer"`
 	PaymentData   map[string]any `json:"payment_data"`
 }
@@ -83,6 +89,8 @@ type AssignPlanRequest struct {
 	// Mode: replace (default) ends the current plan now with no credit;
 	// change applies the customer's rules (credit, end-of-period changes).
 	Mode string `json:"mode" validate:"omitempty,oneof=replace change"`
+	// BillingCycle is the cycle to assign (default: the plan's own).
+	BillingCycle string `json:"billing_cycle" validate:"omitempty,oneof=monthly yearly one_time"`
 }
 
 // RefundRequest gives money back for a payment (staff).
@@ -125,17 +133,19 @@ type FeatureResponse struct {
 
 // PackageResponse is the public package representation.
 type PackageResponse struct {
-	ID           int64             `json:"id"`
-	Name         string            `json:"name"`
-	Description  *string           `json:"description"`
-	Price        int64             `json:"price"`
-	BillingCycle string            `json:"billing_cycle"`
-	TrialDays    int32             `json:"trial_days"`
-	IsActive     bool              `json:"is_active"`
-	SortOrder    int32             `json:"sort_order"`
-	Features     []FeatureResponse `json:"features"`
-	CreatedAt    time.Time         `json:"created_at"`
-	UpdatedAt    time.Time         `json:"updated_at"`
+	ID           int64   `json:"id"`
+	Name         string  `json:"name"`
+	Description  *string `json:"description"`
+	Price        int64   `json:"price"`
+	BillingCycle string  `json:"billing_cycle"`
+	// YearlyPrice: the plan can also be bought yearly at this price.
+	YearlyPrice *int64            `json:"yearly_price"`
+	TrialDays   int32             `json:"trial_days"`
+	IsActive    bool              `json:"is_active"`
+	SortOrder   int32             `json:"sort_order"`
+	Features    []FeatureResponse `json:"features"`
+	CreatedAt   time.Time         `json:"created_at"`
+	UpdatedAt   time.Time         `json:"updated_at"`
 }
 
 // NewPackageResponse maps a package to its public representation.
@@ -154,6 +164,7 @@ func NewPackageResponse(pkg domain.Package) PackageResponse {
 		Description:  pkg.Description,
 		Price:        pkg.Price,
 		BillingCycle: pkg.BillingCycle,
+		YearlyPrice:  pkg.YearlyPrice,
 		TrialDays:    pkg.TrialDays,
 		IsActive:     pkg.IsActive,
 		SortOrder:    pkg.SortOrder,
@@ -176,9 +187,13 @@ type SubscriptionResponse struct {
 	CancellationReason *string        `json:"cancellation_reason"`
 	Overrides          map[string]any `json:"overrides"`
 	NextPackageID      *int64         `json:"next_package_id"`
-	CancelAtPeriodEnd  bool           `json:"cancel_at_period_end"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
+	// BillingCycle is the cycle chosen (null: the plan's own);
+	// NextBillingCycle goes with NextPackageID.
+	BillingCycle      *string   `json:"billing_cycle"`
+	NextBillingCycle  *string   `json:"next_billing_cycle"`
+	CancelAtPeriodEnd bool      `json:"cancel_at_period_end"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 // NewSubscriptionResponse maps a subscription to its public representation.
@@ -195,6 +210,8 @@ func NewSubscriptionResponse(subscription domain.Subscription) SubscriptionRespo
 		CancellationReason: subscription.CancellationReason,
 		Overrides:          subscription.Overrides,
 		NextPackageID:      subscription.NextPackageID,
+		BillingCycle:       subscription.BillingCycle,
+		NextBillingCycle:   subscription.NextBillingCycle,
 		CancelAtPeriodEnd:  subscription.CancelAtPeriodEnd,
 		CreatedAt:          subscription.CreatedAt,
 		UpdatedAt:          subscription.UpdatedAt,
@@ -214,6 +231,16 @@ type StatusResponse struct {
 	// CreditBalance is the account credit in Currency (minor units).
 	CreditBalance int64  `json:"credit_balance"`
 	Currency      string `json:"currency"`
+	// BillingCycle and Price are what the plan costs at the subscription's
+	// cycle (a monthly plan bought yearly shows the yearly price).
+	BillingCycle string `json:"billing_cycle"`
+	Price        int64  `json:"price"`
+	// InGrace: the paid plan lapsed and still applies until GraceEndsAt.
+	// ReadOnly: it lapsed beyond the grace period; writes are refused until
+	// a plan is paid.
+	InGrace     bool       `json:"in_grace"`
+	GraceEndsAt *time.Time `json:"grace_ends_at"`
+	ReadOnly    bool       `json:"read_only"`
 }
 
 // PaymentResponse is the public payment representation.
@@ -340,4 +367,61 @@ func NewApprovalResponse(approval domain.Approval) ApprovalResponse {
 		CreatedAt:      approval.CreatedAt,
 		UpdatedAt:      approval.UpdatedAt,
 	}
+}
+
+// StaffSubscriptionResponse is one row of the staff subscriptions panel: the
+// subscription with its organization, its plan, what its period costs and
+// its standing.
+type StaffSubscriptionResponse struct {
+	SubscriptionResponse
+	Organization OrganizationRef `json:"organization"`
+	Package      PackageRef      `json:"package"`
+	// Price is what one period costs at PriceCycle (the subscription's cycle).
+	Price      int64  `json:"price"`
+	PriceCycle string `json:"price_cycle"`
+	// InGrace: the paid plan lapsed and still applies until GraceEndsAt.
+	// ReadOnly: the organization is read-only (this is its latest plan).
+	InGrace     bool       `json:"in_grace"`
+	GraceEndsAt *time.Time `json:"grace_ends_at"`
+	ReadOnly    bool       `json:"read_only"`
+}
+
+// OrganizationRef names an organization in a list.
+type OrganizationRef struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Code string `json:"code"`
+}
+
+// PackageRef names a plan in a list.
+type PackageRef struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+// NewStaffSubscriptionResponse maps a staff panel row.
+func NewStaffSubscriptionResponse(row service.StaffSubscriptionRow) StaffSubscriptionResponse {
+	return StaffSubscriptionResponse{
+		SubscriptionResponse: NewSubscriptionResponse(row.Subscription),
+		Organization:         OrganizationRef{ID: row.TenantID, Name: row.TenantName, Code: row.TenantCode},
+		Package:              PackageRef{ID: row.Package.ID, Name: row.Package.Name},
+		Price:                row.Offered.Price,
+		PriceCycle:           row.Offered.BillingCycle,
+		InGrace:              row.InGrace,
+		GraceEndsAt:          row.GraceEndsAt,
+		ReadOnly:             row.ReadOnly,
+	}
+}
+
+// StaffSubscriptionCountsResponse is the number of subscriptions in each view
+// of the staff panel (its tabs).
+type StaffSubscriptionCountsResponse struct {
+	Current   int64 `json:"current"`
+	Active    int64 `json:"active"`
+	Trial     int64 `json:"trial"`
+	Grace     int64 `json:"grace"`
+	ReadOnly  int64 `json:"read_only"`
+	Pending   int64 `json:"pending"`
+	Scheduled int64 `json:"scheduled"`
+	All       int64 `json:"all"`
 }

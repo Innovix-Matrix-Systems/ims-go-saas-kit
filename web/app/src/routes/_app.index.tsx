@@ -14,6 +14,7 @@ import { GettingStarted } from '../components/GettingStarted'
 import { fetchFeed, feedKey } from '../components/notifications'
 import { organizationQuery } from '../components/organization'
 import { Avatar, Badge, Card, EmptyState, Icon, type IconName } from '../components/ui'
+import { branchesEnabled } from '../product'
 
 export const Route = createFileRoute('/_app/')({
   component: HomePage,
@@ -376,7 +377,7 @@ function OrganizationHome({ session }: { session: Session }) {
   const quick: QuickAction[] = [
     { to: '/org/members', icon: 'users', label: 'dashboard.qInvite', hint: 'dashboard.qInviteHint', show: can(session, 'user.create') },
     { to: '/org/files', icon: 'files', label: 'dashboard.qUpload', hint: 'dashboard.qUploadHint', show: can(session, 'file.create') },
-    { to: '/org/branches', icon: 'tenants', label: 'dashboard.qBranches', hint: 'dashboard.qBranchesHint', show: can(session, 'branch.view.all') },
+    { to: '/org/branches', icon: 'tenants', label: 'dashboard.qBranches', hint: 'dashboard.qBranchesHint', show: branchesEnabled && can(session, 'branch.view.all') },
     { to: '/org/billing', icon: 'package', label: 'dashboard.qBilling', hint: 'dashboard.qBillingHint', show: billing },
     { to: '/profile', icon: 'user', label: 'dashboard.qProfile', hint: 'dashboard.qProfileHint', show: true },
     { to: '/settings/security', icon: 'shield', label: 'dashboard.qSecurity', hint: 'dashboard.qSecurityHint', show: true },

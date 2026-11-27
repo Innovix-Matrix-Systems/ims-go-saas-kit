@@ -39,12 +39,19 @@ in one branch at a time, and branch-scoped lists (files, activity, your own modu
 branch; **All branches** shows everything the member may see. The choice is stored on the account,
 so it follows the member to another device. See [Tenancy](../guides/tenancy.md#lists-by-branch).
 
+A product whose organizations never need a second branch sets `branchesEnabled` to `false` in
+`web/app/src/product.ts` and gives every plan `branches.max` = 1: the app then hides the branch
+page, its dashboard shortcut, the branch count and the branch limit on plans and usage, and every
+organization works in its default branch.
+
 ## Plan limits
 
 Plans limit members, branches, storage and any feature you add. When an action would cross a limit
 the API answers **402** with the limit in `meta`, and the app explains it and links to Billing. A
-banner in the shell says when the plan is about to expire or needs payment. See
-[Billing](../guides/billing.md).
+banner in the shell says when the plan is about to expire or needs payment. When a paid plan has
+lapsed, the banner counts down the grace period, then says the organization is read-only: members
+can still view, copy and export, and paying lifts it. Billing and onboarding offer each plan monthly
+or yearly. See [Billing](../guides/billing.md#grace-and-read-only).
 
 ![Billing in Bangla](../images/app-billing-bn.png)
 

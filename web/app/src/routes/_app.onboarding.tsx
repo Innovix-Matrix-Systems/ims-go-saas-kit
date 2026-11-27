@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api, ApiError, type Schemas } from '../api/client'
 import { useSession } from '../auth/session'
-import { BankTransferForm, publicPackagesQuery, subscriptionStatusQuery, type Package, PricingCard } from '../components/billing'
+import { atCycle, BankTransferForm, CycleSwitch, offersYearly, publicPackagesQuery, subscriptionStatusQuery, type Cycle, type Package, PricingCard } from '../components/billing'
 import { Field } from '../components/form'
 import { TwoFactorSetup } from '../components/TwoFactorSetup'
 import { Button, Card, Icon, PageHeader, Spinner } from '../components/ui'
@@ -123,6 +123,7 @@ function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
   const status = useQuery(subscriptionStatusQuery)
   const [chosen, setChosen] = useState<Package | null>(null)
   const [pending, setPending] = useState(false)
+  const [cycle, setCycle] = useState<Cycle>('monthly')
   const currentId = status.data?.package?.id
 
   if (!packages.data || !status.data) {
@@ -136,8 +137,19 @@ function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
   return (
     <Card title={t('onboarding.step.package')}>
       <div className="stack">
+        {offersYearly(packages.data) ? (
+          <CycleSwitch
+            value={cycle}
+            onChange={(next) => {
+              setCycle(next)
+              setChosen(null)
+            }}
+            packages={packages.data}
+          />
+        ) : null}
         <div className="plan-grid">
-          {packages.data.map((pkg) => {
+          {packages.data.map((base) => {
+            const pkg = atCycle(base, cycle)
             const current = pkg.id === currentId
             return (
               <PricingCard
@@ -167,7 +179,7 @@ function PackageStep({ onNext }: { onNext: (skip: boolean) => void }) {
           ) : (
             <div className="stack form-narrow">
               <h3 className="card-title">{t('onboarding.payTitle')}</h3>
-              <BankTransferForm key={chosen.id} pkg={chosen} onSubmitted={() => setPending(true)} />
+              <BankTransferForm key={`${chosen.id}-${chosen.billing_cycle}`} pkg={chosen} onSubmitted={() => setPending(true)} />
             </div>
           )
         ) : null}

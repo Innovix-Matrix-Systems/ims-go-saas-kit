@@ -46,6 +46,8 @@ and docs site), so they work the same on Windows, macOS and Linux. `make help` p
 | `make lint-fix` | Run golangci-lint and apply automatic fixes. |
 | `make tidy` | Tidy go.mod and go.sum. |
 | `make check` | Format check + vet + lint + unit tests. |
+| `make hooks` | Enable the git hooks in .githooks: gofmt before a commit, the build and CI checks before a push. |
+| `make pre-push` | Build everything and run the checks CI runs on a pull request (what the pre-push hook runs). |
 | `make sqlc` | Regenerate sqlc output in internal/dbgen. |
 | `make openapi` | Regenerate OpenAPI-derived types in internal/contract. |
 | `make openapi-gen` | Refresh the generated regions of api/openapi.yaml from module routes/DTOs. |

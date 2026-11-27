@@ -83,7 +83,7 @@ func (h *Handler) changePreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tenantID := tenancy.From(r).EffectiveTenantID()
-	change, err := h.subscriptions.Preview(r.Context(), tenantID, packageID)
+	change, err := h.subscriptions.Preview(r.Context(), tenantID, packageID, r.URL.Query().Get("billing_cycle"))
 	if err != nil {
 		h.Error(w, r, err)
 		return

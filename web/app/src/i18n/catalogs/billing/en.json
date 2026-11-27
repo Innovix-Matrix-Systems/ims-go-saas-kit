@@ -111,5 +111,9 @@
   "billing.change.confirm": "Confirm",
   "billing.change.confirmLater": "Switch when my period ends",
   "billing.change.later": "{name} starts on {date}.",
-  "billing.waitingHint": "Withdraw or wait for the payment that is waiting before choosing another plan."
+  "billing.waitingHint": "Withdraw or wait for the payment that is waiting before choosing another plan.",
+  "billing.cycle.label": "Billing cycle",
+  "billing.cycle.monthly": "Monthly",
+  "billing.cycle.yearly": "Yearly",
+  "billing.cycle.save": "Save up to {amount}"
 }

@@ -427,6 +427,7 @@ type Package struct {
 	SortOrder    int32              `json:"sort_order"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	YearlyPrice  *int64             `json:"yearly_price"`
 }
 
 type PackageFeature struct {
@@ -598,6 +599,8 @@ type Subscription struct {
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 	NextPackageID      *int64             `json:"next_package_id"`
 	CancelAtPeriodEnd  bool               `json:"cancel_at_period_end"`
+	BillingCycle       *string            `json:"billing_cycle"`
+	NextBillingCycle   *string            `json:"next_billing_cycle"`
 }
 
 type Tenant struct {

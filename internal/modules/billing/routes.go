@@ -39,6 +39,7 @@ func (h *Handler) RegisterRoutesExempt(r chi.Router) {
 	r.With(h.can("package.delete")).Delete("/packages/{id}", h.destroyPackage)
 
 	r.With(h.can("subscription.view.all")).Get("/billing/internal/subscriptions", h.listSubscriptions)
+	r.With(h.can("subscription.view.all")).Get("/billing/internal/subscriptions/summary", h.subscriptionSummary)
 	r.With(h.can("subscription.manage")).Post("/billing/internal/subscriptions/{id}/cancel", h.cancelSubscription)
 	r.With(h.can("subscription.override")).Post("/billing/internal/subscriptions/{id}/overrides", h.overrides)
 	r.With(h.can("subscription.manage")).Post("/billing/internal/tenants/{tenant_id}/subscription", h.assignPlan)

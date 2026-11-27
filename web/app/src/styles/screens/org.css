@@ -109,6 +109,8 @@
 .plan-feature-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; }
 .plan-feature-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 34px; }
 .plan-limit { width: 96px; flex: none; }
+/* The included-features list inside the plan drawer: no card divider. */
+.plan-includes-plain { border-top: 0; padding-top: 0; }
 .form-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 640px) { .form-grid-3 { grid-template-columns: 1fr; } }
 .setting-row.wide { flex-direction: column; align-items: stretch; }

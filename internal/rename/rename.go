@@ -76,11 +76,12 @@ var (
 
 	// Upstream references that must keep their names: the studio's domain and
 	// sibling starters on GitHub (anything but this repository itself).
+	// Text that describes the starter's names on purpose (the rename docs, the
+	// "Use this template" link) sits between "rename:keep" and "rename:end"
+	// markers, written in the file's own comment syntax. It is masked before
+	// any rule runs, the module path included, so nothing inside it changes.
+	keepBlock         = regexp.MustCompile(`(?s)rename:keep.*?rename:end`)
 	protectedPatterns = []*regexp.Regexp{
-		// Text that describes the starter's names on purpose (the rename docs)
-		// sits between "rename:keep" and "rename:end" markers, written in the
-		// file's own comment syntax.
-		regexp.MustCompile(`(?s)rename:keep.*?rename:end`),
 		regexp.MustCompile(`[A-Za-z0-9.-]*innovixmatrixsystem[A-Za-z0-9./_-]*`),
 		regexp.MustCompile(`github\.com/Innovix-Matrix-Systems/[A-Za-z0-9._-]+`),
 		regexp.MustCompile(`[A-Za-z0-9._%+-]*@ims\b(\.com)?`), // seeded accounts, also partial ("superadmin@ims")
@@ -243,7 +244,11 @@ func Rewrite(text, oldModule string, names Names) (string, int) {
 	}
 	edits := 0
 
-	// The module path first: it contains the repository name.
+	// Keep blocks before anything else: a block holding the module path would
+	// otherwise be masked with the new path's placeholder inside it, and that
+	// nested placeholder came out as NUL bytes.
+	text = keepBlock.ReplaceAllStringFunc(text, hold)
+	// The module path next: it contains the repository name.
 	if n := strings.Count(text, oldModule); n > 0 {
 		text = strings.ReplaceAll(text, oldModule, hold(names.Module))
 		edits += n
