@@ -6,6 +6,76 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-11-27
+
+**Monthly or yearly on one plan, no lock-out after a lapse, and a subscriptions panel for staff.**
+Brought back from the first product built on the kit.
+
+- **Monthly and yearly on one plan.** A monthly plan can have a `yearly_price`; organizations pick
+  the cycle with a Monthly/Yearly switch on the billing and onboarding pages, and the subscription
+  remembers it (`billing_cycle` on subscribe, change preview and staff assign). Monthly → yearly of
+  the same plan is an upgrade with the unused days credited; yearly → monthly waits for the period
+  end. Staff set the yearly price in the plan editor. See
+  [Billing → Monthly and yearly](docs/guides/billing.md#monthly-and-yearly).
+- **Grace, then read-only.** A lapsed paid plan keeps applying for `BILLING_GRACE_DAYS` (14), with
+  a "payment overdue" banner. After that the organization is read-only: reads, exports, paying, the
+  caller's own account and removing members still work; other writes answer 402
+  `SUBSCRIPTION_REQUIRED` (`meta.reason: read_only`) until a plan is paid. The subscription status
+  reports `in_grace`, `grace_ends_at` and `read_only`. The routes that stay open are one list in
+  `internal/app/routes.go` (`readOnlyAllowed`), checked by a test that every entry names a real
+  route. See [Billing → Grace and read-only](docs/guides/billing.md#grace-and-read-only).
+- **Console → Subscriptions.** One list of every organization's plan, cycle and price, when it
+  renews or ends and who is in grace or read-only, with tabs and counts (Current, Active, Trial,
+  Grace, Read-only, Pending, Next periods, All), search, plan, cycle and "ends within" filters and
+  sorting by end date; a row opens the organization. Behind it,
+  `GET /billing/internal/subscriptions` now returns names, price and standing with views and
+  filters, and `…/subscriptions/summary` counts them. See
+  [Billing → The staff subscriptions panel](docs/guides/billing.md#the-staff-subscriptions-panel).
+- **Organization drawer.** It opens from a link (`/console/organizations?org=<id>`), prices the
+  plan at its cycle, and **Change plan** offers monthly or yearly. It used to show the 10 newest
+  payments and the first 50 members and quietly hide the rest; it now shows the latest five of
+  each with the total and **See all**, which opens the new **Console → Payments** page or
+  **Users** filtered to that organization (`?org=<id>`), with pagination. The staff payments list
+  and the users list take `tenant_id` (organization members stay pinned to their own).
+- **Plans in the console** open as a summary (prices, trial, limits, included features); **Edit
+  plan** switches to a form grouped into Plan, Pricing, Limits and Features. Plan cards and usage
+  show only limits that mean something (no "0 of N" for a limit nothing counts).
+- **Sample plans.** `ims db:seed` creates Free (3 members, never ends), Pro ($19/month or
+  $190/year) and Business ($49/month or $490/year), each only when missing, so console edits are
+  never overwritten (`seeder.SeedPlans`, separate from the test kit's base seed). Sign-up starts
+  new organizations on Free. See [Billing → Packages](docs/guides/billing.md#packages).
+- **One branch per organization, optionally.** `branchesEnabled` in `web/app/src/product.ts`
+  (default `true`) hides the branch page, shortcut, count and limit for products that use only the
+  default branch.
+- **CI runs on pull requests only**, not again after a merge. **`make hooks`** enables the git
+  hooks and the **pre-push hook** now runs what CI runs on a pull request (Go build, `make check`,
+  generated code, OpenAPI, translations, app and dashboard checks and builds) after checking the
+  Node.js version; `make pre-push` runs it by hand. The hook files are executable in git.
+
+### Fixed
+
+- `make rename` wrote NUL bytes in place of the "Use this template" link (README,
+  `docs/getting-started/make-it-yours.md`): text between `rename:keep` and `rename:end` that held
+  the module path came out with a placeholder inside. Keep blocks are now masked before any rule.
+
+**Upgrading from 0.2.6:** run `ims migrate` (migration 00046: `packages.yearly_price`,
+`subscriptions.billing_cycle`, `next_billing_cycle`). Things to check:
+
+- **Read-only after the grace period** is on by default. A module with writes that must work while
+  an organization is read-only (paying, its own account) adds its routes to `readOnlyAllowed`. Set
+  `BILLING_GRACE_DAYS` to change the grace period. A tenant that never had a plan is unaffected.
+- **API:** `yearly_price` on packages; `billing_cycle` on `POST /billing/subscribe`,
+  `GET /billing/change-preview` and staff assign; subscription status `in_grace`, `grace_ends_at`,
+  `read_only`; `GET /billing/internal/subscriptions` takes `view`, `status`, `search`,
+  `package_id`, `billing_cycle`, `expires_within_days`, `order_by` and returns organization and
+  plan names; new `…/subscriptions/summary`; `tenant_id` on `GET /billing/internal/payments` and
+  `GET /user`.
+- **Go:** `SubscriptionRepository.SetPlanEnd` takes the next cycle; `PaymentRepository.List` takes
+  a `domain.PaymentFilter`; `SubscriptionService.Preview` takes a cycle; new `Package.ForCycle`,
+  `Subscription.Cycle`/`PlanFor`, `Guard.WithGrace`, `billing.ReadOnly`.
+- **Seed:** `ims db:seed` adds the three sample plans if no package has their names; delete or edit
+  them, or replace `seeder.Plans`, for your product.
+
 ## [0.2.6] - 2026-11-25
 
 **Plan changes that never charge twice.** Changing plan used to charge the full price of the new
@@ -520,7 +590,8 @@ If you run this on a database created by the API starter, run `ims migrate`,
 `ims permission:sync` and `ims settings:sync`, then restart `ims queue` and `ims schedule`
 (announcements are delivered by a new scheduled task).
 
-[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.6...HEAD
+[Unreleased]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.7...HEAD
+[0.2.7]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.3...v0.2.5
 [0.2.3]: https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/compare/v0.2.0...v0.2.3
