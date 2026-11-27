@@ -76,6 +76,9 @@ func (s *PackageService) Get(ctx context.Context, id int64) (*domain.Package, er
 func (s *PackageService) Create(ctx context.Context, input domain.PackageInput, features []domain.FeatureInput) (_ *domain.Package, err error) {
 	ctx, end := tracing.Begin(ctx, "billing.create_package")
 	defer end(&err)
+	if err := validateYearlyPrice(input); err != nil {
+		return nil, err
+	}
 	validated, err := validateFeatures(features)
 	if err != nil {
 		return nil, err
@@ -102,6 +105,9 @@ func (s *PackageService) Create(ctx context.Context, input domain.PackageInput, 
 func (s *PackageService) Update(ctx context.Context, id int64, input domain.PackageInput, features []domain.FeatureInput) (_ *domain.Package, err error) {
 	ctx, end := tracing.Begin(ctx, "billing.update_package", attribute.Int64("package.id", id))
 	defer end(&err)
+	if err := validateYearlyPrice(input); err != nil {
+		return nil, err
+	}
 	validated, err := validateFeatures(features)
 	if err != nil {
 		return nil, err
@@ -170,4 +176,14 @@ func validateFeatures(features []domain.FeatureInput) ([]domain.FeatureInput, er
 		validated = append(validated, feature)
 	}
 	return validated, nil
+}
+
+// validateYearlyPrice: only a monthly plan can also be offered yearly.
+func validateYearlyPrice(input domain.PackageInput) error {
+	if input.YearlyPrice != nil && input.BillingCycle != domain.CycleMonthly {
+		return apperr.Validation(map[string][]string{
+			"yearly_price": {"Only a monthly plan can have a yearly price."},
+		})
+	}
+	return nil
 }

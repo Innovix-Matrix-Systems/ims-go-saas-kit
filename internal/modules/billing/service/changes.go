@@ -67,10 +67,12 @@ func (s *SubscriptionService) quoteFor(ctx context.Context, st store, tenantID i
 		return nil, err
 	}
 	if found {
-		currentPkg, err := st.packages.Get(ctx, current.PackageID)
+		base, err := st.packages.Get(ctx, current.PackageID)
 		if err != nil {
 			return nil, err
 		}
+		offered := current.PlanFor(*base)
+		currentPkg := &offered
 		paid, err := st.payments.PaidValue(ctx, current.ID)
 		if err != nil {
 			return nil, err
@@ -104,19 +106,23 @@ func (s *SubscriptionService) quoteFor(ctx context.Context, st store, tenantID i
 
 // Preview prices a plan change without changing anything (GET
 // /billing/change-preview).
-func (s *SubscriptionService) Preview(ctx context.Context, tenantID, packageID int64) (_ *Change, err error) {
+func (s *SubscriptionService) Preview(ctx context.Context, tenantID, packageID int64, cycle string) (_ *Change, err error) {
 	ctx, end := tracing.Begin(ctx, "billing.change_preview",
-		attribute.Int64("tenant.id", tenantID), attribute.Int64("package.id", packageID))
+		attribute.Int64("tenant.id", tenantID), attribute.Int64("package.id", packageID), attribute.String("billing.cycle", cycle))
 	defer end(&err)
-	pkg, err := s.packages.Get(ctx, packageID)
+	base, err := s.packages.Get(ctx, packageID)
 	if err != nil {
 		return nil, err
 	}
-	change, err := s.quoteFor(ctx, s.store(), tenantID, *pkg)
+	pkg, err := base.ForCycle(cycle)
 	if err != nil {
 		return nil, err
 	}
-	if err := available(pkg, change); err != nil {
+	change, err := s.quoteFor(ctx, s.store(), tenantID, pkg)
+	if err != nil {
+		return nil, err
+	}
+	if err := available(&pkg, change); err != nil {
 		return nil, err
 	}
 	return change, nil
@@ -135,9 +141,11 @@ func available(pkg *domain.Package, change *Change) error {
 
 // checkoutRequest is one plan change asked by the organization or by staff.
 type checkoutRequest struct {
-	TenantID    int64
-	ActorID     int64
-	Package     *domain.Package
+	TenantID int64
+	ActorID  int64
+	Package  *domain.Package
+	// Cycle is the billing cycle chosen ("" is the plan's own).
+	Cycle       string
 	Method      string
 	PaymentData map[string]any
 	// Staff records the payment as received at once (cash or bank).
@@ -165,7 +173,11 @@ func (s *SubscriptionService) checkout(ctx context.Context, req checkoutRequest)
 	if _, err := st.subscriptions.ActivateDueScheduled(ctx, &tenantTarget); err != nil {
 		return nil, err
 	}
-	pkg := req.Package
+	offered, err := req.Package.ForCycle(req.Cycle)
+	if err != nil {
+		return nil, err
+	}
+	pkg := &offered
 	if !req.Staff {
 		if existing, found, err := st.payments.PendingCheckout(ctx, req.TenantID, pkg.ID, req.Method); err != nil {
 			return nil, err
@@ -174,7 +186,12 @@ func (s *SubscriptionService) checkout(ctx context.Context, req checkoutRequest)
 			if err != nil {
 				return nil, err
 			}
-			return &checkoutResult{Subscription: subscription, Payment: existing}, nil
+			// The same checkout asked again (a retry or a double click). A
+			// checkout of the same plan at another cycle is a different one:
+			// it meets the pending-payment check below.
+			if subscription.Cycle(*req.Package) == pkg.BillingCycle {
+				return &checkoutResult{Subscription: subscription, Payment: existing}, nil
+			}
 		}
 	}
 	if pending, found, err := st.payments.PendingForTenant(ctx, req.TenantID); err != nil {
@@ -196,7 +213,7 @@ func (s *SubscriptionService) checkout(ctx context.Context, req checkoutRequest)
 	now := s.now()
 
 	if !quote.RequiresPayment {
-		return s.changeWithoutPayment(ctx, st, req, change)
+		return s.changeWithoutPayment(ctx, st, req, pkg, change)
 	}
 
 	method := req.Method
@@ -226,7 +243,7 @@ func (s *SubscriptionService) checkout(ctx context.Context, req checkoutRequest)
 
 	subscription, err := st.subscriptions.Create(ctx, domain.SubscriptionInput{
 		TenantID: req.TenantID, PackageID: pkg.ID, Status: domain.StatusPending,
-		StartsAt: &quote.PeriodStart, ExpiresAt: &quote.PeriodEnd,
+		StartsAt: &quote.PeriodStart, ExpiresAt: &quote.PeriodEnd, BillingCycle: pkg.BillingCycle,
 	})
 	if err != nil {
 		return nil, err
@@ -298,12 +315,13 @@ func (s *SubscriptionService) checkout(ctx context.Context, req checkoutRequest)
 // changeWithoutPayment handles changes with nothing to pay now: a downgrade
 // is remembered for the renewal (Q-1); a free plan starts now or is
 // scheduled for the end of the period.
-func (s *SubscriptionService) changeWithoutPayment(ctx context.Context, st store, req checkoutRequest, change *Change) (*checkoutResult, error) {
+func (s *SubscriptionService) changeWithoutPayment(ctx context.Context, st store, req checkoutRequest, pkg *domain.Package, change *Change) (*checkoutResult, error) {
 	quote := change.Quote
-	pkg := req.Package
 	if pkg.Price > 0 {
-		// A paid downgrade: the organization pays for it when it renews.
-		updated, err := st.subscriptions.SetPlanEnd(ctx, change.Current.ID, &pkg.ID, false)
+		// A paid downgrade (another plan, or the same plan on a shorter
+		// cycle): the organization pays for it when it renews.
+		cycle := pkg.BillingCycle
+		updated, err := st.subscriptions.SetPlanEnd(ctx, change.Current.ID, &pkg.ID, &cycle, false)
 		if err != nil {
 			return nil, err
 		}
@@ -318,7 +336,7 @@ func (s *SubscriptionService) changeWithoutPayment(ctx context.Context, st store
 		}
 		created, err := st.subscriptions.Create(ctx, domain.SubscriptionInput{
 			TenantID: req.TenantID, PackageID: pkg.ID, Status: domain.StatusActive,
-			StartsAt: &quote.PeriodStart, ExpiresAt: &quote.PeriodEnd,
+			StartsAt: &quote.PeriodStart, ExpiresAt: &quote.PeriodEnd, BillingCycle: pkg.BillingCycle,
 		})
 		if err != nil {
 			return nil, err
@@ -328,7 +346,7 @@ func (s *SubscriptionService) changeWithoutPayment(ctx context.Context, st store
 	// A free plan after the paid period.
 	created, err := st.subscriptions.Create(ctx, domain.SubscriptionInput{
 		TenantID: req.TenantID, PackageID: pkg.ID, Status: domain.StatusPending,
-		StartsAt: &quote.PeriodStart, ExpiresAt: &quote.PeriodEnd,
+		StartsAt: &quote.PeriodStart, ExpiresAt: &quote.PeriodEnd, BillingCycle: pkg.BillingCycle,
 	})
 	if err != nil {
 		return nil, err
@@ -338,7 +356,7 @@ func (s *SubscriptionService) changeWithoutPayment(ctx context.Context, st store
 	if err != nil {
 		return nil, err
 	}
-	if _, err := st.subscriptions.SetPlanEnd(ctx, change.Current.ID, nil, false); err != nil {
+	if _, err := st.subscriptions.SetPlanEnd(ctx, change.Current.ID, nil, nil, false); err != nil {
 		return nil, err
 	}
 	return &checkoutResult{Subscription: scheduled, Change: change, Created: true}, nil
@@ -369,10 +387,11 @@ func fulfil(ctx context.Context, st store, payment *domain.Payment, now time.Tim
 	if err != nil {
 		return nil, err
 	}
-	pkg, err := st.packages.Get(ctx, subscription.PackageID)
+	base, err := st.packages.Get(ctx, subscription.PackageID)
 	if err != nil {
 		return nil, err
 	}
+	cycle := subscription.Cycle(*base)
 	actor := payment.RecordedBy
 	actorID := int64(0)
 	if actor != nil {
@@ -389,12 +408,12 @@ func fulfil(ctx context.Context, st store, payment *domain.Payment, now time.Tim
 				return nil, err
 			}
 			start := *current.ExpiresAt
-			scheduled, err := st.subscriptions.Schedule(ctx, subscription.ID, start, domain.PeriodEnd(pkg.BillingCycle, start),
+			scheduled, err := st.subscriptions.Schedule(ctx, subscription.ID, start, domain.PeriodEnd(cycle, start),
 				carriedOverrides(current, subscription.PackageID))
 			if err != nil {
 				return nil, err
 			}
-			if _, err := st.subscriptions.SetPlanEnd(ctx, current.ID, nil, false); err != nil {
+			if _, err := st.subscriptions.SetPlanEnd(ctx, current.ID, nil, nil, false); err != nil {
 				return nil, err
 			}
 			return scheduled, nil
@@ -409,7 +428,7 @@ func fulfil(ctx context.Context, st store, payment *domain.Payment, now time.Tim
 		return nil, err
 	}
 	start := now
-	activated, err := st.subscriptions.Activate(ctx, subscription.ID, &start, domain.PeriodEnd(pkg.BillingCycle, start))
+	activated, err := st.subscriptions.Activate(ctx, subscription.ID, &start, domain.PeriodEnd(cycle, start))
 	if err != nil {
 		return nil, err
 	}
@@ -521,7 +540,7 @@ func (s *SubscriptionService) CancelAtPeriodEnd(ctx context.Context, tenantID, a
 		if err := withdrawScheduled(ctx, st, tenantID, currency, "The organization cancelled its plan.", actorID); err != nil {
 			return err
 		}
-		updated, err = st.subscriptions.SetPlanEnd(ctx, current.ID, nil, true)
+		updated, err = st.subscriptions.SetPlanEnd(ctx, current.ID, nil, nil, true)
 		return err
 	})
 	if err != nil {
@@ -564,7 +583,7 @@ func (s *SubscriptionService) KeepPlan(ctx context.Context, tenantID, actorID in
 				return err
 			}
 		}
-		updated, err = st.subscriptions.SetPlanEnd(ctx, current.ID, nil, false)
+		updated, err = st.subscriptions.SetPlanEnd(ctx, current.ID, nil, nil, false)
 		return err
 	})
 	if err != nil {

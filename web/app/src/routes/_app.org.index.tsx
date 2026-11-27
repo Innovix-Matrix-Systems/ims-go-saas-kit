@@ -13,6 +13,7 @@ import { PlanCard } from '../components/PlanCard'
 import { FormSkeleton } from '../components/Skeleton'
 import { OrgMark } from '../components/WorkspaceMenu'
 import { Avatar, Badge, Button, Card, CopyField, Icon, Modal, Spinner, type IconName } from '../components/ui'
+import { branchesEnabled } from '../product'
 
 export const Route = createFileRoute('/_app/org/')({
   component: OrganizationProfilePage,
@@ -52,7 +53,7 @@ function OrganizationProfilePage() {
   const plan = subscription.data?.package?.name
   const stats: { icon: IconName; label: string; value: string; to: string }[] = []
   if (data?.members) stats.push({ icon: 'users', label: t('dashboard.members'), value: String(data.members.total), to: '/org/members' })
-  if (data?.branches != null) stats.push({ icon: 'tenants', label: t('org.branches'), value: String(data.branches), to: '/org/branches' })
+  if (branchesEnabled && data?.branches != null) stats.push({ icon: 'tenants', label: t('org.branches'), value: String(data.branches), to: '/org/branches' })
   if (data?.roles != null) stats.push({ icon: 'shield', label: t('org.roles'), value: String(data.roles), to: '/org/roles' })
   if (data?.files) stats.push({ icon: 'files', label: t('dashboard.storage'), value: formatBytes(data.files.bytes), to: '/org/files' })
 

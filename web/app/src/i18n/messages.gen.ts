@@ -262,6 +262,10 @@ export interface MessageVars {
   'billing.credit': never
   'billing.creditHint': never
   'billing.currentPlan': never
+  'billing.cycle.label': never
+  'billing.cycle.monthly': never
+  'billing.cycle.save': 'amount'
+  'billing.cycle.yearly': never
   'billing.endsOn': 'date'
   'billing.feature.api': never
   'billing.feature.audit': never
@@ -419,16 +423,21 @@ export interface MessageVars {
   'console.assignPlan': never
   'console.auditLog': never
   'console.auditLogSubtitle': never
+  'console.badge.grace': 'date'
+  'console.badge.readOnly': never
   'console.cannotLoginAs': never
   'console.chosenOrganizations': never
   'console.code': never
   'console.colAmount': never
   'console.colContact': never
   'console.colCreated': never
+  'console.colEnds': never
   'console.colOrg': never
   'console.colPayer': never
   'console.colPlan': never
   'console.colReference': never
+  'console.colRenewal': never
+  'console.colStarted': never
   'console.colStatus': never
   'console.colSubmitted': never
   'console.colTitle': never
@@ -441,6 +450,18 @@ export interface MessageVars {
   'console.editPlan': never
   'console.everyone': never
   'console.features': never
+  'console.filter.allCycles': never
+  'console.filter.allOrgs': never
+  'console.filter.allPlans': never
+  'console.filter.allStatuses': never
+  'console.filter.anyEnd': never
+  'console.filter.endingFirst': never
+  'console.filter.ends': never
+  'console.filter.newest': never
+  'console.filter.sort': never
+  'console.filter.within30': never
+  'console.filter.within7': never
+  'console.filter.within90': never
   'console.flagTarget': never
   'console.flags': never
   'console.flagsSubtitle': never
@@ -453,6 +474,8 @@ export interface MessageVars {
   'console.members': never
   'console.method': never
   'console.monthly': never
+  'console.monthlyOnly': never
+  'console.monthlyPrice': never
   'console.newAnnouncement': never
   'console.newOrg': never
   'console.newPlan': never
@@ -460,15 +483,21 @@ export interface MessageVars {
   'console.noAnnouncements': never
   'console.noApprovals': never
   'console.noPlan': never
+  'console.noSubscriptions': never
+  'console.notIncluded': never
   'console.note': never
   'console.offered': never
+  'console.offeredHint': never
   'console.oneTime': never
   'console.order': never
+  'console.orderHint': never
   'console.orgSubtitle': never
   'console.organizations': never
   'console.overridable': never
   'console.overridesDropped': 'count'
   'console.owner': never
+  'console.payments': never
+  'console.paymentsSubtitle': never
   'console.pending': never
   'console.plan': never
   'console.planDescription': never
@@ -493,15 +522,22 @@ export interface MessageVars {
   'console.reject': never
   'console.rejectConfirm': 'amount' | 'name'
   'console.rejected': never
+  'console.renewal.changesTo': 'name'
+  'console.renewal.renews': never
+  'console.renewal.stops': never
   'console.reset': never
   'console.role': never
   'console.rollout': never
   'console.rolloutHint': never
   'console.save': never
   'console.searchOrgs': never
+  'console.sectionLimits': never
+  'console.sectionPlan': never
+  'console.sectionPricing': never
   'console.sendTo': never
   'console.settings': never
   'console.settingsSubtitle': never
+  'console.shownOf': 'shown' | 'total'
   'console.source.default': never
   'console.source.global': never
   'console.source.tenant': never
@@ -510,6 +546,8 @@ export interface MessageVars {
   'console.staffAccount': never
   'console.staffInvited': 'email'
   'console.staffSubtitle': never
+  'console.subscriptions': never
+  'console.subscriptionsSubtitle': never
   'console.suspend': never
   'console.suspendConfirm': 'name'
   'console.suspended': never
@@ -517,8 +555,18 @@ export interface MessageVars {
   'console.trialDays': never
   'console.users': never
   'console.usersSubtitle': never
+  'console.view.active': never
+  'console.view.all': never
+  'console.view.current': never
+  'console.view.grace': never
+  'console.view.pending': never
+  'console.view.readOnly': never
+  'console.view.scheduled': never
+  'console.view.trial': never
   'console.wontRenew': never
   'console.yearly': never
+  'console.yearlyPrice': never
+  'console.yearlyPriceHint': never
   'copy.copied': never
   'copy.copy': never
   'copy.unavailable': never
@@ -932,6 +980,8 @@ export interface MessageVars {
   'planBanner.ended': 'plan'
   'planBanner.endedBody': never
   'planBanner.ends': 'plan' | 'when'
+  'planBanner.grace': 'date' | 'plan'
+  'planBanner.graceBody': never
   'planBanner.hide': never
   'planBanner.inDays': 'count'
   'planBanner.none': never
@@ -940,6 +990,8 @@ export interface MessageVars {
   'planBanner.pastDueBody': never
   'planBanner.pending': 'plan'
   'planBanner.pendingBody': never
+  'planBanner.readOnly': 'plan'
+  'planBanner.readOnlyBody': never
   'planBanner.renewBody': never
   'planBanner.today': never
   'planBanner.tomorrow': never

@@ -69,6 +69,12 @@ View as a tenant:
 | `X-Acting-Tenant: 7` | act as tenant 7, across all of its branches |
 | `X-Acting-Tenant: 7` + `X-Acting-Branch: 12` | act as branch 12 of tenant 7 |
 
+A list read with the global view can be narrowed to one organization with a `tenant_id` query
+parameter instead of acting headers: the users list (`GET /api/v1/user`), the platform activity log
+and the staff payments list. An organization's own members are always pinned to theirs, whatever
+`tenant_id` they send; a malformed one is a 422. The console's Users and Payments pages take it
+from `?org=<id>`, so an organization's drawer links straight to its members and payments.
+
 Act as a user (`tenancy.Resolve` swaps the identity, so permission gates, scoping, handlers and
 the activity recorder all see the target):
 

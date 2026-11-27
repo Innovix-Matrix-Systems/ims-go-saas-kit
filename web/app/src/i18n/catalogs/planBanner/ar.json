@@ -24,5 +24,9 @@
   "planBanner.ends": "تنتهي خطة {plan} {when}.",
   "planBanner.choose": "مراجعة الخطط",
   "planBanner.viewBilling": "عرض الفوترة",
-  "planBanner.hide": "إخفاء لهذا اليوم"
+  "planBanner.hide": "إخفاء لهذا اليوم",
+  "planBanner.readOnly": "انتهت خطة {plan}: مؤسستك الآن للقراءة فقط.",
+  "planBanner.readOnlyBody": "لا يزال بإمكان الجميع تسجيل الدخول والعرض والنسخ والتصدير. اختر خطة لإجراء التغييرات مجددًا.",
+  "planBanner.grace": "تأخر دفع خطة {plan}. تتوقف التغييرات في {date}.",
+  "planBanner.graceBody": "يستمر كل شيء في العمل حتى ذلك الحين، ثم تصبح مؤسستك للقراءة فقط حتى تدفع."
 }

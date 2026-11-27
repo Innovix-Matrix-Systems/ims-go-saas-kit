@@ -311,3 +311,23 @@ numbered so code comments and reviews can refer to them. Each says **what** was 
     the customer's favour, because people type these amounts into a banking app. Only one checkout
     waits per organization, which closes the double-payment hole of approving two
     (`docs/guides/billing.md#changing-plans`).
+58. **Monthly and yearly are prices of one plan, not two plans.** A monthly plan may carry a
+    `yearly_price`; the subscription records the cycle chosen (`billing_cycle`, NULL on older rows
+    meaning the plan's own). `domain.Package.ForCycle` turns a plan into the plan as offered at a
+    cycle, so `QuoteChange`, checkout, renewals and invoices price it without knowing a second price
+    exists. Two rules follow from customers' expectations rather than price per day: a renewal is
+    the same plan **and** cycle, and the same plan on a shorter cycle (yearly → monthly) waits for
+    the period end even though monthly costs more per day. One extra column was chosen over a
+    Stripe-style price table because one more cycle is all the product needs
+    (`docs/guides/billing.md#monthly-and-yearly`).
+59. **A lapsed plan never locks anyone out: grace, then read-only.** A paid plan that lapses keeps
+    applying for `BILLING_GRACE_DAYS`; after that the organization is read-only: one middleware
+    after `tenancy.Resolve` refuses writes with 402 `SUBSCRIPTION_REQUIRED` (`reason: read_only`)
+    except an allowlist of routes named as chi names them (`readOnlyAllowed` in
+    `internal/app/routes.go`, checked against the router by a test). Allowlisting instead of
+    blocklisting means a module added later is read-only by default. Suspension
+    (`BILLING_SUSPEND_ON_EXPIRY`) stays available for products that want it
+    (`docs/guides/billing.md#grace-and-read-only`).
+60. **Public plans are seeded in their own step.** `ims db:seed` runs `seeder.SeedPlans` after the
+    base seed and creates a plan only when no package has its name, so prices staff edit are never
+    overwritten. The test kit's base seed does not run it: tests create the packages they need.

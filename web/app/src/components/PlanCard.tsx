@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { Schemas } from '../api/client'
 import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
-import { featureName, formatMB } from './billing'
+import { featureName, formatMB, visibleLimits } from './billing'
 import { MeterList } from './MeterList'
 import { Badge, Card } from './ui'
 
@@ -13,7 +13,7 @@ export function PlanCard({ usage, status }: { usage?: Usage; status?: Schemas['S
   const locale = useLocale()
   const pkg = status?.package
   const sub = status?.subscription
-  const items = (usage?.limits ?? []).map((limit) => ({
+  const items = visibleLimits(usage?.limits).map((limit) => ({
     key: limit.feature_key,
     label: featureName(t, limit.feature_key),
     used: limit.used,

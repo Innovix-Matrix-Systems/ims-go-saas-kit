@@ -1,9 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { api, type Schemas, type User } from '../api/client'
 import { can, useSession } from '../auth/session'
 import { allTenantsQuery, useStartActing } from '../components/console'
+import { Select } from '../components/inputs'
 import { useStartExport } from '../components/jobs'
 import { Pagination } from '../components/Pagination'
 import { useToast } from '../components/Toasts'
@@ -11,7 +12,15 @@ import { Avatar, Badge, Button, Card, ConfirmDialog, EmptyState, PageHeader } fr
 import { useT } from '../i18n'
 import { TableSkeleton } from '../components/Skeleton'
 
+interface UsersSearch {
+  /** One organization's members (an organization's drawer links here). */
+  org?: number
+}
+
 export const Route = createFileRoute('/_app/console/users')({
+  validateSearch: (search: Record<string, unknown>): UsersSearch => ({
+    org: Number(search.org) > 0 ? Number(search.org) : undefined,
+  }),
   component: UsersPage,
 })
 
@@ -31,6 +40,13 @@ function UsersPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
   const [target, setTarget] = useState<User | null>(null)
+  const { org } = Route.useSearch()
+  const navigate = useNavigate({ from: '/console/users' })
+  // The organization filter lives in the URL, so a link can open it set.
+  const setOrg = (value: string) => {
+    setPage(1)
+    void navigate({ search: (prev) => ({ ...prev, org: value ? Number(value) : undefined }), replace: true })
+  }
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -41,8 +57,13 @@ function UsersPage() {
   }, [search])
 
   const users = useQuery({
-    queryKey: ['console', 'users', query, page, perPage],
-    queryFn: () => api<UserPage>('/user', { asStaff: true, envelope: true, query: { search: query, page, per_page: perPage, order_by: 'name', order_direction: 'asc' } }),
+    queryKey: ['console', 'users', query, org ?? 0, page, perPage],
+    queryFn: () =>
+      api<UserPage>('/user', {
+        asStaff: true,
+        envelope: true,
+        query: { search: query, tenant_id: org, page, per_page: perPage, order_by: 'name', order_direction: 'asc' },
+      }),
     placeholderData: keepPreviousData,
   })
   const tenants = useQuery(allTenantsQuery)
@@ -75,6 +96,13 @@ function UsersPage() {
       />
       <div className="toolbar">
         <input className="input toolbar-search" type="search" placeholder={t('members.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Select
+          value={org ? String(org) : ''}
+          ariaLabel={t('console.colOrg')}
+          searchable
+          onChange={setOrg}
+          options={[{ value: '', label: t('console.filter.allOrgs') }, ...(tenants.data ?? []).map((tenant) => ({ value: String(tenant.id), label: tenant.name }))]}
+        />
       </div>
       <Card flush>
         {users.isLoading ? (

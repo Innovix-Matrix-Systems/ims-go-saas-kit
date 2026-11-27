@@ -28,8 +28,10 @@ type SubscriptionService struct {
 	notifier      Notifier
 	tx            *database.TxManager
 	now           func() time.Time
-	activity      *activity.Recorder
-	currencies    domain.CurrencySource
+	// grace is reported by Status (standing.go).
+	grace      time.Duration
+	activity   *activity.Recorder
+	currencies domain.CurrencySource
 	// payNotices tells staff and the organization about payments (optional).
 	payNotices PaymentNotifier
 }
@@ -92,6 +94,11 @@ type StatusResult struct {
 	// CreditBalance is the account credit, in Currency.
 	CreditBalance int64  `json:"credit_balance"`
 	Currency      string `json:"currency"`
+	// InGrace: the plan lapsed and still applies until GraceEndsAt.
+	// ReadOnly: a plan lapsed beyond its grace period (standing.go).
+	InGrace     bool       `json:"in_grace"`
+	GraceEndsAt *time.Time `json:"grace_ends_at"`
+	ReadOnly    bool       `json:"read_only"`
 }
 
 // Status returns the tenant's active subscription, falling back to the latest
@@ -118,6 +125,11 @@ func (s *SubscriptionService) Status(ctx context.Context, tenantID int64) (*Stat
 	} else {
 		return nil, err
 	}
+	standing, err := standingOf(ctx, s.subscriptions, tenantID, s.grace, s.now())
+	if err != nil {
+		return nil, err
+	}
+	result.InGrace, result.GraceEndsAt, result.ReadOnly = standing.InGrace, standing.GraceEndsAt, standing.ReadOnly
 	if !found {
 		return result, nil
 	}
@@ -217,10 +229,17 @@ func (s *SubscriptionService) Subscribe(ctx context.Context, tenantID, packageID
 }
 
 // Checkout is Subscribe returning the priced change as well.
-func (s *SubscriptionService) Checkout(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (_ *CheckoutResult, err error) {
+func (s *SubscriptionService) Checkout(ctx context.Context, tenantID, packageID int64, method string, paymentData map[string]any, actorID int64) (*CheckoutResult, error) {
+	return s.CheckoutAt(ctx, tenantID, packageID, "", method, paymentData, actorID)
+}
+
+// CheckoutAt is Checkout at a billing cycle ("" is the plan's own): a
+// monthly plan with a yearly price can be bought yearly.
+func (s *SubscriptionService) CheckoutAt(ctx context.Context, tenantID, packageID int64, cycle, method string, paymentData map[string]any, actorID int64) (_ *CheckoutResult, err error) {
 	ctx, end := tracing.Begin(ctx, "billing.subscribe",
 		attribute.Int64("tenant.id", tenantID),
 		attribute.Int64("package.id", packageID),
+		attribute.String("billing.cycle", cycle),
 		attribute.String("payment.method", method),
 	)
 	defer end(&err)
@@ -235,7 +254,7 @@ func (s *SubscriptionService) Checkout(ctx context.Context, tenantID, packageID 
 	err = s.inTenantLock(ctx, "billing.subscribe", tenantID, func(scoped *SubscriptionService) error {
 		var err error
 		result, err = scoped.checkout(ctx, checkoutRequest{
-			TenantID: tenantID, ActorID: actorID, Package: pkg, Method: method, PaymentData: paymentData,
+			TenantID: tenantID, ActorID: actorID, Package: pkg, Cycle: cycle, Method: method, PaymentData: paymentData,
 		})
 		return err
 	})
@@ -256,12 +275,14 @@ func (s *SubscriptionService) afterCheckout(ctx context.Context, tenantID, actor
 	if !result.Created {
 		// A downgrade remembered for the renewal.
 		s.record(ctx, "subscription.downgrade_scheduled", result.Subscription, map[string]any{
-			"package_id": pkg.ID, "starts_at": quote.PeriodStart, "due_at_renewal": quote.DueAtRenewal,
+			"package_id": pkg.ID, "billing_cycle": quote.Target.BillingCycle, "starts_at": quote.PeriodStart, "due_at_renewal": quote.DueAtRenewal,
 		})
 		s.changed(ctx, tenantID)
 		return
 	}
-	changes := map[string]any{"package_id": pkg.ID, "kind": quote.Kind, "status": result.Subscription.Status}
+	changes := map[string]any{
+		"package_id": pkg.ID, "billing_cycle": quote.Target.BillingCycle, "kind": quote.Kind, "status": result.Subscription.Status,
+	}
 	if result.Payment != nil {
 		changes["method"] = result.Payment.PaymentMethod
 		changes["amount"] = result.Payment.Amount
@@ -600,7 +621,7 @@ func (s *SubscriptionService) expiryForActivation(ctx context.Context, subscript
 	if err != nil {
 		return now.AddDate(0, 1, 0)
 	}
-	return nextExpiry(pkg.BillingCycle, now)
+	return nextExpiry(subscription.Cycle(*pkg), now)
 }
 
 func nextExpiry(cycle string, from time.Time) time.Time {

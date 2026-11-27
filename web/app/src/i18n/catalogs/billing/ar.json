@@ -119,5 +119,9 @@
   "billing.change.confirm": "تأكيد",
   "billing.change.confirmLater": "التبديل عند انتهاء الفترة",
   "billing.change.later": "تبدأ {name} في {date}.",
-  "billing.waitingHint": "اسحب الدفعة المعلّقة أو انتظر تأكيدها قبل اختيار خطة أخرى."
+  "billing.waitingHint": "اسحب الدفعة المعلّقة أو انتظر تأكيدها قبل اختيار خطة أخرى.",
+  "billing.cycle.label": "دورة الفوترة",
+  "billing.cycle.monthly": "شهريًا",
+  "billing.cycle.yearly": "سنويًا",
+  "billing.cycle.save": "وفّر حتى {amount}"
 }

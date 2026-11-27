@@ -113,5 +113,9 @@
   "billing.change.confirm": "Confirmar",
   "billing.change.confirmLater": "Cambiar al terminar el periodo",
   "billing.change.later": "{name} empieza el {date}.",
-  "billing.waitingHint": "Retire el pago pendiente o espere a que se confirme antes de elegir otro plan."
+  "billing.waitingHint": "Retire el pago pendiente o espere a que se confirme antes de elegir otro plan.",
+  "billing.cycle.label": "Ciclo de facturación",
+  "billing.cycle.monthly": "Mensual",
+  "billing.cycle.yearly": "Anual",
+  "billing.cycle.save": "Ahorre hasta {amount}"
 }

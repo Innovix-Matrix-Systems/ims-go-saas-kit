@@ -42,7 +42,7 @@ SET status              = 'active',
     cancellation_reason = NULL,
     updated_at          = now()
 WHERE id = $3 AND status IN ('pending', 'scheduled', 'trial', 'active', 'expired')
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle
 `
 
 type ActivateSubscriptionParams struct {
@@ -71,6 +71,8 @@ func (q *Queries) ActivateSubscription(ctx context.Context, arg ActivateSubscrip
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }
@@ -139,7 +141,7 @@ SET status              = 'cancelled',
     cancellation_reason = $1,
     updated_at          = now()
 WHERE tenant_id = $2 AND status = 'scheduled'
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle
 `
 
 type CancelScheduledSubscriptionsParams struct {
@@ -171,6 +173,8 @@ func (q *Queries) CancelScheduledSubscriptions(ctx context.Context, arg CancelSc
 			&i.UpdatedAt,
 			&i.NextPackageID,
 			&i.CancelAtPeriodEnd,
+			&i.BillingCycle,
+			&i.NextBillingCycle,
 		); err != nil {
 			return nil, err
 		}
@@ -208,10 +212,16 @@ func (q *Queries) CountPaymentApprovals(ctx context.Context, status *string) (in
 const countPayments = `-- name: CountPayments :one
 SELECT count(*) FROM payments
 WHERE ($1::text IS NULL OR status = $1::text)
+  AND ($2::bigint IS NULL OR tenant_id = $2::bigint)
 `
 
-func (q *Queries) CountPayments(ctx context.Context, status *string) (int64, error) {
-	row := q.db.QueryRow(ctx, countPayments, status)
+type CountPaymentsParams struct {
+	Status   *string `json:"status"`
+	TenantID *int64  `json:"tenant_id"`
+}
+
+func (q *Queries) CountPayments(ctx context.Context, arg CountPaymentsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countPayments, arg.Status, arg.TenantID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -223,6 +233,83 @@ SELECT count(*) FROM payments WHERE tenant_id = $1
 
 func (q *Queries) CountPaymentsForTenant(ctx context.Context, tenantID int64) (int64, error) {
 	row := q.db.QueryRow(ctx, countPaymentsForTenant, tenantID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countStaffSubscriptions = `-- name: CountStaffSubscriptions :one
+WITH subs AS (
+    SELECT s.id, s.tenant_id, s.package_id, s.status, s.starts_at, s.trial_ends_at, s.expires_at, s.cancelled_at, s.cancellation_reason, s.overrides, s.created_at, s.updated_at, s.next_package_id, s.cancel_at_period_end, s.billing_cycle, s.next_billing_cycle FROM subscriptions s
+    JOIN tenants t ON t.id = s.tenant_id AND t.deleted_at IS NULL
+),
+in_force AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE (status IN ('active', 'trial') OR (status = 'scheduled' AND starts_at <= now()))
+      AND expires_at > now()
+    ORDER BY tenant_id, id DESC
+),
+lapsed AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE status IN ('active', 'expired', 'past_due') AND expires_at <= now() AND expires_at > $7
+      AND tenant_id NOT IN (SELECT tenant_id FROM in_force)
+    ORDER BY tenant_id, expires_at DESC, id DESC
+),
+read_only AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE status IN ('active', 'trial', 'expired', 'past_due', 'cancelled') AND starts_at <= now()
+      AND tenant_id NOT IN (SELECT tenant_id FROM in_force)
+      AND tenant_id NOT IN (SELECT tenant_id FROM lapsed)
+    ORDER BY tenant_id, expires_at DESC NULLS LAST, id DESC
+)
+SELECT count(*)
+FROM subs s
+JOIN tenants t ON t.id = s.tenant_id
+JOIN packages k ON k.id = s.package_id
+LEFT JOIN in_force f ON f.id = s.id
+LEFT JOIN lapsed l ON l.id = s.id
+LEFT JOIN read_only r ON r.id = s.id
+WHERE (CASE $1::text
+        WHEN 'current' THEN f.id IS NOT NULL OR l.id IS NOT NULL OR r.id IS NOT NULL
+        WHEN 'active' THEN f.id IS NOT NULL AND s.status <> 'trial'
+        WHEN 'trial' THEN f.id IS NOT NULL AND s.status = 'trial'
+        WHEN 'grace' THEN l.id IS NOT NULL
+        WHEN 'read_only' THEN r.id IS NOT NULL
+        WHEN 'pending' THEN s.status = 'pending'
+        WHEN 'scheduled' THEN s.status = 'scheduled' AND s.starts_at > now()
+        ELSE true END)
+  AND ($2::text IS NULL OR s.status = $2::text)
+  AND ($3::text IS NULL
+       OR t.name ILIKE '%' || $3::text || '%'
+       OR t.code ILIKE '%' || $3::text || '%')
+  AND ($4::bigint IS NULL OR s.package_id = $4::bigint)
+  AND ($5::text IS NULL
+       OR COALESCE(s.billing_cycle, k.billing_cycle) = $5::text)
+  AND ($6::timestamptz IS NULL
+       OR (s.expires_at IS NOT NULL AND s.expires_at <= $6::timestamptz))
+`
+
+type CountStaffSubscriptionsParams struct {
+	View          string             `json:"view"`
+	Status        *string            `json:"status"`
+	Search        *string            `json:"search"`
+	PackageID     *int64             `json:"package_id"`
+	BillingCycle  *string            `json:"billing_cycle"`
+	ExpiresBefore pgtype.Timestamptz `json:"expires_before"`
+	GraceSince    pgtype.Timestamptz `json:"grace_since"`
+}
+
+// The number of rows ListStaffSubscriptions matches (same CTEs and filters).
+func (q *Queries) CountStaffSubscriptions(ctx context.Context, arg CountStaffSubscriptionsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countStaffSubscriptions,
+		arg.View,
+		arg.Status,
+		arg.Search,
+		arg.PackageID,
+		arg.BillingCycle,
+		arg.ExpiresBefore,
+		arg.GraceSince,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -252,9 +339,9 @@ func (q *Queries) CountSubscriptionsForTenant(ctx context.Context, tenantID int6
 }
 
 const createPackage = `-- name: CreatePackage :one
-INSERT INTO packages (name, description, price, billing_cycle, trial_days, is_active, sort_order)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at
+INSERT INTO packages (name, description, price, billing_cycle, yearly_price, trial_days, is_active, sort_order)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at, yearly_price
 `
 
 type CreatePackageParams struct {
@@ -262,6 +349,7 @@ type CreatePackageParams struct {
 	Description  *string `json:"description"`
 	Price        int64   `json:"price"`
 	BillingCycle string  `json:"billing_cycle"`
+	YearlyPrice  *int64  `json:"yearly_price"`
 	TrialDays    int32   `json:"trial_days"`
 	IsActive     bool    `json:"is_active"`
 	SortOrder    int32   `json:"sort_order"`
@@ -273,6 +361,7 @@ func (q *Queries) CreatePackage(ctx context.Context, arg CreatePackageParams) (P
 		arg.Description,
 		arg.Price,
 		arg.BillingCycle,
+		arg.YearlyPrice,
 		arg.TrialDays,
 		arg.IsActive,
 		arg.SortOrder,
@@ -289,6 +378,7 @@ func (q *Queries) CreatePackage(ctx context.Context, arg CreatePackageParams) (P
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.YearlyPrice,
 	)
 	return i, err
 }
@@ -405,18 +495,19 @@ func (q *Queries) CreatePaymentApproval(ctx context.Context, arg CreatePaymentAp
 }
 
 const createSubscription = `-- name: CreateSubscription :one
-INSERT INTO subscriptions (tenant_id, package_id, status, starts_at, trial_ends_at, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+INSERT INTO subscriptions (tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, billing_cycle)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle
 `
 
 type CreateSubscriptionParams struct {
-	TenantID    int64              `json:"tenant_id"`
-	PackageID   int64              `json:"package_id"`
-	Status      string             `json:"status"`
-	StartsAt    pgtype.Timestamptz `json:"starts_at"`
-	TrialEndsAt pgtype.Timestamptz `json:"trial_ends_at"`
-	ExpiresAt   pgtype.Timestamptz `json:"expires_at"`
+	TenantID     int64              `json:"tenant_id"`
+	PackageID    int64              `json:"package_id"`
+	Status       string             `json:"status"`
+	StartsAt     pgtype.Timestamptz `json:"starts_at"`
+	TrialEndsAt  pgtype.Timestamptz `json:"trial_ends_at"`
+	ExpiresAt    pgtype.Timestamptz `json:"expires_at"`
+	BillingCycle *string            `json:"billing_cycle"`
 }
 
 func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (Subscription, error) {
@@ -427,6 +518,7 @@ func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscription
 		arg.StartsAt,
 		arg.TrialEndsAt,
 		arg.ExpiresAt,
+		arg.BillingCycle,
 	)
 	var i Subscription
 	err := row.Scan(
@@ -444,6 +536,8 @@ func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscription
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }
@@ -519,7 +613,7 @@ func (q *Queries) ExpireSubscriptions(ctx context.Context) (int64, error) {
 }
 
 const getActiveSubscriptionForTenant = `-- name: GetActiveSubscriptionForTenant :one
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle FROM subscriptions
 WHERE tenant_id = $1
   AND (status IN ('active', 'trial') OR (status = 'scheduled' AND starts_at <= now()))
   AND expires_at > now()
@@ -547,12 +641,14 @@ func (q *Queries) GetActiveSubscriptionForTenant(ctx context.Context, tenantID i
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }
 
 const getExpiringSubscriptions = `-- name: GetExpiringSubscriptions :many
-SELECT s.id, s.tenant_id, s.package_id, s.status, s.starts_at, s.trial_ends_at, s.expires_at, s.cancelled_at, s.cancellation_reason, s.overrides, s.created_at, s.updated_at, s.next_package_id, s.cancel_at_period_end FROM subscriptions s
+SELECT s.id, s.tenant_id, s.package_id, s.status, s.starts_at, s.trial_ends_at, s.expires_at, s.cancelled_at, s.cancellation_reason, s.overrides, s.created_at, s.updated_at, s.next_package_id, s.cancel_at_period_end, s.billing_cycle, s.next_billing_cycle FROM subscriptions s
 WHERE s.status IN ('active', 'trial')
   AND s.expires_at IS NOT NULL
   AND s.expires_at <= $1
@@ -587,6 +683,8 @@ func (q *Queries) GetExpiringSubscriptions(ctx context.Context, before pgtype.Ti
 			&i.UpdatedAt,
 			&i.NextPackageID,
 			&i.CancelAtPeriodEnd,
+			&i.BillingCycle,
+			&i.NextBillingCycle,
 		); err != nil {
 			return nil, err
 		}
@@ -598,8 +696,50 @@ func (q *Queries) GetExpiringSubscriptions(ctx context.Context, before pgtype.Ti
 	return items, nil
 }
 
+const getLapsedSubscriptionForTenant = `-- name: GetLapsedSubscriptionForTenant :one
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle FROM subscriptions
+WHERE tenant_id = $1
+  AND status IN ('active', 'expired', 'past_due')
+  AND expires_at <= now()
+  AND expires_at > $2
+ORDER BY expires_at DESC, id DESC
+LIMIT 1
+`
+
+type GetLapsedSubscriptionForTenantParams struct {
+	TenantID int64              `json:"tenant_id"`
+	Since    pgtype.Timestamptz `json:"since"`
+}
+
+// The paid plan that lapsed most recently while its grace period runs: it
+// expired after @since (now minus BILLING_GRACE_DAYS). Callers use it only
+// when nothing is current (docs/guides/billing.md#grace-and-read-only).
+func (q *Queries) GetLapsedSubscriptionForTenant(ctx context.Context, arg GetLapsedSubscriptionForTenantParams) (Subscription, error) {
+	row := q.db.QueryRow(ctx, getLapsedSubscriptionForTenant, arg.TenantID, arg.Since)
+	var i Subscription
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.PackageID,
+		&i.Status,
+		&i.StartsAt,
+		&i.TrialEndsAt,
+		&i.ExpiresAt,
+		&i.CancelledAt,
+		&i.CancellationReason,
+		&i.Overrides,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.NextPackageID,
+		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
+	)
+	return i, err
+}
+
 const getLatestSubscriptionForTenant = `-- name: GetLatestSubscriptionForTenant :one
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions WHERE tenant_id = $1 ORDER BY id DESC LIMIT 1
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle FROM subscriptions WHERE tenant_id = $1 ORDER BY id DESC LIMIT 1
 `
 
 func (q *Queries) GetLatestSubscriptionForTenant(ctx context.Context, tenantID int64) (Subscription, error) {
@@ -620,12 +760,14 @@ func (q *Queries) GetLatestSubscriptionForTenant(ctx context.Context, tenantID i
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }
 
 const getPackage = `-- name: GetPackage :one
-SELECT id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at FROM packages WHERE id = $1
+SELECT id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at, yearly_price FROM packages WHERE id = $1
 `
 
 func (q *Queries) GetPackage(ctx context.Context, id int64) (Package, error) {
@@ -642,6 +784,7 @@ func (q *Queries) GetPackage(ctx context.Context, id int64) (Package, error) {
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.YearlyPrice,
 	)
 	return i, err
 }
@@ -830,7 +973,7 @@ func (q *Queries) GetPendingPaymentForTenant(ctx context.Context, tenantID int64
 }
 
 const getScheduledSubscriptionForTenant = `-- name: GetScheduledSubscriptionForTenant :one
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions WHERE tenant_id = $1 AND status = 'scheduled' LIMIT 1
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle FROM subscriptions WHERE tenant_id = $1 AND status = 'scheduled' LIMIT 1
 `
 
 func (q *Queries) GetScheduledSubscriptionForTenant(ctx context.Context, tenantID int64) (Subscription, error) {
@@ -851,12 +994,14 @@ func (q *Queries) GetScheduledSubscriptionForTenant(ctx context.Context, tenantI
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }
 
 const getSubscription = `-- name: GetSubscription :one
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions WHERE id = $1
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle FROM subscriptions WHERE id = $1
 `
 
 func (q *Queries) GetSubscription(ctx context.Context, id int64) (Subscription, error) {
@@ -877,6 +1022,8 @@ func (q *Queries) GetSubscription(ctx context.Context, id int64) (Subscription, 
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }
@@ -927,7 +1074,7 @@ SELECT p.id, p.invoice_number, p.status, p.payment_method, p.amount, p.currency,
        p.kind, p.lines, p.refunded_amount,
        COALESCE(p.gateway_ref, '')::text AS gateway_ref,
        t.name AS tenant_name, COALESCE(t.email, '')::text AS tenant_email, COALESCE(t.phone, '')::text AS tenant_phone,
-       COALESCE(k.name, '')::text AS package_name, COALESCE(k.billing_cycle, '')::text AS billing_cycle,
+       COALESCE(k.name, '')::text AS package_name, COALESCE(s.billing_cycle, k.billing_cycle, '')::text AS billing_cycle,
        s.starts_at, s.expires_at
 FROM payments p
 JOIN tenants t ON t.id = p.tenant_id
@@ -992,7 +1139,7 @@ func (q *Queries) InvoiceForPayment(ctx context.Context, arg InvoiceForPaymentPa
 }
 
 const listActivePackages = `-- name: ListActivePackages :many
-SELECT id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at FROM packages WHERE is_active ORDER BY sort_order, id
+SELECT id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at, yearly_price FROM packages WHERE is_active ORDER BY sort_order, id
 `
 
 func (q *Queries) ListActivePackages(ctx context.Context) ([]Package, error) {
@@ -1015,6 +1162,7 @@ func (q *Queries) ListActivePackages(ctx context.Context) ([]Package, error) {
 			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.YearlyPrice,
 		); err != nil {
 			return nil, err
 		}
@@ -1134,7 +1282,7 @@ func (q *Queries) ListPackageFeatures(ctx context.Context, packageID int64) ([]P
 }
 
 const listPackages = `-- name: ListPackages :many
-SELECT id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at FROM packages ORDER BY sort_order, id
+SELECT id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at, yearly_price FROM packages ORDER BY sort_order, id
 `
 
 func (q *Queries) ListPackages(ctx context.Context) ([]Package, error) {
@@ -1157,6 +1305,7 @@ func (q *Queries) ListPackages(ctx context.Context) ([]Package, error) {
 			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.YearlyPrice,
 		); err != nil {
 			return nil, err
 		}
@@ -1219,18 +1368,26 @@ func (q *Queries) ListPaymentApprovals(ctx context.Context, arg ListPaymentAppro
 const listPayments = `-- name: ListPayments :many
 SELECT id, tenant_id, subscription_id, payment_method, status, amount, currency, gateway_ref, gateway_status, gateway_response, invoice_number, paid_at, recorded_by, created_by, updated_by, created_at, updated_at, kind, lines, gross, balance_applied, replaces_subscription_id, refunded_amount FROM payments
 WHERE ($1::text IS NULL OR status = $1::text)
+  AND ($2::bigint IS NULL OR tenant_id = $2::bigint)
 ORDER BY id DESC
-LIMIT $3 OFFSET $2
+LIMIT $4 OFFSET $3
 `
 
 type ListPaymentsParams struct {
 	Status     *string `json:"status"`
+	TenantID   *int64  `json:"tenant_id"`
 	PageOffset int32   `json:"page_offset"`
 	PageLimit  int32   `json:"page_limit"`
 }
 
+// Every organization's payments (staff), optionally one organization's.
 func (q *Queries) ListPayments(ctx context.Context, arg ListPaymentsParams) ([]Payment, error) {
-	rows, err := q.db.Query(ctx, listPayments, arg.Status, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listPayments,
+		arg.Status,
+		arg.TenantID,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1330,8 +1487,180 @@ func (q *Queries) ListPaymentsForTenant(ctx context.Context, arg ListPaymentsFor
 	return items, nil
 }
 
+const listStaffSubscriptions = `-- name: ListStaffSubscriptions :many
+WITH subs AS (
+    SELECT s.id, s.tenant_id, s.package_id, s.status, s.starts_at, s.trial_ends_at, s.expires_at, s.cancelled_at, s.cancellation_reason, s.overrides, s.created_at, s.updated_at, s.next_package_id, s.cancel_at_period_end, s.billing_cycle, s.next_billing_cycle FROM subscriptions s
+    JOIN tenants t ON t.id = s.tenant_id AND t.deleted_at IS NULL
+),
+in_force AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE (status IN ('active', 'trial') OR (status = 'scheduled' AND starts_at <= now()))
+      AND expires_at > now()
+    ORDER BY tenant_id, id DESC
+),
+lapsed AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE status IN ('active', 'expired', 'past_due') AND expires_at <= now() AND expires_at > $11
+      AND tenant_id NOT IN (SELECT tenant_id FROM in_force)
+    ORDER BY tenant_id, expires_at DESC, id DESC
+),
+read_only AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE status IN ('active', 'trial', 'expired', 'past_due', 'cancelled') AND starts_at <= now()
+      AND tenant_id NOT IN (SELECT tenant_id FROM in_force)
+      AND tenant_id NOT IN (SELECT tenant_id FROM lapsed)
+    ORDER BY tenant_id, expires_at DESC NULLS LAST, id DESC
+)
+SELECT s.id, s.tenant_id, s.package_id, s.status, s.starts_at, s.trial_ends_at, s.expires_at,
+       s.cancelled_at, s.cancellation_reason, s.overrides, s.created_at, s.updated_at,
+       s.next_package_id, s.cancel_at_period_end, s.billing_cycle, s.next_billing_cycle,
+       t.name AS tenant_name, t.code AS tenant_code,
+       k.name AS package_name, k.price AS package_price, k.billing_cycle AS package_billing_cycle,
+       k.yearly_price AS package_yearly_price,
+       (l.id IS NOT NULL)::bool AS in_grace, (r.id IS NOT NULL)::bool AS read_only
+FROM subs s
+JOIN tenants t ON t.id = s.tenant_id
+JOIN packages k ON k.id = s.package_id
+LEFT JOIN in_force f ON f.id = s.id
+LEFT JOIN lapsed l ON l.id = s.id
+LEFT JOIN read_only r ON r.id = s.id
+WHERE (CASE $1::text
+        WHEN 'current' THEN f.id IS NOT NULL OR l.id IS NOT NULL OR r.id IS NOT NULL
+        WHEN 'active' THEN f.id IS NOT NULL AND s.status <> 'trial'
+        WHEN 'trial' THEN f.id IS NOT NULL AND s.status = 'trial'
+        WHEN 'grace' THEN l.id IS NOT NULL
+        WHEN 'read_only' THEN r.id IS NOT NULL
+        WHEN 'pending' THEN s.status = 'pending'
+        WHEN 'scheduled' THEN s.status = 'scheduled' AND s.starts_at > now()
+        ELSE true END)
+  AND ($2::text IS NULL OR s.status = $2::text)
+  AND ($3::text IS NULL
+       OR t.name ILIKE '%' || $3::text || '%'
+       OR t.code ILIKE '%' || $3::text || '%')
+  AND ($4::bigint IS NULL OR s.package_id = $4::bigint)
+  AND ($5::text IS NULL
+       OR COALESCE(s.billing_cycle, k.billing_cycle) = $5::text)
+  AND ($6::timestamptz IS NULL
+       OR (s.expires_at IS NOT NULL AND s.expires_at <= $6::timestamptz))
+ORDER BY
+    CASE WHEN $7::text = 'id' AND $8::text = 'asc' THEN s.id END ASC,
+    CASE WHEN $7::text = 'id' AND $8::text = 'desc' THEN s.id END DESC,
+    CASE WHEN $7::text = 'expires_at' AND $8::text = 'asc' THEN s.expires_at END ASC NULLS LAST,
+    CASE WHEN $7::text = 'expires_at' AND $8::text = 'desc' THEN s.expires_at END DESC NULLS LAST,
+    CASE WHEN $7::text = 'created_at' AND $8::text = 'asc' THEN s.created_at END ASC,
+    CASE WHEN $7::text = 'created_at' AND $8::text = 'desc' THEN s.created_at END DESC,
+    s.id DESC
+LIMIT $10 OFFSET $9
+`
+
+type ListStaffSubscriptionsParams struct {
+	View          string             `json:"view"`
+	Status        *string            `json:"status"`
+	Search        *string            `json:"search"`
+	PackageID     *int64             `json:"package_id"`
+	BillingCycle  *string            `json:"billing_cycle"`
+	ExpiresBefore pgtype.Timestamptz `json:"expires_before"`
+	OrderBy       string             `json:"order_by"`
+	OrderDir      string             `json:"order_dir"`
+	PageOffset    int32              `json:"page_offset"`
+	PageLimit     int32              `json:"page_limit"`
+	GraceSince    pgtype.Timestamptz `json:"grace_since"`
+}
+
+type ListStaffSubscriptionsRow struct {
+	ID                  int64              `json:"id"`
+	TenantID            int64              `json:"tenant_id"`
+	PackageID           int64              `json:"package_id"`
+	Status              string             `json:"status"`
+	StartsAt            pgtype.Timestamptz `json:"starts_at"`
+	TrialEndsAt         pgtype.Timestamptz `json:"trial_ends_at"`
+	ExpiresAt           pgtype.Timestamptz `json:"expires_at"`
+	CancelledAt         pgtype.Timestamptz `json:"cancelled_at"`
+	CancellationReason  *string            `json:"cancellation_reason"`
+	Overrides           []byte             `json:"overrides"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	NextPackageID       *int64             `json:"next_package_id"`
+	CancelAtPeriodEnd   bool               `json:"cancel_at_period_end"`
+	BillingCycle        *string            `json:"billing_cycle"`
+	NextBillingCycle    *string            `json:"next_billing_cycle"`
+	TenantName          string             `json:"tenant_name"`
+	TenantCode          string             `json:"tenant_code"`
+	PackageName         string             `json:"package_name"`
+	PackagePrice        int64              `json:"package_price"`
+	PackageBillingCycle string             `json:"package_billing_cycle"`
+	PackageYearlyPrice  *int64             `json:"package_yearly_price"`
+	InGrace             bool               `json:"in_grace"`
+	ReadOnly            bool               `json:"read_only"`
+}
+
+// The staff subscriptions panel (docs/guides/billing.md#the-staff-subscriptions-panel):
+// rows with their organization and plan, their standing and a view. The
+// standing follows service.standingOf: the plan in force per organization
+// (as GetActiveSubscriptionForTenant picks it), else the paid plan that
+// lapsed after @grace_since (in grace), else read-only when a plan ever
+// started. Deleted organizations are left out. CountStaffSubscriptions
+// counts the same rows; StaffSubscriptionCounts counts each view. The three
+// repeat the same CTEs (sqlc cannot share them): keep them in step.
+func (q *Queries) ListStaffSubscriptions(ctx context.Context, arg ListStaffSubscriptionsParams) ([]ListStaffSubscriptionsRow, error) {
+	rows, err := q.db.Query(ctx, listStaffSubscriptions,
+		arg.View,
+		arg.Status,
+		arg.Search,
+		arg.PackageID,
+		arg.BillingCycle,
+		arg.ExpiresBefore,
+		arg.OrderBy,
+		arg.OrderDir,
+		arg.PageOffset,
+		arg.PageLimit,
+		arg.GraceSince,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListStaffSubscriptionsRow{}
+	for rows.Next() {
+		var i ListStaffSubscriptionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.PackageID,
+			&i.Status,
+			&i.StartsAt,
+			&i.TrialEndsAt,
+			&i.ExpiresAt,
+			&i.CancelledAt,
+			&i.CancellationReason,
+			&i.Overrides,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.NextPackageID,
+			&i.CancelAtPeriodEnd,
+			&i.BillingCycle,
+			&i.NextBillingCycle,
+			&i.TenantName,
+			&i.TenantCode,
+			&i.PackageName,
+			&i.PackagePrice,
+			&i.PackageBillingCycle,
+			&i.PackageYearlyPrice,
+			&i.InGrace,
+			&i.ReadOnly,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSubscriptions = `-- name: ListSubscriptions :many
-SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions
+SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle FROM subscriptions
 WHERE ($1::text IS NULL OR status = $1::text)
 ORDER BY id DESC
 LIMIT $3 OFFSET $2
@@ -1367,6 +1696,8 @@ func (q *Queries) ListSubscriptions(ctx context.Context, arg ListSubscriptionsPa
 			&i.UpdatedAt,
 			&i.NextPackageID,
 			&i.CancelAtPeriodEnd,
+			&i.BillingCycle,
+			&i.NextBillingCycle,
 		); err != nil {
 			return nil, err
 		}
@@ -1461,7 +1792,7 @@ SET status     = 'scheduled',
     overrides  = $3,
     updated_at = now()
 WHERE id = $4 AND status = 'pending'
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle
 `
 
 type ScheduleSubscriptionParams struct {
@@ -1495,6 +1826,8 @@ func (q *Queries) ScheduleSubscription(ctx context.Context, arg ScheduleSubscrip
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }
@@ -1565,7 +1898,7 @@ UPDATE subscriptions
 SET overrides  = $1,
     updated_at = now()
 WHERE id = $2
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle
 `
 
 type SetSubscriptionOverridesParams struct {
@@ -1591,6 +1924,8 @@ func (q *Queries) SetSubscriptionOverrides(ctx context.Context, arg SetSubscript
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }
@@ -1598,22 +1933,29 @@ func (q *Queries) SetSubscriptionOverrides(ctx context.Context, arg SetSubscript
 const setSubscriptionPlanEnd = `-- name: SetSubscriptionPlanEnd :one
 UPDATE subscriptions
 SET next_package_id      = $1,
-    cancel_at_period_end = $2,
+    next_billing_cycle   = $2,
+    cancel_at_period_end = $3,
     updated_at           = now()
-WHERE id = $3
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+WHERE id = $4
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle
 `
 
 type SetSubscriptionPlanEndParams struct {
-	NextPackageID     *int64 `json:"next_package_id"`
-	CancelAtPeriodEnd bool   `json:"cancel_at_period_end"`
-	ID                int64  `json:"id"`
+	NextPackageID     *int64  `json:"next_package_id"`
+	NextBillingCycle  *string `json:"next_billing_cycle"`
+	CancelAtPeriodEnd bool    `json:"cancel_at_period_end"`
+	ID                int64   `json:"id"`
 }
 
 // What happens when the period ends: renew onto another plan
 // (next_package_id) or not at all (cancel_at_period_end).
 func (q *Queries) SetSubscriptionPlanEnd(ctx context.Context, arg SetSubscriptionPlanEndParams) (Subscription, error) {
-	row := q.db.QueryRow(ctx, setSubscriptionPlanEnd, arg.NextPackageID, arg.CancelAtPeriodEnd, arg.ID)
+	row := q.db.QueryRow(ctx, setSubscriptionPlanEnd,
+		arg.NextPackageID,
+		arg.NextBillingCycle,
+		arg.CancelAtPeriodEnd,
+		arg.ID,
+	)
 	var i Subscription
 	err := row.Scan(
 		&i.ID,
@@ -1630,6 +1972,69 @@ func (q *Queries) SetSubscriptionPlanEnd(ctx context.Context, arg SetSubscriptio
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
+	)
+	return i, err
+}
+
+const staffSubscriptionCounts = `-- name: StaffSubscriptionCounts :one
+WITH subs AS (
+    SELECT s.id, s.tenant_id, s.package_id, s.status, s.starts_at, s.trial_ends_at, s.expires_at, s.cancelled_at, s.cancellation_reason, s.overrides, s.created_at, s.updated_at, s.next_package_id, s.cancel_at_period_end, s.billing_cycle, s.next_billing_cycle FROM subscriptions s
+    JOIN tenants t ON t.id = s.tenant_id AND t.deleted_at IS NULL
+),
+in_force AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE (status IN ('active', 'trial') OR (status = 'scheduled' AND starts_at <= now()))
+      AND expires_at > now()
+    ORDER BY tenant_id, id DESC
+),
+lapsed AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE status IN ('active', 'expired', 'past_due') AND expires_at <= now() AND expires_at > $1
+      AND tenant_id NOT IN (SELECT tenant_id FROM in_force)
+    ORDER BY tenant_id, expires_at DESC, id DESC
+),
+read_only AS (
+    SELECT DISTINCT ON (tenant_id) id, tenant_id FROM subs
+    WHERE status IN ('active', 'trial', 'expired', 'past_due', 'cancelled') AND starts_at <= now()
+      AND tenant_id NOT IN (SELECT tenant_id FROM in_force)
+      AND tenant_id NOT IN (SELECT tenant_id FROM lapsed)
+    ORDER BY tenant_id, expires_at DESC NULLS LAST, id DESC
+)
+SELECT
+    (SELECT count(*) FROM in_force f JOIN subs s ON s.id = f.id WHERE s.status <> 'trial') AS active,
+    (SELECT count(*) FROM in_force f JOIN subs s ON s.id = f.id WHERE s.status = 'trial') AS trial,
+    (SELECT count(*) FROM lapsed) AS grace,
+    (SELECT count(*) FROM read_only) AS read_only,
+    (SELECT count(*) FROM subs WHERE status = 'pending') AS pending,
+    (SELECT count(*) FROM subs WHERE status = 'scheduled' AND starts_at > now()) AS scheduled,
+    (SELECT count(*) FROM subs) AS all_rows
+`
+
+type StaffSubscriptionCountsRow struct {
+	Active    int64 `json:"active"`
+	Trial     int64 `json:"trial"`
+	Grace     int64 `json:"grace"`
+	ReadOnly  int64 `json:"read_only"`
+	Pending   int64 `json:"pending"`
+	Scheduled int64 `json:"scheduled"`
+	AllRows   int64 `json:"all_rows"`
+}
+
+// A count per view of ListStaffSubscriptions (the tabs of the staff panel);
+// the same standing rules.
+func (q *Queries) StaffSubscriptionCounts(ctx context.Context, graceSince pgtype.Timestamptz) (StaffSubscriptionCountsRow, error) {
+	row := q.db.QueryRow(ctx, staffSubscriptionCounts, graceSince)
+	var i StaffSubscriptionCountsRow
+	err := row.Scan(
+		&i.Active,
+		&i.Trial,
+		&i.Grace,
+		&i.ReadOnly,
+		&i.Pending,
+		&i.Scheduled,
+		&i.AllRows,
 	)
 	return i, err
 }
@@ -1700,6 +2105,24 @@ func (q *Queries) SuspendLapsedTenants(ctx context.Context, arg SuspendLapsedTen
 	return items, nil
 }
 
+const tenantHadSubscription = `-- name: TenantHadSubscription :one
+SELECT EXISTS (
+    SELECT 1 FROM subscriptions
+    WHERE tenant_id = $1
+      AND status IN ('active', 'trial', 'expired', 'past_due', 'cancelled')
+      AND starts_at <= now()
+)::bool AS had
+`
+
+// Whether the tenant ever had a plan that started: one that never did
+// cannot lapse into read-only.
+func (q *Queries) TenantHadSubscription(ctx context.Context, tenantID int64) (bool, error) {
+	row := q.db.QueryRow(ctx, tenantHadSubscription, tenantID)
+	var had bool
+	err := row.Scan(&had)
+	return had, err
+}
+
 const tenantUsage = `-- name: TenantUsage :one
 SELECT
     (SELECT count(*) FROM users u WHERE u.tenant_id = $1::bigint AND u.deleted_at IS NULL)::bigint AS users,
@@ -1728,12 +2151,13 @@ SET name          = $1,
     description   = $2,
     price         = $3,
     billing_cycle = $4,
-    trial_days    = $5,
-    is_active     = $6,
-    sort_order    = $7,
+    yearly_price  = $5,
+    trial_days    = $6,
+    is_active     = $7,
+    sort_order    = $8,
     updated_at    = now()
-WHERE id = $8
-RETURNING id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at
+WHERE id = $9
+RETURNING id, name, description, price, billing_cycle, trial_days, is_active, sort_order, created_at, updated_at, yearly_price
 `
 
 type UpdatePackageParams struct {
@@ -1741,6 +2165,7 @@ type UpdatePackageParams struct {
 	Description  *string `json:"description"`
 	Price        int64   `json:"price"`
 	BillingCycle string  `json:"billing_cycle"`
+	YearlyPrice  *int64  `json:"yearly_price"`
 	TrialDays    int32   `json:"trial_days"`
 	IsActive     bool    `json:"is_active"`
 	SortOrder    int32   `json:"sort_order"`
@@ -1753,6 +2178,7 @@ func (q *Queries) UpdatePackage(ctx context.Context, arg UpdatePackageParams) (P
 		arg.Description,
 		arg.Price,
 		arg.BillingCycle,
+		arg.YearlyPrice,
 		arg.TrialDays,
 		arg.IsActive,
 		arg.SortOrder,
@@ -1770,6 +2196,7 @@ func (q *Queries) UpdatePackage(ctx context.Context, arg UpdatePackageParams) (P
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.YearlyPrice,
 	)
 	return i, err
 }
@@ -1920,7 +2347,7 @@ SET status              = $1,
     cancellation_reason = $3,
     updated_at          = now()
 WHERE id = $4
-RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end
+RETURNING id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle
 `
 
 type UpdateSubscriptionStatusParams struct {
@@ -1953,6 +2380,8 @@ func (q *Queries) UpdateSubscriptionStatus(ctx context.Context, arg UpdateSubscr
 		&i.UpdatedAt,
 		&i.NextPackageID,
 		&i.CancelAtPeriodEnd,
+		&i.BillingCycle,
+		&i.NextBillingCycle,
 	)
 	return i, err
 }

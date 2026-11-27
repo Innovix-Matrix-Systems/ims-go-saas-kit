@@ -5,6 +5,7 @@ import { intlLocale, useLocale, useT, type MessageKey } from '../i18n'
 import { currenciesQuery, findCurrency, formatMoney, type Currency } from '../money'
 import { Field, useApiErrors } from './form'
 import { Badge, Icon, Spinner } from './ui'
+import { branchesEnabled } from '../product'
 
 export type Package = Schemas['Package']
 export type SubscriptionStatus = Schemas['SubscriptionStatusEnvelope']['data']
@@ -41,6 +42,47 @@ export function usePrice() {
   return (pkg: Package) => (pkg.price === 0 ? t('onboarding.free') : `${money(pkg.price)} ${t(cycleLabels[pkg.billing_cycle])}`)
 }
 
+export type Cycle = Package['billing_cycle']
+
+/**
+ * The plan as offered at a cycle: a monthly plan with a yearly price, at the yearly cycle, has the
+ * yearly price. Any other cycle leaves the plan as it is. Checkout sends `pkg.billing_cycle`.
+ */
+export function atCycle(pkg: Package, cycle: string | null | undefined): Package {
+  if (cycle === 'yearly' && pkg.billing_cycle === 'monthly' && pkg.yearly_price != null) {
+    return { ...pkg, price: pkg.yearly_price, billing_cycle: 'yearly' }
+  }
+  return pkg
+}
+
+/** Whether any of the plans can be bought yearly as well as monthly. */
+export function offersYearly(packages: Package[] | undefined): boolean {
+  return !!packages?.some((pkg) => pkg.billing_cycle === 'monthly' && pkg.yearly_price != null)
+}
+
+/**
+ * Monthly or yearly: the switch above a list of plans. The yearly button says what the best
+ * yearly price saves over paying monthly for twelve months.
+ */
+export function CycleSwitch({ value, onChange, packages }: { value: Cycle; onChange: (cycle: Cycle) => void; packages: Package[] }) {
+  const t = useT()
+  const money = useMoney()
+  const saving = Math.max(0, ...packages.map((pkg) => (pkg.billing_cycle === 'monthly' && pkg.yearly_price != null ? pkg.price * 12 - pkg.yearly_price : 0)))
+  // Wrapped so the switch keeps its own width inside a stacked layout.
+  return (
+    <div>
+      <div className="segmented" role="group" aria-label={t('billing.cycle.label')}>
+        {(['monthly', 'yearly'] as const).map((cycle) => (
+          <button key={cycle} type="button" className={value === cycle ? 'active' : ''} aria-pressed={value === cycle} onClick={() => onChange(cycle)}>
+            {t(cycle === 'monthly' ? 'billing.cycle.monthly' : 'billing.cycle.yearly')}
+            {cycle === 'yearly' && saving > 0 ? <Badge tone="ok">{t('billing.cycle.save', { amount: money(saving) })}</Badge> : null}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // Readable names for plan features; unknown keys fall back to the key.
 const featureLabels: Record<string, MessageKey> = {
   'users.max': 'billing.feature.users',
@@ -53,6 +95,11 @@ const featureLabels: Record<string, MessageKey> = {
   'reports.basic': 'billing.feature.reportsBasic',
   'reports.advanced': 'billing.feature.reportsAdvanced',
   'reports.export': 'billing.feature.reportsExport',
+}
+
+/** Whether a feature key is a numeric limit (its value is a number, not on or off). */
+function isLimitKey(key: string): boolean {
+  return key.endsWith('.max') || key === 'storage.mb'
 }
 
 const verbs = new Set(['manage', 'view', 'export', 'create', 'edit', 'delete', 'import', 'send'])
@@ -119,7 +166,7 @@ export function BankTransferForm({ pkg, amount, onSubmitted }: { pkg: Package; a
       await api('/billing/subscribe', {
         method: 'POST',
         idempotent: true,
-        body: { package_id: pkg.id, payment_method: 'bank_transfer', payment_data: { reference_number: reference.trim() } },
+        body: { package_id: pkg.id, billing_cycle: pkg.billing_cycle, payment_method: 'bank_transfer', payment_data: { reference_number: reference.trim() } },
       })
       onSubmitted()
     } catch (cause) {
@@ -164,7 +211,7 @@ export function PricingCard({ pkg, current, chosen, action }: { pkg: Package; cu
   const money = useMoney()
   const featureText = useFeatureText()
   const [expanded, setExpanded] = useState(false)
-  const features = pkg.features.filter((feature) => feature.is_enabled)
+  const features = includedFeatures(pkg.features)
   const shown = expanded ? features : features.slice(0, FEATURES_SHOWN)
   const hidden = features.length - shown.length
   return (
@@ -259,8 +306,8 @@ export function PlanChange({ pkg, onDone }: { pkg: Package; onDone: (change: Cha
   const errors = useApiErrors()
   const [busy, setBusy] = useState(false)
   const preview = useQuery({
-    queryKey: ['billing', 'change-preview', pkg.id],
-    queryFn: () => api<Change>('/billing/change-preview', { query: { package_id: pkg.id } }),
+    queryKey: ['billing', 'change-preview', pkg.id, pkg.billing_cycle],
+    queryFn: () => api<Change>('/billing/change-preview', { query: { package_id: pkg.id, billing_cycle: pkg.billing_cycle } }),
     staleTime: 0,
     gcTime: 0,
   })
@@ -289,7 +336,7 @@ export function PlanChange({ pkg, onDone }: { pkg: Package; onDone: (change: Cha
     setBusy(true)
     errors.clear()
     try {
-      await api('/billing/subscribe', { method: 'POST', idempotent: true, body: { package_id: pkg.id } })
+      await api('/billing/subscribe', { method: 'POST', idempotent: true, body: { package_id: pkg.id, billing_cycle: pkg.billing_cycle } })
       onDone(change)
     } catch (cause) {
       errors.setError(cause instanceof Error ? cause : new Error(String(cause)))
@@ -345,4 +392,17 @@ export function PlanChange({ pkg, onDone }: { pkg: Package; onDone: (change: Cha
       )}
     </div>
   )
+}
+
+/** The usage limits to show: the branch limit only while the product uses branches (product.ts). */
+export function visibleLimits<T extends { feature_key: string }>(limits: T[] | undefined): T[] {
+  return (limits ?? []).filter((limit) => branchesEnabled || limit.feature_key !== 'branches.max')
+}
+
+/**
+ * What a plan includes, for lists: enabled features, without a limit of 0 (not in the plan) and
+ * without the branch limit while the product uses one branch.
+ */
+export function includedFeatures<T extends { feature_key: string; is_enabled: boolean; limit_value: number }>(features: T[]): T[] {
+  return visibleLimits(features.filter((feature) => feature.is_enabled && !(isLimitKey(feature.feature_key) && feature.limit_value === 0)))
 }

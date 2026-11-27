@@ -21,5 +21,9 @@
   "planBanner.ends": "Votre offre {plan} se termine {when}.",
   "planBanner.choose": "Voir les offres",
   "planBanner.viewBilling": "Voir la facturation",
-  "planBanner.hide": "Masquer pour aujourd'hui"
+  "planBanner.hide": "Masquer pour aujourd'hui",
+  "planBanner.readOnly": "Votre offre {plan} a expiré : votre organisation est en lecture seule.",
+  "planBanner.readOnlyBody": "Tout le monde peut toujours se connecter, consulter, copier et exporter. Choisissez une offre pour pouvoir modifier à nouveau.",
+  "planBanner.grace": "Le paiement de votre offre {plan} est en retard. Les modifications s’arrêtent le {date}.",
+  "planBanner.graceBody": "D’ici là, tout continue de fonctionner. Ensuite, votre organisation passe en lecture seule jusqu’au paiement."
 }

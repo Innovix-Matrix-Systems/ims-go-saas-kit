@@ -76,6 +76,7 @@ hourly task then makes it active).
 | see the use of each plan limit | `GET /api/v1/billing/usage` (`billing.view`): `users.max`, `branches.max` and `storage.mb` with the limit (-1 unlimited, 0 not in the plan) and what is used, counted as the limit checks count |
 | staff assigns a plan | `POST /api/v1/billing/internal/tenants/{tenant_id}/subscription` |
 | staff cancels | `POST /api/v1/billing/internal/subscriptions/{id}/cancel` — immediate |
+| staff payments list | `GET /api/v1/billing/internal/payments` (`payment.view.all`): every organization's, by `status` and `tenant_id` (one organization's) |
 | staff refund | `POST /api/v1/billing/internal/payments/{id}/refund` (`payment.refund`) |
 | staff credit | `GET`/`POST /api/v1/billing/internal/tenants/{tenant_id}/credits` (`payment.view.all` / `payment.refund`) |
 | expiry, scheduled plans start | the `billing.expire-subscriptions` task, hourly |
@@ -116,6 +117,35 @@ never changes the amount. The rules follow what Stripe, Paddle and Claude do:
   paid in advance becomes account credit. `…/subscription/keep` undoes it, and also undoes a chosen
   downgrade or a scheduled free plan.
 
+### Monthly and yearly
+
+A plan has a base price and cycle (`price`, `billing_cycle`). A **monthly** plan can also be sold
+yearly: set `yearly_price` (minor units; `null` means monthly only, and a non-monthly plan cannot
+have one). The organization picks the cycle when it buys: `billing_cycle` on
+`GET /billing/change-preview`, `POST /billing/subscribe` and the staff assign endpoint, defaulting
+to the plan's own. The subscription records it (`subscription.billing_cycle`; `null` on rows from
+before means the plan's own), and renewals, invoices and periods follow it.
+
+Changing only the cycle follows the same rules as changing plans: monthly → yearly of the same plan
+is an **upgrade** (now, with the unused days credited); yearly → monthly is a **downgrade** that waits
+for the period end (`next_package_id` + `next_billing_cycle`). The same plan at the same cycle is a
+renewal. In code, `domain.Package.ForCycle(cycle)` is the plan as offered at a cycle, so proration
+works unchanged; `Subscription.PlanFor(pkg)` is the plan at a subscription's cycle.
+
+### Grace and read-only
+
+No lock-out: when a paid plan lapses with nothing to replace it, the organization keeps it for
+**`BILLING_GRACE_DAYS`** (default 14): its features and limits still apply, and
+`GET /billing/subscription/status` reports `in_grace` and `grace_ends_at`. After that the
+organization is **read-only** (`read_only: true`): members can still sign in, read, copy and export,
+but writes on the organization API answer **402** `SUBSCRIPTION_REQUIRED` with
+`meta.reason: read_only` (`billing.ReadOnly`; the allowed routes are `readOnlyAllowed` in `internal/app/routes.go`). Still allowed: billing (pay,
+change plan, withdraw a checkout), the caller's own profile, password and notifications, exports
+and their jobs, onboarding, and removing a member. Platform staff acting inside the organization
+are not blocked. Paying (or staff assigning a plan) lifts it at once. An organization that never
+had a plan is never read-only. `BILLING_SUSPEND_ON_EXPIRY` ([configuration](../reference/configuration.md)) is the harsher kit option that
+locks members out; leave it off for no lock-out.
+
 ### Account credit and refunds
 
 Nothing is refunded automatically. Staff refund a completed payment with
@@ -129,6 +159,27 @@ organization's activity log.
 When approving a bank or cash payment, staff can give the **amount received**: more than the
 invoice becomes account credit, less is refused (reject it, or ask for the rest). An approval whose
 credited plan is no longer the one in force shows `quote_stale`.
+
+### The staff subscriptions panel
+
+`GET /api/v1/billing/internal/subscriptions` (`subscription.view.all`, platform staff only) lists
+every organization's subscriptions with the organization (`id`, `name`, `code`) and plan
+(`id`, `name`), what a period costs at the subscription's cycle (`price`, `price_cycle`) and its
+standing (`in_grace`, `grace_ends_at`, `read_only`), decided by the same rules as
+[Grace and read-only](#grace-and-read-only). Deleted organizations are left out.
+
+| Parameter | Values |
+| --- | --- |
+| `view` | `current` (one row per organization: the plan in force, else the lapsed one), `active`, `trial`, `grace`, `read_only`, `pending` (checkouts waiting), `scheduled` (next periods), `all` (default: every row) |
+| `status` | a subscription status |
+| `search` | part of the organization's name or code |
+| `package_id`, `billing_cycle` | the plan, the cycle (the plan's own when none was chosen) |
+| `expires_within_days` | periods ending within that many days (ended ones included) |
+| `order_by`, `order_direction` | `id` (default), `expires_at` or `created_at`; `asc` or `desc` (default), as other lists (`httpx.OrderParams`) |
+
+`GET /api/v1/billing/internal/subscriptions/summary` counts each view, for tabs. The staff
+console's **Subscriptions** page shows both; a row opens the organization, where staff change the
+plan (monthly or yearly), adjust credit, refund or cancel.
 
 ### Staff assignment
 
@@ -207,6 +258,23 @@ An **orchestrator** picks a driver per method:
 `ims db:seed` creates a hidden **Unlimited** package (every feature on, every limit `-1`) and
 subscribes the default tenant to it when that tenant has no active plan, so a fresh install can
 add users right away; it is never listed publicly and seeding again changes nothing.
+
+`ims db:seed` then creates three sample public plans (`seeder.SeedPlans` in
+`internal/seeder/plans.go`; the test kit's base seed does not), each only when no package of that
+name exists, so prices and limits changed in the console are never overwritten:
+
+| Package | Monthly | Yearly | Members | Branches | Storage |
+| --- | --- | --- | --- | --- | --- |
+| Free | $0, one-time (never ends) | — | 3 | 1 | 100 MB |
+| Pro | $19 | $190 | 25 | 3 | 5 GB |
+| Business | $49 | $490 | 100 | unlimited | 50 GB |
+
+Free includes `patients.manage`, `appointments.manage` and `reports.basic`; Pro adds
+`invoices.manage`, `reports.advanced`, `reports.export` and `audit.log`; Business also adds
+`sms.notifications`, `api.access` and `custom.branding`. No plan has trial days. Free is the first
+active free package, so [sign-up](sign-up.md) starts new organizations on it; its one-time cycle
+keeps a free subscription from ever reaching the end of a period. Replace `Plans` with your
+product's plans.
 
 `GET /api/v1/public/packages` lists active packages for your pricing page (no auth). Staff manage
 packages with `/api/v1/packages` (`package.*`); updating a package **replaces** its feature set

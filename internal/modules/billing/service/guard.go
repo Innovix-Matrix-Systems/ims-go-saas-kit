@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/apperr"
 	"github.com/Innovix-Matrix-Systems/ims-go-saas-kit/internal/modules/billing/domain"
@@ -11,6 +12,8 @@ import (
 type Guard struct {
 	subscriptions domain.SubscriptionRepository
 	packages      domain.PackageRepository
+	// grace keeps a lapsed paid plan applying for a while (standing.go).
+	grace time.Duration
 }
 
 // NewGuard creates the feature guard.
@@ -24,11 +27,13 @@ type planContext struct {
 }
 
 func (g *Guard) planFor(ctx context.Context, tenantID int64) (*planContext, error) {
-	subscription, found, err := g.subscriptions.GetActiveForTenant(ctx, tenantID)
+	// The current plan, or a lapsed one during its grace period.
+	standing, err := g.Standing(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}
-	if !found || subscription == nil {
+	subscription := standing.Subscription
+	if subscription == nil {
 		return nil, nil
 	}
 	features, err := g.packages.FeaturesFor(ctx, subscription.PackageID)

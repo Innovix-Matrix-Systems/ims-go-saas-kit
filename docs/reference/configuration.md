@@ -160,6 +160,7 @@ effective values with secrets masked.
 | --- | --- | --- |
 | `BILLING_SUSPEND_ON_EXPIRY` | `false` | *Optional.* The currency is not configured here: staff choose it in the console (Currencies). suspend tenants whose subscription expired (nothing current or pending) |
 | `BILLING_SUSPEND_GRACE_DAYS` | `3` | *Optional.* days after expiry before the suspension |
+| `BILLING_GRACE_DAYS` | `14` | *Optional.* days a lapsed paid plan keeps applying, then the organization is read-only |
 | `BKASH_BASE_URL` | `/ BKASH_APP_KEY= / BKASH_APP_SECRET= / BKASH_USERNAME= / BKASH_PASSWORD=` | *Optional.* |
 | `BKASH_CALLBACK_URL` | `https://api.example.com/api/v1/billing/bkash/callback` | *Optional.* |
 | `NAGAD_BASE_URL` | `/ NAGAD_MERCHANT_ID= / NAGAD_MERCHANT_NUMBER= / NAGAD_PUBLIC_KEY= / NAGAD_PRIVATE_KEY=` | *Optional.* |

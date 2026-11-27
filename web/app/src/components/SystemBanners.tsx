@@ -212,7 +212,13 @@ export function PlanBanner() {
     const daysLeft = expires ? Math.ceil((expires.getTime() - Date.now()) / 86_400_000) : null
     const date = expires ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(expires) : ''
     const when = daysLeft === null ? '' : daysLeft <= 0 ? t('planBanner.today') : daysLeft === 1 ? t('planBanner.tomorrow') : t('planBanner.inDays', { count: daysLeft })
-    if (!sub) {
+    const graceEnds = data.grace_ends_at ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(data.grace_ends_at)) : ''
+    if (data.read_only) {
+      // A paid plan lapsed beyond its grace period: everything can be read and exported, nothing changed.
+      notice = { kind: 'read_only', tone: 'danger', title: t('planBanner.readOnly', { plan }), body: t('planBanner.readOnlyBody') }
+    } else if (data.in_grace) {
+      notice = { kind: 'grace', tone: 'danger', title: t('planBanner.grace', { plan, date: graceEnds }), body: t('planBanner.graceBody') }
+    } else if (!sub) {
       notice = { kind: 'none', tone: 'warn', title: t('planBanner.none'), body: t('planBanner.noneBody') }
     } else if (sub.status === 'expired' || (!data.active && sub.status !== 'pending' && sub.status !== 'past_due')) {
       notice = { kind: 'ended', tone: 'danger', title: t('planBanner.ended', { plan }), body: t('planBanner.endedBody') }

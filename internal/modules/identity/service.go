@@ -85,10 +85,16 @@ func (s *Service) WithTx(tx *database.TxManager) *Service {
 
 // List returns users within the effective scope.
 func (s *Service) List(ctx context.Context, scope tenancy.Scope, filter ListFilter) ([]User, int64, error) {
-	if scope.AllTenants() {
+	switch {
+	case scope.AllTenants() && filter.TenantID > 0:
+		// A reader of every tenant narrows to one organization's members (the
+		// console links here from an organization), every branch included.
+		filter.AllTenants = false
+		filter.BranchID = 0
+	case scope.AllTenants():
 		filter.AllTenants = true
 		filter.TenantID = 0
-	} else {
+	default:
 		tenantID := scope.EffectiveTenantID()
 		if tenantID == 0 {
 			return nil, 0, apperr.New(apperr.TenantContextNotResolved, "A tenant context is required.")

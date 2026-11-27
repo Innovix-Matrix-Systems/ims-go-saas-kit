@@ -99,6 +99,10 @@ func newDBSeedCommand(state *State) *cobra.Command {
 			if err := seeder.Run(ctx, cfg, queries, tx, checker, state.Logger()); err != nil {
 				return err
 			}
+			// The sample public plans (Free, Pro, Business), each only when missing.
+			if err := seeder.SeedPlans(ctx, queries, state.Logger()); err != nil {
+				return err
+			}
 			// Materialize the code-defined settings groups/globals and feature-flag
 			// globals so the settings surface is complete after a plain seed.
 			if _, err := settings.NewService(settings.NewRepository(queries), store).Sync(ctx); err != nil {

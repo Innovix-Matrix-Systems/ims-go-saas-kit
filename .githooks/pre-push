@@ -1,13 +1,69 @@
 #!/usr/bin/env sh
+# Runs before every `git push`: builds everything and runs the checks CI runs
+# on a pull request, so a branch is only pushed once it builds and passes
+# locally. CI runs on pull requests only, so this is the first line of defence.
+#
+# Enable once per clone:  make hooks   (git config core.hooksPath .githooks)
+# Run by hand:            make pre-push
+# Skip in an emergency:   git push --no-verify   (CI still checks the pull request)
+#
+# Integration tests run too when DATABASE_TEST_DSN is set; without it they
+# skip, and CI's integration job is the only place they run.
+# Not covered here (CI only): the race detector, the Docker stack and the
+# cross-compiles.
 set -eu
 
 cd "$(git rev-parse --show-toplevel)"
 
-make check
-make openapi-check
+step() { printf '\n==> %s\n' "$1"; }
+fail() { printf '\npre-push: %s\n' "$1" >&2; exit 1; }
 
-if [ -d web/dev/node_modules ]; then
-	make web-typecheck
-else
-	echo "Skipping dashboard type-check (web/dev/node_modules is missing; run: npm --prefix web/dev ci)."
-fi
+# Vite and its bundler need Node ^20.19 or >=22.12.
+step "Node.js version"
+command -v node >/dev/null 2>&1 || fail "node is not installed (the app and dashboard builds need it)."
+node -e 'const [a, b] = process.versions.node.split(".").map(Number); process.exit(a > 22 || (a === 22 && b >= 12) || (a === 20 && b >= 19) ? 0 : 1)' \
+	|| fail "Node.js $(node -v) is too old: the app build needs ^20.19 or >=22.12 (for example: nvm use 22)."
+node -v
+
+for app in web/app web/dev; do
+	[ -d "$app/node_modules" ] || fail "$app/node_modules is missing. Run: npm --prefix $app ci"
+done
+
+step "Go build"
+go build ./...
+
+step "Format, vet, lint, tests"
+make check
+
+step "Generated code is current"
+if command -v sqlc >/dev/null 2>&1; then sqlc generate; else make sqlc; fi
+make openapi
+git --no-pager diff --exit-code -- internal/dbgen internal/contract \
+	|| fail "generated code changed: commit internal/dbgen and internal/contract."
+go run ./cmd/app gen openapi --all --check
+go run ./cmd/skills check
+go run ./cmd/app gen docs --check
+
+step "OpenAPI spec and route drift"
+make openapi-check
+go run ./cmd/app i18n:coverage
+
+step "Client app (web/app)"
+npm --prefix web/app run typecheck
+npm --prefix web/app run i18n:check
+npm --prefix web/app run check:style
+npm --prefix web/app run check:logical
+npm --prefix web/app run build
+npm --prefix web/app run openapi:gen
+git --no-pager diff --exit-code -- web/app/src/api/schema.d.ts web/app/src/routeTree.gen.ts \
+	|| fail "web/app generated files changed: commit them."
+
+step "Developer dashboard (web/dev)"
+npm --prefix web/dev run typecheck
+npm --prefix web/dev run check:style
+npm --prefix web/dev run build
+npm --prefix web/dev run openapi:gen
+git --no-pager diff --exit-code -- web/dev/src/api/schema.d.ts \
+	|| fail "web/dev generated files changed: commit them."
+
+printf '\npre-push: build and checks passed.\n'

@@ -269,7 +269,7 @@ const devCountTenants = `-- name: DevCountTenants :one
 SELECT count(*)
 FROM tenants t
 LEFT JOIN LATERAL (
-    SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions sub
+    SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle FROM subscriptions sub
     WHERE sub.tenant_id = t.id
     ORDER BY (sub.status IN ('active', 'trial')) DESC, sub.id DESC
     LIMIT 1
@@ -401,7 +401,7 @@ SELECT t.id, t.name, t.code, t.domain, t.email, t.phone, t.is_active, t.created_
         + (SELECT count(*) FROM feature_flags ff WHERE ff.target_type = 'tenant' AND ff.target_id = t.id))::bigint AS override_count
 FROM tenants t
 LEFT JOIN LATERAL (
-    SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end FROM subscriptions sub
+    SELECT id, tenant_id, package_id, status, starts_at, trial_ends_at, expires_at, cancelled_at, cancellation_reason, overrides, created_at, updated_at, next_package_id, cancel_at_period_end, billing_cycle, next_billing_cycle FROM subscriptions sub
     WHERE sub.tenant_id = t.id
     ORDER BY (sub.status IN ('active', 'trial')) DESC, sub.id DESC
     LIMIT 1

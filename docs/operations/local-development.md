@@ -28,7 +28,7 @@ cp .env.example .env          # .env is git-ignored
 make key-generate             # APP_KEY into .env (optional locally, required in staging/production)
 make tools                    # install air + golangci-lint
 npm --prefix web/dev ci       # dashboard dependencies (Vite/React)
-git config core.hooksPath .githooks   # enable pre-commit/pre-push hooks
+make hooks                    # enable the git hooks (git config core.hooksPath .githooks)
 chmod +x .githooks/pre-commit .githooks/pre-push   # macOS/Linux only
 
 make db-up                    # Postgres via docker compose: creates ims_go_api (app) and
@@ -121,6 +121,27 @@ such request is written to the system audit log. Still rotate its password outsi
 
 To watch a job end-to-end, trigger a background user export (`POST /api/v1/user/export-background`),
 watch Shell B process it, then check `queue:stats` and the job status.
+
+## Git hooks: check before you push
+
+CI runs on **pull requests only**, not again after a merge to `main`: the pull request already
+checked it, and a product built on the kit usually lives in a private repository, where Actions
+minutes cost money. So every push is checked locally first. `make hooks` enables two hooks:
+
+- **pre-commit**: Go files must be gofmt-clean.
+- **pre-push**: builds and checks everything CI checks on a pull request, and stops the push on
+  the first failure: Go build, `make check` (gofmt, vet, golangci-lint, tests), generated code
+  (sqlc, OpenAPI, docs, skills), the OpenAPI route check, API translations, and the client app
+  and developer dashboard (typecheck, translations, style checks, build, generated types).
+
+The pre-push hook needs Node.js ^20.19 or >=22.12 and `npm ci` in `web/app` and `web/dev`. Set
+`DATABASE_TEST_DSN` to run the integration tests too; without it they skip. The race detector,
+the Docker stack and the cross-compiles run in CI only. Run the same checks by hand with
+`make pre-push`; skip the hook once with `git push --no-verify` (CI still checks the pull request).
+
+On Windows without a working cgo toolchain, the race detector and `go run` of cgo tools fail; the
+hook uses an installed `sqlc` binary when there is one (`go install
+github.com/sqlc-dev/sqlc/cmd/sqlc@<version>` or a release download) instead of `make sqlc`.
 
 ## Scheduled tasks
 

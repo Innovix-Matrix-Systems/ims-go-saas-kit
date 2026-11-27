@@ -1,6 +1,7 @@
 import { can, type Session } from '../auth/session'
 import type { MessageKey } from '../i18n'
 import type { IconName } from './ui'
+import { branchesEnabled } from '../product'
 
 // Every screen of the signed-in app, in one list: the sidebar, the command
 // palette, the shortcuts sheet and the top bar title all read it. A new page
@@ -44,6 +45,8 @@ export const pages: Page[] = [
   { to: '/console/activity', label: 'console.auditLog', icon: 'activity', group: 'console', key: 'd', keywords: 'audit log activity history system impersonation', permission: 'activity.view.all', platformOnly: true },
   { to: '/console/approvals', label: 'console.approvals', icon: 'check', group: 'console', key: 'v', keywords: 'payments bank transfer review approve reject', permission: 'payment_approval.view.all', platformOnly: true },
   { to: '/console/plans', label: 'console.plans', icon: 'package', group: 'console', key: 'l', keywords: 'packages pricing features limits', permission: 'package.view.all', platformOnly: true },
+  { to: '/console/subscriptions', label: 'console.subscriptions', icon: 'refresh', group: 'console', key: 't', keywords: 'subscriptions renewals expiring grace read-only lapsed plans customers', permission: 'subscription.view.all', platformOnly: true },
+  { to: '/console/payments', label: 'console.payments', icon: 'list', group: 'console', key: 'z', keywords: 'payments invoices receipts history refunds money transactions', permission: 'payment.view.all', platformOnly: true },
   { to: '/console/currencies', label: 'currencies.title', icon: 'coins', group: 'console', key: 'q', keywords: 'currency money symbol taka dollar euro default decimals', permission: 'currency.view.all', platformOnly: true },
   { to: '/console/staff', label: 'console.staff', icon: 'shield', group: 'console', key: 'x', keywords: 'internal users team admins', permission: 'user.internal.create', platformOnly: true },
   { to: '/console/announcements', label: 'console.announcements', icon: 'bell', group: 'console', key: 'k', keywords: 'broadcast notify maintenance news message', permission: 'announcement.view', platformOnly: true },
@@ -82,6 +85,7 @@ export function visiblePages(session: Session | undefined): Page[] {
     // Organization pages: members, and staff while impersonating one.
     if (page.tenantOnly && session?.isPlatformUser !== false && session?.acting?.kind !== 'tenant') return false
     if (page.permission && !can(session, page.permission)) return false
+    if (page.to === '/org/branches' && !branchesEnabled) return false
     return true
   })
 }

@@ -64,6 +64,8 @@ func TestRewrite(t *testing.T) {
 		{"words containing ims stay", "claims, imsi, IMSI, aims", "claims, imsi, IMSI, aims"},
 		{"keep markers", "ims serve\n<!-- rename:keep -->\nmake rename turns `ims` into yours\n<!-- rename:end -->\nims migrate",
 			"shop serve\n<!-- rename:keep -->\nmake rename turns `ims` into yours\n<!-- rename:end -->\nshop migrate"},
+		{"keep block with the module path", "<!-- rename:keep -->\n[Use this template](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate)\n<!-- rename:end -->",
+			"<!-- rename:keep -->\n[Use this template](https://github.com/Innovix-Matrix-Systems/ims-go-saas-kit/generate)\n<!-- rename:end -->"},
 		{"partial seeded e-mail stays", "/dev/api/actions?search=superadmin@ims", "/dev/api/actions?search=superadmin@ims"},
 		{"url-encoded titles", "otpauth://totp/IMS%20Go%20SaaS:jane@acme.test?issuer=IMS+Go+SaaS&period=30 IMS%20Go%20SaaS%20Kit",
 			"otpauth://totp/Acme%20Shop:jane@acme.test?issuer=Acme+Shop&period=30 Acme%20Shop"},
@@ -71,6 +73,9 @@ func TestRewrite(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got, _ := Rewrite(tc.in, starterModule, n)
+			if strings.ContainsRune(got, 0) {
+				t.Fatalf("Rewrite() left a NUL byte: %q", got)
+			}
 			if got != tc.want {
 				t.Fatalf("Rewrite()\n got: %s\nwant: %s", got, tc.want)
 			}

@@ -34,6 +34,16 @@ func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 	}
 	// Staff accounts only (no tenant); only a global reader sees any.
 	filter.PlatformOnly, _ = strconv.ParseBool(r.URL.Query().Get("platform"))
+	// One organization's members, for a reader of every tenant (the service
+	// ignores it for an organization's own members, who only see theirs).
+	if raw := r.URL.Query().Get("tenant_id"); raw != "" {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || id < 1 {
+			h.Error(w, r, apperr.Validation(map[string][]string{"tenant_id": {"The tenant_id must be a tenant id."}}))
+			return
+		}
+		filter.TenantID = id
+	}
 	switch raw := r.URL.Query().Get("invitation"); raw {
 	case "", InvitationPending, InvitationAccepted:
 		filter.Invitation = raw
